@@ -1,0 +1,207 @@
+{
+  "main": {
+    "id": "9b07ff1655f58066",
+    "type": "split",
+    "children": [
+      {
+        "id": "ec81f15456ae9a35",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "7dca314a26a0f087",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "Data Structure Summary.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "Data Structure Summary"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "vertical"
+  },
+  "left": {
+    "id": "c14d85c1fa0eaf11",
+    "type": "split",
+    "children": [
+      {
+        "id": "f378724b7951f4c2",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "7210625e0140b47b",
+            "type": "leaf",
+            "state": {
+              "type": "file-explorer",
+              "state": {
+                "sortOrder": "alphabetical"
+              },
+              "icon": "lucide-folder-closed",
+              "title": "檔案瀏覽器"
+            }
+          },
+          {
+            "id": "ef467040cd2031db",
+            "type": "leaf",
+            "state": {
+              "type": "search",
+              "state": {
+                "query": "",
+                "matchingCase": false,
+                "explainSearch": false,
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical"
+              },
+              "icon": "lucide-search",
+              "title": "搜尋"
+            }
+          },
+          {
+            "id": "e5e0f49682c0a782",
+            "type": "leaf",
+            "state": {
+              "type": "bookmarks",
+              "state": {},
+              "icon": "lucide-bookmark",
+              "title": "書籤"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 301.5
+  },
+  "right": {
+    "id": "7870daaab79c7df9",
+    "type": "split",
+    "children": [
+      {
+        "id": "caaad0d0b7752c92",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "4de0f65ad37251d5",
+            "type": "leaf",
+            "state": {
+              "type": "backlink",
+              "state": {
+                "file": "Interview - AI projects/Multi-camera 3d reconstruction - Projects.md",
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical",
+                "showSearch": false,
+                "searchQuery": "",
+                "backlinkCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-coming-in",
+              "title": "Multi-camera 3d reconstruction - Projects 的反向連結"
+            }
+          },
+          {
+            "id": "075416c9c0791abb",
+            "type": "leaf",
+            "state": {
+              "type": "outgoing-link",
+              "state": {
+                "file": "Interview - AI projects/Multi-camera 3d reconstruction - Projects QA.md",
+                "linksCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-going-out",
+              "title": "Multi-camera 3d reconstruction - Projects QA 的對外連結"
+            }
+          },
+          {
+            "id": "74ce57f991d45a0d",
+            "type": "leaf",
+            "state": {
+              "type": "tag",
+              "state": {
+                "sortOrder": "frequency",
+                "useHierarchy": true
+              },
+              "icon": "lucide-tags",
+              "title": "標籤"
+            }
+          },
+          {
+            "id": "f0c3801c1049f635",
+            "type": "leaf",
+            "state": {
+              "type": "outline",
+              "state": {
+                "file": "Interview - AI projects/Multi-camera 3d reconstruction - Projects QA.md"
+              },
+              "icon": "lucide-list",
+              "title": "Multi-camera 3d reconstruction - Projects QA 的大綱"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300,
+    "collapsed": true
+  },
+  "left-ribbon": {
+    "hiddenItems": {
+      "switcher:開啟快速切換": false,
+      "graph:查看關聯圖": false,
+      "canvas:建立新畫布": false,
+      "daily-notes:開啟今天的每日筆記": false,
+      "templates:插入模板": false,
+      "command-palette:開啟命令面板": false,
+      "table-editor-obsidian:Advanced Tables Toolbar": false
+    }
+  },
+  "active": "7dca314a26a0f087",
+  "lastOpenFiles": [
+    "Leetcode - 9.Data Structure/Word Search II.md",
+    "Data Structure Summary.md",
+    "Leetcode - 9.Data Structure/Tree.md",
+    "Leetcode - 9.Data Structure/Word Search III.md",
+    "Leetcode - 9.Data Structure/Intersection of Arrays.md",
+    "Leetcode - 9.Data Structure/Intersection of Two Arrays II.md",
+    "Leetcode - 9.Data Structure/Intersection of Two Arrays.md",
+    "Leetcode - 9.Data Structure/Data Stream as Disjoint Intervals.md",
+    "Leetcode - 9.Data Structure/Rehashing.md",
+    "Leetcode - 9.Data Structure/Hash Function.md",
+    "Leetcode - 9.Data Structure/High Five.md",
+    "Leetcode - 9.Data Structure/Insert Delete GetRandom O(1).md",
+    "Leetcode - 9.Data Structure/First Unique Number in Data Stream II.md",
+    "Leetcode - 9.Data Structure/First Unique Number in Data Stream.md",
+    "Leetcode - 9.Data Structure/Minimum Depth of Binary Tree.md",
+    "Leetcode - 9.Data Structure/Regular Expression Matching.md",
+    "Leetcode - 9.Data Structure/Combination Sum II.md",
+    "Leetcode - 9.Data Structure/Combinations.md",
+    "Leetcode - 9.Data Structure/Sort Colors.md",
+    "Leetcode - 9.Data Structure/Narcissistic Number.md",
+    "Leetcode - 9.Data Structure/Lowercase to Uppercase II.md",
+    "Leetcode - 9.Data Structure/Interleaving Positive and Negative Numbers.md",
+    "Leetcode - 9.Data Structure/Lowercase to Uppercase.md",
+    "Leetcode - 9.Data Structure/Sort Colors II.md",
+    "Leetcode - 9.Data Structure/O(1) Check Power of 2.md",
+    "Leetcode - 9.Data Structure/Sqrt(x).md",
+    "Leetcode - 11.other QA",
+    "materials/Pasted image 20241107101428.png",
+    "materials/Pasted image 20240914170030.png",
+    "materials/Pasted image 20240914165952.png",
+    "materials/Pasted image 20240914170344.png",
+    "materials/Pasted image 20240914170226.png",
+    "materials/Pasted image 20240914170140.png",
+    "materials/Pasted image 20240914165824.png",
+    "materials/Pasted image 20240914164330.png",
+    "materials/Pasted image 20240914163738.png",
+    "materials/Pasted image 20240914163701.png",
+    "DL - 3D Image,CV and Camera"
+  ]
+}
