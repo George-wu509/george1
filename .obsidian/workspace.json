@@ -4,21 +4,17 @@
     "type": "split",
     "children": [
       {
-        "id": "ec81f15456ae9a35",
+        "id": "db4393ba1555cc7d",
         "type": "tabs",
         "children": [
           {
-            "id": "7dca314a26a0f087",
+            "id": "7fb6459617eaa885",
             "type": "leaf",
             "state": {
-              "type": "markdown",
-              "state": {
-                "file": "Data Structure Summary.md",
-                "mode": "source",
-                "source": false
-              },
+              "type": "empty",
+              "state": {},
               "icon": "lucide-file",
-              "title": "Data Structure Summary"
+              "title": "新分頁"
             }
           }
         ]
@@ -52,7 +48,7 @@
             "state": {
               "type": "search",
               "state": {
-                "query": "",
+                "query": "\"",
                 "matchingCase": false,
                 "explainSearch": false,
                 "collapseAll": false,
@@ -163,34 +159,36 @@
       "table-editor-obsidian:Advanced Tables Toolbar": false
     }
   },
-  "active": "7dca314a26a0f087",
+  "active": "7fb6459617eaa885",
   "lastOpenFiles": [
-    "Leetcode - 9.Data Structure/Word Search II.md",
+    "Leetcode - 3.Two Pointers/雙指針.md",
     "Data Structure Summary.md",
-    "Leetcode - 9.Data Structure/Tree.md",
-    "Leetcode - 9.Data Structure/Word Search III.md",
-    "Leetcode - 9.Data Structure/Intersection of Arrays.md",
-    "Leetcode - 9.Data Structure/Intersection of Two Arrays II.md",
-    "Leetcode - 9.Data Structure/Intersection of Two Arrays.md",
-    "Leetcode - 9.Data Structure/Data Stream as Disjoint Intervals.md",
-    "Leetcode - 9.Data Structure/Rehashing.md",
-    "Leetcode - 9.Data Structure/Hash Function.md",
-    "Leetcode - 9.Data Structure/High Five.md",
-    "Leetcode - 9.Data Structure/Insert Delete GetRandom O(1).md",
-    "Leetcode - 9.Data Structure/First Unique Number in Data Stream II.md",
-    "Leetcode - 9.Data Structure/First Unique Number in Data Stream.md",
-    "Leetcode - 9.Data Structure/Minimum Depth of Binary Tree.md",
-    "Leetcode - 9.Data Structure/Regular Expression Matching.md",
-    "Leetcode - 9.Data Structure/Combination Sum II.md",
-    "Leetcode - 9.Data Structure/Combinations.md",
-    "Leetcode - 9.Data Structure/Sort Colors.md",
-    "Leetcode - 9.Data Structure/Narcissistic Number.md",
-    "Leetcode - 9.Data Structure/Lowercase to Uppercase II.md",
-    "Leetcode - 9.Data Structure/Interleaving Positive and Negative Numbers.md",
-    "Leetcode - 9.Data Structure/Lowercase to Uppercase.md",
-    "Leetcode - 9.Data Structure/Sort Colors II.md",
-    "Leetcode - 9.Data Structure/O(1) Check Power of 2.md",
-    "Leetcode - 9.Data Structure/Sqrt(x).md",
+    "Leetcode - 4.Binary Search/二分法.md",
+    "Interview - Image CV/Traditional Computer Vision summary.md",
+    "Interview - Image CV/algorithms/Bilateral Filter.md",
+    "Interview - Image CV/algorithms/SIFT.md",
+    "Interview - Image CV/algorithms/Gaussian Filter.md",
+    "New folder",
+    "Interview - Image CV/algorithms/1. Laplacian Filtering, 2. Sobel Filtering, 3. Canny filtering.md",
+    "Interview - Image CV/傅里叶变换（Fourier Transform）.md",
+    "Leetcode - 10.Advanced/Partition to K Equal Sum Subsets.md",
+    "Leetcode - 10.Advanced/Degree of an Array.md",
+    "Leetcode - 10.Advanced/Search Graph Nodes.md",
+    "Leetcode - 10.Advanced/Connected Component in Undirected Graph.md",
+    "Leetcode - 10.Advanced/Route Between Two Nodes in Graph.md",
+    "Leetcode - 10.Advanced/Minimum Subsequence in Non-Increasing Order.md",
+    "Leetcode - 10.Advanced/Range Sum Query - Mutable.md",
+    "Leetcode - 10.Advanced/Range Sum Query 2D - Mutable.md",
+    "Leetcode - 10.Advanced/Count of Smaller Numbers Before Self.md",
+    "Leetcode - 10.Advanced/Exam Room.md",
+    "Leetcode - 10.Advanced/Balanced Binary Tree.md",
+    "Leetcode - 10.Advanced/Interval Sum II.md",
+    "Leetcode - 10.Advanced/Remove Duplicates from Unsorted List.md",
+    "Leetcode - 10.Advanced/Segment Tree Build 1.md",
+    "Leetcode - 10.Advanced/Space Replacement.md",
+    "Leetcode - 10.Advanced/String Permutation.md",
+    "Leetcode - 10.Advanced/Interval Minimum Number.md",
+    "未命名",
     "Leetcode - 11.other QA",
     "materials/Pasted image 20241107101428.png",
     "materials/Pasted image 20240914170030.png",

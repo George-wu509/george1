@@ -51,6 +51,42 @@ LintCode第68题“Binary Tree Postorder Traversal（二叉树的后序遍历）
 4. 访问当前节点并将其值加入结果数组。
 
 ---
+Example:
+**样例 1：**
+输入：
+```
+二叉树 = {1,2,3}
+```
+输出：
+```
+[2,3,1]
+```
+解释：
+```
+      1
+    /   \
+  2       3
+```
+它将被序列化为{1,2,3}之后进行后序遍历
+
+**样例 2：**
+输入：
+```
+二叉树 = {1,#,2,3}
+```
+输出：
+```
+[3,2,1]
+```
+解释：
+```
+     1
+       \
+        2
+       /
+      3
+```
+它将被序列化为{1,#,2,3}之后进行后序遍历
 
 #### Python实现代码
 ```python
@@ -60,7 +96,7 @@ class TreeNode:
         self.left = None
         self.right = None
 
-def postorderTraversal(root):
+def postorder_traversal(root):
     result = []
 
     def dfs(node):
@@ -74,6 +110,7 @@ def postorderTraversal(root):
     return result
 
 ```
+pass
 
 ---
 

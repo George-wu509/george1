@@ -51,6 +51,42 @@ LintCode第67题“二叉树的中序遍历”要求按**中序遍历**的顺序
 4. 递归遍历右子树。
 
 ---
+Example:
+**样例 1：**
+输入：
+```
+二叉树 = {1,2,3}
+```
+输出：
+```
+[2,1,3]
+```
+解释：
+```
+      1
+    /   \
+  2       3
+```
+它将被序列化为{1,2,3}中序遍历
+
+**样例 2：**
+输入：
+```
+二叉树 = {1,#,2,3}
+```
+输出：
+```
+[1,3,2]
+```
+解释：
+```
+     1
+       \
+        2
+       /
+      3
+```
+它将被序列化为{1,#,2,3}中序遍历
 
 #### Python实现代码
 ```python
@@ -60,20 +96,21 @@ class TreeNode:
         self.left = None
         self.right = None
 
-def inorderTraversal(root):
-    result = []
+class Solution:
+    def inorder_traversal(self, root: TreeNode) -> List[int]:
+        result = []
 
-    def dfs(node):
-        if not node:
-            return
-        dfs(node.left)           # 遍历左子树
-        result.append(node.val)  # 访问当前节点
-        dfs(node.right)          # 遍历右子树
+        def dfs(node):
+            if not node:
+                return
+            dfs(node.left)           # 遍历左子树
+            result.append(node.val)  # 访问当前节点
+            dfs(node.right)          # 遍历右子树
 
-    dfs(root)
-    return result
-
+        dfs(root)
+        return result
 ```
+pass
 
 ---
 

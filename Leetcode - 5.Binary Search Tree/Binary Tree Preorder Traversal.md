@@ -94,10 +94,45 @@ def preorderTraversal(root):
 3. 栈为空时，结束遍历。
 
 ---
+Example:
+**样例 1：**
+输入：
+```
+二叉树 = {1,2,3}
+```
+输出：
+```
+[1,2,3]
+```
+解释：
+```
+      1
+    /   \
+  2       3
+```
+它将被序列化为{1,2,3}前序遍历
+
+**样例 2：**
+输入：
+```
+二叉树 = {1,#,2,3}
+```
+输出：
+```
+[1,2,3]
+```
+解释：
+```
+     1
+       \
+        2
+       /
+      3
+```
 
 #### Python代码实现
 ```python
-def preorderTraversal(root):
+def preorder_traversal(root):
     if not root:
         return []
 
@@ -116,6 +151,8 @@ def preorderTraversal(root):
     return result
 
 ```
+pass
+
 
 ---
 

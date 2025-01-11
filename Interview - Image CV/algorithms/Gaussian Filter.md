@@ -10,7 +10,7 @@ Ref1: [[Python]Gaussian Filter-概念與實作](https://medium.com/@bob800530/py
 
 ![](https://miro.medium.com/v2/resize:fit:331/1*2xnfNXq_unnHzOQHJgpP3A.png)
 
-Gassian Function
+Gaussian Function
 
 簡化計算，假設sigma = 0.707(根號0.5)
 
