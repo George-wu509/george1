@@ -4,17 +4,35 @@
     "type": "split",
     "children": [
       {
-        "id": "db4393ba1555cc7d",
+        "id": "733d58138b74d720",
         "type": "tabs",
         "children": [
           {
-            "id": "7fb6459617eaa885",
+            "id": "6a738e72d5600d69",
             "type": "leaf",
             "state": {
-              "type": "empty",
-              "state": {},
+              "type": "markdown",
+              "state": {
+                "file": "Interview - AI projects/DINOv2 Foundation Model - Projects.md",
+                "mode": "source",
+                "source": false
+              },
               "icon": "lucide-file",
-              "title": "新分頁"
+              "title": "DINOv2 Foundation Model - Projects"
+            }
+          },
+          {
+            "id": "121f9ae36a5e5d62",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "Interview - AI projects/DINOv2 Foundation Model - Projects QA.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "DINOv2 Foundation Model - Projects QA"
             }
           }
         ]
@@ -159,8 +177,13 @@
       "table-editor-obsidian:Advanced Tables Toolbar": false
     }
   },
-  "active": "7fb6459617eaa885",
+  "active": "7210625e0140b47b",
   "lastOpenFiles": [
+    "DL - NLP LLM/LLM finetune.md",
+    "materials/LMM_finetune.jpg",
+    "Interview - AI projects/DINOv2 Foundation Model - Projects.md",
+    "Interview - AI projects/DINOv2 Foundation Model - Projects QA.md",
+    "Interview - AI projects/DINOv2 Foundation Model - LORA.md",
     "Leetcode - 3.Two Pointers/雙指針.md",
     "Data Structure Summary.md",
     "Leetcode - 4.Binary Search/二分法.md",
@@ -183,11 +206,6 @@
     "Leetcode - 10.Advanced/Exam Room.md",
     "Leetcode - 10.Advanced/Balanced Binary Tree.md",
     "Leetcode - 10.Advanced/Interval Sum II.md",
-    "Leetcode - 10.Advanced/Remove Duplicates from Unsorted List.md",
-    "Leetcode - 10.Advanced/Segment Tree Build 1.md",
-    "Leetcode - 10.Advanced/Space Replacement.md",
-    "Leetcode - 10.Advanced/String Permutation.md",
-    "Leetcode - 10.Advanced/Interval Minimum Number.md",
     "未命名",
     "Leetcode - 11.other QA",
     "materials/Pasted image 20241107101428.png",
@@ -199,7 +217,6 @@
     "materials/Pasted image 20240914165824.png",
     "materials/Pasted image 20240914164330.png",
     "materials/Pasted image 20240914163738.png",
-    "materials/Pasted image 20240914163701.png",
     "DL - 3D Image,CV and Camera"
   ]
 }
