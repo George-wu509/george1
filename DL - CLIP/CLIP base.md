@@ -2,7 +2,9 @@
 
 ref:  [ViLD：首个引入CLIP的目标检测](https://zhuanlan.zhihu.com/p/3834361915)
 
+ref: [多模态架构--clip](https://zhuanlan.zhihu.com/p/674126634)
 
+ref: [【多模态模型学习】CLIP模型](https://zhuanlan.zhihu.com/p/11259128726)
 
 
 

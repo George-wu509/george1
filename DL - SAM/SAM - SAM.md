@@ -98,7 +98,7 @@ SAM同時會對輸入的圖像進行特徵提取。這是由模型中的卷積�
 SAM能夠基於提示（如點或框）進行分割，其核心思想是通過提示幫助模型在圖像中定位對象區域，並生成對應的分割掩膜。即使是未知對象（未在訓練集中出現），SAM仍能夠利用提示來進行分割，因為它並不依賴具體對象的類別標籤。這使得SAM具有廣泛的應用潛力，無論是在醫學影像、自然場景還是其他領域都能有效應用。
 
 ### 4. PyTorch 示例代碼
-```
+```python
 import torch
 from segment_anything import SamPredictor, sam_model_registry
 import cv2
