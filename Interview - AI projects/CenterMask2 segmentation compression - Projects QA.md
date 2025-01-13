@@ -2450,51 +2450,63 @@ python
 
 首先，需要在Azure上創建一個工作區，這是進行任何訓練操作的基礎。
 
-python
-
-複製程式碼
-
-`from azureml.core import Workspace  ws = Workspace.create(name="my_workspace",                        subscription_id="<your-subscription-id>",                        resource_group="<your-resource-group>")`
+```python
+from azureml.core import Workspace  
+ws = Workspace.create(
+		name="my_workspace",
+		subscription_id="<your-subscription-id>",
+		resource_group="<your-resource-group>")`
+```
 
 #### **2. 配置Python環境**
 
 為了設置PyTorch和Detectron2環境，可以創建一個環境配置文件 `environment.yml`，並在Azure ML中註冊它。
 
 **environment.yml**：
+```python
+name: detectron2-env
+channels:
+  - defaults
+dependencies:
+  - pytorch=1.8
+  - torchvision=0.9
+  - detectron2
+  - pip:
+    - azureml-sdk
 
-yaml
-
-複製程式碼
-
-`name: detectron2-env channels:   - defaults dependencies:   - pytorch=1.8   - torchvision=0.9   - detectron2   - pip:     - azureml-sdk`
+```
 
 註冊並創建環境：
+```python
+from azureml.core import Environment
 
-python
+env = Environment.from_conda_specification(name="detectron2-env", file_path="environment.yml")
 
-複製程式碼
-
-`from azureml.core import Environment  env = Environment.from_conda_specification(name="detectron2-env", file_path="environment.yml")`
+```
 
 #### **3. 設置計算目標（Compute Target）**
 
 選擇Azure上的計算目標，例如使用NVIDIA GPU的計算叢集。
+```python
+from azureml.core import ComputeTarget, AmlCompute
 
-python
+compute_target = ComputeTarget.create(ws, "gpu-cluster", 
+                                     AmlCompute.provisioning_configuration(vm_size="STANDARD_NC6"))
 
-複製程式碼
-
-`from azureml.core import ComputeTarget, AmlCompute  compute_target = ComputeTarget.create(ws, "gpu-cluster",                                       AmlCompute.provisioning_configuration(vm_size="STANDARD_NC6"))`
+```
 
 #### **4. 創建訓練腳本並提交訓練任務**
 
 編寫訓練腳本（例如 `train.py`），並通過Azure ML提交訓練作業。
+```python
+from azureml.core import ScriptRunConfig
+from azureml.core import Experiment
 
-python
+src = ScriptRunConfig(source_directory=".", script="train.py", environment=env, compute_target=compute_target)
+experiment = Experiment(ws, "detectron2-experiment")
+run = experiment.submit(src)
 
-複製程式碼
-
-`from azureml.core import ScriptRunConfig from azureml.core import Experiment  src = ScriptRunConfig(source_directory=".", script="train.py", environment=env, compute_target=compute_target) experiment = Experiment(ws, "detectron2-experiment") run = experiment.submit(src)`
+```
 
 #### **5. 監控訓練**
 
@@ -2514,12 +2526,10 @@ Azure ML支持多種分布式訓練方法，其中最常見的是**數據並行�
     
     - **Azure ML的分布式數據並行**：可以使用 `DistributedDataParallel`（PyTorch）來實現數據並行。
     - **例子**：
-        
-        python
-        
-        複製程式碼
-        
-        `from torch.nn.parallel import DistributedDataParallel as DDP model = DDP(model, device_ids=[0, 1])`
+```python
+from torch.nn.parallel import DistributedDataParallel as DDP
+model = DDP(model, device_ids=[0, 1])
+```
         
 
 #### **2. 混合精度訓練（Mixed Precision Training）**
@@ -2539,51 +2549,49 @@ Azure ML支持多種分布式訓練方法，其中最常見的是**數據並行�
 
 首先需要安裝Azure Machine Learning SDK：
 
-bash
-
-複製程式碼
-
 `pip install azureml-sdk`
 
 #### **步驟 2：配置Azure工作區（Workspace）**
 
 在Azure中，所有的資源都會與一個工作區（Workspace）相關聯。首先需要創建或連接到一個工作區。
+```python
+from azureml.core import Workspace
 
-python
+ws = Workspace.from_config()  # 從本地配置文件讀取工作區配置
 
-複製程式碼
-
-`from azureml.core import Workspace  ws = Workspace.from_config()  # 從本地配置文件讀取工作區配置`
-
+```
 #### **步驟 3：定義訓練環境（Environment）**
 
 在提交訓練作業之前，您需要定義一個適合訓練的環境，包括所需的依賴庫和工具。這可以通過Azure Machine Learning的 **Environment** 來完成。
+```python
+from azureml.core import Environment
+from azureml.core.conda_dependencies import CondaDependencies
 
-python
+env = Environment("my_environment")
+conda_dep = CondaDependencies.create(conda_packages=['numpy', 'torch', 'scikit-learn'])
+env.python.conda_dependencies = conda_dep
 
-複製程式碼
-
-`from azureml.core import Environment from azureml.core.conda_dependencies import CondaDependencies  env = Environment("my_environment") conda_dep = CondaDependencies.create(conda_packages=['numpy', 'torch', 'scikit-learn']) env.python.conda_dependencies = conda_dep`
+```
 
 #### **步驟 4：創建訓練作業（ScriptRunConfig）**
 
 接下來，需要設置訓練腳本的配置，通常包括訓練腳本的位置、使用的計算資源等。
+```python
+from azureml.core import ScriptRunConfig
 
-python
+src = ScriptRunConfig(source_directory='./scripts', script='train.py', environment=env)
 
-複製程式碼
-
-`from azureml.core import ScriptRunConfig  src = ScriptRunConfig(source_directory='./scripts', script='train.py', environment=env)`
-
+```
 #### **步驟 5：提交訓練作業**
 
 現在，您可以提交訓練作業到Azure ML計算資源上。
+```python
+from azureml.core import Experiment
 
-python
+experiment = Experiment(workspace=ws, name='my-experiment')
+run = experiment.submit(src)
 
-複製程式碼
-
-`from azureml.core import Experiment  experiment = Experiment(workspace=ws, name='my-experiment') run = experiment.submit(src)`
+```
 
 這樣，訓練作業就會在Azure上執行，並且可以在Azure Machine Learning Studio中查看其狀態。
 
@@ -2613,22 +2621,33 @@ Azure提供不同的虛擬機型號來支持GPU訓練：
 #### **3. 配置計算目標**
 
 在Azure ML中，計算目標（compute target）用來定義訓練所使用的硬體資源。可以根據需要選擇適合的GPU計算資源。
+```python
+from azureml.core import AmlCompute, ComputeTarget
 
-python
+compute_target_name = 'gpu-cluster'
+compute_target = ComputeTarget(workspace=ws, name=compute_target_name)
 
-複製程式碼
+# 或者創建新的計算集群
+compute_config = AmlCompute.provisioning_configuration(
+    vm_size='STANDARD_NC6',  # 選擇適合的GPU型號
+    min_nodes=1, 
+    max_nodes=4
+)
+gpu_cluster = ComputeTarget.create(ws, compute_target_name, compute_config)
+gpu_cluster.wait_for_completion(show_output=True)
 
-`from azureml.core import AmlCompute, ComputeTarget  compute_target_name = 'gpu-cluster' compute_target = ComputeTarget(workspace=ws, name=compute_target_name)  # 或者創建新的計算集群 compute_config = AmlCompute.provisioning_configuration(     vm_size='STANDARD_NC6',  # 選擇適合的GPU型號     min_nodes=1,      max_nodes=4 ) gpu_cluster = ComputeTarget.create(ws, compute_target_name, compute_config) gpu_cluster.wait_for_completion(show_output=True)`
+```
 
 #### **4. 在訓練作業中使用GPU**
 
 配置好計算資源後，可以將其用於訓練作業。確保您的訓練腳本支持GPU加速，並在腳本中正確設置設備（例如使用 `torch.device('cuda')`）。
+```python
+import torch
 
-python
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+model = model.to(device)
 
-複製程式碼
-
-`import torch  device = torch.device("cuda" if torch.cuda.is_available() else "cpu") model = model.to(device)`
+```
 
 ---
 
@@ -2643,12 +2662,20 @@ Azure ML提供了強大的Run Tracking功能，您可以在訓練作業中記錄
 ##### **記錄指標**
 
 在訓練過程中，您可以使用Azure ML的 `run.log()` 方法來記錄自定義指標。
+```python
+from azureml.core import Run
 
-python
+run = Run.get_context()
 
-複製程式碼
+# 訓練過程中記錄損失和準確率
+for epoch in range(epochs):
+    loss = compute_loss(model, data)
+    accuracy = compute_accuracy(model, data)
+    
+    run.log('loss', loss)
+    run.log('accuracy', accuracy)
 
-`from azureml.core import Run  run = Run.get_context()  # 訓練過程中記錄損失和準確率 for epoch in range(epochs):     loss = compute_loss(model, data)     accuracy = compute_accuracy(model, data)          run.log('loss', loss)     run.log('accuracy', accuracy)`
+```
 
 ##### **記錄超參數**
 
@@ -3034,48 +3061,63 @@ python
 #### **1. 加載PyTorch模型**
 
 確保模型已經訓練完成並處於評估模式（evaluation mode）。
+```python
+import torch
 
-python
+model = MyModel()
+model.load_state_dict(torch.load("model.pth"))
+model.eval()
 
-複製程式碼
-
-`import torch  model = MyModel() model.load_state_dict(torch.load("model.pth")) model.eval()`
+```
 
 ---
 
 #### **2. 準備示例輸入（Dummy Input）**
 
 ONNX導出需要一個示例輸入，用於定義模型的輸入形狀。
+```python
+dummy_input = torch.randn(1, 3, 224, 224)  # 批量大小1，3通道，224x224圖像
 
-python
-
-複製程式碼
-
-`dummy_input = torch.randn(1, 3, 224, 224)  # 批量大小1，3通道，224x224圖像`
+```
 
 ---
 
 #### **3. 將PyTorch模型導出為ONNX格式**
 
 使用 `torch.onnx.export()` 將模型導出為 ONNX 格式。
+```python
+torch.onnx.export(
+    model,                      # PyTorch 模型
+    dummy_input,                # 示例輸入
+    "model.onnx",               # 保存的ONNX文件名
+    export_params=True,         # 是否導出模型參數
+    opset_version=11,           # ONNX算子集版本
+    do_constant_folding=True,   # 是否執行常量折疊
+    input_names=['input'],      # 模型輸入名稱
+    output_names=['output'],    # 模型輸出名稱
+    dynamic_axes={'input': {0: 'batch_size'}, 'output': {0: 'batch_size'}}  # 支持動態輸入維度
+)
 
-python
-
-複製程式碼
-
-`torch.onnx.export(     model,                      # PyTorch 模型     dummy_input,                # 示例輸入     "model.onnx",               # 保存的ONNX文件名     export_params=True,         # 是否導出模型參數     opset_version=11,           # ONNX算子集版本     do_constant_folding=True,   # 是否執行常量折疊     input_names=['input'],      # 模型輸入名稱     output_names=['output'],    # 模型輸出名稱     dynamic_axes={'input': {0: 'batch_size'}, 'output': {0: 'batch_size'}}  # 支持動態輸入維度 )`
+```
 
 ---
 
 #### **4. 驗證ONNX模型**
 
 使用 `onnx` 和 `onnxruntime` 驗證模型是否正確。
+```python
+import onnx
+import onnxruntime as ort
 
-python
+# 檢查ONNX模型是否有效
+onnx_model = onnx.load("model.onnx")
+onnx.checker.check_model(onnx_model)
 
-複製程式碼
+# 使用 ONNX Runtime 進行推理
+ort_session = ort.InferenceSession("model.onnx")
+outputs = ort_session.run(None, {"input": dummy_input.numpy()})
 
-`import onnx import onnxruntime as ort  # 檢查ONNX模型是否有效 onnx_model = onnx.load("model.onnx") onnx.checker.check_model(onnx_model)  # 使用 ONNX Runtime 進行推理 ort_session = ort.InferenceSession("model.onnx") outputs = ort_session.run(None, {"input": dummy_input.numpy()})`
+```
 
 ---
 
@@ -3104,34 +3146,69 @@ ONNX 默認要求固定的輸入形狀，但在許多情況下，我們需要支
 使用 `torch.onnx.export` 時，可以通過 `dynamic_axes` 參數來指定哪些維度是動態的。
 
 ##### **Example: 支持動態批量大小**
+```python
+import torch
 
-python
+# 假設模型已經訓練完成
+model = MyModel()
+model.eval()
 
-複製程式碼
+# 定義示例輸入
+dummy_input = torch.randn(1, 3, 224, 224)
 
-`import torch  # 假設模型已經訓練完成 model = MyModel() model.eval()  # 定義示例輸入 dummy_input = torch.randn(1, 3, 224, 224)  # 將模型導出為ONNX格式，支持動態批量大小 torch.onnx.export(     model,     dummy_input,     "model_dynamic.onnx",     input_names=["input"],               # 定義輸入名稱     output_names=["output"],             # 定義輸出名稱     dynamic_axes={         "input": {0: "batch_size"},      # 定義批量大小為動態         "output": {0: "batch_size"}     },     opset_version=11                     # 指定ONNX opset版本 )`
+# 將模型導出為ONNX格式，支持動態批量大小
+torch.onnx.export(
+    model,
+    dummy_input,
+    "model_dynamic.onnx",
+    input_names=["input"],               # 定義輸入名稱
+    output_names=["output"],             # 定義輸出名稱
+    dynamic_axes={
+        "input": {0: "batch_size"},      # 定義批量大小為動態
+        "output": {0: "batch_size"}
+    },
+    opset_version=11                     # 指定ONNX opset版本
+)
+
+```
 
 ##### **Example: 支持動態圖像尺寸**
 
 如果需要支持動態的圖像寬度和高度，可以這樣設置：
+```python
+torch.onnx.export(
+    model,
+    dummy_input,
+    "model_dynamic_hw.onnx",
+    input_names=["input"],
+    output_names=["output"],
+    dynamic_axes={
+        "input": {0: "batch_size", 2: "height", 3: "width"},
+        "output": {0: "batch_size", 2: "height", 3: "width"}
+    },
+    opset_version=11
+)
 
-python
-
-複製程式碼
-
-`torch.onnx.export(     model,     dummy_input,     "model_dynamic_hw.onnx",     input_names=["input"],     output_names=["output"],     dynamic_axes={         "input": {0: "batch_size", 2: "height", 3: "width"},         "output": {0: "batch_size", 2: "height", 3: "width"}     },     opset_version=11 )`
+```
 
 ---
 
 #### **3. 驗證動態尺寸模型**
 
 使用 **ONNX Runtime** 驗證模型是否可以正確處理動態輸入尺寸。
+```python
+import onnxruntime as ort
+import numpy as np
 
-python
+# 加載ONNX模型
+session = ort.InferenceSession("model_dynamic_hw.onnx")
 
-複製程式碼
+# 測試不同輸入尺寸
+input_data = np.random.randn(4, 3, 128, 128).astype(np.float32)  # 動態批量大小為4
+outputs = session.run(None, {"input": input_data})
+print(outputs[0].shape)
 
-`import onnxruntime as ort import numpy as np  # 加載ONNX模型 session = ort.InferenceSession("model_dynamic_hw.onnx")  # 測試不同輸入尺寸 input_data = np.random.randn(4, 3, 128, 128).astype(np.float32)  # 動態批量大小為4 outputs = session.run(None, {"input": input_data}) print(outputs[0].shape)`
+```
 
 如果模型可以正確處理多種輸入形狀，則表示動態尺寸支持已正確配置。
 
@@ -3196,30 +3273,42 @@ ONNX 支持多種優化技術，如模型剪枝（Pruning）、量化（Quantiza
 #### **2. 具體驗證步驟**
 
 ##### **步驟 1: PyTorch 模型推理**
+```python
+import torch
+import numpy as np
 
-python
+# 定義 PyTorch 模型和輸入
+model = MyModel()
+model.eval()
+input_data = torch.randn(1, 3, 224, 224)
 
-複製程式碼
+# PyTorch 模型推理
+torch_output = model(input_data).detach().numpy()
 
-`import torch import numpy as np  # 定義 PyTorch 模型和輸入 model = MyModel() model.eval() input_data = torch.randn(1, 3, 224, 224)  # PyTorch 模型推理 torch_output = model(input_data).detach().numpy()`
+```
 
 ##### **步驟 2: ONNX 模型推理**
+```python
+import onnxruntime as ort
 
-python
+# 加載 ONNX 模型
+ort_session = ort.InferenceSession("model.onnx")
 
-複製程式碼
+# 準備輸入數據（轉換為 NumPy 格式）
+onnx_input = input_data.numpy()
+onnx_output = ort_session.run(None, {"input": onnx_input})
 
-`import onnxruntime as ort  # 加載 ONNX 模型 ort_session = ort.InferenceSession("model.onnx")  # 準備輸入數據（轉換為 NumPy 格式） onnx_input = input_data.numpy() onnx_output = ort_session.run(None, {"input": onnx_input})`
+```
 
 ##### **步驟 3: 比較輸出**
 
 比較兩者的輸出值是否一致，可以計算相對誤差。
+```python
+# 計算相對誤差
+relative_error = np.abs(torch_output - onnx_output[0]) / np.abs(torch_output)
+print("最大相對誤差: ", np.max(relative_error))
 
-python
-
-複製程式碼
-
-`# 計算相對誤差 relative_error = np.abs(torch_output - onnx_output[0]) / np.abs(torch_output) print("最大相對誤差: ", np.max(relative_error))`
+```
 
 ---
 
@@ -3236,12 +3325,13 @@ python
 #### **4. 使用 ONNX Checker**
 
 使用 `onnx.checker` 檢查模型是否符合ONNX規範，確保模型的結構正確。
+```python
+import onnx
 
-python
+onnx_model = onnx.load("model.onnx")
+onnx.checker.check_model(onnx_model)
 
-複製程式碼
-
-`import onnx  onnx_model = onnx.load("model.onnx") onnx.checker.check_model(onnx_model)`
+```
 
 
 ### **55. PyTorch的`torch.onnx.export()`具體實現細節是什麼？**
@@ -3266,10 +3356,6 @@ python
 
 在導出過程中，模型需要切換到推理模式（evaluation mode），這樣可以避免訓練特定行為（如 Dropout）的影響。
 
-python
-
-複製程式碼
-
 `model.eval()`
 
 ##### **步驟 2: 跟蹤計算圖**
@@ -3291,23 +3377,50 @@ PyTorch 的符號表達式與 ONNX 的操作符（Operator）進行映射，生�
 
 #### **3. 函數參數解釋**
 
-python
+```python
+torch.onnx.export(
+    model,                       # PyTorch 模型
+    args,                        # 示例輸入張量 (dummy input)
+    f,                           # 保存的 ONNX 模型文件名
+    export_params=True,          # 是否導出模型參數
+    opset_version=11,            # 使用的 ONNX 算子集版本
+    do_constant_folding=True,    # 是否執行常量折疊（Constant Folding）
+    input_names=['input'],       # 模型輸入名稱
+    output_names=['output'],     # 模型輸出名稱
+    dynamic_axes=None            # 定義動態維度
+)
 
-複製程式碼
-
-`torch.onnx.export(     model,                       # PyTorch 模型     args,                        # 示例輸入張量 (dummy input)     f,                           # 保存的 ONNX 模型文件名     export_params=True,          # 是否導出模型參數     opset_version=11,            # 使用的 ONNX 算子集版本     do_constant_folding=True,    # 是否執行常量折疊（Constant Folding）     input_names=['input'],       # 模型輸入名稱     output_names=['output'],     # 模型輸出名稱     dynamic_axes=None            # 定義動態維度 )`
+```
 
 - **`args`**：示例輸入張量，用於模擬正向傳播，確定模型的輸入和輸出形狀。
 - **`opset_version`**：指定 ONNX 算子版本，最新版本通常支持更多功能。
 - **`dynamic_axes`**：指定模型支持的動態維度，例如批量大小、圖像分辨率。
 
 ##### **Example**
+```python
+import torch
+import torch.nn as nn
 
-python
+# 定義模型
+class SimpleModel(nn.Module):
+    def forward(self, x):
+        return x + 1
 
-複製程式碼
+model = SimpleModel()
+dummy_input = torch.randn(1, 3, 224, 224)
 
-`import torch import torch.nn as nn  # 定義模型 class SimpleModel(nn.Module):     def forward(self, x):         return x + 1  model = SimpleModel() dummy_input = torch.randn(1, 3, 224, 224)  # 導出為 ONNX 格式 torch.onnx.export(     model,     dummy_input,     "simple_model.onnx",     opset_version=11,     input_names=['input'],     output_names=['output'],     dynamic_axes={'input': {0: 'batch_size'}} )`
+# 導出為 ONNX 格式
+torch.onnx.export(
+    model,
+    dummy_input,
+    "simple_model.onnx",
+    opset_version=11,
+    input_names=['input'],
+    output_names=['output'],
+    dynamic_axes={'input': {0: 'batch_size'}}
+)
+
+```
 
 ---
 
@@ -3331,24 +3444,51 @@ python
 ##### **Example**
 
 以下代碼展示了如何將批量大小設置為動態維度：
+```python
+import torch
+import torch.nn as nn
 
-python
+# 定義簡單模型
+class SimpleModel(nn.Module):
+    def forward(self, x):
+        return x * 2
 
-複製程式碼
+model = SimpleModel()
+dummy_input = torch.randn(1, 3, 224, 224)
 
-`import torch import torch.nn as nn  # 定義簡單模型 class SimpleModel(nn.Module):     def forward(self, x):         return x * 2  model = SimpleModel() dummy_input = torch.randn(1, 3, 224, 224)  # 導出支持動態批量大小的 ONNX 模型 torch.onnx.export(     model,     dummy_input,     "dynamic_batch.onnx",     input_names=['input'],     output_names=['output'],     dynamic_axes={         'input': {0: 'batch_size'},  # 批量大小為動態         'output': {0: 'batch_size'}     },     opset_version=11 )`
+# 導出支持動態批量大小的 ONNX 模型
+torch.onnx.export(
+    model,
+    dummy_input,
+    "dynamic_batch.onnx",
+    input_names=['input'],
+    output_names=['output'],
+    dynamic_axes={
+        'input': {0: 'batch_size'},  # 批量大小為動態
+        'output': {0: 'batch_size'}
+    },
+    opset_version=11
+)
 
+```
 ---
 
 #### **3. 驗證動態批量大小**
 
 使用 ONNX Runtime 測試不同的批量大小：
+```python
+import onnxruntime as ort
+import numpy as np
 
-python
+# 加載模型
+session = ort.InferenceSession("dynamic_batch.onnx")
 
-複製程式碼
+# 測試不同的批量大小
+input_data = np.random.randn(8, 3, 224, 224).astype(np.float32)  # 批量大小為8
+outputs = session.run(None, {'input': input_data})
+print(outputs[0].shape)  # 應返回 (8, 3, 224, 224)
 
-`import onnxruntime as ort import numpy as np  # 加載模型 session = ort.InferenceSession("dynamic_batch.onnx")  # 測試不同的批量大小 input_data = np.random.randn(8, 3, 224, 224).astype(np.float32)  # 批量大小為8 outputs = session.run(None, {'input': input_data}) print(outputs[0].shape)  # 應返回 (8, 3, 224, 224)`
+```
 
 ---
 
@@ -3372,32 +3512,30 @@ python
 
 某些操作在較新的 ONNX `opset_version` 中可能已支持，升級 `opset_version` 可以解決問題。
 
-python
-
-複製程式碼
-
 `torch.onnx.export(model, dummy_input, "model.onnx", opset_version=15)`
 
 ##### **方法 2: 使用替代操作**
 
 如果某個操作不受支持，可以通過重寫模型代碼來用支持的操作替代。
+```python
+class ModifiedModel(nn.Module):
+    def forward(self, x):
+        # 替換不支持的操作
+        return x.clamp(min=0, max=1)  # 用 clamp 替代自定義限制範圍操作
 
-python
-
-複製程式碼
-
-`class ModifiedModel(nn.Module):     def forward(self, x):         # 替換不支持的操作         return x.clamp(min=0, max=1)  # 用 clamp 替代自定義限制範圍操作`
-
+```
 ##### **方法 3: 使用自定義操作**
 
 PyTorch 提供 `symbolic` 方法來定義自定義操作，將其映射到 ONNX 的等效表示。
+```python
+from torch.onnx import register_custom_op_symbolic
 
-python
+def custom_op_symbolic(g, input):
+    return g.op("CustomOp", input)
 
-複製程式碼
+register_custom_op_symbolic("::CustomOp", custom_op_symbolic, 11)
 
-`from torch.onnx import register_custom_op_symbolic  def custom_op_symbolic(g, input):     return g.op("CustomOp", input)  register_custom_op_symbolic("::CustomOp", custom_op_symbolic, 11)`
-
+```
 ##### **方法 4: 分段導出**
 
 將模型分為支持的部分和不支持的部分，分別進行處理。例如，使用 PyTorch 執行不支持的部分，使用 ONNX 執行其他部分。
@@ -3405,10 +3543,6 @@ python
 ##### **方法 5: 常量折疊（Constant Folding）**
 
 啟用常量折疊可以將某些運算結果直接內嵌到模型中，減少不支持的操作。
-
-python
-
-複製程式碼
 
 `torch.onnx.export(model, dummy_input, "model.onnx", do_constant_folding=True)`
 
@@ -3418,10 +3552,6 @@ python
 
 使用 `torch.onnx.export` 的輸出日誌檢查具體是哪個操作導致問題。
 
-python
-
-複製程式碼
-
 `import torch.onnx torch.onnx.export(model, dummy_input, "model.onnx", verbose=True)`
 
 ---
@@ -3429,10 +3559,6 @@ python
 #### **4. 測試解決方案**
 
 在 ONNX Runtime 中測試轉換後的模型，確認問題已解決：
-
-python
-
-複製程式碼
 
 `import onnxruntime as ort  session = ort.InferenceSession("model.onnx")`
 
@@ -4279,12 +4405,19 @@ ONNX 模型在 **TensorRT** 中的部署流程包括從 ONNX 模型構建 Tensor
 - 如果需要支持動態輸入尺寸，導出時設置 `dynamic_axes`。
 
 ##### **導出模型示例**
+```python
+import torch
 
-python
+# PyTorch 模型轉換為 ONNX
+torch.onnx.export(
+    model, 
+    dummy_input, 
+    "model.onnx",
+    opset_version=11,
+    dynamic_axes={"input": {0: "batch_size", 2: "height", 3: "width"}}
+)
 
-複製程式碼
-
-`import torch  # PyTorch 模型轉換為 ONNX torch.onnx.export(     model,      dummy_input,      "model.onnx",     opset_version=11,     dynamic_axes={"input": {0: "batch_size", 2: "height", 3: "width"}} )`
+```
 
 ---
 
@@ -4294,19 +4427,11 @@ TensorRT 提供 `trtexec` 工具，將 ONNX 模型轉換為高效的 TensorRT �
 
 ##### **基本轉換命令**
 
-bash
-
-複製程式碼
-
 `trtexec --onnx=model.onnx --saveEngine=model.trt`
 
 ##### **啟用優化選項**
 
 - **FP16**（半精度運算）：
-
-bash
-
-複製程式碼
 
 `trtexec --onnx=model.onnx --fp16 --saveEngine=model_fp16.trt`
 
