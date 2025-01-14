@@ -18,6 +18,7 @@
 | LLAMA            | Transformer | 文本序列   | 文本        | GeLU          | 交叉熵損失  | NLP      | 高效多任務   |
 |                  |             |        |           |               |        |          |         |
 
+YOLO, Mask R-CNN, CenterMask2, U-Net, Real-ESRGAN, Transformer, ViT, DINOv2, CLIP, SAM, SAM2, Stable Diffusion, ControlNet, LLAMA
 
 以下是您要求的模型詳細解釋，將涵蓋其架構（architecture）、輸入輸出（input/output）、激活函數（activation function）、目標函數（objective function）、作用及重要特性。最後將以表格形式進行比較。
 

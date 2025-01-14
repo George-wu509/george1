@@ -28,22 +28,16 @@ Step13: cscript ospp.vbs /act
 
 **3.基于KMS的 GVLK：[https://learn.microsoft.com/zh-cn/deployoffice/vlactivation/gvlks](https://learn.microsoft.com/zh-cn/deployoffice/vlactivation/gvlks)**
 
+
+
+original video explanations:
 然后以管理员身份运行CMD 进入命令终端
-
 **下载命令：**
-
 setup /download config.xml
-
 **安装命令:**
-
 setup /configure config.xml
-
 **最后启动命令:**
-
 cd C:\Program Files\Microsoft Office\Office16
-
 cscript ospp.vbs /sethst:kms.03k.org 
-
 cscript ospp.vbs /act
-
 注意：如果你安装的是32位版本，那么启动命令第一个要改成：cd C:\Program Files (x86)\Microsoft Office\Office16
