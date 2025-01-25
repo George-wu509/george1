@@ -77,7 +77,8 @@
       }
     ],
     "direction": "horizontal",
-    "width": 301.5
+    "width": 301.5,
+    "collapsed": true
   },
   "right": {
     "id": "7870daaab79c7df9",
@@ -163,7 +164,7 @@
       "table-editor-obsidian:Advanced Tables Toolbar": false
     }
   },
-  "active": "7210625e0140b47b",
+  "active": "91a0ac68b2ebd3b5",
   "lastOpenFiles": [
     "Interview - handon AI model/Pytorch coding exercise.md",
     "Interview - handon AI model/Interview - handon AI model.md",
