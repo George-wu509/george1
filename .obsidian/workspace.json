@@ -4,35 +4,21 @@
     "type": "split",
     "children": [
       {
-        "id": "ec4297ad977ea1f8",
+        "id": "78da8a993f6bd5ff",
         "type": "tabs",
         "children": [
           {
-            "id": "dd3e352da47b968f",
+            "id": "91a0ac68b2ebd3b5",
             "type": "leaf",
             "state": {
               "type": "markdown",
               "state": {
-                "file": "Leetcode - 4.Binary Search/二分法.md",
+                "file": "Interview - handon AI model/Pytorch coding exercise.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "二分法"
-            }
-          },
-          {
-            "id": "789a3763243b6254",
-            "type": "leaf",
-            "state": {
-              "type": "markdown",
-              "state": {
-                "file": "Leetcode - 3.Two Pointers/雙指針.md",
-                "mode": "source",
-                "source": false
-              },
-              "icon": "lucide-file",
-              "title": "雙指針"
+              "title": "Pytorch coding exercise"
             }
           }
         ]
@@ -66,7 +52,7 @@
             "state": {
               "type": "search",
               "state": {
-                "query": "\"YOLO",
+                "query": "\"Longest Palindromic",
                 "matchingCase": false,
                 "explainSearch": false,
                 "collapseAll": false,
@@ -177,47 +163,47 @@
       "table-editor-obsidian:Advanced Tables Toolbar": false
     }
   },
-  "active": "dd3e352da47b968f",
+  "active": "7210625e0140b47b",
   "lastOpenFiles": [
-    "Leetcode - 4.Binary Search/Search a 2D Matrix.md",
-    "Leetcode - 4.Binary Search/二分法.md",
-    "Leetcode - 4.Binary Search/Search in Rotated Sorted Array.md",
-    "Leetcode - 4.Binary Search/Fibonacciseries.md",
-    "Leetcode - 4.Binary Search/Copy Books.md",
-    "Leetcode - 4.Binary Search/Smallest Rectangle Enclosing Black Pixels.md",
-    "Leetcode - 4.Binary Search/Search a 2D Matrix II.md",
-    "Leetcode - 4.Binary Search/Wood Cut.md",
-    "Leetcode - 4.Binary Search/Find Peak Element.md",
-    "Leetcode - 4.Binary Search/Find Minimum in Rotated Sorted Array.md",
-    "Leetcode - 4.Binary Search/Maximum Number in Mountain Sequence.md",
-    "Leetcode - 4.Binary Search/Find K Closest Elements.md",
-    "Leetcode - 4.Binary Search/Search in a Big Sorted Array.md",
-    "Leetcode - 4.Binary Search/Last Position of Target.md",
-    "Leetcode - 4.Binary Search/Binary Search.md",
-    "Leetcode - 4.Binary Search/Classical Binary Search.md",
+    "Interview - handon AI model/Pytorch coding exercise.md",
+    "Interview - handon AI model/Interview - handon AI model.md",
     "Leetcode - 3.Two Pointers/雙指針.md",
+    "Leetcode - 7.DFS/k Sum II.md",
+    "Leetcode - 3.Two Pointers/Longest Palindromic Substring.md",
+    "Leetcode - 3.Two Pointers/Remove Duplicate Numbers in Array.md",
+    "Leetcode - 3.Two Pointers/Two Sum - Greater than target.md",
+    "Leetcode - 3.Two Pointers/Two Sum - Less than or equal to target.md",
+    "Leetcode - 3.Two Pointers/Two Sum - Difference equals to target.md",
     "Leetcode - 3.Two Pointers/Two Sum.md",
     "Leetcode - 3.Two Pointers/Two Sum III.md",
     "Data Structure Summary.md",
-    "Leetcode - 7.DFS/DFS.md",
     "Leetcode - 6.BFS/BFS.md",
+    "Leetcode - 7.DFS/DFS.md",
+    "Leetcode - 4.Binary Search/二分法.md",
+    "Interview - AI projects/CenterMask2 segmentation compression - CenterMask2.md",
+    "Interview - AI projects/CenterMask2 segmentation compression - Projects QA.md",
+    "DL - UNet/U-Net.md",
+    "Interview - DL AI/计算机视觉面试题 - AI 優化目標函數.md",
+    "Interview - DL AI/ML-interview - optimizer.md",
+    "Leetcode - 3.Two Pointers/Number of Substrings with All Zeroes.md",
+    "Leetcode - 2.Sorting/排序.md",
+    "Leetcode - 4.Binary Search/Classical Binary Search.md",
+    "Leetcode - 2.Sorting/Classical Sort Integers.md",
+    "Leetcode - 2.Sorting/Moving Stones.md",
+    "Leetcode - 3.Two Pointers/Partition Array.md",
+    "materials/summary.jpg",
+    "materials/v2-d518bd32a1a22bed46e4cc843e3c8503_r.jpg",
     "materials/Pasted image 20250113145750.png",
     "materials/Pasted image 20250113145420.png",
     "materials/Pasted image 20250113144434.png",
     "materials/Pasted image 20250113143613.png",
-    "Interview - AI projects/AI model Summary.md",
-    "Interview - AI projects/AI model Summary architecture.md",
-    "DL - Transformer and ViT/Transformer and ViT - architecture.md",
-    "DL - Transformer and ViT/Transformer and ViT basic.md",
     "materials/Pasted image 20250113143208.png",
     "materials/transformer.webp",
     "materials/unet.png",
     "materials/Pasted image 20240912132028.png",
-    "materials/LMM_finetune.jpg",
     "New folder",
     "未命名",
     "Leetcode - 11.other QA",
-    "materials/Pasted image 20241107101428.png",
     "DL - 3D Image,CV and Camera"
   ]
 }

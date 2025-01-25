@@ -54,7 +54,7 @@ class Solution: def fibonacci(self, n): a = 0 b = 1 for i in range(n - 1): a, b 
 
 [https://www.lintcode.com/problem/366/solution/18282](https://www.lintcode.com/problem/366/solution/18282)
 
-```
+```python
 class Solution:
 2    def fibonacci(self, n):
 3        fib = [0, 0, 1]
@@ -83,7 +83,7 @@ class Solution:
 
 下面的三份代码依次为Java、C++、Python。
 
-```
+```python
 
 class Solution:
     def fibonacci(self, n):
@@ -102,7 +102,7 @@ class Solution:
 
 下面的三份代码依次为Java、C++、Python。
 
-```
+```python
 class Solution:
     def fibonacci(self, n):
         fib = [0, 1]
@@ -121,7 +121,7 @@ class Solution:
 
 下面的三份代码依次为Java、C++、Python。
 
-```
+```python
 class Solution:
     def dfs(self, n):
         if n <= 2:
@@ -141,7 +141,7 @@ class Solution:
 
 下面的三份代码依次为Java、C++、Python。
 
-```
+```python
 class Solution:
     def dfs(self, n, fib):
         if fib[n] != -1:

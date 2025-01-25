@@ -1,3 +1,6 @@
+32
+给定两个字符串 `source` 和 `target`. 求 `source` 中最短的包含 `target` 中每一个字符的子串.
+
 Example
 样例 1：
 输入：
@@ -75,3 +78,18 @@ class Solution:
         return source[start: start + minlen + 1]
 ```
 pass
+
+解說
+source = "adobecodebanc"
+target = "abc"
+
+Step1
+建立兩個dict,  counter_s一個準備儲存source內子字串, 另一個counter_t則是將target轉成dict = {"a":1, "b":1, "c":1}
+
+Step2
+雙指針Left=0 and Right=0. Right一步步往右移, 並將字元加入counter_s. 並跟counter_t 比較. 如果Right所在的字元也在counter_t內, 則valid +1. 當valid = 3時代表目前Left到Right的子字串有target所有字元. 
+"adobecodebanc"
+ L=0    R=5
+
+Step3
+接下來開始移動Left指針往右移並跟counter_t比較試圖找到更短的子字串. 如果沒有則換成Right指針往右移, 回到step2

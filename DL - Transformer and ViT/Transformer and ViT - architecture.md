@@ -174,3 +174,10 @@ SAM（Segment Anything Model）是一種針對任意圖像分割的模型，它�
 
 這些模型在其設計上都繼承了 Transformer 或 ViT 的優勢，但根據具體應用場景進行了調整，以實現最佳性能。
 
+
+
+
+transformer的细节到底是怎么样的？ - 姜富春的回答 - 知乎
+https://www.zhihu.com/question/362131975/answer/55524039858
+
+![[v2-d518bd32a1a22bed46e4cc843e3c8503_r.jpg]]

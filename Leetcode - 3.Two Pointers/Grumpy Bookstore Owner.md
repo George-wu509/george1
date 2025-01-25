@@ -1,11 +1,16 @@
+1849
+有一个书店，在接下来的n天中的第i天会有customer[i]个顾客到来，并且在这一天结束后离开。但是书店老板的脾气时好时坏，我们用一个数组grumpy表示他每一天的脾气好坏，若grumpy[i]=1, 则表示第i天老板的脾气很不好；若grumpy[i]=0, 则表示第i天老板的脾气很好。
 
+若某一天书店老板的脾气不好，则会导致所有当天来的所有顾客会给书店差评。但如果某一天脾气好，那么当天所有顾客都会给书店好评。老板想要尽量增加给书店好评的人数数量，想了一个方法。他可以保持连续XX天的好脾气。但这个方法只能使用一次。
+
+那么在这n天这个书店最多能有多少人离开时给书店好评？
 
 **样例 1:**
-```
+```python
 输入:
-[1,0,1,2,1,1,7,5]
-[0,1,0,1,0,1,0,1]
-3
+customer = [1,0,1,2,1,1,7,5]
+grumpy   = [0,1,0,1,0,1,0,1]
+x = 3
 输出: 
 16
 解释: 
@@ -15,7 +20,7 @@
 
 
 ```python
-    def max_satisfied(self, customers: List[int], grumpy: List[int], x: int) -> int:
+    def max_satisfied(customers, grumpy, x):
         n = len(customers)
         not_satisfied = customers[:]
         ans = 0

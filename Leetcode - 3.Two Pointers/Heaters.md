@@ -1,3 +1,10 @@
+1219
+冬天来啦！你的任务是设计出一个具有固定加热半径的加热器，使得所有房屋在这个冬天不至于太冷。
+
+现在你能够获知所有房屋和加热器所处的位置，它们均分布在一条水平线中。你需要找出最小的加热半径使得所有房屋都处在至少一个加热器的加热范围内。
+
+所以，你的输入将会是所有房屋和加热器所处的位置，期望输出为加热器最小的加热半径。
+
 Example
 ```python
 输入：[1,2,3],[2]
@@ -12,24 +19,159 @@ Example
 ```
 
 ```python
-import bisect
-class Solution:
-    """
-    @param houses: positions of houses
-    @param heaters: positions of heaters
-    @return: the minimum radius standard of heaters
-    """
-    def find_radius(self, houses: List[int], heaters: List[int]) -> int:
-        # Write your code here
-        ans = 0
-        heaters.sort()
-        for house in houses:
-            j = bisect.bisect_right(heaters, house)
-            i = j - 1
-            rightDistance = heaters[j] - house if j < len(heaters) else float('inf')
-            leftDistance = house - heaters[i] if i >= 0 else float('inf')
-            curDistance = min(leftDistance, rightDistance)
-            ans = max(ans, curDistance)
-        return ans
+def find_radius(self, houses: List[int], heaters: List[int]) -> int:
+	# 初始化
+	houses.sort()  # 將房子排序
+	heaters.sort()  # 將加熱器排序
+	ans = 0  # 保存所需的最小半徑
+	
+	j = 0  # 加熱器指針
+	
+	for house in houses:
+		# 移動加熱器指針，確保 heaters[j] 是距離 house 最近或靠右最近的加熱器
+		while j < len(heaters) - 1 and abs(heaters[j + 1] - house) <= abs(heaters[j] - house):
+			j += 1
+		
+		# 當前房子到最近加熱器的距離
+		curDistance = abs(heaters[j] - house)
+		# 更新所需的最小半徑
+		ans = max(ans, curDistance)
+	
+	return ans
 ```
 pass
+
+
+### **問題描述**
+
+給定兩個列表：
+
+- `houses` 表示房子的座標。
+- `heaters` 表示加熱器的座標。
+
+目標是找到一個**最小的半徑 `r`**，使得每個房子都能被至少一個加熱器覆蓋。
+
+---
+
+### **雙指針解法：逐步解釋**
+
+#### **1. 解法思路**
+
+1. **排序處理**：
+    
+    - 先將 `houses` 和 `heaters` 進行排序，確保房子和加熱器的座標從小到大排列。
+    - 排序後可以利用雙指針的方法有效地找到每個房子最近的加熱器。
+2. **雙指針設計**：
+    
+    - **房子指針**：遍歷 `houses`，逐一處理每個房子的位置。
+    - **加熱器指針**：從 `heaters` 中找到距離當前房子最近的加熱器。
+3. **距離計算**：
+    
+    - 如果 `heaters[j + 1]` 比 `heaters[j]` 更靠近當前房子，移動加熱器指針 `j`。
+    - 當加熱器指針確定後，計算當前房子到加熱器的距離。
+4. **更新結果**：
+    
+    - 對於每個房子，記錄它到最近加熱器的距離。
+    - 最終答案為所有房子的最小覆蓋距離中的最大值。
+
+---
+
+#### **2. 代碼分解與步驟詳解**
+```python
+def find_radius(self, houses: List[int], heaters: List[int]) -> int:
+    # 初始化
+    houses.sort()  # 將房子排序
+    heaters.sort()  # 將加熱器排序
+    ans = 0  # 保存所需的最小半徑
+    
+    j = 0  # 加熱器指針
+    
+    for house in houses:
+        # 移動加熱器指針，確保 heaters[j] 是距離 house 最近或靠右最近的加熱器
+        while j < len(heaters) - 1 and abs(heaters[j + 1] - house) <= abs(heaters[j] - house):
+            j += 1
+        
+        # 當前房子到最近加熱器的距離
+        curDistance = abs(heaters[j] - house)
+        # 更新所需的最小半徑
+        ans = max(ans, curDistance)
+    
+    return ans
+
+```
+
+---
+
+#### **3. 例子分析**
+
+##### 輸入：
+
+`houses = [1, 2, 3]`，`heaters = [2]`
+
+##### 運行過程：
+
+1. **排序**：
+    
+    - `houses = [1, 2, 3]`
+    - `heaters = [2]`
+2. **遍歷每個房子**：
+    
+    - **房子 1**：
+        
+        - `j = 0`（初始加熱器位置）。
+        - 距離 `abs(heaters[0] - 1) = abs(2 - 1) = 1`。
+        - 更新 `ans = max(0, 1) = 1`。
+    - **房子 2**：
+        
+        - `j = 0`。
+        - 距離 `abs(heaters[0] - 2) = abs(2 - 2) = 0`。
+        - 更新 `ans = max(1, 0) = 1`。
+    - **房子 3**：
+        
+        - `j = 0`。
+        - 距離 `abs(heaters[0] - 3) = abs(2 - 3) = 1`。
+        - 更新 `ans = max(1, 1) = 1`。
+
+##### 輸出：
+
+`ans = 1`
+
+---
+
+#### **4. 時間與空間複雜度分析**
+
+1. **時間複雜度**：
+    
+    - 排序步驟：
+        - `houses.sort()` 和 `heaters.sort()` 的時間複雜度均為 `O(n log n)` 和 `O(m log m)`。
+    - 雙指針遍歷：
+        - 對於每個房子，移動加熱器指針一次，最多需要 `O(n + m)`。
+    - 總時間複雜度為 **`O(n log n + m log m)`**。
+2. **空間複雜度**：
+    
+    - 排序為原地操作，雙指針僅使用常數額外空間。
+    - 空間複雜度為 **`O(1)`**。
+
+---
+
+### **其他解法簡述**
+
+1. **暴力法**：
+    
+    - 對於每個房子，遍歷所有加熱器，找到距離最近的加熱器。
+    - 時間複雜度：`O(n * m)`，不適合大數據。
+2. **二分查找法**：
+    
+    - 使用 `bisect` 或手動實現二分查找，在加熱器列表中快速找到距離某個房子最近的加熱器。
+    - 時間複雜度：`O(n log m + m log m)`。
+
+---
+
+### **總結**
+
+- **雙指針法**：
+    - 高效且簡潔，適合解決多列表對比問題。
+- **二分查找法**：
+    - 對於靜態數據（如加熱器座標）較優，但需要熟悉二分查找邏輯。
+- **暴力法**：
+    - 優化潛力不高，但適合理解問題基礎。

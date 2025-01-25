@@ -49,7 +49,7 @@ CenterMask 的損失函數由多個組件構成，因為它是針對實例分割
 
 - 用於對物體的類別進行分類。
 - 通常採用 **Focal Loss**，以解決正負樣本數量不平衡的問題，這在實例分割和目標檢測中是一個常見的挑戰。
-- **Focal Loss 定義**: FL(pt)=−αt(1−pt)γlog⁡(pt)\text{FL}(p_t) = -\alpha_t (1-p_t)^\gamma \log(p_t)FL(pt​)=−αt​(1−pt​)γlog(pt​) 其中 ptp_tpt​ 是模型對正確類別的預測機率，γ\gammaγ 控制難例的權重，αt\alpha_tαt​ 是對正負樣本的平衡參數。
+- **Focal Loss 定義**: $\large \text{FL}(p_t) = -\alpha_t (1-p_t)^\gamma \log(p_t)$ 其中 $p_t$​ 是模型對正確類別的預測機率，γ 控制難例的權重，$\alpha_t$​ 是對正負樣本的平衡參數。
 
 #### (2) **中心點損失 (Center-ness Loss)**:
 
@@ -107,3 +107,204 @@ CenterMask 的優化過程使用了現代深度學習中常見的優化方法：
     - 學習率調度：Warm-up Cosine Annealing
 
 這些組合使 CenterMask 能夠在保證準確度的前提下實現即時的實例分割。
+
+SAG-Mask（Spatial Attention-Guided Mask）是CenterMask模型的一个核心组件，设计目的是通过引入空间注意力机制来提升实例分割的性能和鲁棒性。以下是SAG-Mask的详细中文解析：
+
+---
+
+### **1. SAG-Mask 的基本设计理念**
+
+SAG-Mask基于空间注意力模块（SAM, Spatial Attention Module）指导分割头关注有意义的像素，同时抑制无用信息。它在CenterMask中作为独立的分割分支，利用由检测器（FCOS）预测的边界框（Bounding Box）生成像素级的分割结果。
+
+- **目标：**
+    - 聚焦于重要的特征区域（例如目标边缘和内部）。
+    - 减少背景噪声对分割精度的影响。
+
+---
+
+### **2. SAG-Mask 的工作流程**
+
+1. **输入特征提取**：
+    
+    - RoI Align操作将每个预测边界框内的特征提取为固定尺寸（例如 14×1414 \times 1414×14）的特征图。
+2. **特征增强（空间注意力模块 - SAM）**：
+    
+    - 对每个输入特征图 Xi∈RC×W×HX_i \in \mathbb{R}^{C \times W \times H}Xi​∈RC×W×H：
+        - **全局池化**：计算沿通道维度的平均池化 PavgP_{\text{avg}}Pavg​ 和最大池化 PmaxP_{\text{max}}Pmax​，尺寸均为 1×W×H1 \times W \times H1×W×H。
+        - **特征融合**：将 PavgP_{\text{avg}}Pavg​ 和 PmaxP_{\text{max}}Pmax​ 在通道维度上拼接，并通过 3×33 \times 33×3 卷积层和Sigmoid激活函数生成空间注意力权重图 Asag(Xi)A_{\text{sag}}(X_i)Asag​(Xi​)。 Asag(Xi)=σ(F3×3([Pavg,Pmax]))A_{\text{sag}}(X_i) = \sigma(F_{3\times3}([P_{\text{avg}}, P_{\text{max}}]))Asag​(Xi​)=σ(F3×3​([Pavg​,Pmax​]))
+        - **特征加权**：用 Asag(Xi)A_{\text{sag}}(X_i)Asag​(Xi​) 对输入特征图 XiX_iXi​ 进行加权（逐元素相乘）： Xsag=Asag(Xi)⊙XiX_{\text{sag}} = A_{\text{sag}}(X_i) \odot X_iXsag​=Asag​(Xi​)⊙Xi​
+    - 加权后特征图 XsagX_{\text{sag}}Xsag​ 聚焦于目标区域，同时抑制噪声。
+3. **分割输出生成**：
+    
+    - **上采样**：通过 2×22 \times 22×2 转置卷积将特征图从 14×1414 \times 1414×14 放大到 28×2828 \times 2828×28。
+    - **分类预测**：使用 1×11 \times 11×1 卷积生成类别特定的分割掩码。
+
+---
+
+### **3. SAG-Mask 的优势**
+
+1. **聚焦目标区域**：
+    
+    - SAM通过关注空间上重要的区域，抑制背景或不相关区域的特征，从而提升分割的精度。
+2. **模块化设计**：
+    
+    - SAG-Mask可以无缝集成到其他基于RoI的分割框架中，具有良好的通用性。
+3. **计算开销小**：
+    
+    - SAM的额外计算量主要来源于少量池化、卷积和Sigmoid操作，相比其他注意力机制非常轻量。
+
+---
+
+### **4. 实验结果与分析**
+
+论文通过消融实验验证了SAG-Mask的有效性：
+
+- 加入SAM模块后，分割性能（APmask）显著提升（如表1所示）。
+- SAM模块不仅提升了分割的准确性，还间接提高了检测性能（APbox），因为改进的特征图在检测头中也被复用。
+
+---
+
+### **5. 数学公式总结**
+
+1. **空间注意力权重图计算**： Asag(Xi)=σ(F3×3([Pavg,Pmax]))A_{\text{sag}}(X_i) = \sigma(F_{3\times3}([P_{\text{avg}}, P_{\text{max}}]))Asag​(Xi​)=σ(F3×3​([Pavg​,Pmax​]))
+2. **特征图加权**： Xsag=Asag(Xi)⊙XiX_{\text{sag}} = A_{\text{sag}}(X_i) \odot X_iXsag​=Asag​(Xi​)⊙Xi​
+
+---
+
+### **6. 适用场景与改进方向**
+
+- 适用于实时性要求高的实例分割任务。
+- 可以进一步探索多尺度特征图的注意力机制，优化小目标的分割性能。
+
+
+在 **CenterMask2** 的論文中，損失函數 (Loss Function) 和優化方法 (Optimization Method) 是實現高效且精準的實例分割的關鍵部分。以下將詳細解釋這些內容並配合具體的數學公式和示例：
+
+---
+
+## **1. CenterMask2 的損失函數**
+
+CenterMask2 的損失函數是基於多任務學習的設計，結合了分類、中心度 (Centerness)、邊界框回歸和分割損失，針對目標檢測與分割任務進行聯合優化。
+
+### **損失函數總公式**
+
+$\Large L = L_{\text{cls}} + L_{\text{center}} + L_{\text{box}} + L_{\text{mask}}$
+
+其中：
+
+- $L_{\text{cls}}$：分類損失 (Classification Loss)，用於指導模型正確分類物體類別。
+- $L_{\text{center}}$​：中心度損失 (Centerness Loss)，用於強化模型對目標中心像素的重視程度。
+- $L_{\text{box}}$：邊界框回歸損失 (Bounding Box Regression Loss)，用於精確回歸目標邊界框。
+- $L_{\text{mask}}$​：分割損失 (Segmentation Loss)，用於提升像素級分割的準確性。
+
+---
+
+### **1.1 分類損失 LclsL_{\text{cls}}Lcls​**
+
+- **公式**：
+    
+    Lcls=−1N∑i=1Nyilog⁡(pi)L_{\text{cls}} = -\frac{1}{N} \sum_{i=1}^N y_i \log(p_i)Lcls​=−N1​i=1∑N​yi​log(pi​)
+    
+    其中：
+    
+    - NNN：預測的所有像素數量。
+    - yi∈{0,1}y_i \in \{0, 1\}yi​∈{0,1}：第 iii 個像素的真實類別標籤。
+    - pip_ipi​：第 iii 個像素屬於前景的預測概率。
+- **示例**： 假設有 4 個像素，其真實標籤 Y=[1,0,1,0]Y = [1, 0, 1, 0]Y=[1,0,1,0]，模型的預測概率 P=[0.9,0.2,0.8,0.3]P = [0.9, 0.2, 0.8, 0.3]P=[0.9,0.2,0.8,0.3]。計算損失：
+    
+    Lcls=−14[1⋅log⁡(0.9)+0⋅log⁡(0.2)+1⋅log⁡(0.8)+0⋅log⁡(0.3)]L_{\text{cls}} = -\frac{1}{4} \left[ 1 \cdot \log(0.9) + 0 \cdot \log(0.2) + 1 \cdot \log(0.8) + 0 \cdot \log(0.3) \right]Lcls​=−41​[1⋅log(0.9)+0⋅log(0.2)+1⋅log(0.8)+0⋅log(0.3)] =−14[log⁡(0.9)+log⁡(0.8)]≈−14[−0.105+(−0.223)]=0.082= -\frac{1}{4} \left[ \log(0.9) + \log(0.8) \right] \approx -\frac{1}{4} \left[ -0.105 + (-0.223) \right] = 0.082=−41​[log(0.9)+log(0.8)]≈−41​[−0.105+(−0.223)]=0.082
+
+---
+
+### **1.2 中心度損失 LcenterL_{\text{center}}Lcenter​**
+
+- **作用**：衡量像素偏離中心的程度。中心像素的預測權重較高，邊緣像素的影響較小。
+- **公式**： Lcenter=Binary Cross-Entropy Loss (BCE)L_{\text{center}} = \text{Binary Cross-Entropy Loss (BCE)}Lcenter​=Binary Cross-Entropy Loss (BCE) 與分類損失類似，BCE 適合二元任務，幫助模型聚焦於目標的中心位置。
+
+---
+
+### **1.3 邊界框回歸損失 LboxL_{\text{box}}Lbox​**
+
+- **作用**：回歸預測的邊界框到真實邊界框。
+    
+- **公式**： 通常採用 GIoU Loss（Generalized IoU）或 L1 損失：
+    
+    Lbox=Smooth L1 LossL_{\text{box}} = \text{Smooth L1 Loss}Lbox​=Smooth L1 Loss LsmoothL1(x)={0.5x2if ∣x∣<1,∣x∣−0.5otherwise.L_{\text{smoothL1}}(x) = \begin{cases} 0.5x^2 & \text{if } |x| < 1, \\ |x| - 0.5 & \text{otherwise.} \end{cases}LsmoothL1​(x)={0.5x2∣x∣−0.5​if ∣x∣<1,otherwise.​
+    
+    xxx 是預測框與真實框的偏差。
+    
+- **示例**： 假設真實框的坐標為 [x1,y1,x2,y2]=[0,0,100,100][x_1, y_1, x_2, y_2] = [0, 0, 100, 100][x1​,y1​,x2​,y2​]=[0,0,100,100]，預測框為 [x1′,y1′,x2′,y2′]=[5,5,95,95][x'_1, y'_1, x'_2, y'_2] = [5, 5, 95, 95][x1′​,y1′​,x2′​,y2′​]=[5,5,95,95]，損失計算：
+    
+    Lbox=14∑smoothL1([5,5,−5,−5])=14[0.5⋅52+0.5⋅52+0.5⋅(−5)2+0.5⋅(−5)2]=25L_{\text{box}} = \frac{1}{4} \sum \text{smoothL1}([5, 5, -5, -5]) = \frac{1}{4} \left[ 0.5 \cdot 5^2 + 0.5 \cdot 5^2 + 0.5 \cdot (-5)^2 + 0.5 \cdot (-5)^2 \right] = 25Lbox​=41​∑smoothL1([5,5,−5,−5])=41​[0.5⋅52+0.5⋅52+0.5⋅(−5)2+0.5⋅(−5)2]=25
+
+---
+
+### **1.4 分割損失 LmaskL_{\text{mask}}Lmask​**
+
+- **作用**：用於像素級分割。
+    
+- **公式**： 通常採用 **Binary Cross-Entropy Loss (BCE)** 或 **Dice Loss**：
+    
+    Lmask=1−2∑i=1Npiyi∑i=1Npi+∑i=1NyiL_{\text{mask}} = 1 - \frac{2 \sum_{i=1}^N p_i y_i}{\sum_{i=1}^N p_i + \sum_{i=1}^N y_i}Lmask​=1−∑i=1N​pi​+∑i=1N​yi​2∑i=1N​pi​yi​​
+- **示例**： 假設真實分割標籤為：
+    
+    Y=[1011]Y = \begin{bmatrix} 1 & 0 \\ 1 & 1 \end{bmatrix}Y=[11​01​]
+    
+    預測概率為：
+    
+    P=[0.90.20.80.6]P = \begin{bmatrix} 0.9 & 0.2 \\ 0.8 & 0.6 \end{bmatrix}P=[0.90.8​0.20.6​]
+    
+    Dice Loss：
+    
+    Lmask=1−2⋅(0.9+0.8+0.6)(0.9+0.2+0.8+0.6)+(1+0+1+1)=1−2⋅2.32.5+3≈0.095L_{\text{mask}} = 1 - \frac{2 \cdot (0.9 + 0.8 + 0.6)}{(0.9 + 0.2 + 0.8 + 0.6) + (1 + 0 + 1 + 1)} = 1 - \frac{2 \cdot 2.3}{2.5 + 3} \approx 0.095Lmask​=1−(0.9+0.2+0.8+0.6)+(1+0+1+1)2⋅(0.9+0.8+0.6)​=1−2.5+32⋅2.3​≈0.095
+
+---
+
+## **2. 優化方法 (Optimization Method)**
+
+CenterMask2 採用標準的優化方法，包括：
+
+1. **優化器**：隨機梯度下降 (Stochastic Gradient Descent, SGD)。
+    
+    - 初始學習率：0.01。
+    - 動量：0.9。
+    - 權重衰減：0.0001。
+2. **學習率調整**：
+    
+    - 在訓練過程中，學習率按指定步驟下降。
+    - 具體：在第 60K 和 80K 次迭代時，將學習率縮小為原來的 1/101/101/10。
+3. **訓練設置**：
+    
+    - 批量大小 (Batch Size)：16。
+    - 訓練迭代次數：約 90K 次（約 12 個 Epoch）。
+
+---
+
+### **示例：損失函數的聯合優化**
+
+假設一張圖像的計算結果如下：
+
+- Lcls=0.082L_{\text{cls}} = 0.082Lcls​=0.082，
+- Lcenter=0.05L_{\text{center}} = 0.05Lcenter​=0.05，
+- Lbox=25L_{\text{box}} = 25Lbox​=25，
+- Lmask=0.095L_{\text{mask}} = 0.095Lmask​=0.095。
+
+損失總和：
+
+L=Lcls+Lcenter+Lbox+Lmask=0.082+0.05+25+0.095=25.227L = L_{\text{cls}} + L_{\text{center}} + L_{\text{box}} + L_{\text{mask}} = 0.082 + 0.05 + 25 + 0.095 = 25.227L=Lcls​+Lcenter​+Lbox​+Lmask​=0.082+0.05+25+0.095=25.227
+
+隨後，模型基於此損失進行梯度更新，以逐步縮小損失值。
+
+---
+
+### **3. 總結**
+
+1. **損失函數設計**：
+    
+    - 分類、中心度、邊界框回歸和分割損失協同工作，確保模型在多任務間平衡。
+    - 使用 BCE、Smooth L1 和 Dice Loss 等標準方法。
+2. **優化方法**：
+    
+    - 使用 SGD 和動量，結合學習率衰減策略，實現穩定優化。
+3. **應用場景**：
+    
+    - CenterMask2 的損失函數設計非常靈活，可應用於其他實例分割模型。

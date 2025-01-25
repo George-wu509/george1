@@ -3020,11 +3020,9 @@ python
 
 在訓練腳本中將 PyTorch 模型保存為 ONNX 格式：
 
-python
-
-複製程式碼
-
-`import torch  # 假設模型已經訓練完成 dummy_input = torch.randn(1, 3, 224, 224) torch.onnx.export(model, dummy_input, "model.onnx", export_params=True)`
+`import torch  # 假設模型已經訓練完成 
+dummy_input = torch.randn(1, 3, 224, 224) 
+torch.onnx.export(model, dummy_input, "model.onnx", export_params=True)`
 
 ---
 
