@@ -47,9 +47,9 @@
 33. 設計一個具有多輸入的模型，例如處理圖像和文本同時進行分類。
 34. 實現一個生成對抗網絡（GAN），用於生成手寫數字。
 35. 設計一個基於注意力機制的模型，用於機器翻譯。
-36. 實現一個簡單的前饋神經網路，包括一個隱藏層。
+36. 實現一個Transformer神經網絡
 37. 使用預訓練的模型（如ResNet）進行遷移學習。
-38. 實現一個循環神經網路（RNN）來進行文本生成。
+38. 實現一個vision Transformer神經網絡
 39. 實現一個自定義的損失函數，並在模型中使用。
 40. 如何在PyTorch中進行模型的序列化和反序列化？
 41. 實現一個自注意力機制（Self-Attention）層。
@@ -60,10 +60,10 @@
 46. 實現一個LSTM網路來進行情感分析。
 47. 實現一個Seq2Seq模型來進行機器翻譯。
 48. 實現一個批正規化（Batch Normalization）層。
-49. 實現一個注意力機制（Attention Mechanism）來加強模型的性能。
-50. 實現一個殘差網路（ResNet）來進行圖像分類。
-51. 實現一個圖像風格遷移（Style Transfer）模型。
-52. 實現一個語音識別模型。
+49. 實現一個UNet神經網絡
+50. 實現一個YOLO神經網絡
+51. 實現一個MaskRCNN神經網絡
+52. 實現一個Segment Anything神經網絡
 
 ---
 
@@ -1136,8 +1136,22 @@ print("Output Tensor:", output_tensor)
 ```
 #### 中文解釋
 
-1. 定義 Swish 激活函數，公式為 x∗sigmoid(x)x * \text{sigmoid}(x)x∗sigmoid(x)。
+1. 定義 Swish 激活函數，公式為 $x * \text{sigmoid}(x)$。
 2. 使用自定義激活函數進行測試，輸入張量包含正數和負數。
+
+| 激活函數        | 特點/適用場景               | 注意事項              | PyTorch Code                         |
+| ----------- | --------------------- | ----------------- | ------------------------------------ |
+| **ReLU**    | 常用，快速，避免梯度消失          | 可能出現 "死亡 ReLU" 問題 | `nn.ReLU()`                          |
+| Leaky ReLU  | 解決 ReLU 的 "死亡" 問題     | 增加了超參數 α\alphaα   | `nn.LeakyReLU(negative_slope=0.01)`  |
+| Swish       | 性能優異，適合高性能場景          | 計算稍慢              | `nn.SiLU()`                          |
+| **Sigmoid** | 二分類輸出，壓縮到 (0,1)       | 容易梯度消失            | `nn.Sigmoid()`                       |
+| **Tanh**    | 中心化輸出，適合 RNN          | 容易梯度消失            | `nn.Tanh()`                          |
+| **Softmax** | 多分類輸出                 | 必須配合交叉熵損失使用       | `nn.Softmax(dim=1)`                  |
+| ELU         | 負輸出不飽和，適合梯度敏感場景       | 增加了計算成本           | `nn.ELU(alpha=1.0)`                  |
+| GELU        | 用於 Transformer，梯度流動良好 | 計算稍慢              | `nn.GELU()`                          |
+| Softplus    | ReLU 的平滑版本，避免非平滑問題    | 計算開銷稍大            | `nn.Softplus()`                      |
+| Hardtanh    | 範圍限制，適合特殊場景           | 功能有限              | `nn.Hardtanh(min_val=-1, max_val=1)` |
+
 
 ---
 
@@ -1172,6 +1186,28 @@ print("Focal Loss:", loss.item())
 1. 定義 Focal Loss，適合處理類別不平衡問題。
 2. 使用 `binary_cross_entropy_with_logits` 計算 BCE 損失，並加權計算焦點損失。
 3. 測試自定義 Focal Loss，輸出損失值。
+
+### **常用的損失函數列表**
+
+| **損失函數**                              | **適用場景**                                                   | **注意事項**                                                                       | **PyTorch Code**                |
+| ------------------------------------- | ---------------------------------------------------------- | ------------------------------------------------------------------------------ | ------------------------------- |
+| **MSELoss (均方誤差損失)**                  | 用於回歸任務，度量輸出與目標之間的平方誤差。                                     | 輸出值應與目標值在相同範圍內；對於異常值敏感。                                                        | `nn.MSELoss()`                  |
+| **CrossEntropyLoss (交叉熵損失)**          | 多分類任務，例如圖像分類或 NLP 任務。                                      | 自動包含 `Softmax` 操作，輸入值應為未經激活的 logits（例如線性層的輸出）。                                 | `nn.CrossEntropyLoss()`         |
+| **BCELoss (二元交叉熵損失)**                 | 二分類任務，例如二元分類模型的輸出為 [0, 1] 的概率。                             | 需要在模型輸出層使用 `Sigmoid` 激活，否則輸入的值不在正確範圍內。                                         | `nn.BCELoss()`                  |
+| **BCEWithLogitsLoss**                 | 二分類任務，與 `BCELoss` 類似，但內部自帶 `Sigmoid` 激活，輸入可以為未經激活的 logits。 | 適合直接處理 logits，數值穩定性更好。                                                         | `nn.BCEWithLogitsLoss()`        |
+| **SmoothL1Loss (平滑 L1 損失)**           | 用於回歸任務，例如目標檢測中的邊界框回歸。                                      | 在 L1 和 L2 損失之間取得平衡，對異常值的敏感性低於 `MSELoss`。                                       | `nn.SmoothL1Loss()`             |
+| **L1Loss (絕對誤差損失)**                   | 回歸任務，度量輸出與目標的絕對差值。                                         | 對異常值敏感，通常用於需要對每個數值差異同等看待的情況。                                                   | `nn.L1Loss()`                   |
+| **HuberLoss**                         | 回歸任務，平衡 L1 和 L2 損失的優點，對異常值不敏感。                             | 在異常值處過渡平滑，但計算稍慢。                                                               | `nn.HuberLoss()`                |
+| **MarginRankingLoss**                 | 用於排序任務，例如學習輸出之間的排序關係（例如相似度學習）。                             | 輸入兩個值及其目標標籤 yyy，yyy 應為 +1 或 -1。                                                | `nn.MarginRankingLoss()`        |
+| **KLDivLoss (Kullback-Leibler 散度損失)** | 用於測量兩個概率分佈之間的差異，例如分佈對齊問題（知識蒸餾）。                            | 輸入應該是 log 概率分佈（可以用 `log_softmax` 計算），目標分佈應是概率分佈（非 log）。                        | `nn.KLDivLoss()`                |
+| **CosineEmbeddingLoss**               | 用於度量輸出向量之間的餘弦相似度，適合於相似性學習任務。                               | 當目標標籤 yyy 為 +1 時，表示相似；當目標標籤 yyy 為 -1 時，表示不相似。                                  | `nn.CosineEmbeddingLoss()`      |
+| **HingeEmbeddingLoss**                | 用於度量輸出向量之間的嵌入相似性，例如支持向量機（SVM）。                             | 當目標標籤 yyy 為 +1 時，計算正常值；當目標標籤 yyy 為 -1 時，計算懲罰值。                                 | `nn.HingeEmbeddingLoss()`       |
+| **CTCLoss (連接時序分類損失)**                | 用於序列任務，例如語音識別、OCR 中的無對齊學習。                                 | 適合輸入長度與目標長度不同的場景，需要提供序列長度。                                                     | `nn.CTCLoss()`                  |
+| **NLLLoss (負對數似然損失)**                 | 多分類任務，用於概率分佈的對數損失計算。                                       | 通常與 `log_softmax` 一起使用，輸入應為 log 概率分佈。                                          | `nn.NLLLoss()`                  |
+| **TripletMarginLoss**                 | 用於學習嵌入表示，特別是三元組學習任務（例如人臉識別）。                               | 需要提供 Anchor、Positive 和 Negative 的嵌入向量，設計目的是使 Anchor 更接近 Positive 而遠離 Negative。 | `nn.TripletMarginLoss()`        |
+| **MultiLabelSoftMarginLoss**          | 用於多標籤分類任務，類似於交叉熵損失，但處理多標籤場景。                               | 自動應用 `Sigmoid` 激活，輸出可以是多個標籤的概率值。                                               | `nn.MultiLabelSoftMarginLoss()` |
+| **PoissonNLLLoss**                    | 用於計算目標值服從泊松分佈的損失，例如計數型數據建模。                                | 對數目標值計算損失，適合處理泊松分佈的情況。                                                         | `nn.PoissonNLLLoss()`           |
+| **BinaryFocalLoss (需自定義)**            | 用於處理樣本不均衡問題，例如目標檢測。                                        | PyTorch 沒有內建實現，通常需要自己實現 Focal Loss。                                            | 需自定義實現                          |
 
 ---
 
@@ -1217,6 +1253,12 @@ print("Loss:", loss.item())
 1. 定義一個簡單的 RNN，包含一個 RNN 層和一個全連接層。
 2. 模擬時間序列數據，輸入為三維張量（批量大小、序列長度、特徵數）。
 3. 使用均方誤差損失函數訓練模型。
+
+perplexity
+```python
+
+```
+
 
 ### **31. 使用 `torch.nn.Transformer` 實現一個文本分類模型**
 
@@ -1329,6 +1371,11 @@ print("Output Shape:", outputs.shape)
 2. 使用 `torch.cat` 將圖像和文本特徵拼接。
 3. 最後使用全連接層進行分類。
 
+perplexity
+```python
+
+```
+
 ---
 
 ### **34. 實現一個生成對抗網絡（GAN），用於生成手寫數字**
@@ -1336,6 +1383,9 @@ print("Output Shape:", outputs.shape)
 #### 代碼
 
 ```python
+import tensor
+import tensor.nn as nn
+
 class Generator(nn.Module):
     def __init__(self, noise_dim, output_dim):
         super(Generator, self).__init__()
@@ -1386,6 +1436,126 @@ print("Discriminator Output Shape:", real_or_fake.shape)
 2. 定義判別器，輸入圖像判斷真假。
 3. 測試生成和判別過程。
 
+perplexity:
+```python
+import torch
+import torch.nn as nn
+import torch.optim as optim
+import torchvision
+import torchvision.transforms as transforms
+import matplotlib.pyplot as plt
+import numpy as np
+
+class Generator(nn.Module):
+    def __init__(self, noise_dim):
+        super(Generator, self).__init__()
+        self.main = nn.Sequential(
+            nn.Linear(noise_dim, 256),
+            nn.ReLU(),
+            nn.Linear(256, 512),
+            nn.ReLU(),
+            nn.Linear(512, 1024),
+            nn.ReLU(),
+            nn.Linear(1024, 784),
+            nn.Tanh()
+        )
+    
+    def forward(self, x):
+        return self.main(x).view(-1, 1, 28, 28)
+
+class Discriminator(nn.Module):
+    def __init__(self):
+        super(Discriminator, self).__init__()
+        self.main = nn.Sequential(
+            nn.Linear(784, 512),
+            nn.LeakyReLU(0.2),
+            nn.Linear(512, 256),
+            nn.LeakyReLU(0.2),
+            nn.Linear(256, 1),
+            nn.Sigmoid()
+        )
+    
+    def forward(self, x):
+        x = x.view(-1, 784)
+        return self.main(x)
+
+def train_gan(epochs=100, batch_size=64, noise_dim=100):
+    # 資料載入
+    transform = transforms.Compose([
+        transforms.ToTensor(),
+        transforms.Normalize((0.5,), (0.5,))
+    ])
+    
+    dataset = torchvision.datasets.MNIST(root='./data', 
+                                       train=True,
+                                       transform=transform,
+                                       download=True)
+    
+    dataloader = torch.utils.data.DataLoader(dataset, 
+                                           batch_size=batch_size,
+                                           shuffle=True)
+    
+    # 初始化模型
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    generator = Generator(noise_dim).to(device)
+    discriminator = Discriminator().to(device)
+    
+    # 損失函數和優化器
+    criterion = nn.BCELoss()
+    g_optimizer = optim.Adam(generator.parameters(), lr=0.0002)
+    d_optimizer = optim.Adam(discriminator.parameters(), lr=0.0002)
+    
+    for epoch in range(epochs):
+        for i, (real_images, _) in enumerate(dataloader):
+            batch_size = real_images.size(0)
+            real_label = torch.ones(batch_size, 1).to(device)
+            fake_label = torch.zeros(batch_size, 1).to(device)
+            
+            # 訓練判別器
+            real_images = real_images.to(device)
+            d_output_real = discriminator(real_images)
+            d_loss_real = criterion(d_output_real, real_label)
+            
+            noise = torch.randn(batch_size, noise_dim).to(device)
+            fake_images = generator(noise)
+            d_output_fake = discriminator(fake_images.detach())
+            d_loss_fake = criterion(d_output_fake, fake_label)
+            
+            d_loss = d_loss_real + d_loss_fake
+            d_optimizer.zero_grad()
+            d_loss.backward()
+            d_optimizer.step()
+            
+            # 訓練生成器
+            g_output = discriminator(fake_images)
+            g_loss = criterion(g_output, real_label)
+            g_optimizer.zero_grad()
+            g_loss.backward()
+            g_optimizer.step()
+            
+        if (epoch + 1) % 10 == 0:
+            print(f'Epoch [{epoch+1}/{epochs}], d_loss: {d_loss.item():.4f}, g_loss: {g_loss.item():.4f}')
+    
+    return generator, discriminator
+
+```
+
+```python
+def generate_samples(generator, noise_dim=100, num_samples=16):
+    with torch.no_grad():
+        noise = torch.randn(num_samples, noise_dim).to(device)
+        generated_images = generator(noise)
+        generated_images = generated_images.cpu().numpy()
+        
+    plt.figure(figsize=(4, 4))
+    for i in range(num_samples):
+        plt.subplot(4, 4, i+1)
+        plt.imshow(generated_images[i][0], cmap='gray')
+        plt.axis('off')
+    plt.show()
+
+```
+
 ---
 
 ### **35. 設計一個基於注意力機制的模型，用於機器翻譯**
@@ -1433,52 +1603,150 @@ print("Output Shape:", outputs.shape)
 2. 使用 LSTM 作為編碼器和解碼器。
 3. 通過注意力機制結合上下文信息，輸出翻譯結果。
 
-### **36. 實現一個簡單的前饋神經網絡，包括一個隱藏層**
+perplexity
+```python
+
+```
+
+### **36. 實現一個Transformer神經網絡**
 
 #### 代碼
 
 ```python
 import torch
 import torch.nn as nn
-import torch.optim as optim
+import math
 
-class SimpleFeedForward(nn.Module):
-    def __init__(self, input_size, hidden_size, output_size):
-        super(SimpleFeedForward, self).__init__()
-        self.fc1 = nn.Linear(input_size, hidden_size)
-        self.relu = nn.ReLU()
-        self.fc2 = nn.Linear(hidden_size, output_size)
+class MultiHeadAttention(nn.Module):
+    def __init__(self, d_model, num_heads):
+        super(MultiHeadAttention, self).__init__()
+        self.d_model = d_model
+        self.num_heads = num_heads
+        self.head_dim = d_model // num_heads
+        
+        self.q_linear = nn.Linear(d_model, d_model)
+        self.k_linear = nn.Linear(d_model, d_model)
+        self.v_linear = nn.Linear(d_model, d_model)
+        self.out = nn.Linear(d_model, d_model)
+        
+    def forward(self, q, k, v, mask=None):
+        batch_size = q.size(0)
+        
+        # 線性轉換並分割成多頭
+        q = self.q_linear(q).view(batch_size, -1, self.num_heads, self.head_dim).transpose(1, 2)
+        k = self.k_linear(k).view(batch_size, -1, self.num_heads, self.head_dim).transpose(1, 2)
+        v = self.v_linear(v).view(batch_size, -1, self.num_heads, self.head_dim).transpose(1, 2)
+        
+        # 注意力計算
+        scores = torch.matmul(q, k.transpose(-2, -1)) / math.sqrt(self.head_dim)
+        
+        if mask is not None:
+            scores = scores.masked_fill(mask == 0, float('-inf'))
+        
+        attention = torch.softmax(scores, dim=-1)
+        out = torch.matmul(attention, v)
+        
+        # 重組並輸出
+        out = out.transpose(1, 2).contiguous().view(batch_size, -1, self.d_model)
+        return self.out(out)
 
-    def forward(self, x):
-        x = self.fc1(x)
-        x = self.relu(x)
-        x = self.fc2(x)
+class TransformerBlock(nn.Module):
+    def __init__(self, d_model, num_heads, d_ff, dropout=0.1):
+        super(TransformerBlock, self).__init__()
+        self.attention = MultiHeadAttention(d_model, num_heads)
+        self.norm1 = nn.LayerNorm(d_model)
+        self.norm2 = nn.LayerNorm(d_model)
+        self.feed_forward = nn.Sequential(
+            nn.Linear(d_model, d_ff),
+            nn.ReLU(),
+            nn.Linear(d_ff, d_model)
+        )
+        self.dropout = nn.Dropout(dropout)
+        
+    def forward(self, x, mask=None):
+        # 自注意力層
+        attention = self.attention(x, x, x, mask)
+        x = self.norm1(x + self.dropout(attention))
+        
+        # 前向網路層
+        ff = self.feed_forward(x)
+        x = self.norm2(x + self.dropout(ff))
         return x
 
-# 測試模型
-model = SimpleFeedForward(input_size=4, hidden_size=8, output_size=2)
-optimizer = optim.Adam(model.parameters(), lr=0.001)
-criterion = nn.CrossEntropyLoss()
+class Transformer(nn.Module):
+    def __init__(self, d_model=512, num_heads=8, num_layers=6, d_ff=2048, 
+                 max_seq_length=100, vocab_size=5000):
+        super(Transformer, self).__init__()
+        
+        self.embedding = nn.Embedding(vocab_size, d_model)
+        self.pos_encoding = self.create_positional_encoding(max_seq_length, d_model)
+        
+        self.transformer_blocks = nn.ModuleList([
+            TransformerBlock(d_model, num_heads, d_ff) for _ in range(num_layers)
+        ])
+        
+        self.fc = nn.Linear(d_model, vocab_size)
+        self.dropout = nn.Dropout(0.1)
+        
+    def create_positional_encoding(self, max_seq_length, d_model):
+        pos_encoding = torch.zeros(max_seq_length, d_model)
+        position = torch.arange(0, max_seq_length, dtype=torch.float).unsqueeze(1)
+        div_term = torch.exp(torch.arange(0, d_model, 2).float() * (-math.log(10000.0) / d_model))
+        
+        pos_encoding[:, 0::2] = torch.sin(position * div_term)
+        pos_encoding[:, 1::2] = torch.cos(position * div_term)
+        return pos_encoding.unsqueeze(0)
+        
+    def forward(self, x, mask=None):
+        seq_length = x.size(1)
+        
+        # 嵌入層和位置編碼
+        x = self.embedding(x)
+        x = x + self.pos_encoding[:, :seq_length, :].to(x.device)
+        x = self.dropout(x)
+        
+        # Transformer層
+        for transformer in self.transformer_blocks:
+            x = transformer(x, mask)
+            
+        # 輸出層
+        output = self.fc(x)
+        return output
 
-# 模擬數據
-inputs = torch.randn(16, 4)
-labels = torch.randint(0, 2, (16,))
-
-# 訓練一個步驟
-outputs = model(inputs)
-loss = criterion(outputs, labels)
-optimizer.zero_grad()
-loss.backward()
-optimizer.step()
-
-print("Loss:", loss.item())
 
 ```
-#### 中文解釋
+## 程式碼說明
 
-1. 定義一個包含一個隱藏層的前饋神經網絡，隱藏層使用 ReLU 激活函數。
-2. 使用交叉熵損失進行訓練。
-3. 模擬數據並進行單步訓練。
+1. **MultiHeadAttention類別**:
+
+- 實現多頭注意力機制
+- 將輸入分割成多個頭進行並行處理
+- 包含Query、Key、Value的線性轉換
+
+2. **TransformerBlock類別**:
+
+- 包含一個完整的Transformer層
+- 實現自注意力機制和前向網路
+- 使用Layer Normalization和殘差連接
+
+3. **Transformer類別**:
+
+- 完整的Transformer模型實現
+- 包含嵌入層和位置編碼
+- 堆疊多個Transformer層
+- 最後通過線性層輸出結果
+
+4. **位置編碼**:
+
+- 使用正弦和餘弦函數生成位置編碼
+- 幫助模型理解序列中的位置信息
+
+使用方式:
+```python
+# 準備輸入數據 x = torch.randint(0, 5000, (32, 100)) # batch_size=32, seq_length=100 output = model(x)
+```
+
+這個實現包含了Transformer的核心組件，適用於各種序列處理任務，如機器翻譯、文本生成等。
 
 ---
 
@@ -1528,42 +1796,190 @@ print("Loss:", loss.item())
 
 ---
 
-### **38. 實現一個循環神經網絡（RNN）來進行文本生成**
+### **38. 實現一個vision Transformer神經網絡
 
 #### 代碼
 
 ```python
-class TextRNN(nn.Module):
-    def __init__(self, vocab_size, embed_size, hidden_size, output_size):
-        super(TextRNN, self).__init__()
-        self.embedding = nn.Embedding(vocab_size, embed_size)
-        self.rnn = nn.RNN(embed_size, hidden_size, batch_first=True)
-        self.fc = nn.Linear(hidden_size, output_size)
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
 
-    def forward(self, x, hidden):
-        x = self.embedding(x)
-        output, hidden = self.rnn(x, hidden)
-        output = self.fc(output[:, -1, :])  # 取最後一個時間步輸出
-        return output, hidden
+class PatchEmbed(nn.Module):
+    def __init__(self, img_size=224, patch_size=16, in_channels=3, embed_dim=768):
+        super().__init__()
+        self.img_size = img_size
+        self.patch_size = patch_size
+        self.n_patches = (img_size // patch_size) ** 2
+        
+        self.proj = nn.Conv2d(
+            in_channels,
+            embed_dim,
+            kernel_size=patch_size,
+            stride=patch_size
+        )
 
-# 模擬文本數據
-vocab_size, embed_size, hidden_size, output_size = 100, 50, 128, 100
-model = TextRNN(vocab_size, embed_size, hidden_size, output_size)
+    def forward(self, x):
+        x = self.proj(x)  # (B, E, H', W')
+        x = x.flatten(2)  # (B, E, N)
+        x = x.transpose(1, 2)  # (B, N, E)
+        return x
 
-# 初始化隱藏狀態
-hidden = torch.zeros(1, 8, hidden_size)  # 1 層, 批次大小 8, 隱藏大小 128
-inputs = torch.randint(0, vocab_size, (8, 10))  # 8 條文本，每條長度 10
+class Attention(nn.Module):
+    def __init__(self, dim, num_heads=8, qkv_bias=False, attn_drop=0., proj_drop=0.):
+        super().__init__()
+        self.num_heads = num_heads
+        self.scale = (dim // num_heads) ** -0.5
 
-# 前向傳播
-outputs, hidden = model(inputs, hidden)
-print("Output Shape:", outputs.shape)
+        self.qkv = nn.Linear(dim, dim * 3, bias=qkv_bias)
+        self.attn_drop = nn.Dropout(attn_drop)
+        self.proj = nn.Linear(dim, dim)
+        self.proj_drop = nn.Dropout(proj_drop)
+
+    def forward(self, x):
+        B, N, C = x.shape
+        qkv = self.qkv(x).reshape(B, N, 3, self.num_heads, C // self.num_heads).permute(2, 0, 3, 1, 4)
+        q, k, v = qkv[0], qkv[1], qkv[2]
+
+        attn = (q @ k.transpose(-2, -1)) * self.scale
+        attn = attn.softmax(dim=-1)
+        attn = self.attn_drop(attn)
+
+        x = (attn @ v).transpose(1, 2).reshape(B, N, C)
+        x = self.proj(x)
+        x = self.proj_drop(x)
+        return x
+
+class VisionTransformer(nn.Module):
+    def __init__(self, img_size=224, patch_size=16, in_channels=3, num_classes=1000,
+                 embed_dim=768, depth=12, num_heads=12, mlp_ratio=4., qkv_bias=True,
+                 drop_rate=0., attn_drop_rate=0.):
+        super().__init__()
+        self.patch_embed = PatchEmbed(img_size, patch_size, in_channels, embed_dim)
+        num_patches = self.patch_embed.n_patches
+
+        self.cls_token = nn.Parameter(torch.zeros(1, 1, embed_dim))
+        self.pos_embed = nn.Parameter(torch.zeros(1, num_patches + 1, embed_dim))
+        self.pos_drop = nn.Dropout(p=drop_rate)
+
+        self.blocks = nn.ModuleList([
+            TransformerBlock(
+                dim=embed_dim,
+                num_heads=num_heads,
+                mlp_ratio=mlp_ratio,
+                qkv_bias=qkv_bias,
+                drop=drop_rate,
+                attn_drop=attn_drop_rate
+            )
+            for _ in range(depth)
+        ])
+
+        self.norm = nn.LayerNorm(embed_dim)
+        self.head = nn.Linear(embed_dim, num_classes)
+
+    def forward(self, x):
+        B = x.shape[0]
+        x = self.patch_embed(x)
+
+        cls_tokens = self.cls_token.expand(B, -1, -1)
+        x = torch.cat((cls_tokens, x), dim=1)
+        x = x + self.pos_embed
+        x = self.pos_drop(x)
+
+        for block in self.blocks:
+            x = block(x)
+
+        x = self.norm(x)
+        x = x[:, 0]
+        x = self.head(x)
+        return x
+
+class TransformerBlock(nn.Module):
+    def __init__(self, dim, num_heads, mlp_ratio=4., qkv_bias=False,
+                 drop=0., attn_drop=0.):
+        super().__init__()
+        self.norm1 = nn.LayerNorm(dim)
+        self.attn = Attention(dim, num_heads=num_heads, qkv_bias=qkv_bias,
+                            attn_drop=attn_drop, proj_drop=drop)
+        self.norm2 = nn.LayerNorm(dim)
+        self.mlp = MLP(in_features=dim, hidden_features=int(dim * mlp_ratio),
+                      drop=drop)
+
+    def forward(self, x):
+        x = x + self.attn(self.norm1(x))
+        x = x + self.mlp(self.norm2(x))
+        return x
+
+class MLP(nn.Module):
+    def __init__(self, in_features, hidden_features, drop=0.):
+        super().__init__()
+        self.fc1 = nn.Linear(in_features, hidden_features)
+        self.act = nn.GELU()
+        self.fc2 = nn.Linear(hidden_features, in_features)
+        self.drop = nn.Dropout(drop)
+
+    def forward(self, x):
+        x = self.fc1(x)
+        x = self.act(x)
+        x = self.drop(x)
+        x = self.fc2(x)
+        x = self.drop(x)
+        return x
+
 
 ```
-#### 中文解釋
+## 程式碼說明
 
-1. 定義一個 RNN 模型，用於嵌入和生成文本。
-2. 嵌入層將單詞 ID 映射到嵌入向量。
-3. 使用 RNN 循環過每個時間步，最後輸出生成結果。
+1. **PatchEmbed類別**:
+
+- 將輸入圖像分割成固定大小的patch
+- 使用卷積層進行patch embedding
+- 將2D特徵圖轉換為序列形式
+
+2. **Attention類別**:
+
+- 實現多頭自注意力機制
+- 包含Query、Key、Value的線性轉換
+- 計算注意力權重並進行加權求和
+
+3. **TransformerBlock類別**:
+
+- 包含自注意力層和MLP層
+- 使用Layer Normalization
+- 實現殘差連接
+
+4. **VisionTransformer類別**:
+
+- 完整的ViT模型實現
+- 包含patch embedding、位置編碼
+- 加入特殊的CLS token用於分類
+- 堆疊多個Transformer層
+
+5. **MLP類別**:
+
+- 實現前向網路
+- 使用GELU激活函數
+- 包含dropout正則化
+
+使用方式:
+```python
+model = VisionTransformer(
+    img_size=224,
+    patch_size=16,
+    in_channels=3,
+    num_classes=1000,
+    embed_dim=768,
+    depth=12,
+    num_heads=12
+)
+
+# 假設輸入圖像大小為 224x224
+x = torch.randn(1, 3, 224, 224)
+output = model(x)  # 輸出形狀: (1, 1000)
+
+```
+
+
 
 ---
 
@@ -1658,6 +2074,12 @@ print("Attention Weights Shape:", attn_weights.shape)
 3. 將注意力分數加權到 Value，生成輸出。
 4. 測試時輸入為三維張量（批量、序列長度、嵌入大小）。
 
+perplexity
+```python
+
+```
+
+
 ---
 
 ### **42. 實現一個自編碼器（Autoencoder）來進行數據壓縮**
@@ -1697,6 +2119,12 @@ print("Decoded Shape:", decoded.shape)
 2. 編碼器將高維數據壓縮為低維表示，解碼器重構原始數據。
 3. 測試時輸入為高維數據，輸出壓縮表示和重構結果。
 
+perplexity
+```python
+
+```
+
+
 ---
 
 ### **43. 實現一個圖神經網路（GNN）來進行節點分類**
@@ -1732,6 +2160,12 @@ print("Output Shape:", output.shape)
 1. 使用 PyG 中的 `GCNConv` 定義圖卷積層。
 2. 每個節點特徵傳遞經過兩層卷積進行分類。
 3. 測試時輸入節點特徵和圖的邊結構。
+
+perplexity
+```python
+
+```
+
 
 ---
 
@@ -1783,6 +2217,12 @@ print("Logvar Shape:", logvar.shape)
 1. 定義 VAE 包括編碼器、重參數化和解碼器。
 2. 重參數化將潛在空間的高斯分佈進行采樣。
 3. 測試生成解碼輸出以及編碼器生成的均值和方差。
+
+perplexity
+```python
+
+```
+
 
 ---
 
@@ -1920,207 +2360,529 @@ print("Output Shape:", outputs.shape)
 
 ---
 
-### **49. 實現一個注意力機制（Attention Mechanism）來加強模型的性能**
-
-#### 代碼
-
-```python
-class AttentionMechanism(nn.Module):
-    def __init__(self, hidden_size):
-        super(AttentionMechanism, self).__init__()
-        self.attn = nn.Linear(hidden_size * 2, hidden_size)
-        self.v = nn.Parameter(torch.rand(hidden_size))
-        self.softmax = nn.Softmax(dim=1)
-
-    def forward(self, hidden, encoder_outputs):
-        attn_scores = self.attn(torch.cat((hidden.expand(encoder_outputs.size(0), -1), encoder_outputs), dim=1))
-        attn_weights = self.softmax(attn_scores @ self.v)
-        context = torch.sum(attn_weights.unsqueeze(-1) * encoder_outputs, dim=0)
-        return context, attn_weights
-
-# 測試注意力機制
-hidden_size = 64
-hidden = torch.randn(1, hidden_size)  # 當前解碼器隱藏狀態
-encoder_outputs = torch.randn(10, hidden_size)  # 10 個時間步編碼器輸出
-attention = AttentionMechanism(hidden_size)
-context, attn_weights = attention(hidden, encoder_outputs)
-print("Context Shape:", context.shape)
-print("Attention Weights Shape:", attn_weights.shape)
-
-```
-#### 中文解釋
-
-1. 使用線性層計算注意力分數，並經 Softmax 歸一化。
-2. 注意力分數加權到編碼器輸出，生成上下文向量。
-3. 測試輸入隱藏狀態和編碼器輸出，輸出上下文向量和權重。
-
----
-
-### **50. 實現一個殘差網絡（ResNet）來進行圖像分類**
-
-#### 代碼
-
-```python
-class ResidualBlock(nn.Module):
-    def __init__(self, in_channels, out_channels, stride=1):
-        super(ResidualBlock, self).__init__()
-        self.conv1 = nn.Conv2d(in_channels, out_channels, kernel_size=3, stride=stride, padding=1)
-        self.bn1 = nn.BatchNorm2d(out_channels)
-        self.relu = nn.ReLU()
-        self.conv2 = nn.Conv2d(out_channels, out_channels, kernel_size=3, stride=1, padding=1)
-        self.bn2 = nn.BatchNorm2d(out_channels)
-        self.shortcut = nn.Sequential()
-        if stride != 1 or in_channels != out_channels:
-            self.shortcut = nn.Sequential(
-                nn.Conv2d(in_channels, out_channels, kernel_size=1, stride=stride),
-                nn.BatchNorm2d(out_channels)
-            )
-
-    def forward(self, x):
-        out = self.relu(self.bn1(self.conv1(x)))
-        out = self.bn2(self.conv2(out))
-        out += self.shortcut(x)
-        return self.relu(out)
-
-class ResNet(nn.Module):
-    def __init__(self, block, num_blocks, num_classes=10):
-        super(ResNet, self).__init__()
-        self.conv1 = nn.Conv2d(3, 64, kernel_size=3, stride=1, padding=1)
-        self.bn1 = nn.BatchNorm2d(64)
-        self.relu = nn.ReLU()
-        self.layer1 = self._make_layer(block, 64, num_blocks[0])
-        self.fc = nn.Linear(64, num_classes)
-
-    def _make_layer(self, block, out_channels, num_blocks):
-        layers = []
-        for _ in range(num_blocks):
-            layers.append(block(64, out_channels))
-        return nn.Sequential(*layers)
-
-    def forward(self, x):
-        out = self.relu(self.bn1(self.conv1(x)))
-        out = self.layer1(out)
-        out = nn.AdaptiveAvgPool2d((1, 1))(out)
-        out = out.view(out.size(0), -1)
-        out = self.fc(out)
-        return out
-
-# 測試 ResNet 模型
-model = ResNet(ResidualBlock, [2])
-inputs = torch.randn(8, 3, 32, 32)
-outputs = model(inputs)
-print("Output Shape:", outputs.shape)
-
-```
-#### 中文解釋
-
-1. 定義殘差塊，包含兩個卷積層和跳躍連接。
-2. 使用多個殘差塊構建 ResNet，用於圖像分類。
-3. 測試模型，輸入圖像為 CIFAR-10 大小，輸出為分類結果。
-
-### **51. 實現一個圖像風格遷移（Style Transfer）模型**
+### **49. 實現一個UNet神經網絡
 
 #### 代碼
 
 ```python
 import torch
 import torch.nn as nn
-import torch.optim as optim
-from torchvision import models, transforms
-from PIL import Image
+import torch.nn.functional as F
 
-# 加載圖片
-def load_image(image_path, max_size=400, device='cpu'):
-    image = Image.open(image_path).convert('RGB')
-    size = min(max_size, max(image.size))
-    transform = transforms.Compose([
-        transforms.Resize(size),
-        transforms.ToTensor(),
-        transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
-    ])
-    return transform(image).unsqueeze(0).to(device)
-
-# 定義內容損失
-class ContentLoss(nn.Module):
-    def __init__(self, target):
-        super(ContentLoss, self).__init__()
-        self.target = target.detach()
+class DoubleConv(nn.Module):
+    def __init__(self, in_channels, out_channels):
+        super().__init__()
+        self.double_conv = nn.Sequential(
+            nn.Conv2d(in_channels, out_channels, kernel_size=3, padding=1),
+            nn.BatchNorm2d(out_channels),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(out_channels, out_channels, kernel_size=3, padding=1),
+            nn.BatchNorm2d(out_channels),
+            nn.ReLU(inplace=True)
+        )
 
     def forward(self, x):
-        return torch.nn.functional.mse_loss(x, self.target)
+        return self.double_conv(x)
 
-# 定義風格損失
-class StyleLoss(nn.Module):
-    def __init__(self, target):
-        super(StyleLoss, self).__init__()
-        self.target = self.gram_matrix(target).detach()
-
-    def gram_matrix(self, x):
-        _, c, h, w = x.size()
-        features = x.view(c, h * w)
-        G = torch.mm(features, features.t())
-        return G.div(c * h * w)
+class UNet(nn.Module):
+    def __init__(self, in_channels=3, num_classes=1):
+        super().__init__()
+        
+        # 編碼器部分
+        self.conv1 = DoubleConv(in_channels, 64)
+        self.conv2 = DoubleConv(64, 128)
+        self.conv3 = DoubleConv(128, 256)
+        self.conv4 = DoubleConv(256, 512)
+        self.conv5 = DoubleConv(512, 1024)
+        
+        # 池化層
+        self.pool = nn.MaxPool2d(kernel_size=2, stride=2)
+        
+        # 解碼器部分
+        self.up1 = nn.ConvTranspose2d(1024, 512, kernel_size=2, stride=2)
+        self.up_conv1 = DoubleConv(1024, 512)
+        
+        self.up2 = nn.ConvTranspose2d(512, 256, kernel_size=2, stride=2)
+        self.up_conv2 = DoubleConv(512, 256)
+        
+        self.up3 = nn.ConvTranspose2d(256, 128, kernel_size=2, stride=2)
+        self.up_conv3 = DoubleConv(256, 128)
+        
+        self.up4 = nn.ConvTranspose2d(128, 64, kernel_size=2, stride=2)
+        self.up_conv4 = DoubleConv(128, 64)
+        
+        # 輸出層
+        self.out = nn.Conv2d(64, num_classes, kernel_size=1)
 
     def forward(self, x):
-        G = self.gram_matrix(x)
-        return torch.nn.functional.mse_loss(G, self.target)
+        # 編碼路徑
+        x1 = self.conv1(x)
+        x2 = self.conv2(self.pool(x1))
+        x3 = self.conv3(self.pool(x2))
+        x4 = self.conv4(self.pool(x3))
+        x5 = self.conv5(self.pool(x4))
+        
+        # 解碼路徑
+        x = self.up1(x5)
+        x = self.up_conv1(torch.cat([x4, x], dim=1))
+        
+        x = self.up2(x)
+        x = self.up_conv2(torch.cat([x3, x], dim=1))
+        
+        x = self.up3(x)
+        x = self.up_conv3(torch.cat([x2, x], dim=1))
+        
+        x = self.up4(x)
+        x = self.up_conv4(torch.cat([x1, x], dim=1))
+        
+        return self.out(x)
 
-# 測試風格遷移
-content_image = load_image('content.jpg')
-style_image = load_image('style.jpg')
-
-# 加載預訓練的 VGG 模型
-vgg = models.vgg19(pretrained=True).features
-for param in vgg.parameters():
-    param.requires_grad = False
-
-# 定義優化器和生成圖像
-generated = content_image.clone().requires_grad_(True)
-optimizer = optim.Adam([generated], lr=0.01)
 
 ```
-#### 中文解釋
+## 程式碼說明
 
-1. 加載內容圖像和風格圖像，並進行歸一化。
-2. 使用 VGG19 提取特徵，並凍結其參數。
-3. 定義內容損失和風格損失。
-4. 使用 Adam 優化器優化生成圖像。
+1. **DoubleConv類別**:
+
+- 實現兩個連續的卷積層
+- 每個卷積後接BatchNorm和ReLU
+- 使用padding保持特徵圖大小不變
+
+2. **UNet架構**:
+
+- **編碼器部分**:
+    
+    - 5個下採樣階段
+    - 每階段包含兩個3x3卷積
+    - 使用MaxPooling進行下採樣
+    
+- **解碼器部分**:
+    
+    - 4個上採樣階段
+    - 使用反卷積進行上採樣
+    - 特徵圖與編碼器對應層進行串接
+    
+
+3. **跳躍連接**:
+
+- 將編碼器特徵與解碼器特徵串接
+- 幫助保留細節信息
+- 使用torch.cat進行特徵串接
+
+使用方式:
+```python
+model = UNet(in_channels=3, num_classes=1)
+x = torch.randn(1, 3, 572, 572)
+output = model(x)
+```
+
+這個UNet實現適用於多種圖像分割任務，例如:
+
+- 醫學影像分割
+- 衛星圖像分割
+- 自動駕駛場景分割
 
 ---
 
-### **52. 實現一個語音識別模型**
+### **50. 實現一個YOLO神經網絡
 
 #### 代碼
 
 ```python
-import torchaudio
+import torch
 import torch.nn as nn
+import torch.nn.functional as F
 
-class SpeechRecognitionModel(nn.Module):
-    def __init__(self, input_dim, hidden_dim, output_dim):
-        super(SpeechRecognitionModel, self).__init__()
-        self.lstm = nn.LSTM(input_dim, hidden_dim, batch_first=True)
-        self.fc = nn.Linear(hidden_dim, output_dim)
-
+class ConvBlock(nn.Module):
+    def __init__(self, in_channels, out_channels, kernel_size=3, stride=1):
+        super().__init__()
+        padding = (kernel_size - 1) // 2
+        self.conv = nn.Sequential(
+            nn.Conv2d(in_channels, out_channels, kernel_size, stride, padding),
+            nn.BatchNorm2d(out_channels),
+            nn.LeakyReLU(0.1)
+        )
+    
     def forward(self, x):
-        out, _ = self.lstm(x)
-        return self.fc(out[:, -1, :])
+        return self.conv(x)
 
-# 測試語音模型
-input_dim, hidden_dim, output_dim = 40, 128, 10
-model = SpeechRecognitionModel(input_dim, hidden_dim, output_dim)
-
-# 模擬語音數據
-inputs = torch.randn(8, 100, input_dim)  # 批次大小 8，序列長度 100，特徵數 40
-outputs = model(inputs)
-print("Output Shape:", outputs.shape)
+class YOLO(nn.Module):
+    def __init__(self, num_classes=20):
+        super().__init__()
+        
+        # 主幹網路
+        self.layer1 = nn.Sequential(
+            ConvBlock(3, 64, 7, 2),
+            nn.MaxPool2d(2, 2)
+        )
+        self.layer2 = nn.Sequential(
+            ConvBlock(64, 192, 3),
+            nn.MaxPool2d(2, 2)
+        )
+        self.layer3 = nn.Sequential(
+            ConvBlock(192, 128, 1),
+            ConvBlock(128, 256, 3),
+            ConvBlock(256, 256, 1),
+            ConvBlock(256, 512, 3),
+            nn.MaxPool2d(2, 2)
+        )
+        self.layer4 = nn.Sequential(
+            ConvBlock(512, 256, 1),
+            ConvBlock(256, 512, 3),
+            ConvBlock(512, 256, 1),
+            ConvBlock(256, 512, 3),
+            ConvBlock(512, 256, 1),
+            ConvBlock(256, 512, 3),
+            nn.MaxPool2d(2, 2)
+        )
+        self.layer5 = nn.Sequential(
+            ConvBlock(512, 512, 1),
+            ConvBlock(512, 1024, 3),
+            ConvBlock(1024, 512, 1),
+            ConvBlock(512, 1024, 3),
+        )
+        
+        # 檢測頭
+        self.detection_head = nn.Sequential(
+            ConvBlock(1024, 1024, 3),
+            ConvBlock(1024, 1024, 3, stride=2),
+            ConvBlock(1024, 1024, 3),
+            ConvBlock(1024, 1024, 3),
+            nn.Flatten(),
+            nn.Linear(1024 * 7 * 7, 4096),
+            nn.LeakyReLU(0.1),
+            nn.Dropout(0.5),
+            nn.Linear(4096, 7 * 7 * (5 * 2 + num_classes))
+        )
+        
+    def forward(self, x):
+        x = self.layer1(x)
+        x = self.layer2(x)
+        x = self.layer3(x)
+        x = self.layer4(x)
+        x = self.layer5(x)
+        x = self.detection_head(x)
+        
+        batch_size = x.size(0)
+        x = x.view(batch_size, 7, 7, -1)
+        return x
 
 ```
-#### 中文解釋
+## 程式碼說明
 
-1. 使用 LSTM 層處理語音特徵，輸出序列的最後一步。
-2. 通過全連接層將輸出映射為語音識別的類別。
-3. 測試輸入為模擬語音數據，輸出為分類結果。
+1. **ConvBlock類別**:
+
+- 實現基本的卷積區塊
+- 包含卷積層、批次正規化和LeakyReLU激活函數[1](https://www.datacamp.com/blog/yolo-object-detection-explained)
+- 使用padding保持特徵圖大小
+
+2. **YOLO架構**:
+
+- 主幹網路包含24個卷積層和4個最大池化層[1](https://www.datacamp.com/blog/yolo-object-detection-explained)[3](https://viso.ai/computer-vision/yolo-explained/)
+- 使用1x1卷積降低通道數[1](https://www.datacamp.com/blog/yolo-object-detection-explained)
+- 最後使用全連接層進行預測[3](https://viso.ai/computer-vision/yolo-explained/)
+
+3. **網路結構特點**:
+
+- 輸入圖像會被調整為448x448大小[1](https://www.datacamp.com/blog/yolo-object-detection-explained)
+- 將圖像分割為7x7的網格進行預測[6](https://encord.com/blog/yolo-object-detection-guide/)
+- 每個網格預測多個邊界框和類別機率[6](https://encord.com/blog/yolo-object-detection-guide/)
+
+4. **檢測頭設計**:
+
+- 使用1024個通道的卷積層處理特徵
+- 最後輸出包含邊界框座標、置信度和類別機率[4](https://blog.paperspace.com/how-to-implement-a-yolo-object-detector-in-pytorch/)
+- 使用Dropout防止過擬合[3](https://viso.ai/computer-vision/yolo-explained/)
+
+使用方式:
+```python
+model = YOLO(num_classes=20)
+x = torch.randn(1, 3, 448, 448)
+output = model(x)
+
+```
+這個YOLO實現適用於多種目標檢測任務，例如:
+
+- 即時物體檢測
+- 自動駕駛場景檢測
+- 安防監控系統
+
+### **51. 實現一個MaskRCNN神經網絡**
+
+#### 代碼
+
+```python
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+
+class BackboneNetwork(nn.Module):
+    def __init__(self):
+        super().__init__()
+        # ResNet-like 骨幹網路
+        self.conv1 = nn.Sequential(
+            nn.Conv2d(3, 64, 7, stride=2, padding=3),
+            nn.BatchNorm2d(64),
+            nn.ReLU(inplace=True),
+            nn.MaxPool2d(3, stride=2, padding=1)
+        )
+        self.conv2 = self._make_layer(64, 256, 3)
+        self.conv3 = self._make_layer(256, 512, 4)
+        self.conv4 = self._make_layer(512, 1024, 6)
+        self.conv5 = self._make_layer(1024, 2048, 3)
+        
+    def _make_layer(self, in_channels, out_channels, blocks):
+        layers = []
+        layers.append(nn.Conv2d(in_channels, out_channels, 3, padding=1))
+        layers.append(nn.BatchNorm2d(out_channels))
+        layers.append(nn.ReLU(inplace=True))
+        for _ in range(blocks-1):
+            layers.extend([
+                nn.Conv2d(out_channels, out_channels, 3, padding=1),
+                nn.BatchNorm2d(out_channels),
+                nn.ReLU(inplace=True)
+            ])
+        return nn.Sequential(*layers)
+
+class FPN(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.toplayer = nn.Conv2d(2048, 256, 1)
+        self.lateral1 = nn.Conv2d(1024, 256, 1)
+        self.lateral2 = nn.Conv2d(512, 256, 1)
+        self.lateral3 = nn.Conv2d(256, 256, 1)
+        
+        self.smooth1 = nn.Conv2d(256, 256, 3, padding=1)
+        self.smooth2 = nn.Conv2d(256, 256, 3, padding=1)
+        self.smooth3 = nn.Conv2d(256, 256, 3, padding=1)
+        
+    def forward(self, c2, c3, c4, c5):
+        p5 = self.toplayer(c5)
+        p4 = self._upsample_add(p5, self.lateral1(c4))
+        p3 = self._upsample_add(p4, self.lateral2(c3))
+        p2 = self._upsample_add(p3, self.lateral3(c2))
+        
+        p4 = self.smooth1(p4)
+        p3 = self.smooth2(p3)
+        p2 = self.smooth3(p2)
+        
+        return p2, p3, p4, p5
+        
+    def _upsample_add(self, x, y):
+        return F.interpolate(x, size=y.shape[2:], mode='bilinear', align_corners=False) + y
+
+class RPN(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.conv = nn.Conv2d(256, 256, 3, padding=1)
+        self.cls_logits = nn.Conv2d(256, 3 * 2, 1)  # 3個錨框 x 2類別
+        self.bbox_pred = nn.Conv2d(256, 3 * 4, 1)   # 3個錨框 x 4座標
+        
+    def forward(self, x):
+        x = F.relu(self.conv(x))
+        return self.cls_logits(x), self.bbox_pred(x)
+
+class MaskHead(nn.Module):
+    def __init__(self, num_classes):
+        super().__init__()
+        self.conv1 = nn.Conv2d(256, 256, 3, padding=1)
+        self.bn1 = nn.BatchNorm2d(256)
+        self.conv2 = nn.Conv2d(256, 256, 3, padding=1)
+        self.bn2 = nn.BatchNorm2d(256)
+        self.conv3 = nn.Conv2d(256, 256, 3, padding=1)
+        self.bn3 = nn.BatchNorm2d(256)
+        self.conv4 = nn.Conv2d(256, 256, 3, padding=1)
+        self.bn4 = nn.BatchNorm2d(256)
+        self.deconv = nn.ConvTranspose2d(256, 256, 2, stride=2)
+        self.mask_pred = nn.Conv2d(256, num_classes, 1)
+        
+    def forward(self, x):
+        x = F.relu(self.bn1(self.conv1(x)))
+        x = F.relu(self.bn2(self.conv2(x)))
+        x = F.relu(self.bn3(self.conv3(x)))
+        x = F.relu(self.bn4(self.conv4(x)))
+        x = F.relu(self.deconv(x))
+        return self.mask_pred(x)
+
+class MaskRCNN(nn.Module):
+    def __init__(self, num_classes):
+        super().__init__()
+        self.backbone = BackboneNetwork()
+        self.fpn = FPN()
+        self.rpn = RPN()
+        self.mask_head = MaskHead(num_classes)
+        
+    def forward(self, x):
+        # 特徵提取
+        c2, c3, c4, c5 = self.backbone(x)
+        # FPN特徵融合
+        p2, p3, p4, p5 = self.fpn(c2, c3, c4, c5)
+        # RPN預測
+        rpn_logits, rpn_bbox = self.rpn(p2)
+        # 這裡需要實現RoI Pooling和proposal選擇
+        # 最後進行遮罩預測
+        masks = self.mask_head(p2)
+        return rpn_logits, rpn_bbox, masks
+
+
+
+```
+## 程式碼說明
+
+1. **BackboneNetwork類別**:
+
+- 實現類似ResNet的骨幹網路
+- 包含5個階段的特徵提取
+- 使用批次正規化和ReLU激活函數
+
+2. **FPN (特徵金字塔網路)類別**:
+
+- 實現自頂向下的特徵融合
+- 橫向連接不同尺度的特徵
+- 生成多尺度特徵圖
+
+3. **RPN (區域建議網路)類別**:
+
+- 生成候選區域建議
+- 預測物體/背景分類
+- 預測邊界框回歸
+
+4. **MaskHead類別**:
+
+- 實現遮罩預測頭
+- 使用多個卷積層提取特徵
+- 最後輸出每個類別的遮罩預測
+
+5. **完整MaskRCNN類別**:
+
+- 整合所有組件
+- 實現前向傳播流程
+- 輸出RPN預測和遮罩預測
+
+使用方式:
+```python
+model = MaskRCNN(num_classes=80)  # COCO資料集有80個類別
+x = torch.randn(1, 3, 800, 800)
+rpn_logits, rpn_bbox, masks = model(x)
+
+```
+
+這個實現包含了Mask R-CNN的核心組件，但注意以下幾點仍需補充:
+
+- RoI Pooling/Align層的實現
+- Proposal生成和選擇邏輯
+- 訓練時的損失函數計算
+- 推論時的後處理邏輯
+
+---
+
+### **52. 實現一個Segment Anything神經網絡**
+
+#### 代碼
+
+```python
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+
+class BackboneNetwork(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.conv1 = nn.Sequential(
+            nn.Conv2d(3, 64, kernel_size=7, stride=2, padding=3),
+            nn.BatchNorm2d(64),
+            nn.ReLU(inplace=True),
+            nn.MaxPool2d(kernel_size=3, stride=2, padding=1)
+        )
+        self.conv2 = self._make_layer(64, 128, 3)
+        self.conv3 = self._make_layer(128, 256, 4)
+        self.conv4 = self._make_layer(256, 512, 6)
+
+    def _make_layer(self, in_channels, out_channels, blocks):
+        layers = []
+        for _ in range(blocks):
+            layers.append(nn.Conv2d(in_channels, out_channels, kernel_size=3, padding=1))
+            layers.append(nn.BatchNorm2d(out_channels))
+            layers.append(nn.ReLU(inplace=True))
+            in_channels = out_channels
+        return nn.Sequential(*layers)
+
+    def forward(self, x):
+        c1 = self.conv1(x)
+        c2 = self.conv2(c1)
+        c3 = self.conv3(c2)
+        c4 = self.conv4(c3)
+        return c1, c2, c3, c4
+
+# 特徵金字塔網路實現:
+class FeaturePyramidNetwork(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.toplayer = nn.Conv2d(512, 256, kernel_size=1)
+        self.lateral3 = nn.Conv2d(256, 256, kernel_size=1)
+        self.lateral2 = nn.Conv2d(128, 256, kernel_size=1)
+        self.smooth3 = nn.Conv2d(256, 256, kernel_size=3, padding=1)
+        self.smooth2 = nn.Conv2d(256, 256, kernel_size=3, padding=1)
+
+    def forward(self, c2, c3, c4):
+        p4 = self.toplayer(c4)
+        p3 = self._upsample_add(p4, self.lateral3(c3))
+        p2 = self._upsample_add(p3, self.lateral2(c2))
+        p3 = self.smooth3(p3)
+        p2 = self.smooth2(p2)
+        return p2, p3, p4
+
+    def _upsample_add(self, x, y):
+        return F.interpolate(x, size=y.shape[2:], mode='bilinear', align_corners=False) + y
+
+# 遮罩預測頭實現:
+class MaskHead(nn.Module):
+    def __init__(self, num_classes):
+        super().__init__()
+        self.conv1 = nn.Conv2d(256, 256, kernel_size=3, padding=1)
+        self.conv2 = nn.Conv2d(256, 256, kernel_size=3, padding=1)
+        self.conv3 = nn.Conv2d(256, 256, kernel_size=3, padding=1)
+        self.deconv = nn.ConvTranspose2d(256, 256, kernel_size=2, stride=2)
+        self.mask_pred = nn.Conv2d(256, num_classes, kernel_size=1)
+
+    def forward(self, x):
+        x = F.relu(self.conv1(x))
+        x = F.relu(self.conv2(x))
+        x = F.relu(self.conv3(x))
+        x = F.relu(self.deconv(x))
+        return self.mask_pred(x)
+
+```
+## 程式碼說明
+
+1. **BackboneNetwork類別**:
+
+- 使用類似ResNet的架構提取特徵
+- 包含四個階段的特徵提取
+- 每個階段使用多個卷積層和批次正規化
+
+2. **FeaturePyramidNetwork類別**:
+
+- 實現特徵金字塔結構
+- 自頂向下的特徵融合
+- 使用1x1卷積進行通道調整
+- 實現特徵圖的上採樣和加法融合
+
+3. **MaskHead類別**:
+
+- 實現遮罩預測頭
+- 使用多個3x3卷積層提取特徵
+- 使用反卷積層進行上採樣
+- 最後輸出每個像素的類別預測
+
+使用方式:
+```python
+model = SegmentAnythingModel(num_classes=1)  # 二元分割
+x = torch.randn(1, 3, 512, 512)
+masks = model(x)
+
+```
+
+這個實現提供了Segment Anything的基本架構，適用於通用的圖像分割任務。
 
 ---
 
