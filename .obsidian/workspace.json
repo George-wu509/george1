@@ -20,8 +20,21 @@
               "icon": "lucide-file",
               "title": "Pytorch coding exercise"
             }
+          },
+          {
+            "id": "3490ab9387604274",
+            "type": "leaf",
+            "state": {
+              "type": "image",
+              "state": {
+                "file": "materials/Pasted image 20250127224233.png"
+              },
+              "icon": "lucide-image",
+              "title": "Pasted image 20250127224233"
+            }
           }
-        ]
+        ],
+        "currentTab": 1
       }
     ],
     "direction": "vertical"
@@ -77,8 +90,7 @@
       }
     ],
     "direction": "horizontal",
-    "width": 301.5,
-    "collapsed": true
+    "width": 301.5
   },
   "right": {
     "id": "7870daaab79c7df9",
@@ -164,15 +176,28 @@
       "table-editor-obsidian:Advanced Tables Toolbar": false
     }
   },
-  "active": "1e7a83ede2555fa5",
+  "active": "7210625e0140b47b",
   "lastOpenFiles": [
+    "Interview - AI projects/AI model Summary architecture.md",
+    "Interview - handon AI model/Pytorch coding exercise.md",
+    "materials/Pasted image 20250127232140.png",
+    "materials/Pasted image 20250127231625.png",
+    "materials/Pasted image 20250127231347.png",
+    "materials/Pasted image 20250127225412.png",
+    "DL - CLIP/CLIP base.md",
+    "DL - CLIP/CLIP - Contrastive Learning.md",
+    "materials/Pasted image 20250127225004.png",
+    "materials/Pasted image 20250127224233.png",
+    "DL - Transformer and ViT/Transformer and ViT - architecture.md",
+    "DL - GAN/GAN - Real-ESRGAN colab.md",
+    "materials/Pasted image 20250127220601.png",
+    "Interview - handon AI model/Interview - handon AI model.md",
+    "Interview - AI projects/AI model Summary.md",
+    "Data Structure Summary.md",
     "Interview - DL AI/计算机视觉面试题 - AI 優化目標函數.md",
     "Interview - DL AI/ML-interview - optimizer.md",
-    "Interview - handon AI model/Pytorch coding exercise.md",
-    "Interview - handon AI model/Interview - handon AI model.md",
     "Leetcode - 3.Two Pointers/雙指針.md",
     "Leetcode - 7.DFS/k Sum II.md",
-    "Data Structure Summary.md",
     "Leetcode - 4.Binary Search/二分法.md",
     "Leetcode - 3.Two Pointers/Longest Palindromic Substring.md",
     "Leetcode - 3.Two Pointers/Remove Duplicate Numbers in Array.md",
@@ -185,23 +210,9 @@
     "Leetcode - 7.DFS/DFS.md",
     "Interview - AI projects/CenterMask2 segmentation compression - CenterMask2.md",
     "Interview - AI projects/CenterMask2 segmentation compression - Projects QA.md",
-    "DL - UNet/U-Net.md",
-    "Leetcode - 3.Two Pointers/Number of Substrings with All Zeroes.md",
-    "Leetcode - 2.Sorting/排序.md",
-    "Leetcode - 4.Binary Search/Classical Binary Search.md",
-    "Leetcode - 2.Sorting/Classical Sort Integers.md",
-    "Leetcode - 2.Sorting/Moving Stones.md",
-    "Leetcode - 3.Two Pointers/Partition Array.md",
     "materials/summary.jpg",
     "materials/v2-d518bd32a1a22bed46e4cc843e3c8503_r.jpg",
     "materials/Pasted image 20250113145750.png",
-    "materials/Pasted image 20250113145420.png",
-    "materials/Pasted image 20250113144434.png",
-    "materials/Pasted image 20250113143613.png",
-    "materials/Pasted image 20250113143208.png",
-    "materials/transformer.webp",
-    "materials/unet.png",
-    "materials/Pasted image 20240912132028.png",
     "New folder",
     "未命名",
     "Leetcode - 11.other QA",
