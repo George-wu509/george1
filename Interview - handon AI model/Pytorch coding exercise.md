@@ -1242,6 +1242,110 @@ for images, labels in train_loader:
 
 perplexity
 ```python
+import torch
+import torch.nn as nn
+import torch.optim as optim
+import torchvision
+import torchvision.transforms as transforms
+
+# 定義 CNN 模型
+class CNN(nn.Module):
+    def __init__(self):
+        super(CNN, self).__init__()
+        # 卷積層
+        self.conv1 = nn.Conv2d(3, 32, 3, padding=1)
+        self.conv2 = nn.Conv2d(32, 64, 3, padding=1)
+        self.conv3 = nn.Conv2d(64, 128, 3, padding=1)
+        
+        # 池化層
+        self.pool = nn.MaxPool2d(2, 2)
+        
+        # 全連接層
+        self.fc1 = nn.Linear(128 * 4 * 4, 512)
+        self.fc2 = nn.Linear(512, 10)
+        
+        # Dropout層
+        self.dropout = nn.Dropout(0.5)
+        
+    def forward(self, x):
+        # 三個卷積-池化層
+        x = self.pool(torch.relu(self.conv1(x)))
+        x = self.pool(torch.relu(self.conv2(x)))
+        x = self.pool(torch.relu(self.conv3(x)))
+        
+        # 展平操作
+        x = x.view(-1, 128 * 4 * 4)
+        
+        # 全連接層
+        x = self.dropout(torch.relu(self.fc1(x)))
+        x = self.fc2(x)
+        return x
+
+def train_model():
+    # 數據預處理
+    transform = transforms.Compose([
+        transforms.ToTensor(),
+        transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
+    ])
+
+    # 加載數據
+    trainset = torchvision.datasets.CIFAR10(root='./data', train=True,
+                                          download=True, transform=transform)
+    trainloader = torch.utils.data.DataLoader(trainset, batch_size=64,
+                                            shuffle=True, num_workers=2)
+
+    testset = torchvision.datasets.CIFAR10(root='./data', train=False,
+                                         download=True, transform=transform)
+    testloader = torch.utils.data.DataLoader(testset, batch_size=64,
+                                           shuffle=False, num_workers=2)
+
+    # 設置設備
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    
+    # 創建模型
+    model = CNN().to(device)
+    
+    # 定義損失函數和優化器
+    criterion = nn.CrossEntropyLoss()
+    optimizer = optim.Adam(model.parameters(), lr=0.001)
+
+    # 訓練模型
+    num_epochs = 10
+    for epoch in range(num_epochs):
+        running_loss = 0.0
+        for i, data in enumerate(trainloader, 0):
+            inputs, labels = data[0].to(device), data[1].to(device)
+            
+            optimizer.zero_grad()
+            outputs = model(inputs)
+            loss = criterion(outputs, labels)
+            loss.backward()
+            optimizer.step()
+            
+            running_loss += loss.item()
+            if i % 200 == 199:
+                print(f'[{epoch + 1}, {i + 1}] loss: {running_loss / 200:.3f}')
+                running_loss = 0.0
+
+    print('訓練完成')
+    return model, testloader, device
+
+def evaluate_model(model, testloader, device):
+    correct = 0
+    total = 0
+    with torch.no_grad():
+        for data in testloader:
+            images, labels = data[0].to(device), data[1].to(device)
+            outputs = model(images)
+            _, predicted = torch.max(outputs.data, 1)
+            total += labels.size(0)
+            correct += (predicted == labels).sum().item()
+
+    print(f'準確率: {100 * correct / total}%')
+
+if __name__ == "__main__":
+    model, testloader, device = train_model()
+    evaluate_model(model, testloader, device)
 
 ```
 
@@ -1278,6 +1382,148 @@ print("Output Tensor:", output_tensor)
 
 perplexity
 ```python
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+import math
+import matplotlib.pyplot as plt
+import numpy as np
+
+class Swish(nn.Module):
+    """
+    Swish 激活函數: x * sigmoid(beta * x)
+    beta 是可學習參數或固定值
+    """
+    def __init__(self, beta=1.0, trainable=False):
+        super().__init__()
+        self.trainable = trainable
+        if trainable:
+            # 創建可學習的 beta 參數
+            self.beta = nn.Parameter(torch.tensor(beta))
+        else:
+            # 創建固定的 beta 值
+            self.register_buffer('beta', torch.tensor(beta))
+
+    def forward(self, x):
+        return x * torch.sigmoid(self.beta * x)
+
+class GELU(nn.Module):
+    """
+    GELU (Gaussian Error Linear Unit) 激活函數
+    GELU(x) = x * Φ(x)
+    其中 Φ(x) 是標準正態分佈的累積分佈函數
+    """
+    def __init__(self, approximate='tanh'):
+        super().__init__()
+        self.approximate = approximate
+
+    def forward(self, x):
+        if self.approximate == 'tanh':
+            # 使用 tanh 近似
+            return 0.5 * x * (1 + torch.tanh(math.sqrt(2 / math.pi) * (x + 0.044715 * torch.pow(x, 3))))
+        else:
+            # 使用精確計算
+            return x * 0.5 * (1 + torch.erf(x / math.sqrt(2)))
+
+def plot_activation_functions():
+    """
+    繪製激活函數的圖像進行比較
+    """
+    x = np.linspace(-5, 5, 1000)
+    
+    # 轉換為 PyTorch tensor
+    x_tensor = torch.FloatTensor(x)
+    
+    # 初始化激活函數
+    swish = Swish(beta=1.0)
+    swish2 = Swish(beta=2.0)
+    gelu = GELU()
+    gelu_exact = GELU(approximate=None)
+    
+    # 計算輸出
+    y_swish = swish(x_tensor).numpy()
+    y_swish2 = swish2(x_tensor).numpy()
+    y_gelu = gelu(x_tensor).numpy()
+    y_gelu_exact = gelu_exact(x_tensor).numpy()
+    
+    # 繪製圖像
+    plt.figure(figsize=(12, 8))
+    plt.plot(x, y_swish, label='Swish (β=1.0)')
+    plt.plot(x, y_swish2, label='Swish (β=2.0)')
+    plt.plot(x, y_gelu, label='GELU (tanh approximation)')
+    plt.plot(x, y_gelu_exact, label='GELU (exact)', linestyle='--')
+    plt.plot(x, x, label='Linear', linestyle=':')
+    plt.grid(True)
+    plt.legend()
+    plt.title('Activation Functions Comparison')
+    plt.xlabel('x')
+    plt.ylabel('f(x)')
+    plt.show()
+
+# 示例：在簡單網絡中使用自定義激活函數
+class SimpleNet(nn.Module):
+    def __init__(self, activation='swish'):
+        super().__init__()
+        self.fc1 = nn.Linear(784, 256)
+        self.fc2 = nn.Linear(256, 10)
+        
+        # 選擇激活函數
+        if activation == 'swish':
+            self.activation = Swish(beta=1.0, trainable=True)
+        elif activation == 'gelu':
+            self.activation = GELU()
+        else:
+            self.activation = nn.ReLU()
+
+    def forward(self, x):
+        x = x.view(-1, 784)
+        x = self.activation(self.fc1(x))
+        x = self.fc2(x)
+        return x
+
+def test_activation_gradients():
+    """
+    測試激活函數的梯度
+    """
+    # 創建輸入數據
+    x = torch.randn(10, 5, requires_grad=True)
+    
+    # 測試 Swish
+    swish = Swish(beta=1.0, trainable=True)
+    y_swish = swish(x)
+    loss_swish = y_swish.sum()
+    loss_swish.backward()
+    print("Swish gradient check:")
+    print(f"Input gradient shape: {x.grad.shape}")
+    print(f"Beta gradient: {swish.beta.grad}")
+    
+    # 重置梯度
+    x.grad = None
+    
+    # 測試 GELU
+    gelu = GELU()
+    y_gelu = gelu(x)
+    loss_gelu = y_gelu.sum()
+    loss_gelu.backward()
+    print("\nGELU gradient check:")
+    print(f"Input gradient shape: {x.grad.shape}")
+
+if __name__ == "__main__":
+    # 繪製激活函數比較圖
+    plot_activation_functions()
+    
+    # 測試梯度計算
+    test_activation_gradients()
+    
+    # 創建使用自定義激活函數的網絡
+    model_swish = SimpleNet(activation='swish')
+    model_gelu = SimpleNet(activation='gelu')
+    
+    # 打印模型結構
+    print("\nModel with Swish activation:")
+    print(model_swish)
+    print("\nModel with GELU activation:")
+    print(model_gelu)
 
 ```
 
@@ -2384,6 +2630,59 @@ if __name__ == "__main__":
 
 perplexity
 ```python
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+
+class SelfAttention(nn.Module):
+    def __init__(self, input_dim):
+        super(SelfAttention, self).__init__()
+        self.input_dim = input_dim
+        
+        # 定義Query、Key、Value的線性轉換層
+        self.query = nn.Linear(input_dim, input_dim)
+        self.key = nn.Linear(input_dim, input_dim)
+        self.value = nn.Linear(input_dim, input_dim)
+        
+        # Softmax用於注意力權重的計算
+        self.softmax = nn.Softmax(dim=2)
+        
+    def forward(self, x):
+        # x的形狀: (batch_size, seq_length, input_dim)
+        
+        # 生成Query、Key、Value矩陣
+        queries = self.query(x)
+        keys = self.key(x)
+        values = self.value(x)
+        
+        # 計算注意力分數
+        scores = torch.bmm(queries, keys.transpose(1, 2))
+        
+        # 縮放注意力分數
+        scores = scores / (self.input_dim ** 0.5)
+        
+        # 應用softmax獲得注意力權重
+        attention = self.softmax(scores)
+        
+        # 計算加權和
+        weighted = torch.bmm(attention, values)
+        
+        return weighted
+
+# 示例使用
+batch_size = 32
+seq_length = 10
+input_dim = 256
+
+# 創建模型實例
+attention = SelfAttention(input_dim)
+
+# 創建輸入數據
+x = torch.randn(batch_size, seq_length, input_dim)
+
+# 前向傳播
+output = attention(x)
+
 
 ```
 
