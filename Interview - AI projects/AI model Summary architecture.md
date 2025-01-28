@@ -2405,6 +2405,219 @@ ViT 的主要目標函數為交叉熵損失 (Cross-Entropy Loss)，用於分類�
 
 以下是 ViT 的 PyTorch 實現：
 ```python
+import torch
+import torch.nn as nn
+
+class PatchEmbed(nn.Module):
+    """將圖像分割成patch並進行線性嵌入"""
+    def __init__(self, img_size=224, patch_size=16, in_channels=3, embed_dim=768):
+        super().__init__()
+        self.img_size = (img_size, img_size)
+        self.patch_size = (patch_size, patch_size)
+        self.num_patches = (img_size // patch_size) ** 2
+        
+        self.proj = nn.Conv2d(in_channels, embed_dim, 
+                             kernel_size=patch_size, stride=patch_size)
+        self.norm = nn.LayerNorm(embed_dim)
+
+    def forward(self, x):
+        B, C, H, W = x.shape
+        assert H == self.img_size[0] and W == self.img_size[1], \
+            f"Input image size ({H}*{W}) doesn't match model ({self.img_size[0]}*{self.img_size[1]})."
+        
+        # (B, C, H, W) -> (B, D, H/P, W/P) -> (B, H/P*W/P, D)
+        x = self.proj(x).flatten(2).transpose(1, 2)
+        x = self.norm(x)
+        return x
+
+class Attention(nn.Module):
+    """多頭自注意力機制"""
+    def __init__(self, dim, num_heads=8, qkv_bias=False, attn_drop=0., proj_drop=0.):
+        super().__init__()
+        assert dim % num_heads == 0, 'dim should be divisible by num_heads'
+        self.num_heads = num_heads
+        head_dim = dim // num_heads
+        self.scale = head_dim ** -0.5
+
+        self.qkv = nn.Linear(dim, dim * 3, bias=qkv_bias)
+        self.attn_drop = nn.Dropout(attn_drop)
+        self.proj = nn.Linear(dim, dim)
+        self.proj_drop = nn.Dropout(proj_drop)
+
+    def forward(self, x):
+        B, N, C = x.shape
+        qkv = self.qkv(x).reshape(B, N, 3, self.num_heads, C // self.num_heads).permute(2, 0, 3, 1, 4)
+        q, k, v = qkv.unbind(0)
+
+        attn = (q @ k.transpose(-2, -1)) * self.scale
+        attn = attn.softmax(dim=-1)
+        attn = self.attn_drop(attn)
+
+        x = (attn @ v).transpose(1, 2).reshape(B, N, C)
+        x = self.proj(x)
+        x = self.proj_drop(x)
+        return x
+
+class MLP(nn.Module):
+    """多層感知機"""
+    def __init__(self, in_features, hidden_features=None, out_features=None, act_layer=nn.GELU, drop=0.):
+        super().__init__()
+        out_features = out_features or in_features
+        hidden_features = hidden_features or in_features
+        
+        self.fc1 = nn.Linear(in_features, hidden_features)
+        self.act = act_layer()
+        self.fc2 = nn.Linear(hidden_features, out_features)
+        self.drop = nn.Dropout(drop)
+
+    def forward(self, x):
+        x = self.fc1(x)
+        x = self.act(x)
+        x = self.drop(x)
+        x = self.fc2(x)
+        x = self.drop(x)
+        return x
+
+class Block(nn.Module):
+    """Transformer 編碼器塊"""
+    def __init__(self, dim, num_heads, mlp_ratio=4., qkv_bias=False, 
+                 drop=0., attn_drop=0., act_layer=nn.GELU, norm_layer=nn.LayerNorm):
+        super().__init__()
+        self.norm1 = norm_layer(dim)
+        self.attn = Attention(dim, num_heads=num_heads, qkv_bias=qkv_bias, 
+                            attn_drop=attn_drop, proj_drop=drop)
+        self.norm2 = norm_layer(dim)
+        mlp_hidden_dim = int(dim * mlp_ratio)
+        self.mlp = MLP(in_features=dim, hidden_features=mlp_hidden_dim, 
+                      act_layer=act_layer, drop=drop)
+
+    def forward(self, x):
+        x = x + self.attn(self.norm1(x))
+        x = x + self.mlp(self.norm2(x))
+        return x
+
+class VisionTransformer(nn.Module):
+    """Vision Transformer"""
+    def __init__(self, img_size=224, patch_size=16, in_channels=3, num_classes=1000,
+                 embed_dim=768, depth=12, num_heads=12, mlp_ratio=4., qkv_bias=True,
+                 drop_rate=0., attn_drop_rate=0., norm_layer=nn.LayerNorm):
+        super().__init__()
+        self.num_classes = num_classes
+        self.num_features = self.embed_dim = embed_dim
+
+        # Patch embedding
+        self.patch_embed = PatchEmbed(img_size=img_size, patch_size=patch_size, 
+                                    in_channels=in_channels, embed_dim=embed_dim)
+        num_patches = self.patch_embed.num_patches
+
+        # Class token and position embedding
+        self.cls_token = nn.Parameter(torch.zeros(1, 1, embed_dim))
+        self.pos_embed = nn.Parameter(torch.zeros(1, num_patches + 1, embed_dim))
+        self.pos_drop = nn.Dropout(p=drop_rate)
+
+        # Transformer blocks
+        self.blocks = nn.Sequential(*[
+            Block(dim=embed_dim, num_heads=num_heads, mlp_ratio=mlp_ratio,
+                  qkv_bias=qkv_bias, drop=drop_rate, attn_drop=attn_drop_rate,
+                  norm_layer=norm_layer)
+            for _ in range(depth)
+        ])
+        
+        self.norm = norm_layer(embed_dim)
+        self.head = nn.Linear(embed_dim, num_classes)
+
+        # Initialize weights
+        self.initialize_weights()
+
+    def initialize_weights(self):
+        # Initialize patch_embed like nn.Linear (instead of nn.Conv2d)
+        w = self.patch_embed.proj.weight.data
+        torch.nn.init.xavier_uniform_(w.view([w.shape[0], -1]))
+
+        # Initialize cls token
+        torch.nn.init.normal_(self.cls_token, std=.02)
+
+        # Initialize position embedding
+        torch.nn.init.normal_(self.pos_embed, std=.02)
+
+        # Initialize all other Linear layers
+        self.apply(self._init_weights)
+
+    def _init_weights(self, m):
+        if isinstance(m, nn.Linear):
+            torch.nn.init.xavier_uniform_(m.weight)
+            if isinstance(m, nn.Linear) and m.bias is not None:
+                nn.init.constant_(m.bias, 0)
+        elif isinstance(m, nn.LayerNorm):
+            nn.init.constant_(m.bias, 0)
+            nn.init.constant_(m.weight, 1.0)
+
+    def forward_features(self, x):
+        B = x.shape[0]
+        x = self.patch_embed(x)
+
+        # Add class token
+        cls_tokens = self.cls_token.expand(B, -1, -1)
+        x = torch.cat((cls_tokens, x), dim=1)
+        
+        # Add position embedding
+        x = x + self.pos_embed
+        x = self.pos_drop(x)
+
+        # Apply Transformer blocks
+        x = self.blocks(x)
+        x = self.norm(x)
+        
+        return x[:, 0]  # Return class token
+
+    def forward(self, x):
+        x = self.forward_features(x)
+        x = self.head(x)
+        return x
+
+def create_vit_model(model_name='ViT-B/16', num_classes=1000, has_logits=True):
+    """創建 ViT 模型"""
+    configs = {
+        'ViT-B/16': dict(patch_size=16, embed_dim=768, depth=12, num_heads=12),
+        'ViT-L/16': dict(patch_size=16, embed_dim=1024, depth=24, num_heads=16),
+        'ViT-H/14': dict(patch_size=14, embed_dim=1280, depth=32, num_heads=16),
+    }
+    
+    config = configs[model_name]
+    model = VisionTransformer(patch_size=config['patch_size'],
+                            embed_dim=config['embed_dim'],
+                            depth=config['depth'],
+                            num_heads=config['num_heads'],
+                            num_classes=num_classes)
+    return model
+
+# 測試代碼
+if __name__ == "__main__":
+    # 創建模型
+    model = create_vit_model('ViT-B/16')
+    
+    # 測試輸入
+    x = torch.randn(1, 3, 224, 224)
+    
+    # 前向傳播
+    output = model(x)
+    
+    # 打印輸出形狀
+    print(f"Input shape: {x.shape}")
+    print(f"Output shape: {output.shape}")
+    
+    # 計算參數量
+    total_params = sum(p.numel() for p in model.parameters())
+    print(f"Total parameters: {total_params:,}")
+
+# 創建模型
+model = create_vit_model('ViT-B/16', num_classes=1000)
+
+# 準備輸入
+x = torch.randn(1, 3, 224, 224)
+
+# 前向傳播
+output = model(x)
 
 
 ```
@@ -2543,71 +2756,258 @@ DINOv2 使用基於對比學習的目標函數，確保多視角輸入的學生�
 ```python
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
+from functools import partial
+import math
 
-# Patch Embedding
-class PatchEmbedding(nn.Module):
-    def __init__(self, img_size=224, patch_size=16, in_channels=3, embed_dim=768):
-        super(PatchEmbedding, self).__init__()
-        self.num_patches = (img_size // patch_size) ** 2
-        self.projection = nn.Conv2d(in_channels, embed_dim, kernel_size=patch_size, stride=patch_size)
+def drop_path(x, drop_prob: float = 0., training: bool = False):
+    """Drop paths (Stochastic Depth) per sample (when applied in main path of residual blocks)."""
+    if drop_prob == 0. or not training:
+        return x
+    keep_prob = 1 - drop_prob
+    shape = (x.shape[0],) + (1,) * (x.ndim - 1)
+    random_tensor = keep_prob + torch.rand(shape, dtype=x.dtype, device=x.device)
+    random_tensor.floor_()  # binarize
+    output = x.div(keep_prob) * random_tensor
+    return output
+
+class DropPath(nn.Module):
+    """Drop paths (Stochastic Depth) per sample (when applied in main path of residual blocks)."""
+    def __init__(self, drop_prob=None):
+        super(DropPath, self).__init__()
+        self.drop_prob = drop_prob
 
     def forward(self, x):
-        x = self.projection(x)  # (B, D, H/P, W/P)
-        x = x.flatten(2)  # (B, D, N)
-        x = x.transpose(1, 2)  # (B, N, D)
+        return drop_path(x, self.drop_prob, self.training)
+
+class LayerScale(nn.Module):
+    def __init__(self, dim, init_values=1e-5):
+        super().__init__()
+        self.gamma = nn.Parameter(init_values * torch.ones(dim))
+
+    def forward(self, x):
+        return x * self.gamma
+
+class PatchEmbed(nn.Module):
+    """Image to Patch Embedding"""
+    def __init__(self, img_size=224, patch_size=16, in_chans=3, embed_dim=768, norm_layer=None):
+        super().__init__()
+        self.img_size = (img_size, img_size)
+        self.patch_size = (patch_size, patch_size)
+        self.grid_size = (img_size // patch_size, img_size // patch_size)
+        self.num_patches = self.grid_size[0] * self.grid_size[1]
+
+        self.proj = nn.Conv2d(in_chans, embed_dim, kernel_size=patch_size, stride=patch_size)
+        self.norm = norm_layer(embed_dim) if norm_layer else nn.Identity()
+
+    def forward(self, x):
+        B, C, H, W = x.shape
+        assert H == self.img_size[0] and W == self.img_size[1], \
+            f"Input image size ({H}*{W}) doesn't match model ({self.img_size[0]}*{self.img_size[1]})."
+        
+        x = self.proj(x).flatten(2).transpose(1, 2)
+        x = self.norm(x)
         return x
 
-# Transformer Encoder Block
-class TransformerEncoderBlock(nn.Module):
-    def __init__(self, embed_dim, num_heads, ff_dim):
-        super(TransformerEncoderBlock, self).__init__()
-        self.attention = nn.MultiheadAttention(embed_dim, num_heads)
-        self.norm1 = nn.LayerNorm(embed_dim)
-        self.ffn = nn.Sequential(
-            nn.Linear(embed_dim, ff_dim),
-            nn.GELU(),
-            nn.Linear(ff_dim, embed_dim),
-        )
-        self.norm2 = nn.LayerNorm(embed_dim)
+class Attention(nn.Module):
+    def __init__(self, dim, num_heads=8, qkv_bias=False, attn_drop=0., proj_drop=0.):
+        super().__init__()
+        assert dim % num_heads == 0, 'dim should be divisible by num_heads'
+        self.num_heads = num_heads
+        head_dim = dim // num_heads
+        self.scale = head_dim ** -0.5
+
+        self.qkv = nn.Linear(dim, dim * 3, bias=qkv_bias)
+        self.attn_drop = nn.Dropout(attn_drop)
+        self.proj = nn.Linear(dim, dim)
+        self.proj_drop = nn.Dropout(proj_drop)
 
     def forward(self, x):
-        attn_output, _ = self.attention(x, x, x)
-        x = x + attn_output
-        x = self.norm1(x)
-        ffn_output = self.ffn(x)
-        x = x + ffn_output
-        x = self.norm2(x)
-        return x
+        B, N, C = x.shape
+        qkv = self.qkv(x).reshape(B, N, 3, self.num_heads, C // self.num_heads).permute(2, 0, 3, 1, 4)
+        q, k, v = qkv.unbind(0)
 
-# Projection Head
-class ProjectionHead(nn.Module):
-    def __init__(self, embed_dim, proj_dim=256):
-        super(ProjectionHead, self).__init__()
-        self.proj = nn.Sequential(
-            nn.Linear(embed_dim, proj_dim),
-            nn.BatchNorm1d(proj_dim),
-            nn.ReLU(),
-            nn.Linear(proj_dim, proj_dim)
-        )
+        attn = (q @ k.transpose(-2, -1)) * self.scale
+        attn = attn.softmax(dim=-1)
+        attn = self.attn_drop(attn)
 
-    def forward(self, x):
+        x = (attn @ v).transpose(1, 2).reshape(B, N, C)
         x = self.proj(x)
+        x = self.proj_drop(x)
         return x
 
-# DINOv2 Model
-class DINOv2(nn.Module):
-    def __init__(self, img_size=224, patch_size=16, in_channels=3, embed_dim=768, num_heads=12, ff_dim=3072, depth=12, proj_dim=256):
-        super(DINOv2, self).__init__()
-        self.patch_embedding = PatchEmbedding(img_size, patch_size, in_channels, embed_dim)
-        self.encoder = nn.Sequential(*[TransformerEncoderBlock(embed_dim, num_heads, ff_dim) for _ in range(depth)])
-        self.projection_head = ProjectionHead(embed_dim, proj_dim)
+class Block(nn.Module):
+    def __init__(self, dim, num_heads, mlp_ratio=4., qkv_bias=False, drop=0., 
+                 attn_drop=0., drop_path=0., act_layer=nn.GELU, norm_layer=nn.LayerNorm,
+                 init_values=None):
+        super().__init__()
+        self.norm1 = norm_layer(dim)
+        self.attn = Attention(dim, num_heads=num_heads, qkv_bias=qkv_bias, 
+                            attn_drop=attn_drop, proj_drop=drop)
+        
+        self.drop_path = DropPath(drop_path) if drop_path > 0. else nn.Identity()
+        self.norm2 = norm_layer(dim)
+        mlp_hidden_dim = int(dim * mlp_ratio)
+        self.mlp = Mlp(in_features=dim, hidden_features=mlp_hidden_dim, 
+                      act_layer=act_layer, drop=drop)
+
+        if init_values is not None:
+            self.gamma_1 = LayerScale(dim, init_values)
+            self.gamma_2 = LayerScale(dim, init_values)
+        else:
+            self.gamma_1 = self.gamma_2 = nn.Identity()
 
     def forward(self, x):
-        x = self.patch_embedding(x)  # (B, N, D)
-        x = self.encoder(x)  # (B, N, D)
-        x_cls = x[:, 0]  # Extract CLS token
-        x_proj = self.projection_head(x_cls)  # (B, proj_dim)
-        return x_proj
+        x = x + self.drop_path(self.gamma_1(self.attn(self.norm1(x))))
+        x = x + self.drop_path(self.gamma_2(self.mlp(self.norm2(x))))
+        return x
+
+class Mlp(nn.Module):
+    def __init__(self, in_features, hidden_features=None, out_features=None, 
+                 act_layer=nn.GELU, drop=0.):
+        super().__init__()
+        out_features = out_features or in_features
+        hidden_features = hidden_features or in_features
+        
+        self.fc1 = nn.Linear(in_features, hidden_features)
+        self.act = act_layer()
+        self.fc2 = nn.Linear(hidden_features, out_features)
+        self.drop = nn.Dropout(drop)
+
+    def forward(self, x):
+        x = self.fc1(x)
+        x = self.act(x)
+        x = self.drop(x)
+        x = self.fc2(x)
+        x = self.drop(x)
+        return x
+
+class DINOv2(nn.Module):
+    def __init__(self, img_size=224, patch_size=16, in_chans=3, embed_dim=768,
+                 depth=12, num_heads=12, mlp_ratio=4., qkv_bias=True,
+                 drop_rate=0., attn_drop_rate=0., drop_path_rate=0.,
+                 norm_layer=partial(nn.LayerNorm, eps=1e-6),
+                 init_values=None, proj_dim=256):
+        super().__init__()
+        
+        self.patch_embed = PatchEmbed(img_size=img_size, patch_size=patch_size,
+                                    in_chans=in_chans, embed_dim=embed_dim)
+        num_patches = self.patch_embed.num_patches
+
+        self.cls_token = nn.Parameter(torch.zeros(1, 1, embed_dim))
+        self.pos_embed = nn.Parameter(torch.zeros(1, num_patches + 1, embed_dim))
+        self.pos_drop = nn.Dropout(p=drop_rate)
+
+        dpr = [x.item() for x in torch.linspace(0, drop_path_rate, depth)]
+        self.blocks = nn.ModuleList([
+            Block(dim=embed_dim, num_heads=num_heads, mlp_ratio=mlp_ratio,
+                  qkv_bias=qkv_bias, drop=drop_rate, attn_drop=attn_drop_rate,
+                  drop_path=dpr[i], norm_layer=norm_layer, init_values=init_values)
+            for i in range(depth)
+        ])
+        
+        self.norm = norm_layer(embed_dim)
+        
+        # Projection head
+        self.projection_head = nn.Sequential(
+            nn.Linear(embed_dim, embed_dim),
+            nn.BatchNorm1d(embed_dim),
+            nn.ReLU(inplace=True),
+            nn.Linear(embed_dim, embed_dim),
+            nn.BatchNorm1d(embed_dim),
+            nn.ReLU(inplace=True),
+            nn.Linear(embed_dim, proj_dim),
+            nn.BatchNorm1d(proj_dim, affine=False)
+        )
+
+        self.initialize_weights()
+
+    def initialize_weights(self):
+        # Initialize patch_embed
+        w = self.patch_embed.proj.weight.data
+        torch.nn.init.xavier_uniform_(w.view([w.shape[0], -1]))
+
+        # Initialize cls token
+        torch.nn.init.normal_(self.cls_token, std=.02)
+
+        # Initialize pos_embed
+        torch.nn.init.normal_(self.pos_embed, std=.02)
+
+        # Initialize all other Linear layers
+        self.apply(self._init_weights)
+
+    def _init_weights(self, m):
+        if isinstance(m, nn.Linear):
+            torch.nn.init.xavier_uniform_(m.weight)
+            if isinstance(m, nn.Linear) and m.bias is not None:
+                nn.init.constant_(m.bias, 0)
+        elif isinstance(m, nn.LayerNorm):
+            nn.init.constant_(m.bias, 0)
+            nn.init.constant_(m.weight, 1.0)
+
+    def forward_features(self, x):
+        B = x.shape[0]
+        x = self.patch_embed(x)
+
+        cls_tokens = self.cls_token.expand(B, -1, -1)
+        x = torch.cat((cls_tokens, x), dim=1)
+        x = x + self.pos_embed
+        x = self.pos_drop(x)
+
+        for blk in self.blocks:
+            x = blk(x)
+
+        x = self.norm(x)
+        return x[:, 0]  # Return CLS token features
+
+    def forward(self, x):
+        x = self.forward_features(x)
+        x = self.projection_head(x)
+        return F.normalize(x, dim=-1)  # L2 normalize
+
+def create_dinov2_model(model_size='small'):
+    """Create DINOv2 model with different sizes"""
+    configs = {
+        'small': dict(depth=12, embed_dim=384, num_heads=6),
+        'base': dict(depth=12, embed_dim=768, num_heads=12),
+        'large': dict(depth=24, embed_dim=1024, num_heads=16),
+    }
+    
+    config = configs[model_size]
+    model = DINOv2(depth=config['depth'],
+                   embed_dim=config['embed_dim'],
+                   num_heads=config['num_heads'])
+    return model
+
+# 測試代碼
+if __name__ == "__main__":
+    # 創建模型
+    model = create_dinov2_model('base')
+    
+    # 測試輸入
+    x = torch.randn(2, 3, 224, 224)
+    
+    # 前向傳播
+    output = model(x)
+    
+    # 打印輸出形狀
+    print(f"Input shape: {x.shape}")
+    print(f"Output shape: {output.shape}")
+    
+    # 計算參數量
+    total_params = sum(p.numel() for p in model.parameters())
+    print(f"Total parameters: {total_params:,}")
+
+
+# 創建模型
+model = create_dinov2_model('base')
+
+# 準備輸入
+x = torch.randn(2, 3, 224, 224)
+
+# 前向傳播
+output = model(x)  # 輸出已經 L2 正則化
+
 
 ```
 
@@ -2739,70 +3139,228 @@ CLIP 的目標函數是對比損失 (Contrastive Loss)，通過拉近匹配的�
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from typing import Tuple
+import math
 
-# Image Encoder (Vision Transformer)
+class MultiheadAttention(nn.Module):
+    def __init__(self, embed_dim: int, num_heads: int, dropout: float = 0.0):
+        super().__init__()
+        self.num_heads = num_heads
+        self.head_dim = embed_dim // num_heads
+        self.scale = self.head_dim ** -0.5
+        
+        self.qkv = nn.Linear(embed_dim, embed_dim * 3)
+        self.proj = nn.Linear(embed_dim, embed_dim)
+        self.dropout = nn.Dropout(dropout)
+
+    def forward(self, x: torch.Tensor, mask: torch.Tensor = None) -> torch.Tensor:
+        B, N, C = x.shape
+        qkv = self.qkv(x).reshape(B, N, 3, self.num_heads, self.head_dim).permute(2, 0, 3, 1, 4)
+        q, k, v = qkv.unbind(0)
+
+        attn = (q @ k.transpose(-2, -1)) * self.scale
+        
+        if mask is not None:
+            attn = attn.masked_fill(mask == 0, float('-inf'))
+            
+        attn = attn.softmax(dim=-1)
+        attn = self.dropout(attn)
+
+        x = (attn @ v).transpose(1, 2).reshape(B, N, C)
+        x = self.proj(x)
+        return x
+
+class TransformerBlock(nn.Module):
+    def __init__(self, embed_dim: int, num_heads: int, mlp_ratio: float = 4.0, dropout: float = 0.0):
+        super().__init__()
+        self.attn = MultiheadAttention(embed_dim, num_heads, dropout)
+        self.norm1 = nn.LayerNorm(embed_dim)
+        self.norm2 = nn.LayerNorm(embed_dim)
+        
+        mlp_hidden_dim = int(embed_dim * mlp_ratio)
+        self.mlp = nn.Sequential(
+            nn.Linear(embed_dim, mlp_hidden_dim),
+            nn.GELU(),
+            nn.Dropout(dropout),
+            nn.Linear(mlp_hidden_dim, embed_dim),
+            nn.Dropout(dropout)
+        )
+
+    def forward(self, x: torch.Tensor, mask: torch.Tensor = None) -> torch.Tensor:
+        x = x + self.attn(self.norm1(x), mask)
+        x = x + self.mlp(self.norm2(x))
+        return x
+
 class VisionTransformer(nn.Module):
-    def __init__(self, img_size=224, patch_size=16, in_channels=3, embed_dim=512, depth=12, num_heads=8):
-        super(VisionTransformer, self).__init__()
+    def __init__(self, img_size: int = 224, patch_size: int = 16, in_channels: int = 3,
+                 embed_dim: int = 512, depth: int = 12, num_heads: int = 8, dropout: float = 0.0):
+        super().__init__()
         self.patch_embed = nn.Conv2d(in_channels, embed_dim, kernel_size=patch_size, stride=patch_size)
+        num_patches = (img_size // patch_size) ** 2
+        
         self.cls_token = nn.Parameter(torch.zeros(1, 1, embed_dim))
-        self.pos_embed = nn.Parameter(torch.zeros(1, (img_size // patch_size) ** 2 + 1, embed_dim))
-        self.encoder = nn.Sequential(
-            *[TransformerEncoderBlock(embed_dim, num_heads, embed_dim * 4) for _ in range(depth)]
-        )
+        self.pos_embed = nn.Parameter(torch.zeros(1, num_patches + 1, embed_dim))
+        self.dropout = nn.Dropout(dropout)
+        
+        self.blocks = nn.ModuleList([
+            TransformerBlock(embed_dim, num_heads, dropout=dropout)
+            for _ in range(depth)
+        ])
+        
         self.norm = nn.LayerNorm(embed_dim)
+        self._init_weights()
 
-    def forward(self, x):
-        B, _, _, _ = x.size()
-        x = self.patch_embed(x).flatten(2).transpose(1, 2)  # (B, N, embed_dim)
-        cls_tokens = self.cls_token.expand(B, -1, -1)  # (B, 1, embed_dim)
-        x = torch.cat((cls_tokens, x), dim=1)  # (B, N+1, embed_dim)
+    def _init_weights(self):
+        nn.init.normal_(self.cls_token, std=0.02)
+        nn.init.normal_(self.pos_embed, std=0.02)
+        
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        B = x.shape[0]
+        x = self.patch_embed(x).flatten(2).transpose(1, 2)
+        
+        cls_tokens = self.cls_token.expand(B, -1, -1)
+        x = torch.cat((cls_tokens, x), dim=1)
         x = x + self.pos_embed
-        x = self.encoder(x)
-        x = self.norm(x[:, 0])  # CLS token
-        return x
+        x = self.dropout(x)
+        
+        for block in self.blocks:
+            x = block(x)
+            
+        x = self.norm(x)
+        return x[:, 0]  # Return CLS token features
 
-# Text Encoder (Transformer)
 class TextTransformer(nn.Module):
-    def __init__(self, vocab_size, max_len=77, embed_dim=512, depth=12, num_heads=8):
-        super(TextTransformer, self).__init__()
-        self.token_embed = nn.Embedding(vocab_size, embed_dim)
-        self.pos_embed = nn.Parameter(torch.zeros(1, max_len, embed_dim))
-        self.encoder = nn.Sequential(
-            *[TransformerEncoderBlock(embed_dim, num_heads, embed_dim * 4) for _ in range(depth)]
-        )
+    def __init__(self, vocab_size: int, max_len: int = 77, embed_dim: int = 512,
+                 depth: int = 12, num_heads: int = 8, dropout: float = 0.0):
+        super().__init__()
+        self.token_embedding = nn.Embedding(vocab_size, embed_dim)
+        self.pos_embedding = nn.Parameter(torch.zeros(1, max_len, embed_dim))
+        self.dropout = nn.Dropout(dropout)
+        
+        self.blocks = nn.ModuleList([
+            TransformerBlock(embed_dim, num_heads, dropout=dropout)
+            for _ in range(depth)
+        ])
+        
         self.norm = nn.LayerNorm(embed_dim)
+        self._init_weights()
 
-    def forward(self, x):
-        x = self.token_embed(x) + self.pos_embed[:, :x.size(1), :]
-        x = self.encoder(x)
-        x = self.norm(x[:, 0])  # CLS token
-        return x
+    def _init_weights(self):
+        nn.init.normal_(self.token_embedding.weight, std=0.02)
+        nn.init.normal_(self.pos_embedding, std=0.02)
 
-# Contrastive Head
-class ContrastiveHead(nn.Module):
-    def __init__(self, embed_dim):
-        super(ContrastiveHead, self).__init__()
-        self.projection = nn.Linear(embed_dim, embed_dim)
+    def forward(self, x: torch.Tensor, attention_mask: torch.Tensor = None) -> torch.Tensor:
+        x = self.token_embedding(x)
+        x = x + self.pos_embedding[:, :x.size(1)]
+        x = self.dropout(x)
+        
+        for block in self.blocks:
+            x = block(x, attention_mask)
+            
+        x = self.norm(x)
+        return x[:, 0]  # Return CLS token features
 
-    def forward(self, x):
-        x = self.projection(x)
-        x = F.normalize(x, dim=-1)  # Normalize embeddings
-        return x
-
-# CLIP Model
 class CLIP(nn.Module):
-    def __init__(self, img_size=224, patch_size=16, vocab_size=49408, embed_dim=512, depth=12, num_heads=8):
-        super(CLIP, self).__init__()
-        self.image_encoder = VisionTransformer(img_size, patch_size, 3, embed_dim, depth, num_heads)
-        self.text_encoder = TextTransformer(vocab_size, embed_dim=embed_dim, depth=depth, num_heads=num_heads)
-        self.img_proj = ContrastiveHead(embed_dim)
-        self.txt_proj = ContrastiveHead(embed_dim)
+    def __init__(self, img_size: int = 224, patch_size: int = 16, vocab_size: int = 49408,
+                 embed_dim: int = 512, vision_depth: int = 12, text_depth: int = 12,
+                 vision_heads: int = 8, text_heads: int = 8, dropout: float = 0.0):
+        super().__init__()
+        
+        self.visual = VisionTransformer(
+            img_size=img_size,
+            patch_size=patch_size,
+            embed_dim=embed_dim,
+            depth=vision_depth,
+            num_heads=vision_heads,
+            dropout=dropout
+        )
+        
+        self.textual = TextTransformer(
+            vocab_size=vocab_size,
+            embed_dim=embed_dim,
+            depth=text_depth,
+            num_heads=text_heads,
+            dropout=dropout
+        )
+        
+        self.logit_scale = nn.Parameter(torch.ones([]) * math.log(1 / 0.07))
+        
+    def forward(self, image: torch.Tensor, text: torch.Tensor,
+                attention_mask: torch.Tensor = None) -> Tuple[torch.Tensor, torch.Tensor]:
+        image_features = F.normalize(self.visual(image), dim=-1)
+        text_features = F.normalize(self.textual(text, attention_mask), dim=-1)
+        
+        return image_features, text_features
+    
+    def get_similarity(self, image_features: torch.Tensor, text_features: torch.Tensor) -> torch.Tensor:
+        return image_features @ text_features.t() * self.logit_scale.exp()
 
-    def forward(self, images, texts):
-        img_features = self.img_proj(self.image_encoder(images))
-        txt_features = self.txt_proj(self.text_encoder(texts))
-        return img_features, txt_features
+def create_clip_model(model_name: str = 'ViT-B/32') -> CLIP:
+    """Create a CLIP model with specified configuration"""
+    configs = {
+        'ViT-B/32': dict(
+            img_size=224,
+            patch_size=32,
+            embed_dim=512,
+            vision_depth=12,
+            text_depth=12,
+            vision_heads=8,
+            text_heads=8
+        ),
+        'ViT-B/16': dict(
+            img_size=224,
+            patch_size=16,
+            embed_dim=512,
+            vision_depth=12,
+            text_depth=12,
+            vision_heads=8,
+            text_heads=8
+        ),
+    }
+    
+    if model_name not in configs:
+        raise ValueError(f"Model {model_name} not found. Available models: {list(configs.keys())}")
+        
+    return CLIP(**configs[model_name])
+
+# 測試代碼
+if __name__ == "__main__":
+    # 創建模型
+    model = create_clip_model('ViT-B/32')
+    
+    # 測試輸入
+    batch_size = 2
+    image = torch.randn(batch_size, 3, 224, 224)
+    text = torch.randint(0, 49408, (batch_size, 77))
+    attention_mask = torch.ones(batch_size, 77)
+    
+    # 前向傳播
+    image_features, text_features = model(image, text, attention_mask)
+    similarity = model.get_similarity(image_features, text_features)
+    
+    # 打印輸出形狀
+    print(f"Image features shape: {image_features.shape}")
+    print(f"Text features shape: {text_features.shape}")
+    print(f"Similarity matrix shape: {similarity.shape}")
+    
+    # 計算參數量
+    total_params = sum(p.numel() for p in model.parameters())
+    print(f"Total parameters: {total_params:,}")
+
+# 創建模型
+model = create_clip_model('ViT-B/32')
+
+# 準備輸入
+image = torch.randn(1, 3, 224, 224)
+text = torch.randint(0, 49408, (1, 77))
+mask = torch.ones(1, 77)
+
+# 計算特徵
+image_features, text_features = model(image, text, mask)
+
+# 計算相似度
+similarity = model.get_similarity(image_features, text_features)
+
 
 ```
 
@@ -2938,69 +3496,320 @@ SAM 的目標函數結合了：
 ```python
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
+from typing import Optional, Tuple, List
 
-# Image Encoder (Vision Transformer)
-class ImageEncoder(nn.Module):
-    def __init__(self, img_size=1024, patch_size=16, embed_dim=768, depth=12, num_heads=12):
-        super(ImageEncoder, self).__init__()
-        self.patch_embed = nn.Conv2d(3, embed_dim, kernel_size=patch_size, stride=patch_size)
-        self.cls_token = nn.Parameter(torch.zeros(1, 1, embed_dim))
-        self.pos_embed = nn.Parameter(torch.zeros(1, (img_size // patch_size) ** 2 + 1, embed_dim))
-        self.encoder = nn.Sequential(
-            *[TransformerEncoderBlock(embed_dim, num_heads, embed_dim * 4) for _ in range(depth)]
-        )
+class LayerNorm2d(nn.Module):
+    def __init__(self, num_channels: int, eps: float = 1e-6):
+        super().__init__()
+        self.weight = nn.Parameter(torch.ones(num_channels))
+        self.bias = nn.Parameter(torch.zeros(num_channels))
+        self.eps = eps
 
-    def forward(self, x):
-        B, _, _, _ = x.size()
-        x = self.patch_embed(x).flatten(2).transpose(1, 2)  # (B, N, embed_dim)
-        cls_token = self.cls_token.expand(B, -1, -1)  # (B, 1, embed_dim)
-        x = torch.cat((cls_token, x), dim=1)  # (B, N+1, embed_dim)
-        x = x + self.pos_embed
-        x = self.encoder(x)
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        u = x.mean(1, keepdim=True)
+        s = (x - u).pow(2).mean(1, keepdim=True)
+        x = (x - u) / torch.sqrt(s + self.eps)
+        x = self.weight[:, None, None] * x + self.bias[:, None, None]
         return x
 
-# Prompt Encoder
-class PromptEncoder(nn.Module):
-    def __init__(self, embed_dim=768):
-        super(PromptEncoder, self).__init__()
-        self.point_embed = nn.Linear(2, embed_dim)
-        self.box_embed = nn.Linear(4, embed_dim)
+class MLPBlock(nn.Module):
+    def __init__(self, embedding_dim: int, mlp_dim: int, act=nn.GELU):
+        super().__init__()
+        self.lin1 = nn.Linear(embedding_dim, mlp_dim)
+        self.lin2 = nn.Linear(mlp_dim, embedding_dim)
+        self.act = act()
 
-    def forward(self, points=None, boxes=None):
-        point_features = self.point_embed(points) if points is not None else None
-        box_features = self.box_embed(boxes) if boxes is not None else None
-        return point_features, box_features
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        return self.lin2(self.act(self.lin1(x)))
 
-# Mask Decoder
-class MaskDecoder(nn.Module):
-    def __init__(self, embed_dim=768, num_heads=12, depth=8):
-        super(MaskDecoder, self).__init__()
-        self.decoder = nn.Sequential(
-            *[TransformerEncoderBlock(embed_dim, num_heads, embed_dim * 4) for _ in range(depth)]
+class AttentionLayer(nn.Module):
+    def __init__(self, embedding_dim: int, num_heads: int, dropout: float = 0.0):
+        super().__init__()
+        self.embedding_dim = embedding_dim
+        self.num_heads = num_heads
+        self.head_dim = embedding_dim // num_heads
+        self.scale = self.head_dim ** -0.5
+
+        self.qkv = nn.Linear(embedding_dim, embedding_dim * 3)
+        self.proj = nn.Linear(embedding_dim, embedding_dim)
+        self.dropout = nn.Dropout(dropout)
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        B, N, C = x.shape
+        qkv = self.qkv(x).reshape(B, N, 3, self.num_heads, self.head_dim).permute(2, 0, 3, 1, 4)
+        q, k, v = qkv.unbind(0)
+
+        attn = (q @ k.transpose(-2, -1)) * self.scale
+        attn = attn.softmax(dim=-1)
+        attn = self.dropout(attn)
+
+        x = (attn @ v).transpose(1, 2).reshape(B, N, C)
+        x = self.proj(x)
+        x = self.dropout(x)
+        return x
+
+class TransformerBlock(nn.Module):
+    def __init__(self, embedding_dim: int, num_heads: int, mlp_dim: int, dropout: float = 0.0):
+        super().__init__()
+        self.norm1 = nn.LayerNorm(embedding_dim)
+        self.attn = AttentionLayer(embedding_dim, num_heads, dropout)
+        self.norm2 = nn.LayerNorm(embedding_dim)
+        self.mlp = MLPBlock(embedding_dim, mlp_dim)
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        x = x + self.attn(self.norm1(x))
+        x = x + self.mlp(self.norm2(x))
+        return x
+
+class ImageEncoderViT(nn.Module):
+    def __init__(
+        self,
+        img_size: int = 1024,
+        patch_size: int = 16,
+        in_channels: int = 3,
+        embedding_dim: int = 768,
+        depth: int = 12,
+        num_heads: int = 12,
+        mlp_ratio: float = 4.0,
+        dropout: float = 0.0,
+    ):
+        super().__init__()
+        self.patch_embed = nn.Conv2d(in_channels, embedding_dim, kernel_size=patch_size, stride=patch_size)
+        
+        self.pos_embed = nn.Parameter(torch.zeros(1, (img_size // patch_size) ** 2, embedding_dim))
+        self.pos_drop = nn.Dropout(dropout)
+
+        self.blocks = nn.ModuleList([
+            TransformerBlock(
+                embedding_dim=embedding_dim,
+                num_heads=num_heads,
+                mlp_dim=int(embedding_dim * mlp_ratio),
+                dropout=dropout,
+            )
+            for _ in range(depth)
+        ])
+
+        self.neck = nn.Sequential(
+            nn.Conv2d(embedding_dim, embedding_dim, kernel_size=1),
+            LayerNorm2d(embedding_dim),
+            nn.Conv2d(embedding_dim, embedding_dim, kernel_size=3, padding=1),
         )
-        self.final_conv = nn.Conv2d(embed_dim, 1, kernel_size=1)
 
-    def forward(self, image_features, prompt_features):
-        # Concatenate image and prompt features
-        combined_features = image_features + prompt_features
-        decoded_features = self.decoder(combined_features)
-        mask = self.final_conv(decoded_features)
-        return mask
+        self.initialize_weights()
 
-# SAM Model
+    def initialize_weights(self):
+        torch.nn.init.normal_(self.pos_embed, std=0.02)
+        self.apply(self._init_weights)
+
+    def _init_weights(self, m):
+        if isinstance(m, nn.Linear):
+            torch.nn.init.xavier_uniform_(m.weight)
+            if m.bias is not None:
+                nn.init.constant_(m.bias, 0)
+        elif isinstance(m, nn.LayerNorm):
+            nn.init.constant_(m.bias, 0)
+            nn.init.constant_(m.weight, 1.0)
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        x = self.patch_embed(x)
+        B, C, H, W = x.shape
+        x = x.flatten(2).transpose(1, 2)
+        x = x + self.pos_embed
+        x = self.pos_drop(x)
+
+        for block in self.blocks:
+            x = block(x)
+
+        x = x.reshape(B, H, W, -1).permute(0, 3, 1, 2)
+        x = self.neck(x)
+        return x
+
+class PromptEncoder(nn.Module):
+    def __init__(
+        self,
+        embedding_dim: int = 256,
+        point_embedding_dim: int = 64,
+        hidden_dim: int = 256,
+    ):
+        super().__init__()
+        
+        self.point_embed = nn.Sequential(
+            nn.Linear(2, point_embedding_dim),
+            nn.GELU(),
+            nn.Linear(point_embedding_dim, embedding_dim),
+        )
+        
+        self.box_embed = nn.Sequential(
+            nn.Linear(4, embedding_dim),
+            nn.GELU(),
+            nn.Linear(embedding_dim, embedding_dim),
+        )
+        
+        self.not_a_point_embed = nn.Parameter(torch.randn(1, embedding_dim))
+
+    def forward(
+        self,
+        points: Optional[torch.Tensor] = None,
+        boxes: Optional[torch.Tensor] = None,
+    ) -> Tuple[torch.Tensor, torch.Tensor]:
+        point_embeddings = self.not_a_point_embed.expand(points.shape[0], -1) if points is None \
+                         else self.point_embed(points)
+        
+        if boxes is not None:
+            box_embeddings = self.box_embed(boxes)
+            return torch.cat([point_embeddings, box_embeddings], dim=1)
+        
+        return point_embeddings
+
+class MaskDecoder(nn.Module):
+    def __init__(
+        self,
+        transformer_dim: int = 256,
+        num_multimask_outputs: int = 3,
+        activation: Type[nn.Module] = nn.GELU,
+    ):
+        super().__init__()
+        
+        self.transformer_dim = transformer_dim
+        self.num_multimask_outputs = num_multimask_outputs
+
+        self.iou_token = nn.Parameter(torch.zeros(1, 1, transformer_dim))
+        self.mask_tokens = nn.Parameter(torch.zeros(1, num_multimask_outputs, transformer_dim))
+        
+        self.output_upscaling = nn.Sequential(
+            nn.ConvTranspose2d(transformer_dim, transformer_dim // 4, kernel_size=2, stride=2),
+            LayerNorm2d(transformer_dim // 4),
+            activation(),
+            nn.ConvTranspose2d(transformer_dim // 4, transformer_dim // 8, kernel_size=2, stride=2),
+            activation(),
+        )
+        
+        self.output_hypernetworks_mlps = nn.ModuleList([
+            MLPBlock(transformer_dim, transformer_dim, activation)
+            for i in range(num_multimask_outputs)
+        ])
+
+        self.iou_prediction_head = MLPBlock(transformer_dim, 1, activation)
+
+    def forward(
+        self,
+        image_embeddings: torch.Tensor,
+        prompt_embeddings: torch.Tensor,
+    ) -> Tuple[torch.Tensor, torch.Tensor]:
+        # Upscale image embeddings
+        image_embeddings = self.output_upscaling(image_embeddings)
+        
+        # Generate masks
+        masks = []
+        iou_pred = self.iou_prediction_head(prompt_embeddings)
+        
+        for i in range(self.num_multimask_outputs):
+            mask_embedding = self.mask_tokens[:, i:i+1]
+            hyper_in = prompt_embeddings + mask_embedding
+            hyper_in = self.output_hypernetworks_mlps[i](hyper_in)
+            mask = (hyper_in @ image_embeddings.flatten(2)).reshape(
+                image_embeddings.shape[0], 1, *image_embeddings.shape[-2:]
+            )
+            masks.append(mask)
+        
+        masks = torch.cat(masks, dim=1)
+        return masks, iou_pred
+
 class SAM(nn.Module):
-    def __init__(self, img_size=1024, patch_size=16, embed_dim=768, depth=12, num_heads=12):
-        super(SAM, self).__init__()
-        self.image_encoder = ImageEncoder(img_size, patch_size, embed_dim, depth, num_heads)
-        self.prompt_encoder = PromptEncoder(embed_dim)
-        self.mask_decoder = MaskDecoder(embed_dim, num_heads, depth)
+    def __init__(
+        self,
+        image_encoder: ImageEncoderViT,
+        prompt_encoder: PromptEncoder,
+        mask_decoder: MaskDecoder,
+    ):
+        super().__init__()
+        self.image_encoder = image_encoder
+        self.prompt_encoder = prompt_encoder
+        self.mask_decoder = mask_decoder
 
-    def forward(self, image, points=None, boxes=None):
-        image_features = self.image_encoder(image)
-        point_features, box_features = self.prompt_encoder(points, boxes)
-        prompt_features = point_features if point_features is not None else box_features
-        mask = self.mask_decoder(image_features, prompt_features)
-        return mask
+    def forward(
+        self,
+        images: torch.Tensor,
+        points: Optional[torch.Tensor] = None,
+        boxes: Optional[torch.Tensor] = None,
+    ) -> Tuple[torch.Tensor, torch.Tensor]:
+        image_embeddings = self.image_encoder(images)
+        prompt_embeddings = self.prompt_encoder(points, boxes)
+        masks, iou_predictions = self.mask_decoder(image_embeddings, prompt_embeddings)
+        return masks, iou_predictions
+
+def create_sam_model(model_type: str = "base"):
+    """Create a SAM model with specified configuration"""
+    configs = {
+        "base": dict(
+            embedding_dim=768,
+            num_heads=12,
+            depth=12,
+        ),
+        "large": dict(
+            embedding_dim=1024,
+            num_heads=16,
+            depth=24,
+        ),
+    }
+    
+    if model_type not in configs:
+        raise ValueError(f"Model type {model_type} not found. Available types: {list(configs.keys())}")
+    
+    config = configs[model_type]
+    
+    image_encoder = ImageEncoderViT(
+        embedding_dim=config["embedding_dim"],
+        num_heads=config["num_heads"],
+        depth=config["depth"],
+    )
+    
+    prompt_encoder = PromptEncoder(
+        embedding_dim=config["embedding_dim"] // 3,
+    )
+    
+    mask_decoder = MaskDecoder(
+        transformer_dim=config["embedding_dim"] // 3,
+    )
+    
+    return SAM(image_encoder, prompt_encoder, mask_decoder)
+
+# 測試代碼
+if __name__ == "__main__":
+    # 創建模型
+    model = create_sam_model("base")
+    
+    # 測試輸入
+    batch_size = 1
+    images = torch.randn(batch_size, 3, 1024, 1024)
+    points = torch.randn(batch_size, 2)
+    boxes = torch.randn(batch_size, 4)
+    
+    # 前向傳播
+    masks, iou_predictions = model(images, points, boxes)
+    
+    # 打印輸出形狀
+    print(f"Input image shape: {images.shape}")
+    print(f"Output masks shape: {masks.shape}")
+    print(f"IoU predictions shape: {iou_predictions.shape}")
+    
+    # 計算參數量
+    total_params = sum(p.numel() for p in model.parameters())
+    print(f"Total parameters: {total_params:,}")
+
+
+# 創建模型
+model = create_sam_model("base")
+
+# 準備輸入
+images = torch.randn(1, 3, 1024, 1024)
+points = torch.randn(1, 2)  # 可選
+boxes = torch.randn(1, 4)   # 可選
+
+# 生成遮罩
+masks, iou_predictions = model(images, points, boxes)
+
 
 ```
 
@@ -3120,73 +3929,226 @@ SAM 2 的目标函数结合了对象级别和像素级别的损失，确保模�
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from typing import Tuple, Optional
+import math
+
+class LayerNorm2d(nn.Module):
+    def __init__(self, num_channels: int, eps: float = 1e-6):
+        super().__init__()
+        self.weight = nn.Parameter(torch.ones(num_channels))
+        self.bias = nn.Parameter(torch.zeros(num_channels))
+        self.eps = eps
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        u = x.mean(1, keepdim=True)
+        s = (x - u).pow(2).mean(1, keepdim=True)
+        x = (x - u) / torch.sqrt(s + self.eps)
+        x = self.weight[:, None, None] * x + self.bias[:, None, None]
+        return x
 
 class ImageEncoder(nn.Module):
-    def __init__(self, in_channels=3, embed_dim=256):
+    def __init__(self, in_channels: int = 3, embed_dim: int = 256, depths: list = [2, 2, 6, 2]):
         super().__init__()
-        self.conv1 = nn.Conv2d(in_channels, 64, kernel_size=7, stride=2, padding=3)
-        self.conv2 = nn.Conv2d(64, 128, kernel_size=3, stride=2, padding=1)
-        self.conv3 = nn.Conv2d(128, embed_dim, kernel_size=3, stride=2, padding=1)
-        self.norm = nn.LayerNorm(embed_dim)
-        
-    def forward(self, x):
-        x = F.relu(self.conv1(x))
-        x = F.relu(self.conv2(x))
-        x = F.relu(self.conv3(x))
-        return self.norm(x.flatten(2).transpose(1, 2))
-
-class MemoryModule(nn.Module):
-    def __init__(self, embed_dim=256):
-        super().__init__()
-        self.memory_encoder = nn.TransformerEncoder(
-            nn.TransformerEncoderLayer(d_model=embed_dim, nhead=8), 
-            num_layers=2
+        self.patch_embed = nn.Sequential(
+            nn.Conv2d(in_channels, embed_dim//8, kernel_size=7, stride=4, padding=3),
+            LayerNorm2d(embed_dim//8),
+            nn.GELU(),
+            nn.Conv2d(embed_dim//8, embed_dim//4, kernel_size=3, stride=2, padding=1),
+            LayerNorm2d(embed_dim//4),
+            nn.GELU(),
+            nn.Conv2d(embed_dim//4, embed_dim//2, kernel_size=3, stride=2, padding=1),
+            LayerNorm2d(embed_dim//2),
+            nn.GELU(),
+            nn.Conv2d(embed_dim//2, embed_dim, kernel_size=3, stride=1, padding=1),
         )
-        self.memory_bank = None
         
-    def forward(self, x):
-        if self.memory_bank is None:
-            self.memory_bank = x
-        else:
-            self.memory_bank = torch.cat([self.memory_bank, x], dim=1)
-        return self.memory_encoder(self.memory_bank)
+        self.pos_embed = nn.Parameter(torch.zeros(1, embed_dim, 64, 64))
+        self.pos_drop = nn.Dropout(p=0.1)
+        
+        self.apply(self._init_weights)
+        
+    def _init_weights(self, m):
+        if isinstance(m, nn.Linear):
+            nn.init.trunc_normal_(m.weight, std=.02)
+            if m.bias is not None:
+                nn.init.constant_(m.bias, 0)
+        elif isinstance(m, nn.LayerNorm):
+            nn.init.constant_(m.bias, 0)
+            nn.init.constant_(m.weight, 1.0)
+            
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        x = self.patch_embed(x)
+        x = x + self.pos_embed
+        x = self.pos_drop(x)
+        return x
+
+class MemoryTransformer(nn.Module):
+    def __init__(self, embed_dim: int = 256, num_heads: int = 8, num_layers: int = 2, dropout: float = 0.1):
+        super().__init__()
+        self.memory_tokens = nn.Parameter(torch.zeros(1, 64, embed_dim))
+        self.memory_pos_embed = nn.Parameter(torch.zeros(1, 64, embed_dim))
+        
+        encoder_layer = nn.TransformerEncoderLayer(
+            d_model=embed_dim,
+            nhead=num_heads,
+            dim_feedforward=embed_dim * 4,
+            dropout=dropout,
+            activation='gelu',
+            batch_first=True
+        )
+        self.transformer = nn.TransformerEncoder(encoder_layer, num_layers=num_layers)
+        
+        self.apply(self._init_weights)
+        
+    def _init_weights(self, m):
+        if isinstance(m, nn.Linear):
+            nn.init.trunc_normal_(m.weight, std=.02)
+            if m.bias is not None:
+                nn.init.constant_(m.bias, 0)
+        elif isinstance(m, nn.LayerNorm):
+            nn.init.constant_(m.bias, 0)
+            nn.init.constant_(m.weight, 1.0)
+    
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        B = x.shape[0]
+        memory = self.memory_tokens.expand(B, -1, -1)
+        memory = memory + self.memory_pos_embed
+        
+        # Reshape spatial dimensions to sequence
+        h, w = x.shape[-2:]
+        x = x.flatten(2).transpose(1, 2)
+        
+        # Concatenate memory tokens with input
+        x = torch.cat([memory, x], dim=1)
+        
+        # Apply transformer
+        x = self.transformer(x)
+        
+        # Split memory tokens and spatial tokens
+        memory, spatial = x[:, :64], x[:, 64:]
+        spatial = spatial.transpose(1, 2).reshape(B, -1, h, w)
+        
+        return memory, spatial
 
 class MaskDecoder(nn.Module):
-    def __init__(self, embed_dim=256):
+    def __init__(self, embed_dim: int = 256):
         super().__init__()
         self.decoder = nn.Sequential(
-            nn.ConvTranspose2d(embed_dim, 128, kernel_size=2, stride=2),
-            nn.ReLU(),
-            nn.ConvTranspose2d(128, 64, kernel_size=2, stride=2),
-            nn.ReLU(),
-            nn.ConvTranspose2d(64, 1, kernel_size=2, stride=2),
-            nn.Sigmoid()
+            nn.ConvTranspose2d(embed_dim, embed_dim//2, kernel_size=2, stride=2),
+            LayerNorm2d(embed_dim//2),
+            nn.GELU(),
+            nn.ConvTranspose2d(embed_dim//2, embed_dim//4, kernel_size=2, stride=2),
+            LayerNorm2d(embed_dim//4),
+            nn.GELU(),
+            nn.ConvTranspose2d(embed_dim//4, embed_dim//8, kernel_size=2, stride=2),
+            LayerNorm2d(embed_dim//8),
+            nn.GELU(),
+            nn.Conv2d(embed_dim//8, 1, kernel_size=1)
         )
         
-    def forward(self, x, original_size):
-        x = x.transpose(1, 2).view(x.size(0), -1, x.size(1)//8, x.size(1)//8)
-        x = self.decoder(x)
-        return F.interpolate(x, size=original_size, mode='bilinear')
+        self.apply(self._init_weights)
+        
+    def _init_weights(self, m):
+        if isinstance(m, (nn.Conv2d, nn.ConvTranspose2d)):
+            nn.init.kaiming_normal_(m.weight, mode='fan_out', nonlinearity='relu')
+            if m.bias is not None:
+                nn.init.constant_(m.bias, 0)
+                
+    def forward(self, memory: torch.Tensor, spatial: torch.Tensor) -> torch.Tensor:
+        # Use memory to condition spatial features
+        B, N, C = memory.shape
+        memory = memory.mean(dim=1).view(B, C, 1, 1)
+        x = spatial * memory
+        
+        # Decode to mask
+        mask = self.decoder(x)
+        return mask
 
 class SAM2(nn.Module):
-    def __init__(self, embed_dim=256):
+    def __init__(
+        self,
+        img_size: int = 1024,
+        in_channels: int = 3,
+        embed_dim: int = 256,
+        num_heads: int = 8,
+        num_layers: int = 2,
+        dropout: float = 0.1
+    ):
         super().__init__()
-        self.image_encoder = ImageEncoder(embed_dim=embed_dim)
-        self.memory_module = MemoryModule(embed_dim=embed_dim)
-        self.mask_decoder = MaskDecoder(embed_dim=embed_dim)
+        self.image_encoder = ImageEncoder(in_channels, embed_dim)
+        self.memory_transformer = MemoryTransformer(embed_dim, num_heads, num_layers, dropout)
+        self.mask_decoder = MaskDecoder(embed_dim)
         
-    def forward(self, x, prompts=None):
-        # 編碼圖像特徵
+    def forward(
+        self,
+        x: torch.Tensor,
+        prompts: Optional[torch.Tensor] = None
+    ) -> Tuple[torch.Tensor, torch.Tensor]:
+        # Encode image
         features = self.image_encoder(x)
         
-        # 記憶體處理
-        memory_features = self.memory_module(features)
+        # Process with memory transformer
+        memory, spatial = self.memory_transformer(features)
         
-        # 解碼生成遮罩
-        original_size = (x.size(2), x.size(3))
-        masks = self.mask_decoder(memory_features, original_size)
+        # Decode mask
+        mask = self.mask_decoder(memory, spatial)
         
-        return masks
+        # Resize mask to input resolution
+        mask = F.interpolate(mask, size=x.shape[-2:], mode='bilinear', align_corners=False)
+        
+        return mask, memory
+
+def create_sam2_model(model_type: str = "base") -> SAM2:
+    """Create a SAM2 model with specified configuration"""
+    configs = {
+        "base": dict(
+            embed_dim=256,
+            num_heads=8,
+            num_layers=2,
+        ),
+        "large": dict(
+            embed_dim=512,
+            num_heads=16,
+            num_layers=4,
+        ),
+    }
+    
+    if model_type not in configs:
+        raise ValueError(f"Model type {model_type} not found. Available types: {list(configs.keys())}")
+    
+    return SAM2(**configs[model_type])
+
+# 測試代碼
+if __name__ == "__main__":
+    # 創建模型
+    model = create_sam2_model("base")
+    
+    # 測試輸入
+    batch_size = 2
+    x = torch.randn(batch_size, 3, 1024, 1024)
+    
+    # 前向傳播
+    mask, memory = model(x)
+    
+    # 打印輸出形狀
+    print(f"Input shape: {x.shape}")
+    print(f"Mask shape: {mask.shape}")
+    print(f"Memory shape: {memory.shape}")
+    
+    # 計算參數量
+    total_params = sum(p.numel() for p in model.parameters())
+    print(f"Total parameters: {total_params:,}")
+
+
+# 創建模型
+model = create_sam2_model("base")
+
+# 準備輸入
+x = torch.randn(1, 3, 1024, 1024)
+
+# 生成遮罩
+mask, memory = model(x)
+
 
 ```
 
@@ -3311,63 +4273,332 @@ Stable Diffusion 使用擴散模型的損失函數，ControlNet 增加了條件�
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from typing import Optional, List, Tuple
+import math
 
-# Stable Diffusion 的 U-Net 模块
+class SinusoidalPositionEmbeddings(nn.Module):
+    """時間步長的位置編碼"""
+    def __init__(self, dim: int):
+        super().__init__()
+        self.dim = dim
+
+    def forward(self, time: torch.Tensor) -> torch.Tensor:
+        device = time.device
+        half_dim = self.dim // 2
+        embeddings = math.log(10000) / (half_dim - 1)
+        embeddings = torch.exp(torch.arange(half_dim, device=device) * -embeddings)
+        embeddings = time[:, None] * embeddings[None, :]
+        embeddings = torch.cat((embeddings.sin(), embeddings.cos()), dim=-1)
+        return embeddings
+
+class ResnetBlock(nn.Module):
+    """Resnet 塊"""
+    def __init__(self, in_channels: int, out_channels: int):
+        super().__init__()
+        self.conv1 = nn.Conv2d(in_channels, out_channels, 3, padding=1)
+        self.conv2 = nn.Conv2d(out_channels, out_channels, 3, padding=1)
+        self.norm1 = nn.GroupNorm(32, out_channels)
+        self.norm2 = nn.GroupNorm(32, out_channels)
+        self.act = nn.SiLU()
+        
+        if in_channels != out_channels:
+            self.shortcut = nn.Conv2d(in_channels, out_channels, 1)
+        else:
+            self.shortcut = nn.Identity()
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        identity = self.shortcut(x)
+        
+        x = self.conv1(x)
+        x = self.norm1(x)
+        x = self.act(x)
+        
+        x = self.conv2(x)
+        x = self.norm2(x)
+        x = self.act(x)
+        
+        return x + identity
+
+class AttentionBlock(nn.Module):
+    """自注意力塊"""
+    def __init__(self, channels: int, num_heads: int = 8):
+        super().__init__()
+        self.channels = channels
+        self.num_heads = num_heads
+        
+        self.norm = nn.GroupNorm(32, channels)
+        self.qkv = nn.Conv2d(channels, channels * 3, 1)
+        self.proj = nn.Conv2d(channels, channels, 1)
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        B, C, H, W = x.shape
+        
+        qkv = self.qkv(self.norm(x))
+        q, k, v = qkv.chunk(3, dim=1)
+        
+        q = q.view(B, self.num_heads, C // self.num_heads, H * W)
+        k = k.view(B, self.num_heads, C // self.num_heads, H * W)
+        v = v.view(B, self.num_heads, C // self.num_heads, H * W)
+        
+        scale = (C // self.num_heads) ** -0.5
+        attn = (q @ k.transpose(-2, -1)) * scale
+        attn = attn.softmax(dim=-1)
+        
+        x = (attn @ v).view(B, C, H, W)
+        return x + self.proj(x)
+
 class UNet(nn.Module):
-    def __init__(self, in_channels=3, out_channels=3, base_channels=64):
-        super(UNet, self).__init__()
-        self.encoder = nn.Sequential(
-            nn.Conv2d(in_channels, base_channels, 3, 1, 1),
-            nn.ReLU(),
-            nn.Conv2d(base_channels, base_channels * 2, 3, 2, 1),
-            nn.ReLU()
+    """改進的 U-Net 架構"""
+    def __init__(
+        self,
+        in_channels: int = 3,
+        model_channels: int = 128,
+        out_channels: int = 3,
+        num_res_blocks: int = 2,
+        attention_resolutions: Tuple[int] = (16, 8),
+        dropout: float = 0.0,
+        channel_mult: Tuple[int] = (1, 2, 4, 8),
+        conv_resample: bool = True,
+        num_heads: int = 8
+    ):
+        super().__init__()
+        
+        self.time_embed_dim = model_channels * 4
+        self.time_embed = nn.Sequential(
+            SinusoidalPositionEmbeddings(model_channels),
+            nn.Linear(model_channels, self.time_embed_dim),
+            nn.SiLU(),
+            nn.Linear(self.time_embed_dim, self.time_embed_dim),
         )
-        self.middle = nn.Sequential(
-            nn.Conv2d(base_channels * 2, base_channels * 4, 3, 1, 1),
-            nn.ReLU()
+        
+        # 輸入投影
+        self.input_blocks = nn.ModuleList([
+            nn.Conv2d(in_channels, model_channels, 3, padding=1)
+        ])
+        
+        # 下採樣塊
+        input_block_chans = [model_channels]
+        ch = model_channels
+        ds = 1
+        for level, mult in enumerate(channel_mult):
+            for _ in range(num_res_blocks):
+                layers = [ResnetBlock(ch, mult * model_channels)]
+                ch = mult * model_channels
+                if ds in attention_resolutions:
+                    layers.append(AttentionBlock(ch, num_heads=num_heads))
+                self.input_blocks.append(nn.Sequential(*layers))
+                input_block_chans.append(ch)
+            if level != len(channel_mult) - 1:
+                self.input_blocks.append(
+                    nn.Conv2d(ch, ch, 3, stride=2, padding=1)
+                )
+                input_block_chans.append(ch)
+                ds *= 2
+        
+        # 中間塊
+        self.middle_block = nn.Sequential(
+            ResnetBlock(ch, ch),
+            AttentionBlock(ch, num_heads=num_heads),
+            ResnetBlock(ch, ch)
         )
-        self.decoder = nn.Sequential(
-            nn.ConvTranspose2d(base_channels * 4, base_channels * 2, 3, 2, 1, output_padding=1),
-            nn.ReLU(),
-            nn.ConvTranspose2d(base_channels * 2, out_channels, 3, 1, 1),
-            nn.Tanh()
+        
+        # 上採樣塊
+        self.output_blocks = nn.ModuleList([])
+        for level, mult in list(enumerate(channel_mult))[::-1]:
+            for i in range(num_res_blocks + 1):
+                layers = [
+                    ResnetBlock(
+                        ch + input_block_chans.pop(),
+                        model_channels * mult
+                    )
+                ]
+                ch = model_channels * mult
+                if ds in attention_resolutions:
+                    layers.append(AttentionBlock(ch, num_heads=num_heads))
+                if level and i == num_res_blocks:
+                    layers.append(
+                        nn.ConvTranspose2d(ch, ch, 4, stride=2, padding=1)
+                    )
+                    ds //= 2
+                self.output_blocks.append(nn.Sequential(*layers))
+        
+        # 輸出投影
+        self.out = nn.Sequential(
+            nn.GroupNorm(32, ch),
+            nn.SiLU(),
+            nn.Conv2d(ch, out_channels, 3, padding=1)
         )
 
-    def forward(self, x):
-        enc = self.encoder(x)
-        mid = self.middle(enc)
-        out = self.decoder(mid)
-        return out
+    def forward(self, x: torch.Tensor, timesteps: torch.Tensor) -> torch.Tensor:
+        # 時間編碼
+        emb = self.time_embed(timesteps)
+        
+        # 下採樣路徑
+        h = x
+        hs = []
+        for module in self.input_blocks:
+            h = module(h)
+            hs.append(h)
+        
+        # 中間處理
+        h = self.middle_block(h)
+        
+        # 上採樣路徑
+        for module in self.output_blocks:
+            h = torch.cat([h, hs.pop()], dim=1)
+            h = module(h)
+            
+        return self.out(h)
 
-# ControlNet 模块
 class ControlNet(nn.Module):
-    def __init__(self, in_channels=1, control_channels=64):
-        super(ControlNet, self).__init__()
-        self.control_branch = nn.Sequential(
-            nn.Conv2d(in_channels, control_channels, 3, 1, 1),
-            nn.ReLU(),
-            nn.Conv2d(control_channels, control_channels, 3, 1, 1),
-            nn.ReLU()
+    """改進的 ControlNet 架構"""
+    def __init__(
+        self,
+        in_channels: int = 3,
+        model_channels: int = 128,
+        control_channels: int = 64,
+        num_res_blocks: int = 2,
+        attention_resolutions: Tuple[int] = (16, 8),
+        dropout: float = 0.0,
+        channel_mult: Tuple[int] = (1, 2, 4, 8),
+        conv_resample: bool = True,
+        num_heads: int = 8
+    ):
+        super().__init__()
+        
+        self.control_encoder = nn.Sequential(
+            nn.Conv2d(in_channels, control_channels, 3, padding=1),
+            nn.GroupNorm(32, control_channels),
+            nn.SiLU(),
+            nn.Conv2d(control_channels, control_channels, 3, padding=1),
+            nn.GroupNorm(32, control_channels),
+            nn.SiLU(),
+            nn.Conv2d(control_channels, model_channels, 3, padding=1)
+        )
+        
+        self.control_unet = UNet(
+            in_channels=model_channels,
+            model_channels=model_channels,
+            out_channels=model_channels,
+            num_res_blocks=num_res_blocks,
+            attention_resolutions=attention_resolutions,
+            dropout=dropout,
+            channel_mult=channel_mult,
+            num_heads=num_heads
         )
 
-    def forward(self, control_input):
-        return self.control_branch(control_input)
+    def forward(self, x: torch.Tensor, control: torch.Tensor, timesteps: torch.Tensor) -> torch.Tensor:
+        control_features = self.control_encoder(control)
+        return self.control_unet(x + control_features, timesteps)
 
-# Stable Diffusion + ControlNet 整合
 class StableDiffusionControlNet(nn.Module):
-    def __init__(self, unet_channels=64, control_channels=64):
-        super(StableDiffusionControlNet, self).__init__()
-        self.unet = UNet(base_channels=unet_channels)
-        self.controlnet = ControlNet(control_channels=control_channels)
+    """Stable Diffusion 與 ControlNet 的整合"""
+    def __init__(
+        self,
+        unet_channels: int = 128,
+        control_channels: int = 64,
+        num_res_blocks: int = 2,
+        attention_resolutions: Tuple[int] = (16, 8),
+        channel_mult: Tuple[int] = (1, 2, 4, 8),
+        num_heads: int = 8
+    ):
+        super().__init__()
+        
+        self.unet = UNet(
+            model_channels=unet_channels,
+            num_res_blocks=num_res_blocks,
+            attention_resolutions=attention_resolutions,
+            channel_mult=channel_mult,
+            num_heads=num_heads
+        )
+        
+        self.controlnet = ControlNet(
+            model_channels=unet_channels,
+            control_channels=control_channels,
+            num_res_blocks=num_res_blocks,
+            attention_resolutions=attention_resolutions,
+            channel_mult=channel_mult,
+            num_heads=num_heads
+        )
 
-    def forward(self, noise, control_input):
-        # 提取控制特征
-        control_features = self.controlnet(control_input)
-        # 将控制特征与噪声输入融合
-        combined_input = noise + control_features
-        # 使用 U-Net 生成图像
-        output = self.unet(combined_input)
-        return output
+    def forward(
+        self,
+        x: torch.Tensor,
+        control: torch.Tensor,
+        timesteps: torch.Tensor,
+        noise: Optional[torch.Tensor] = None
+    ) -> torch.Tensor:
+        if noise is None:
+            noise = torch.randn_like(x)
+            
+        # 控制網絡的輸出
+        control_output = self.controlnet(x, control, timesteps)
+        
+        # 主要 UNet 的輸出
+        unet_output = self.unet(x + control_output, timesteps)
+        
+        return unet_output
+
+def create_stable_diffusion_controlnet(model_type: str = "base"):
+    """創建 Stable Diffusion ControlNet 模型"""
+    configs = {
+        "base": dict(
+            unet_channels=128,
+            control_channels=64,
+            num_res_blocks=2,
+            attention_resolutions=(16, 8),
+            channel_mult=(1, 2, 4, 8),
+            num_heads=8
+        ),
+        "large": dict(
+            unet_channels=256,
+            control_channels=128,
+            num_res_blocks=3,
+            attention_resolutions=(16, 8, 4),
+            channel_mult=(1, 2, 4, 8, 16),
+            num_heads=16
+        )
+    }
+    
+    if model_type not in configs:
+        raise ValueError(f"Model type {model_type} not found. Available types: {list(configs.keys())}")
+    
+    return StableDiffusionControlNet(**configs[model_type])
+
+# 測試代碼
+if __name__ == "__main__":
+    # 創建模型
+    model = create_stable_diffusion_controlnet("base")
+    
+    # 測試輸入
+    batch_size = 2
+    x = torch.randn(batch_size, 3, 256, 256)
+    control = torch.randn(batch_size, 3, 256, 256)
+    timesteps = torch.randint(0, 1000, (batch_size,))
+    
+    # 前向傳播
+    output = model(x, control, timesteps)
+    
+    # 打印輸出形狀
+    print(f"Input shape: {x.shape}")
+    print(f"Control shape: {control.shape}")
+    print(f"Output shape: {output.shape}")
+    
+    # 計算參數量
+    total_params = sum(p.numel() for p in model.parameters())
+    print(f"Total parameters: {total_params:,}")
+
+# 創建模型
+model = create_stable_diffusion_controlnet("base")
+
+# 準備輸入
+x = torch.randn(1, 3, 256, 256)
+control = torch.randn(1, 3, 256, 256)
+timesteps = torch.randint(0, 1000, (1,))
+
+# 生成圖像
+output = model(x, control, timesteps)
+
 
 ```
 

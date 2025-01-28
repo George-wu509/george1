@@ -20,17 +20,39 @@
               "icon": "lucide-file",
               "title": "Pytorch coding exercise"
             }
-          },
+          }
+        ]
+      },
+      {
+        "id": "6c10ac76bb2f5a56",
+        "type": "tabs",
+        "children": [
           {
-            "id": "3490ab9387604274",
+            "id": "b6c1e5d448494fdb",
             "type": "leaf",
             "state": {
-              "type": "image",
+              "type": "markdown",
               "state": {
-                "file": "materials/Pasted image 20250127224233.png"
+                "file": "Interview - AI projects/AI model Summary architecture.md",
+                "mode": "source",
+                "source": false
               },
-              "icon": "lucide-image",
-              "title": "Pasted image 20250127224233"
+              "icon": "lucide-file",
+              "title": "AI model Summary architecture"
+            }
+          },
+          {
+            "id": "070efc46c1f7a8c3",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "Interview - handon AI model/Pytorch coding exercise.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "Pytorch coding exercise"
             }
           }
         ],
@@ -90,7 +112,8 @@
       }
     ],
     "direction": "horizontal",
-    "width": 301.5
+    "width": 301.5,
+    "collapsed": true
   },
   "right": {
     "id": "7870daaab79c7df9",
@@ -176,10 +199,12 @@
       "table-editor-obsidian:Advanced Tables Toolbar": false
     }
   },
-  "active": "7210625e0140b47b",
+  "active": "1e7a83ede2555fa5",
   "lastOpenFiles": [
     "Interview - AI projects/AI model Summary architecture.md",
     "Interview - handon AI model/Pytorch coding exercise.md",
+    "DL - Latest update/AI Latest update.md",
+    "materials/Pasted image 20250127224233.png",
     "materials/Pasted image 20250127232140.png",
     "materials/Pasted image 20250127231625.png",
     "materials/Pasted image 20250127231347.png",
@@ -187,7 +212,6 @@
     "DL - CLIP/CLIP base.md",
     "DL - CLIP/CLIP - Contrastive Learning.md",
     "materials/Pasted image 20250127225004.png",
-    "materials/Pasted image 20250127224233.png",
     "DL - Transformer and ViT/Transformer and ViT - architecture.md",
     "DL - GAN/GAN - Real-ESRGAN colab.md",
     "materials/Pasted image 20250127220601.png",

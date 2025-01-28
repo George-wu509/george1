@@ -1046,6 +1046,136 @@ print("Loss:", loss.item())
 2. 使用 `BCELoss` 作為二分類損失函數。
 3. 前向傳播計算損失，後向傳播更新權重。
 
+perplexity
+```python
+import torch
+import torch.nn as nn
+import torch.optim as optim
+from torch.utils.data import Dataset, DataLoader
+import numpy as np
+
+class BinaryClassifier(nn.Module):
+    def __init__(self, input_size, hidden_size1=128, hidden_size2=64):
+        super().__init__()
+        self.network = nn.Sequential(
+            nn.Linear(input_size, hidden_size1),
+            nn.ReLU(),
+            nn.BatchNorm1d(hidden_size1),
+            nn.Dropout(0.3),
+            
+            nn.Linear(hidden_size1, hidden_size2),
+            nn.ReLU(),
+            nn.BatchNorm1d(hidden_size2),
+            nn.Dropout(0.2),
+            
+            nn.Linear(hidden_size2, 1),
+            nn.Sigmoid()
+        )
+    
+    def forward(self, x):
+        return self.network(x)
+
+# 資料集類別
+class CustomDataset(Dataset):
+    def __init__(self, X, y):
+        self.X = torch.FloatTensor(X)
+        self.y = torch.FloatTensor(y)
+    
+    def __len__(self):
+        return len(self.y)
+    
+    def __getitem__(self, idx):
+        return self.X[idx], self.y[idx]
+
+# 訓練函數
+def train_model(model, train_loader, criterion, optimizer, device):
+    model.train()
+    running_loss = 0.0
+    correct = 0
+    total = 0
+    
+    for inputs, labels in train_loader:
+        inputs, labels = inputs.to(device), labels.to(device)
+        
+        optimizer.zero_grad()
+        outputs = model(inputs)
+        loss = criterion(outputs, labels.unsqueeze(1))
+        
+        loss.backward()
+        optimizer.step()
+        
+        running_loss += loss.item()
+        predicted = (outputs > 0.5).float()
+        total += labels.size(0)
+        correct += (predicted.squeeze() == labels).sum().item()
+    
+    accuracy = 100 * correct / total
+    return running_loss / len(train_loader), accuracy
+
+# 評估函數
+def evaluate_model(model, test_loader, criterion, device):
+    model.eval()
+    running_loss = 0.0
+    correct = 0
+    total = 0
+    
+    with torch.no_grad():
+        for inputs, labels in test_loader:
+            inputs, labels = inputs.to(device), labels.to(device)
+            outputs = model(inputs)
+            loss = criterion(outputs, labels.unsqueeze(1))
+            
+            running_loss += loss.item()
+            predicted = (outputs > 0.5).float()
+            total += labels.size(0)
+            correct += (predicted.squeeze() == labels).sum().item()
+    
+    accuracy = 100 * correct / total
+    return running_loss / len(test_loader), accuracy
+
+# 主程式
+def main():
+    # 設定超參數
+    input_size = 10  # 特徵數量
+    batch_size = 32
+    learning_rate = 0.001
+    num_epochs = 50
+    
+    # 創建隨機數據（實際應用中替換為真實數據）
+    X_train = np.random.randn(1000, input_size)
+    y_train = np.random.randint(0, 2, 1000)
+    X_test = np.random.randn(200, input_size)
+    y_test = np.random.randint(0, 2, 200)
+    
+    # 創建數據加載器
+    train_dataset = CustomDataset(X_train, y_train)
+    test_dataset = CustomDataset(X_test, y_test)
+    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
+    test_loader = DataLoader(test_dataset, batch_size=batch_size)
+    
+    # 設定設備
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    
+    # 創建模型
+    model = BinaryClassifier(input_size).to(device)
+    criterion = nn.BCELoss()
+    optimizer = optim.Adam(model.parameters(), lr=learning_rate)
+    
+    # 訓練循環
+    for epoch in range(num_epochs):
+        train_loss, train_acc = train_model(model, train_loader, criterion, optimizer, device)
+        test_loss, test_acc = evaluate_model(model, test_loader, criterion, device)
+        
+        if (epoch + 1) % 10 == 0:
+            print(f'Epoch [{epoch+1}/{num_epochs}]')
+            print(f'Train Loss: {train_loss:.4f}, Train Acc: {train_acc:.2f}%')
+            print(f'Test Loss: {test_loss:.4f}, Test Acc: {test_acc:.2f}%')
+
+if __name__ == '__main__':
+    main()
+
+```
+
 ---
 
 ### **27. 編寫代碼實現一個 CNN 用於處理 CIFAR-10 圖像分類**
@@ -1110,6 +1240,12 @@ for images, labels in train_loader:
 2. 使用交叉熵損失函數和 Adam 優化器。
 3. 測試模型，運行一個批次的數據。
 
+perplexity
+```python
+
+```
+
+
 ---
 
 ### **28. 編寫代碼實現一個自定義的激活函數，如 Swish 或 GELU**
@@ -1138,6 +1274,13 @@ print("Output Tensor:", output_tensor)
 
 1. 定義 Swish 激活函數，公式為 $x * \text{sigmoid}(x)$。
 2. 使用自定義激活函數進行測試，輸入張量包含正數和負數。
+
+
+perplexity
+```python
+
+```
+
 
 | 激活函數        | 特點/適用場景               | 注意事項              | PyTorch Code                         |
 | ----------- | --------------------- | ----------------- | ------------------------------------ |
@@ -1186,6 +1329,13 @@ print("Focal Loss:", loss.item())
 1. 定義 Focal Loss，適合處理類別不平衡問題。
 2. 使用 `binary_cross_entropy_with_logits` 計算 BCE 損失，並加權計算焦點損失。
 3. 測試自定義 Focal Loss，輸出損失值。
+
+
+perplexity
+```python
+
+```
+
 
 ### **常用的損失函數列表**
 
@@ -1335,6 +1485,13 @@ print("Output Shape:", outputs.shape)
 1. 定義三層網絡，其中第二層與第一層有跳躍連接。
 2. 跳躍連接通過加法操作保留前層信息，提升梯度流動能力。
 3. 測試模型輸入和輸出形狀。
+
+
+perplexity
+```python
+
+```
+
 
 ---
 
@@ -1799,37 +1956,42 @@ print("Loss:", loss.item())
 ### **38. 實現一個vision Transformer神經網絡
 
 #### 代碼
+[[AI model Summary architecture###### Vision Transformer (ViT)]]
 
 ```python
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 
 class PatchEmbed(nn.Module):
+    """將圖像分割成patch並進行線性嵌入"""
     def __init__(self, img_size=224, patch_size=16, in_channels=3, embed_dim=768):
         super().__init__()
-        self.img_size = img_size
-        self.patch_size = patch_size
-        self.n_patches = (img_size // patch_size) ** 2
+        self.img_size = (img_size, img_size)
+        self.patch_size = (patch_size, patch_size)
+        self.num_patches = (img_size // patch_size) ** 2
         
-        self.proj = nn.Conv2d(
-            in_channels,
-            embed_dim,
-            kernel_size=patch_size,
-            stride=patch_size
-        )
+        self.proj = nn.Conv2d(in_channels, embed_dim, 
+                             kernel_size=patch_size, stride=patch_size)
+        self.norm = nn.LayerNorm(embed_dim)
 
     def forward(self, x):
-        x = self.proj(x)  # (B, E, H', W')
-        x = x.flatten(2)  # (B, E, N)
-        x = x.transpose(1, 2)  # (B, N, E)
+        B, C, H, W = x.shape
+        assert H == self.img_size[0] and W == self.img_size[1], \
+            f"Input image size ({H}*{W}) doesn't match model ({self.img_size[0]}*{self.img_size[1]})."
+        
+        # (B, C, H, W) -> (B, D, H/P, W/P) -> (B, H/P*W/P, D)
+        x = self.proj(x).flatten(2).transpose(1, 2)
+        x = self.norm(x)
         return x
 
 class Attention(nn.Module):
+    """多頭自注意力機制"""
     def __init__(self, dim, num_heads=8, qkv_bias=False, attn_drop=0., proj_drop=0.):
         super().__init__()
+        assert dim % num_heads == 0, 'dim should be divisible by num_heads'
         self.num_heads = num_heads
-        self.scale = (dim // num_heads) ** -0.5
+        head_dim = dim // num_heads
+        self.scale = head_dim ** -0.5
 
         self.qkv = nn.Linear(dim, dim * 3, bias=qkv_bias)
         self.attn_drop = nn.Dropout(attn_drop)
@@ -1839,7 +2001,7 @@ class Attention(nn.Module):
     def forward(self, x):
         B, N, C = x.shape
         qkv = self.qkv(x).reshape(B, N, 3, self.num_heads, C // self.num_heads).permute(2, 0, 3, 1, 4)
-        q, k, v = qkv[0], qkv[1], qkv[2]
+        q, k, v = qkv.unbind(0)
 
         attn = (q @ k.transpose(-2, -1)) * self.scale
         attn = attn.softmax(dim=-1)
@@ -1850,72 +2012,16 @@ class Attention(nn.Module):
         x = self.proj_drop(x)
         return x
 
-class VisionTransformer(nn.Module):
-    def __init__(self, img_size=224, patch_size=16, in_channels=3, num_classes=1000,
-                 embed_dim=768, depth=12, num_heads=12, mlp_ratio=4., qkv_bias=True,
-                 drop_rate=0., attn_drop_rate=0.):
-        super().__init__()
-        self.patch_embed = PatchEmbed(img_size, patch_size, in_channels, embed_dim)
-        num_patches = self.patch_embed.n_patches
-
-        self.cls_token = nn.Parameter(torch.zeros(1, 1, embed_dim))
-        self.pos_embed = nn.Parameter(torch.zeros(1, num_patches + 1, embed_dim))
-        self.pos_drop = nn.Dropout(p=drop_rate)
-
-        self.blocks = nn.ModuleList([
-            TransformerBlock(
-                dim=embed_dim,
-                num_heads=num_heads,
-                mlp_ratio=mlp_ratio,
-                qkv_bias=qkv_bias,
-                drop=drop_rate,
-                attn_drop=attn_drop_rate
-            )
-            for _ in range(depth)
-        ])
-
-        self.norm = nn.LayerNorm(embed_dim)
-        self.head = nn.Linear(embed_dim, num_classes)
-
-    def forward(self, x):
-        B = x.shape[0]
-        x = self.patch_embed(x)
-
-        cls_tokens = self.cls_token.expand(B, -1, -1)
-        x = torch.cat((cls_tokens, x), dim=1)
-        x = x + self.pos_embed
-        x = self.pos_drop(x)
-
-        for block in self.blocks:
-            x = block(x)
-
-        x = self.norm(x)
-        x = x[:, 0]
-        x = self.head(x)
-        return x
-
-class TransformerBlock(nn.Module):
-    def __init__(self, dim, num_heads, mlp_ratio=4., qkv_bias=False,
-                 drop=0., attn_drop=0.):
-        super().__init__()
-        self.norm1 = nn.LayerNorm(dim)
-        self.attn = Attention(dim, num_heads=num_heads, qkv_bias=qkv_bias,
-                            attn_drop=attn_drop, proj_drop=drop)
-        self.norm2 = nn.LayerNorm(dim)
-        self.mlp = MLP(in_features=dim, hidden_features=int(dim * mlp_ratio),
-                      drop=drop)
-
-    def forward(self, x):
-        x = x + self.attn(self.norm1(x))
-        x = x + self.mlp(self.norm2(x))
-        return x
-
 class MLP(nn.Module):
-    def __init__(self, in_features, hidden_features, drop=0.):
+    """多層感知機"""
+    def __init__(self, in_features, hidden_features=None, out_features=None, act_layer=nn.GELU, drop=0.):
         super().__init__()
+        out_features = out_features or in_features
+        hidden_features = hidden_features or in_features
+        
         self.fc1 = nn.Linear(in_features, hidden_features)
-        self.act = nn.GELU()
-        self.fc2 = nn.Linear(hidden_features, in_features)
+        self.act = act_layer()
+        self.fc2 = nn.Linear(hidden_features, out_features)
         self.drop = nn.Dropout(drop)
 
     def forward(self, x):
@@ -1926,6 +2032,146 @@ class MLP(nn.Module):
         x = self.drop(x)
         return x
 
+class Block(nn.Module):
+    """Transformer 編碼器塊"""
+    def __init__(self, dim, num_heads, mlp_ratio=4., qkv_bias=False, 
+                 drop=0., attn_drop=0., act_layer=nn.GELU, norm_layer=nn.LayerNorm):
+        super().__init__()
+        self.norm1 = norm_layer(dim)
+        self.attn = Attention(dim, num_heads=num_heads, qkv_bias=qkv_bias, 
+                            attn_drop=attn_drop, proj_drop=drop)
+        self.norm2 = norm_layer(dim)
+        mlp_hidden_dim = int(dim * mlp_ratio)
+        self.mlp = MLP(in_features=dim, hidden_features=mlp_hidden_dim, 
+                      act_layer=act_layer, drop=drop)
+
+    def forward(self, x):
+        x = x + self.attn(self.norm1(x))
+        x = x + self.mlp(self.norm2(x))
+        return x
+
+class VisionTransformer(nn.Module):
+    """Vision Transformer"""
+    def __init__(self, img_size=224, patch_size=16, in_channels=3, num_classes=1000,
+                 embed_dim=768, depth=12, num_heads=12, mlp_ratio=4., qkv_bias=True,
+                 drop_rate=0., attn_drop_rate=0., norm_layer=nn.LayerNorm):
+        super().__init__()
+        self.num_classes = num_classes
+        self.num_features = self.embed_dim = embed_dim
+
+        # Patch embedding
+        self.patch_embed = PatchEmbed(img_size=img_size, patch_size=patch_size, 
+                                    in_channels=in_channels, embed_dim=embed_dim)
+        num_patches = self.patch_embed.num_patches
+
+        # Class token and position embedding
+        self.cls_token = nn.Parameter(torch.zeros(1, 1, embed_dim))
+        self.pos_embed = nn.Parameter(torch.zeros(1, num_patches + 1, embed_dim))
+        self.pos_drop = nn.Dropout(p=drop_rate)
+
+        # Transformer blocks
+        self.blocks = nn.Sequential(*[
+            Block(dim=embed_dim, num_heads=num_heads, mlp_ratio=mlp_ratio,
+                  qkv_bias=qkv_bias, drop=drop_rate, attn_drop=attn_drop_rate,
+                  norm_layer=norm_layer)
+            for _ in range(depth)
+        ])
+        
+        self.norm = norm_layer(embed_dim)
+        self.head = nn.Linear(embed_dim, num_classes)
+
+        # Initialize weights
+        self.initialize_weights()
+
+    def initialize_weights(self):
+        # Initialize patch_embed like nn.Linear (instead of nn.Conv2d)
+        w = self.patch_embed.proj.weight.data
+        torch.nn.init.xavier_uniform_(w.view([w.shape[0], -1]))
+
+        # Initialize cls token
+        torch.nn.init.normal_(self.cls_token, std=.02)
+
+        # Initialize position embedding
+        torch.nn.init.normal_(self.pos_embed, std=.02)
+
+        # Initialize all other Linear layers
+        self.apply(self._init_weights)
+
+    def _init_weights(self, m):
+        if isinstance(m, nn.Linear):
+            torch.nn.init.xavier_uniform_(m.weight)
+            if isinstance(m, nn.Linear) and m.bias is not None:
+                nn.init.constant_(m.bias, 0)
+        elif isinstance(m, nn.LayerNorm):
+            nn.init.constant_(m.bias, 0)
+            nn.init.constant_(m.weight, 1.0)
+
+    def forward_features(self, x):
+        B = x.shape[0]
+        x = self.patch_embed(x)
+
+        # Add class token
+        cls_tokens = self.cls_token.expand(B, -1, -1)
+        x = torch.cat((cls_tokens, x), dim=1)
+        
+        # Add position embedding
+        x = x + self.pos_embed
+        x = self.pos_drop(x)
+
+        # Apply Transformer blocks
+        x = self.blocks(x)
+        x = self.norm(x)
+        
+        return x[:, 0]  # Return class token
+
+    def forward(self, x):
+        x = self.forward_features(x)
+        x = self.head(x)
+        return x
+
+def create_vit_model(model_name='ViT-B/16', num_classes=1000, has_logits=True):
+    """創建 ViT 模型"""
+    configs = {
+        'ViT-B/16': dict(patch_size=16, embed_dim=768, depth=12, num_heads=12),
+        'ViT-L/16': dict(patch_size=16, embed_dim=1024, depth=24, num_heads=16),
+        'ViT-H/14': dict(patch_size=14, embed_dim=1280, depth=32, num_heads=16),
+    }
+    
+    config = configs[model_name]
+    model = VisionTransformer(patch_size=config['patch_size'],
+                            embed_dim=config['embed_dim'],
+                            depth=config['depth'],
+                            num_heads=config['num_heads'],
+                            num_classes=num_classes)
+    return model
+
+# 測試代碼
+if __name__ == "__main__":
+    # 創建模型
+    model = create_vit_model('ViT-B/16')
+    
+    # 測試輸入
+    x = torch.randn(1, 3, 224, 224)
+    
+    # 前向傳播
+    output = model(x)
+    
+    # 打印輸出形狀
+    print(f"Input shape: {x.shape}")
+    print(f"Output shape: {output.shape}")
+    
+    # 計算參數量
+    total_params = sum(p.numel() for p in model.parameters())
+    print(f"Total parameters: {total_params:,}")
+
+# 創建模型
+model = create_vit_model('ViT-B/16', num_classes=1000)
+
+# 準備輸入
+x = torch.randn(1, 3, 224, 224)
+
+# 前向傳播
+output = model(x)
 
 ```
 ## 程式碼說明
@@ -2040,31 +2286,93 @@ print("Model Loaded Successfully")
 ```python
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 
 class SelfAttention(nn.Module):
-    def __init__(self, embed_size):
-        super(SelfAttention, self).__init__()
-        self.query = nn.Linear(embed_size, embed_size)
-        self.key = nn.Linear(embed_size, embed_size)
-        self.value = nn.Linear(embed_size, embed_size)
-        self.softmax = nn.Softmax(dim=-1)
+    def __init__(self, embed_dim, num_heads=8, dropout=0.0):
+        """
+        初始化自注意力層
+        
+        參數:
+        embed_dim: 輸入特徵的維度
+        num_heads: 注意力頭的數量
+        dropout: dropout 比率
+        """
+        super().__init__()
+        assert embed_dim % num_heads == 0, "embed_dim 必須能被 num_heads 整除"
+        
+        self.embed_dim = embed_dim
+        self.num_heads = num_heads
+        self.head_dim = embed_dim // num_heads
+        self.scale = self.head_dim ** -0.5  # 縮放因子
+        
+        # 定義線性變換層
+        self.qkv = nn.Linear(embed_dim, embed_dim * 3)  # 用於生成 query, key, value
+        self.proj = nn.Linear(embed_dim, embed_dim)     # 輸出投影
+        self.dropout = nn.Dropout(dropout)
 
-    def forward(self, x):
-        Q = self.query(x)
-        K = self.key(x)
-        V = self.value(x)
-        attention_weights = self.softmax(torch.matmul(Q, K.transpose(-2, -1)) / (K.size(-1) ** 0.5))
-        out = torch.matmul(attention_weights, V)
-        return out, attention_weights
+    def forward(self, x, mask=None):
+        """
+        前向傳播
+        
+        參數:
+        x: 輸入張量, 形狀為 (batch_size, seq_len, embed_dim)
+        mask: 可選的注意力遮罩
+        
+        返回:
+        output: 注意力機制的輸出
+        """
+        batch_size, seq_len, embed_dim = x.shape
+        
+        # 1. 生成 query, key, value
+        qkv = self.qkv(x)  # (batch_size, seq_len, 3 * embed_dim)
+        qkv = qkv.reshape(batch_size, seq_len, 3, self.num_heads, self.head_dim)
+        qkv = qkv.permute(2, 0, 3, 1, 4)  # (3, batch_size, num_heads, seq_len, head_dim)
+        q, k, v = qkv[0], qkv[1], qkv[2]  # 分離 query, key, value
+        
+        # 2. 計算注意力分數
+        attn = (q @ k.transpose(-2, -1)) * self.scale  # (batch_size, num_heads, seq_len, seq_len)
+        
+        # 3. 應用遮罩（如果有）
+        if mask is not None:
+            attn = attn.masked_fill(mask == 0, float('-inf'))
+        
+        # 4. Softmax 歸一化
+        attn = F.softmax(attn, dim=-1)
+        attn = self.dropout(attn)
+        
+        # 5. 與 value 相乘並重組
+        x = (attn @ v).transpose(1, 2)  # (batch_size, seq_len, num_heads, head_dim)
+        x = x.reshape(batch_size, seq_len, embed_dim)  # (batch_size, seq_len, embed_dim)
+        
+        # 6. 最終的線性投影
+        x = self.proj(x)
+        x = self.dropout(x)
+        
+        return x
 
-# 測試自注意力層
-embed_size = 64
-seq_len, batch_size = 10, 32
-x = torch.randn(batch_size, seq_len, embed_size)
-self_attention = SelfAttention(embed_size)
-out, attn_weights = self_attention(x)
-print("Output Shape:", out.shape)
-print("Attention Weights Shape:", attn_weights.shape)
+# 測試代碼
+if __name__ == "__main__":
+    # 創建模型
+    embed_dim = 256
+    num_heads = 8
+    attention = SelfAttention(embed_dim, num_heads)
+    
+    # 生成測試數據
+    batch_size = 4
+    seq_len = 10
+    x = torch.randn(batch_size, seq_len, embed_dim)
+    
+    # 可選：創建注意力遮罩
+    mask = torch.ones(batch_size, num_heads, seq_len, seq_len)
+    
+    # 前向傳播
+    output = attention(x, mask)
+    
+    # 打印形狀
+    print(f"Input shape: {x.shape}")
+    print(f"Output shape: {output.shape}")
+
 
 ```
 #### 中文解釋
@@ -2086,31 +2394,160 @@ perplexity
 
 #### 代碼
 
+perplexity
 ```python
+import torch
+import torch.nn as nn
+import torch.optim as optim
+from torch.utils.data import DataLoader
+from torchvision import datasets, transforms
+import matplotlib.pyplot as plt
+
 class Autoencoder(nn.Module):
-    def __init__(self, input_dim, hidden_dim):
-        super(Autoencoder, self).__init__()
+    def __init__(self, input_dim=784, encoding_dim=128):
+        """
+        初始化自編碼器
+        
+        參數:
+        input_dim: 輸入維度 (例如 MNIST: 28*28=784)
+        encoding_dim: 壓縮後的維度
+        """
+        super().__init__()
+        
+        # 編碼器
         self.encoder = nn.Sequential(
-            nn.Linear(input_dim, hidden_dim),
+            nn.Linear(input_dim, 512),
+            nn.ReLU(),
+            nn.Linear(512, 256),
+            nn.ReLU(),
+            nn.Linear(256, encoding_dim),
             nn.ReLU()
         )
+        
+        # 解碼器
         self.decoder = nn.Sequential(
-            nn.Linear(hidden_dim, input_dim),
-            nn.Sigmoid()
+            nn.Linear(encoding_dim, 256),
+            nn.ReLU(),
+            nn.Linear(256, 512),
+            nn.ReLU(),
+            nn.Linear(512, input_dim),
+            nn.Sigmoid()  # 輸出範圍限制在 [0,1]
         )
-
+        
     def forward(self, x):
+        # 編碼
         encoded = self.encoder(x)
+        # 解碼
         decoded = self.decoder(encoded)
         return encoded, decoded
 
-# 測試自編碼器
-input_dim, hidden_dim = 100, 32
-model = Autoencoder(input_dim, hidden_dim)
-data = torch.randn(16, input_dim)  # 16 條數據
-encoded, decoded = model(data)
-print("Encoded Shape:", encoded.shape)
-print("Decoded Shape:", decoded.shape)
+def train_autoencoder(model, train_loader, num_epochs=10, learning_rate=1e-3):
+    """
+    訓練自編碼器
+    
+    參數:
+    model: 自編碼器模型
+    train_loader: 訓練數據加載器
+    num_epochs: 訓練輪數
+    learning_rate: 學習率
+    """
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    model = model.to(device)
+    criterion = nn.MSELoss()
+    optimizer = optim.Adam(model.parameters(), lr=learning_rate)
+    
+    for epoch in range(num_epochs):
+        total_loss = 0
+        for data in train_loader:
+            img, _ = data
+            img = img.view(img.size(0), -1).to(device)
+            
+            # 前向傳播
+            _, reconstructed = model(img)
+            loss = criterion(reconstructed, img)
+            
+            # 反向傳播和優化
+            optimizer.zero_grad()
+            loss.backward()
+            optimizer.step()
+            
+            total_loss += loss.item()
+            
+        avg_loss = total_loss / len(train_loader)
+        print(f'Epoch [{epoch+1}/{num_epochs}], Average Loss: {avg_loss:.4f}')
+
+def visualize_reconstruction(model, test_loader, num_images=5):
+    """
+    視覺化重建結果
+    """
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    model.eval()
+    with torch.no_grad():
+        for data in test_loader:
+            img, _ = data
+            img = img.view(img.size(0), -1).to(device)
+            _, reconstructed = model(img)
+            
+            # 顯示原始圖像和重建圖像
+            plt.figure(figsize=(12, 4))
+            for i in range(num_images):
+                # 原始圖像
+                plt.subplot(2, num_images, i + 1)
+                plt.imshow(img[i].cpu().view(28, 28), cmap='gray')
+                plt.axis('off')
+                if i == 0:
+                    plt.title('Original Images')
+                
+                # 重建圖像
+                plt.subplot(2, num_images, i + 1 + num_images)
+                plt.imshow(reconstructed[i].cpu().view(28, 28), cmap='gray')
+                plt.axis('off')
+                if i == 0:
+                    plt.title('Reconstructed Images')
+            
+            plt.tight_layout()
+            plt.show()
+            break
+
+# 主程序
+if __name__ == "__main__":
+    # 設置數據轉換
+    transform = transforms.Compose([
+        transforms.ToTensor()
+    ])
+    
+    # 加載 MNIST 數據集
+    train_dataset = datasets.MNIST(root='./data', train=True, transform=transform, download=True)
+    test_dataset = datasets.MNIST(root='./data', train=False, transform=transform, download=True)
+    
+    train_loader = DataLoader(train_dataset, batch_size=128, shuffle=True)
+    test_loader = DataLoader(test_dataset, batch_size=128, shuffle=False)
+    
+    # 創建模型
+    input_dim = 28 * 28  # MNIST 圖像大小
+    encoding_dim = 128   # 壓縮後的維度
+    model = Autoencoder(input_dim, encoding_dim)
+    
+    # 訓練模型
+    train_autoencoder(model, train_loader)
+    
+    # 視覺化結果
+    visualize_reconstruction(model, test_loader)
+
+
+# 創建自編碼器
+autoencoder = Autoencoder(input_dim=784, encoding_dim=128)
+
+# 準備數據
+transform = transforms.Compose([transforms.ToTensor()])
+dataset = datasets.MNIST('./data', transform=transform, download=True)
+dataloader = DataLoader(dataset, batch_size=128, shuffle=True)
+
+# 訓練模型
+train_autoencoder(autoencoder, dataloader)
+
+# 視覺化結果
+visualize_reconstruction(autoencoder, dataloader)
 
 ```
 #### 中文解釋
@@ -2118,11 +2555,6 @@ print("Decoded Shape:", decoded.shape)
 1. 自編碼器包括編碼器和解碼器兩部分。
 2. 編碼器將高維數據壓縮為低維表示，解碼器重構原始數據。
 3. 測試時輸入為高維數據，輸出壓縮表示和重構結果。
-
-perplexity
-```python
-
-```
 
 
 ---
@@ -2163,6 +2595,80 @@ print("Output Shape:", output.shape)
 
 perplexity
 ```python
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+from torch_geometric.nn import GCNConv
+from torch_geometric.datasets import Planetoid
+
+class GNN(nn.Module):
+    def __init__(self, input_dim, hidden_dim, output_dim, dropout=0.5):
+        super(GNN, self).__init__()
+        # 第一層圖卷積
+        self.conv1 = GCNConv(input_dim, hidden_dim)
+        # 第二層圖卷積
+        self.conv2 = GCNConv(hidden_dim, output_dim)
+        self.dropout = dropout
+
+    def forward(self, x, edge_index):
+        # 第一層: 圖卷積 + ReLU + Dropout
+        x = self.conv1(x, edge_index)
+        x = F.relu(x)
+        x = F.dropout(x, p=self.dropout, training=self.training)
+        
+        # 第二層: 圖卷積 + softmax
+        x = self.conv2(x, edge_index)
+        return F.log_softmax(x, dim=1)
+
+def train_gnn():
+    # 加載 Cora 數據集
+    dataset = Planetoid(root='/tmp/Cora', name='Cora')
+    data = dataset[0]
+    
+    # 創建模型
+    model = GNN(
+        input_dim=dataset.num_features,
+        hidden_dim=16,
+        output_dim=dataset.num_classes
+    )
+    
+    # 優化器
+    optimizer = torch.optim.Adam(model.parameters(), lr=0.01, weight_decay=5e-4)
+    
+    # 訓練模型
+    model.train()
+    for epoch in range(200):
+        optimizer.zero_grad()
+        # 前向傳播
+        output = model(data.x, data.edge_index)
+        # 計算訓練集上的損失
+        loss = F.nll_loss(output[data.train_mask], data.y[data.train_mask])
+        # 反向傳播
+        loss.backward()
+        optimizer.step()
+        
+        if (epoch + 1) % 10 == 0:
+            print(f'Epoch {epoch+1:03d}, Loss: {loss.item():.4f}')
+    
+    return model, data
+
+def evaluate(model, data):
+    model.eval()
+    with torch.no_grad():
+        output = model(data.x, data.edge_index)
+        # 在測試集上計算準確率
+        pred = output[data.test_mask].max(1)[1]
+        correct = pred.eq(data.y[data.test_mask]).sum().item()
+        acc = correct / data.test_mask.sum().item()
+    return acc
+
+if __name__ == "__main__":
+    # 訓練模型
+    model, data = train_gnn()
+    
+    # 評估模型
+    acc = evaluate(model, data)
+    print(f'Test Accuracy: {acc:.4f}')
 
 ```
 
@@ -2220,6 +2726,194 @@ print("Logvar Shape:", logvar.shape)
 
 perplexity
 ```python
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+from torch.distributions import Normal
+from torchvision import datasets, transforms
+from torch.utils.data import DataLoader
+import matplotlib.pyplot as plt
+
+class VAE(nn.Module):
+    def __init__(self, input_dim=784, hidden_dim=400, latent_dim=20):
+        """
+        初始化變分自編碼器
+        
+        參數:
+        input_dim: 輸入維度 (例如 MNIST: 28*28=784)
+        hidden_dim: 隱藏層維度
+        latent_dim: 潛在空間維度
+        """
+        super().__init__()
+        
+        # 編碼器
+        self.encoder = nn.Sequential(
+            nn.Linear(input_dim, hidden_dim),
+            nn.ReLU(),
+            nn.Linear(hidden_dim, hidden_dim),
+            nn.ReLU()
+        )
+        
+        # 均值和方差預測層
+        self.fc_mu = nn.Linear(hidden_dim, latent_dim)
+        self.fc_var = nn.Linear(hidden_dim, latent_dim)
+        
+        # 解碼器
+        self.decoder = nn.Sequential(
+            nn.Linear(latent_dim, hidden_dim),
+            nn.ReLU(),
+            nn.Linear(hidden_dim, hidden_dim),
+            nn.ReLU(),
+            nn.Linear(hidden_dim, input_dim),
+            nn.Sigmoid()
+        )
+        
+    def encode(self, x):
+        """編碼過程：輸入 -> 潛在空間參數"""
+        h = self.encoder(x)
+        mu = self.fc_mu(h)
+        log_var = self.fc_var(h)
+        return mu, log_var
+    
+    def reparameterize(self, mu, log_var):
+        """重參數化技巧"""
+        std = torch.exp(0.5 * log_var)
+        # 使用 torch.distributions 創建正態分佈
+        eps = Normal(0, 1).sample(mu.shape).to(mu.device)
+        z = mu + eps * std
+        return z
+    
+    def decode(self, z):
+        """解碼過程：潛在變量 -> 重建"""
+        return self.decoder(z)
+    
+    def forward(self, x):
+        """前向傳播"""
+        mu, log_var = self.encode(x)
+        z = self.reparameterize(mu, log_var)
+        return self.decode(z), mu, log_var
+
+def loss_function(recon_x, x, mu, log_var):
+    """
+    VAE 損失函數：重建損失 + KL散度
+    """
+    # 重建損失（二元交叉熵）
+    BCE = F.binary_cross_entropy(recon_x, x, reduction='sum')
+    
+    # KL 散度
+    KLD = -0.5 * torch.sum(1 + log_var - mu.pow(2) - log_var.exp())
+    
+    return BCE + KLD
+
+def train_vae(model, train_loader, num_epochs=50, learning_rate=1e-3):
+    """訓練 VAE"""
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    model = model.to(device)
+    optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
+    
+    for epoch in range(num_epochs):
+        model.train()
+        total_loss = 0
+        for batch_idx, (data, _) in enumerate(train_loader):
+            data = data.view(data.size(0), -1).to(device)
+            optimizer.zero_grad()
+            
+            recon_batch, mu, log_var = model(data)
+            loss = loss_function(recon_batch, data, mu, log_var)
+            
+            loss.backward()
+            total_loss += loss.item()
+            optimizer.step()
+            
+        avg_loss = total_loss / len(train_loader.dataset)
+        print(f'Epoch [{epoch+1}/{num_epochs}], Average Loss: {avg_loss:.4f}')
+
+def visualize_results(model, test_loader, num_images=10):
+    """視覺化重建結果和生成樣本"""
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    model.eval()
+    
+    with torch.no_grad():
+        # 獲取一批測試數據
+        data, _ = next(iter(test_loader))
+        data = data.view(data.size(0), -1).to(device)
+        recon, _, _ = model(data)
+        
+        # 生成隨機樣本
+        sample = torch.randn(num_images, model.fc_mu.out_features).to(device)
+        generated = model.decode(sample)
+        
+        # 顯示原始圖像、重建圖像和生成圖像
+        plt.figure(figsize=(15, 5))
+        
+        # 原始圖像
+        for i in range(num_images):
+            plt.subplot(3, num_images, i + 1)
+            plt.imshow(data[i].cpu().view(28, 28), cmap='gray')
+            plt.axis('off')
+            if i == 0:
+                plt.title('Original')
+        
+        # 重建圖像
+        for i in range(num_images):
+            plt.subplot(3, num_images, i + 1 + num_images)
+            plt.imshow(recon[i].cpu().view(28, 28), cmap='gray')
+            plt.axis('off')
+            if i == 0:
+                plt.title('Reconstructed')
+        
+        # 生成圖像
+        for i in range(num_images):
+            plt.subplot(3, num_images, i + 1 + 2*num_images)
+            plt.imshow(generated[i].cpu().view(28, 28), cmap='gray')
+            plt.axis('off')
+            if i == 0:
+                plt.title('Generated')
+        
+        plt.tight_layout()
+        plt.show()
+
+# 主程序
+if __name__ == "__main__":
+    # 設置數據轉換
+    transform = transforms.Compose([
+        transforms.ToTensor()
+    ])
+    
+    # 加載 MNIST 數據集
+    train_dataset = datasets.MNIST(root='./data', train=True, transform=transform, download=True)
+    test_dataset = datasets.MNIST(root='./data', train=False, transform=transform, download=True)
+    
+    train_loader = DataLoader(train_dataset, batch_size=128, shuffle=True)
+    test_loader = DataLoader(test_dataset, batch_size=128, shuffle=False)
+    
+    # 創建模型
+    input_dim = 28 * 28  # MNIST 圖像大小
+    hidden_dim = 400     # 隱藏層維度
+    latent_dim = 20      # 潛在空間維度
+    model = VAE(input_dim, hidden_dim, latent_dim)
+    
+    # 訓練模型
+    train_vae(model, train_loader)
+    
+    # 視覺化結果
+    visualize_results(model, test_loader)
+
+# 創建 VAE
+vae = VAE(input_dim=784, hidden_dim=400, latent_dim=20)
+
+# 準備數據
+transform = transforms.Compose([transforms.ToTensor()])
+dataset = datasets.MNIST('./data', transform=transform, download=True)
+dataloader = DataLoader(dataset, batch_size=128, shuffle=True)
+
+# 訓練模型
+train_vae(vae, dataloader)
+
+# 視覺化結果
+visualize_results(vae, dataloader)
+
+
 
 ```
 
@@ -2363,6 +3057,7 @@ print("Output Shape:", outputs.shape)
 ### **49. 實現一個UNet神經網絡
 
 #### 代碼
+[[AI model Summary architecture#U-Net]]
 
 ```python
 import torch
@@ -2370,13 +3065,16 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 class DoubleConv(nn.Module):
-    def __init__(self, in_channels, out_channels):
+    """(Conv => BN => ReLU) * 2"""
+    def __init__(self, in_channels, out_channels, mid_channels=None):
         super().__init__()
+        if not mid_channels:
+            mid_channels = out_channels
         self.double_conv = nn.Sequential(
-            nn.Conv2d(in_channels, out_channels, kernel_size=3, padding=1),
-            nn.BatchNorm2d(out_channels),
+            nn.Conv2d(in_channels, mid_channels, kernel_size=3, padding=1, bias=False),
+            nn.BatchNorm2d(mid_channels),
             nn.ReLU(inplace=True),
-            nn.Conv2d(out_channels, out_channels, kernel_size=3, padding=1),
+            nn.Conv2d(mid_channels, out_channels, kernel_size=3, padding=1, bias=False),
             nn.BatchNorm2d(out_channels),
             nn.ReLU(inplace=True)
         )
@@ -2384,59 +3082,125 @@ class DoubleConv(nn.Module):
     def forward(self, x):
         return self.double_conv(x)
 
-class UNet(nn.Module):
-    def __init__(self, in_channels=3, num_classes=1):
+class Down(nn.Module):
+    """Downscaling with maxpool then double conv"""
+    def __init__(self, in_channels, out_channels):
         super().__init__()
-        
-        # 編碼器部分
-        self.conv1 = DoubleConv(in_channels, 64)
-        self.conv2 = DoubleConv(64, 128)
-        self.conv3 = DoubleConv(128, 256)
-        self.conv4 = DoubleConv(256, 512)
-        self.conv5 = DoubleConv(512, 1024)
-        
-        # 池化層
-        self.pool = nn.MaxPool2d(kernel_size=2, stride=2)
-        
-        # 解碼器部分
-        self.up1 = nn.ConvTranspose2d(1024, 512, kernel_size=2, stride=2)
-        self.up_conv1 = DoubleConv(1024, 512)
-        
-        self.up2 = nn.ConvTranspose2d(512, 256, kernel_size=2, stride=2)
-        self.up_conv2 = DoubleConv(512, 256)
-        
-        self.up3 = nn.ConvTranspose2d(256, 128, kernel_size=2, stride=2)
-        self.up_conv3 = DoubleConv(256, 128)
-        
-        self.up4 = nn.ConvTranspose2d(128, 64, kernel_size=2, stride=2)
-        self.up_conv4 = DoubleConv(128, 64)
-        
-        # 輸出層
-        self.out = nn.Conv2d(64, num_classes, kernel_size=1)
+        self.maxpool_conv = nn.Sequential(
+            nn.MaxPool2d(2),
+            DoubleConv(in_channels, out_channels)
+        )
 
     def forward(self, x):
-        # 編碼路徑
-        x1 = self.conv1(x)
-        x2 = self.conv2(self.pool(x1))
-        x3 = self.conv3(self.pool(x2))
-        x4 = self.conv4(self.pool(x3))
-        x5 = self.conv5(self.pool(x4))
-        
-        # 解碼路徑
-        x = self.up1(x5)
-        x = self.up_conv1(torch.cat([x4, x], dim=1))
-        
-        x = self.up2(x)
-        x = self.up_conv2(torch.cat([x3, x], dim=1))
-        
-        x = self.up3(x)
-        x = self.up_conv3(torch.cat([x2, x], dim=1))
-        
-        x = self.up4(x)
-        x = self.up_conv4(torch.cat([x1, x], dim=1))
-        
-        return self.out(x)
+        return self.maxpool_conv(x)
 
+class Up(nn.Module):
+    """Upscaling then double conv"""
+    def __init__(self, in_channels, out_channels, bilinear=True):
+        super().__init__()
+
+        # 如果使用雙線性插值進行上採樣
+        if bilinear:
+            self.up = nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True)
+            self.conv = DoubleConv(in_channels, out_channels, in_channels // 2)
+        else:
+            self.up = nn.ConvTranspose2d(in_channels, in_channels // 2, kernel_size=2, stride=2)
+            self.conv = DoubleConv(in_channels, out_channels)
+
+    def forward(self, x1, x2):
+        x1 = self.up(x1)
+        
+        # 處理輸入大小不匹配的情況
+        diff_y = x2.size()[2] - x1.size()[2]
+        diff_x = x2.size()[3] - x1.size()[3]
+
+        x1 = F.pad(x1, [diff_x // 2, diff_x - diff_x // 2,
+                       diff_y // 2, diff_y - diff_y // 2])
+        
+        x = torch.cat([x2, x1], dim=1)
+        return self.conv(x)
+
+class OutConv(nn.Module):
+    """最後的輸出卷積層"""
+    def __init__(self, in_channels, out_channels):
+        super().__init__()
+        self.conv = nn.Conv2d(in_channels, out_channels, kernel_size=1)
+
+    def forward(self, x):
+        return self.conv(x)
+
+class UNet(nn.Module):
+    def __init__(self, n_channels=3, n_classes=1, bilinear=True):
+        super().__init__()
+        self.n_channels = n_channels
+        self.n_classes = n_classes
+        self.bilinear = bilinear
+
+        factor = 2 if bilinear else 1
+
+        self.inc = DoubleConv(n_channels, 64)
+        self.down1 = Down(64, 128)
+        self.down2 = Down(128, 256)
+        self.down3 = Down(256, 512)
+        self.down4 = Down(512, 1024 // factor)
+        self.up1 = Up(1024, 512 // factor, bilinear)
+        self.up2 = Up(512, 256 // factor, bilinear)
+        self.up3 = Up(256, 128 // factor, bilinear)
+        self.up4 = Up(128, 64, bilinear)
+        self.outc = OutConv(64, n_classes)
+
+        # 初始化權重
+        self.apply(self._init_weights)
+
+    def _init_weights(self, m):
+        if isinstance(m, nn.Conv2d):
+            nn.init.kaiming_normal_(m.weight, mode='fan_out', nonlinearity='relu')
+            if m.bias is not None:
+                nn.init.constant_(m.bias, 0)
+        elif isinstance(m, nn.BatchNorm2d):
+            nn.init.constant_(m.weight, 1)
+            nn.init.constant_(m.bias, 0)
+
+    def forward(self, x):
+        x1 = self.inc(x)
+        x2 = self.down1(x1)
+        x3 = self.down2(x2)
+        x4 = self.down3(x3)
+        x5 = self.down4(x4)
+        x = self.up1(x5, x4)
+        x = self.up2(x, x3)
+        x = self.up3(x, x2)
+        x = self.up4(x, x1)
+        logits = self.outc(x)
+        return logits
+
+def create_unet(n_channels=3, n_classes=1, bilinear=True):
+    """創建 U-Net 模型"""
+    model = UNet(n_channels=n_channels, n_classes=n_classes, bilinear=bilinear)
+    return model
+
+# 測試代碼
+if __name__ == "__main__":
+    # 創建模型
+    model = create_unet()
+    
+    # 測試輸入
+    batch_size = 1
+    channels = 3
+    height = 572
+    width = 572
+    x = torch.randn(batch_size, channels, height, width)
+    
+    # 前向傳播
+    output = model(x)
+    
+    # 打印輸出形狀
+    print(f"Input shape: {x.shape}")
+    print(f"Output shape: {output.shape}")
+    
+    # 計算模型參數量
+    total_params = sum(p.numel() for p in model.parameters())
+    print(f"Total parameters: {total_params:,}")
 
 ```
 ## 程式碼說明
@@ -2468,24 +3232,20 @@ class UNet(nn.Module):
 - 幫助保留細節信息
 - 使用torch.cat進行特徵串接
 
-使用方式:
-```python
-model = UNet(in_channels=3, num_classes=1)
-x = torch.randn(1, 3, 572, 572)
-output = model(x)
-```
-
 這個UNet實現適用於多種圖像分割任務，例如:
 
 - 醫學影像分割
 - 衛星圖像分割
 - 自動駕駛場景分割
 
+
+
 ---
 
 ### **50. 實現一個YOLO神經網絡
 
 #### 代碼
+[[AI model Summary architecture###### YOLOv7]]
 
 ```python
 import torch
@@ -2593,12 +3353,191 @@ class YOLO(nn.Module):
 - 最後輸出包含邊界框座標、置信度和類別機率[4](https://blog.paperspace.com/how-to-implement-a-yolo-object-detector-in-pytorch/)
 - 使用Dropout防止過擬合[3](https://viso.ai/computer-vision/yolo-explained/)
 
-使用方式:
+perplexity
 ```python
-model = YOLO(num_classes=20)
-x = torch.randn(1, 3, 448, 448)
-output = model(x)
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
 
+class ConvBNSiLU(nn.Module):
+    """Convolution + BatchNorm + SiLU activation"""
+    def __init__(self, in_channels, out_channels, kernel_size, stride=1, padding=None, groups=1):
+        super().__init__()
+        if padding is None:
+            padding = kernel_size // 2
+        self.conv = nn.Conv2d(
+            in_channels,
+            out_channels,
+            kernel_size=kernel_size,
+            stride=stride,
+            padding=padding,
+            groups=groups,
+            bias=False,
+        )
+        self.bn = nn.BatchNorm2d(out_channels)
+        self.act = nn.SiLU(inplace=True)
+
+    def forward(self, x):
+        return self.act(self.bn(self.conv(x)))
+
+class ELAN(nn.Module):
+    """Extended Linear Aggregation Node"""
+    def __init__(self, in_channels, out_channels):
+        super().__init__()
+        mid_channels = out_channels // 2
+        self.conv1 = ConvBNSiLU(in_channels, mid_channels, 1)
+        self.conv2 = ConvBNSiLU(mid_channels, mid_channels, 3)
+        self.conv3 = ConvBNSiLU(mid_channels, mid_channels, 3)
+        self.conv4 = ConvBNSiLU(mid_channels, mid_channels, 3)
+        self.conv5 = ConvBNSiLU(mid_channels * 4, out_channels, 1)
+
+    def forward(self, x):
+        x1 = self.conv1(x)
+        x2 = self.conv2(x1)
+        x3 = self.conv3(x2)
+        x4 = self.conv4(x3)
+        out = self.conv5(torch.cat([x1, x2, x3, x4], dim=1))
+        return out
+
+class ELAN_Block(nn.Module):
+    """ELAN Block with downsampling"""
+    def __init__(self, in_channels, out_channels):
+        super().__init__()
+        self.downsample = ConvBNSiLU(in_channels, out_channels, 3, stride=2)
+        self.elan = ELAN(out_channels, out_channels)
+
+    def forward(self, x):
+        x = self.downsample(x)
+        x = self.elan(x)
+        return x
+
+class SPPCSPBlock(nn.Module):
+    """Spatial Pyramid Pooling CSP block"""
+    def __init__(self, in_channels, out_channels):
+        super().__init__()
+        mid_channels = in_channels // 2
+        self.conv1 = ConvBNSiLU(in_channels, mid_channels, 1)
+        self.conv2 = ConvBNSiLU(in_channels, mid_channels, 1)
+        self.conv3 = ConvBNSiLU(mid_channels * 4, out_channels, 1)
+        self.pools = nn.ModuleList([
+            nn.MaxPool2d(kernel_size=k, stride=1, padding=k//2)
+            for k in [5, 9, 13]
+        ])
+
+    def forward(self, x):
+        x1 = self.conv1(x)
+        x2 = self.conv2(x)
+        pools = [x2]
+        pools.extend([pool(x2) for pool in self.pools])
+        x2 = torch.cat(pools, dim=1)
+        return self.conv3(torch.cat([x1, x2], dim=1))
+
+class YOLOv7(nn.Module):
+    def __init__(self, num_classes=80, input_channels=3):
+        super().__init__()
+        
+        # Backbone
+        self.stem = nn.Sequential(
+            ConvBNSiLU(input_channels, 32, 3),
+            ConvBNSiLU(32, 64, 3, stride=2),
+            ConvBNSiLU(64, 64, 3)
+        )
+        
+        self.stage1 = ELAN_Block(64, 128)
+        self.stage2 = ELAN_Block(128, 256)
+        self.stage3 = ELAN_Block(256, 512)
+        self.stage4 = ELAN_Block(512, 1024)
+        
+        self.spp = SPPCSPBlock(1024, 1024)
+        
+        # Head
+        self.head = nn.ModuleList()
+        for out_channels in [512, 256, 128]:
+            self.head.append(
+                nn.Sequential(
+                    ConvBNSiLU(1024, out_channels, 1),
+                    ConvBNSiLU(out_channels, out_channels * 2, 3),
+                    ConvBNSiLU(out_channels * 2, out_channels, 1)
+                )
+            )
+        
+        # Detection layers
+        self.det_layers = nn.ModuleList()
+        for out_channels in [128, 256, 512]:
+            self.det_layers.append(
+                nn.Conv2d(out_channels, 3 * (5 + num_classes), 1)
+            )
+
+    def forward(self, x):
+        # Backbone
+        x = self.stem(x)
+        x1 = self.stage1(x)      # 1/4
+        x2 = self.stage2(x1)     # 1/8
+        x3 = self.stage3(x2)     # 1/16
+        x4 = self.stage4(x3)     # 1/32
+        
+        x4 = self.spp(x4)
+        
+        # Head
+        outputs = []
+        for i, head in enumerate(self.head):
+            feat = head(x4 if i == 0 else outputs[-1])
+            outputs.append(feat)
+            
+        # Detection
+        results = []
+        for feat, det_layer in zip(outputs, self.det_layers):
+            results.append(det_layer(feat))
+            
+        if self.training:
+            return results
+        else:
+            return self.postprocess(results)
+            
+    def postprocess(self, outputs):
+        """後處理：將輸出轉換為邊界框"""
+        batch_size = outputs[0].shape[0]
+        predictions = []
+        
+        for output in outputs:
+            # 重塑輸出為 [batch, anchors, grid_h, grid_w, xywh + obj + classes]
+            batch, _, grid_h, grid_w = output.shape
+            output = output.view(batch, 3, -1, grid_h, grid_w).permute(0, 1, 3, 4, 2)
+            predictions.append(output)
+            
+        return predictions
+
+def create_yolov7_model(num_classes=80, pretrained=False):
+    model = YOLOv7(num_classes=num_classes)
+    if pretrained:
+        # 載入預訓練權重的邏輯
+        pass
+    return model
+
+# 測試代碼
+if __name__ == "__main__":
+    model = create_yolov7_model()
+    x = torch.randn(1, 3, 640, 640)
+    outputs = model(x)
+    
+    # 打印每個檢測層的輸出大小
+    if isinstance(outputs, list):
+        for i, out in enumerate(outputs):
+            print(f"Detection layer {i + 1} output shape:", out.shape)
+
+
+# 創建模型
+model = create_yolov7_model(num_classes=80)
+
+# 訓練模式
+model.train()
+x = torch.randn(1, 3, 640, 640)
+outputs = model(x)  # 返回原始檢測輸出
+
+# 推理模式
+model.eval()
+with torch.no_grad():
+    predictions = model(x)  # 返回處理後的預測結果
 ```
 這個YOLO實現適用於多種目標檢測任務，例如:
 
@@ -2609,6 +3548,7 @@ output = model(x)
 ### **51. 實現一個MaskRCNN神經網絡**
 
 #### 代碼
+[[AI model Summary architecture###### Mask R-CNN]]
 
 ```python
 import torch
@@ -2758,12 +3698,192 @@ class MaskRCNN(nn.Module):
 - 實現前向傳播流程
 - 輸出RPN預測和遮罩預測
 
-使用方式:
+Perplexity
 ```python
-model = MaskRCNN(num_classes=80)  # COCO資料集有80個類別
-x = torch.randn(1, 3, 800, 800)
-rpn_logits, rpn_bbox, masks = model(x)
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+from torchvision.ops import RoIAlign
 
+class Backbone(nn.Module):
+    def __init__(self, out_channels=256):
+        super(Backbone, self).__init__()
+        # 增強特徵提取能力
+        self.conv1 = nn.Conv2d(3, 64, kernel_size=7, stride=2, padding=3)
+        self.bn1 = nn.BatchNorm2d(64)
+        self.relu = nn.ReLU(inplace=True)
+        self.maxpool = nn.MaxPool2d(kernel_size=3, stride=2, padding=1)
+        
+        # 添加更多卷積層
+        self.layer1 = nn.Sequential(
+            nn.Conv2d(64, 128, kernel_size=3, padding=1),
+            nn.BatchNorm2d(128),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(128, 128, kernel_size=3, padding=1),
+            nn.BatchNorm2d(128),
+            nn.ReLU(inplace=True)
+        )
+        
+        self.layer2 = nn.Sequential(
+            nn.Conv2d(128, out_channels, kernel_size=3, padding=1),
+            nn.BatchNorm2d(out_channels),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(out_channels, out_channels, kernel_size=3, padding=1),
+            nn.BatchNorm2d(out_channels),
+            nn.ReLU(inplace=True)
+        )
+
+    def forward(self, x):
+        x = self.maxpool(self.relu(self.bn1(self.conv1(x))))
+        x = self.layer1(x)
+        features = self.layer2(x)
+        return features
+
+class RPN(nn.Module):
+    def __init__(self, in_channels=256, anchor_num=9):
+        super(RPN, self).__init__()
+        self.conv = nn.Sequential(
+            nn.Conv2d(in_channels, 256, kernel_size=3, stride=1, padding=1),
+            nn.ReLU(inplace=True)
+        )
+        self.cls_layer = nn.Conv2d(256, anchor_num, kernel_size=1)
+        self.reg_layer = nn.Conv2d(256, anchor_num * 4, kernel_size=1)
+        
+        # 初始化權重
+        for layer in self.modules():
+            if isinstance(layer, nn.Conv2d):
+                nn.init.normal_(layer.weight, std=0.01)
+                nn.init.constant_(layer.bias, 0)
+
+    def forward(self, features):
+        x = self.conv(features)
+        objectness = self.cls_layer(x)
+        bbox_reg = self.reg_layer(x)
+        return objectness, bbox_reg
+
+class RoIHeads(nn.Module):
+    def __init__(self, num_classes=21, in_channels=256, roi_size=7):
+        super(RoIHeads, self).__init__()
+        self.roi_align = RoIAlign(
+            output_size=(roi_size, roi_size),
+            spatial_scale=1.0,
+            sampling_ratio=2
+        )
+        
+        roi_size = roi_size * roi_size * in_channels
+        self.fc = nn.Sequential(
+            nn.Linear(roi_size, 1024),
+            nn.ReLU(inplace=True),
+            nn.Dropout(0.5),
+            nn.Linear(1024, 1024),
+            nn.ReLU(inplace=True),
+            nn.Dropout(0.5)
+        )
+        
+        self.cls_score = nn.Linear(1024, num_classes)
+        self.bbox_pred = nn.Linear(1024, num_classes * 4)
+        
+        # 初始化權重
+        for layer in self.modules():
+            if isinstance(layer, nn.Linear):
+                nn.init.normal_(layer.weight, std=0.01)
+                nn.init.constant_(layer.bias, 0)
+
+    def forward(self, features, proposals, image_shapes):
+        roi_features = self.roi_align(features, proposals, image_shapes)
+        roi_features = roi_features.flatten(start_dim=1)
+        fc_features = self.fc(roi_features)
+        cls_scores = self.cls_score(fc_features)
+        bbox_deltas = self.bbox_pred(fc_features)
+        return cls_scores, bbox_deltas
+
+class MaskBranch(nn.Module):
+    def __init__(self, in_channels=256, num_classes=21):
+        super(MaskBranch, self).__init__()
+        self.mask_head = nn.Sequential(
+            nn.Conv2d(in_channels, 256, 3, padding=1),
+            nn.BatchNorm2d(256),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(256, 256, 3, padding=1),
+            nn.BatchNorm2d(256),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(256, 256, 3, padding=1),
+            nn.BatchNorm2d(256),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(256, 256, 3, padding=1),
+            nn.BatchNorm2d(256),
+            nn.ReLU(inplace=True),
+            nn.ConvTranspose2d(256, 256, 2, stride=2),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(256, num_classes, 1)
+        )
+        
+        self.roi_align = RoIAlign(
+            output_size=(14, 14),
+            spatial_scale=1.0,
+            sampling_ratio=2
+        )
+
+    def forward(self, features, proposals, image_shapes):
+        roi_features = self.roi_align(features, proposals, image_shapes)
+        masks = self.mask_head(roi_features)
+        return masks
+
+class MaskRCNN(nn.Module):
+    def __init__(self, num_classes=21, min_size=800, max_size=1333):
+        super(MaskRCNN, self).__init__()
+        self.backbone = Backbone(out_channels=256)
+        self.rpn = RPN(in_channels=256, anchor_num=9)
+        self.roi_heads = RoIHeads(num_classes=num_classes, in_channels=256)
+        self.mask_branch = MaskBranch(in_channels=256, num_classes=num_classes)
+        self.min_size = min_size
+        self.max_size = max_size
+
+    def transform_image(self, images):
+        # 圖像預處理
+        original_sizes = [(img.shape[-2], img.shape[-1]) for img in images]
+        
+        # 標準化
+        mean = torch.tensor([0.485, 0.456, 0.406]).view(-1, 1, 1)
+        std = torch.tensor([0.229, 0.224, 0.225]).view(-1, 1, 1)
+        images = [(img / 255.0 - mean) / std for img in images]
+        
+        return images, original_sizes
+
+    def forward(self, images, targets=None):
+        if self.training and targets is None:
+            raise ValueError("在訓練模式下必須提供targets")
+            
+        images, original_sizes = self.transform_image(images)
+        
+        # 特徵提取
+        features = self.backbone(images)
+        
+        # RPN 處理
+        objectness, bbox_reg = self.rpn(features)
+        
+        # 生成proposals (簡化版本)
+        proposals = torch.rand((len(images), 100, 4))
+        image_shapes = [(images.size(2), images.size(3))] * len(images)
+        
+        # RoI 處理
+        cls_scores, bbox_deltas = self.roi_heads(features, proposals, image_shapes)
+        
+        # Mask 預測
+        masks = self.mask_branch(features, proposals, image_shapes)
+        
+        result = {
+            "cls_scores": cls_scores,
+            "bbox_deltas": bbox_deltas,
+            "masks": masks,
+            "proposals": proposals
+        }
+        
+        if self.training:
+            losses = self.compute_losses(result, targets)
+            result.update(losses)
+            
+        return result
 ```
 
 這個實現包含了Mask R-CNN的核心組件，但注意以下幾點仍需補充:
@@ -2778,6 +3898,7 @@ rpn_logits, rpn_bbox, masks = model(x)
 ### **52. 實現一個Segment Anything神經網絡**
 
 #### 代碼
+[[AI model Summary architecture###### SAM (Segment Anything Model)]]
 
 ```python
 import torch
@@ -2874,11 +3995,323 @@ class MaskHead(nn.Module):
 - 使用反卷積層進行上採樣
 - 最後輸出每個像素的類別預測
 
-使用方式:
+perplexity
 ```python
-model = SegmentAnythingModel(num_classes=1)  # 二元分割
-x = torch.randn(1, 3, 512, 512)
-masks = model(x)
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+from typing import Optional, Tuple, List
+
+class LayerNorm2d(nn.Module):
+    def __init__(self, num_channels: int, eps: float = 1e-6):
+        super().__init__()
+        self.weight = nn.Parameter(torch.ones(num_channels))
+        self.bias = nn.Parameter(torch.zeros(num_channels))
+        self.eps = eps
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        u = x.mean(1, keepdim=True)
+        s = (x - u).pow(2).mean(1, keepdim=True)
+        x = (x - u) / torch.sqrt(s + self.eps)
+        x = self.weight[:, None, None] * x + self.bias[:, None, None]
+        return x
+
+class MLPBlock(nn.Module):
+    def __init__(self, embedding_dim: int, mlp_dim: int, act=nn.GELU):
+        super().__init__()
+        self.lin1 = nn.Linear(embedding_dim, mlp_dim)
+        self.lin2 = nn.Linear(mlp_dim, embedding_dim)
+        self.act = act()
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        return self.lin2(self.act(self.lin1(x)))
+
+class AttentionLayer(nn.Module):
+    def __init__(self, embedding_dim: int, num_heads: int, dropout: float = 0.0):
+        super().__init__()
+        self.embedding_dim = embedding_dim
+        self.num_heads = num_heads
+        self.head_dim = embedding_dim // num_heads
+        self.scale = self.head_dim ** -0.5
+
+        self.qkv = nn.Linear(embedding_dim, embedding_dim * 3)
+        self.proj = nn.Linear(embedding_dim, embedding_dim)
+        self.dropout = nn.Dropout(dropout)
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        B, N, C = x.shape
+        qkv = self.qkv(x).reshape(B, N, 3, self.num_heads, self.head_dim).permute(2, 0, 3, 1, 4)
+        q, k, v = qkv.unbind(0)
+
+        attn = (q @ k.transpose(-2, -1)) * self.scale
+        attn = attn.softmax(dim=-1)
+        attn = self.dropout(attn)
+
+        x = (attn @ v).transpose(1, 2).reshape(B, N, C)
+        x = self.proj(x)
+        x = self.dropout(x)
+        return x
+
+class TransformerBlock(nn.Module):
+    def __init__(self, embedding_dim: int, num_heads: int, mlp_dim: int, dropout: float = 0.0):
+        super().__init__()
+        self.norm1 = nn.LayerNorm(embedding_dim)
+        self.attn = AttentionLayer(embedding_dim, num_heads, dropout)
+        self.norm2 = nn.LayerNorm(embedding_dim)
+        self.mlp = MLPBlock(embedding_dim, mlp_dim)
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        x = x + self.attn(self.norm1(x))
+        x = x + self.mlp(self.norm2(x))
+        return x
+
+class ImageEncoderViT(nn.Module):
+    def __init__(
+        self,
+        img_size: int = 1024,
+        patch_size: int = 16,
+        in_channels: int = 3,
+        embedding_dim: int = 768,
+        depth: int = 12,
+        num_heads: int = 12,
+        mlp_ratio: float = 4.0,
+        dropout: float = 0.0,
+    ):
+        super().__init__()
+        self.patch_embed = nn.Conv2d(in_channels, embedding_dim, kernel_size=patch_size, stride=patch_size)
+        
+        self.pos_embed = nn.Parameter(torch.zeros(1, (img_size // patch_size) ** 2, embedding_dim))
+        self.pos_drop = nn.Dropout(dropout)
+
+        self.blocks = nn.ModuleList([
+            TransformerBlock(
+                embedding_dim=embedding_dim,
+                num_heads=num_heads,
+                mlp_dim=int(embedding_dim * mlp_ratio),
+                dropout=dropout,
+            )
+            for _ in range(depth)
+        ])
+
+        self.neck = nn.Sequential(
+            nn.Conv2d(embedding_dim, embedding_dim, kernel_size=1),
+            LayerNorm2d(embedding_dim),
+            nn.Conv2d(embedding_dim, embedding_dim, kernel_size=3, padding=1),
+        )
+
+        self.initialize_weights()
+
+    def initialize_weights(self):
+        torch.nn.init.normal_(self.pos_embed, std=0.02)
+        self.apply(self._init_weights)
+
+    def _init_weights(self, m):
+        if isinstance(m, nn.Linear):
+            torch.nn.init.xavier_uniform_(m.weight)
+            if m.bias is not None:
+                nn.init.constant_(m.bias, 0)
+        elif isinstance(m, nn.LayerNorm):
+            nn.init.constant_(m.bias, 0)
+            nn.init.constant_(m.weight, 1.0)
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        x = self.patch_embed(x)
+        B, C, H, W = x.shape
+        x = x.flatten(2).transpose(1, 2)
+        x = x + self.pos_embed
+        x = self.pos_drop(x)
+
+        for block in self.blocks:
+            x = block(x)
+
+        x = x.reshape(B, H, W, -1).permute(0, 3, 1, 2)
+        x = self.neck(x)
+        return x
+
+class PromptEncoder(nn.Module):
+    def __init__(
+        self,
+        embedding_dim: int = 256,
+        point_embedding_dim: int = 64,
+        hidden_dim: int = 256,
+    ):
+        super().__init__()
+        
+        self.point_embed = nn.Sequential(
+            nn.Linear(2, point_embedding_dim),
+            nn.GELU(),
+            nn.Linear(point_embedding_dim, embedding_dim),
+        )
+        
+        self.box_embed = nn.Sequential(
+            nn.Linear(4, embedding_dim),
+            nn.GELU(),
+            nn.Linear(embedding_dim, embedding_dim),
+        )
+        
+        self.not_a_point_embed = nn.Parameter(torch.randn(1, embedding_dim))
+
+    def forward(
+        self,
+        points: Optional[torch.Tensor] = None,
+        boxes: Optional[torch.Tensor] = None,
+    ) -> Tuple[torch.Tensor, torch.Tensor]:
+        point_embeddings = self.not_a_point_embed.expand(points.shape[0], -1) if points is None \
+                         else self.point_embed(points)
+        
+        if boxes is not None:
+            box_embeddings = self.box_embed(boxes)
+            return torch.cat([point_embeddings, box_embeddings], dim=1)
+        
+        return point_embeddings
+
+class MaskDecoder(nn.Module):
+    def __init__(
+        self,
+        transformer_dim: int = 256,
+        num_multimask_outputs: int = 3,
+        activation: Type[nn.Module] = nn.GELU,
+    ):
+        super().__init__()
+        
+        self.transformer_dim = transformer_dim
+        self.num_multimask_outputs = num_multimask_outputs
+
+        self.iou_token = nn.Parameter(torch.zeros(1, 1, transformer_dim))
+        self.mask_tokens = nn.Parameter(torch.zeros(1, num_multimask_outputs, transformer_dim))
+        
+        self.output_upscaling = nn.Sequential(
+            nn.ConvTranspose2d(transformer_dim, transformer_dim // 4, kernel_size=2, stride=2),
+            LayerNorm2d(transformer_dim // 4),
+            activation(),
+            nn.ConvTranspose2d(transformer_dim // 4, transformer_dim // 8, kernel_size=2, stride=2),
+            activation(),
+        )
+        
+        self.output_hypernetworks_mlps = nn.ModuleList([
+            MLPBlock(transformer_dim, transformer_dim, activation)
+            for i in range(num_multimask_outputs)
+        ])
+
+        self.iou_prediction_head = MLPBlock(transformer_dim, 1, activation)
+
+    def forward(
+        self,
+        image_embeddings: torch.Tensor,
+        prompt_embeddings: torch.Tensor,
+    ) -> Tuple[torch.Tensor, torch.Tensor]:
+        # Upscale image embeddings
+        image_embeddings = self.output_upscaling(image_embeddings)
+        
+        # Generate masks
+        masks = []
+        iou_pred = self.iou_prediction_head(prompt_embeddings)
+        
+        for i in range(self.num_multimask_outputs):
+            mask_embedding = self.mask_tokens[:, i:i+1]
+            hyper_in = prompt_embeddings + mask_embedding
+            hyper_in = self.output_hypernetworks_mlps[i](hyper_in)
+            mask = (hyper_in @ image_embeddings.flatten(2)).reshape(
+                image_embeddings.shape[0], 1, *image_embeddings.shape[-2:]
+            )
+            masks.append(mask)
+        
+        masks = torch.cat(masks, dim=1)
+        return masks, iou_pred
+
+class SAM(nn.Module):
+    def __init__(
+        self,
+        image_encoder: ImageEncoderViT,
+        prompt_encoder: PromptEncoder,
+        mask_decoder: MaskDecoder,
+    ):
+        super().__init__()
+        self.image_encoder = image_encoder
+        self.prompt_encoder = prompt_encoder
+        self.mask_decoder = mask_decoder
+
+    def forward(
+        self,
+        images: torch.Tensor,
+        points: Optional[torch.Tensor] = None,
+        boxes: Optional[torch.Tensor] = None,
+    ) -> Tuple[torch.Tensor, torch.Tensor]:
+        image_embeddings = self.image_encoder(images)
+        prompt_embeddings = self.prompt_encoder(points, boxes)
+        masks, iou_predictions = self.mask_decoder(image_embeddings, prompt_embeddings)
+        return masks, iou_predictions
+
+def create_sam_model(model_type: str = "base"):
+    """Create a SAM model with specified configuration"""
+    configs = {
+        "base": dict(
+            embedding_dim=768,
+            num_heads=12,
+            depth=12,
+        ),
+        "large": dict(
+            embedding_dim=1024,
+            num_heads=16,
+            depth=24,
+        ),
+    }
+    
+    if model_type not in configs:
+        raise ValueError(f"Model type {model_type} not found. Available types: {list(configs.keys())}")
+    
+    config = configs[model_type]
+    
+    image_encoder = ImageEncoderViT(
+        embedding_dim=config["embedding_dim"],
+        num_heads=config["num_heads"],
+        depth=config["depth"],
+    )
+    
+    prompt_encoder = PromptEncoder(
+        embedding_dim=config["embedding_dim"] // 3,
+    )
+    
+    mask_decoder = MaskDecoder(
+        transformer_dim=config["embedding_dim"] // 3,
+    )
+    
+    return SAM(image_encoder, prompt_encoder, mask_decoder)
+
+# 測試代碼
+if __name__ == "__main__":
+    # 創建模型
+    model = create_sam_model("base")
+    
+    # 測試輸入
+    batch_size = 1
+    images = torch.randn(batch_size, 3, 1024, 1024)
+    points = torch.randn(batch_size, 2)
+    boxes = torch.randn(batch_size, 4)
+    
+    # 前向傳播
+    masks, iou_predictions = model(images, points, boxes)
+    
+    # 打印輸出形狀
+    print(f"Input image shape: {images.shape}")
+    print(f"Output masks shape: {masks.shape}")
+    print(f"IoU predictions shape: {iou_predictions.shape}")
+    
+    # 計算參數量
+    total_params = sum(p.numel() for p in model.parameters())
+    print(f"Total parameters: {total_params:,}")
+
+
+# 創建模型
+model = create_sam_model("base")
+
+# 準備輸入
+images = torch.randn(1, 3, 1024, 1024)
+points = torch.randn(1, 2)  # 可選
+boxes = torch.randn(1, 4)   # 可選
+
+# 生成遮罩
+masks, iou_predictions = model(images, points, boxes)
 
 ```
 

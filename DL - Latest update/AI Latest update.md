@@ -155,4 +155,7 @@ previous: gemmo、pika和runway
 [Genesis github](https://github.com/Genesis-Embodied-AI/Genesis)
 [刚刚，AI进化到一句话生成物理模拟，学术圈半壁江山联手耗时24个月研究成果](https://zhuanlan.zhihu.com/p/13499656158)
 
-
+2025.0128  DeepSeek-R1
+[DeepSeek-R1 github](https://github.com/deepseek-ai/DeepSeek-R1)
+DeepSeek-R1 模型发布，性能对标 OpenAI o1 正式版，大家怎么看？ - 段小草的回答 - 知乎
+https://www.zhihu.com/question/10152040622/answer/84383440957
