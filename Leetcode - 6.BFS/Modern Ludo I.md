@@ -32,7 +32,7 @@
 ---
 Example:
 **样例1**
-```
+```python
 输入: length = 10 和 connections = [[2, 
 10]]
 输出: 1
@@ -41,7 +41,7 @@ Example:
 2->10(直接相连)
 ```
 **样例2**
-```
+```python
 输入: length = 15 和 connections = [[2, 8],
 [6, 9]]
 输出: 2

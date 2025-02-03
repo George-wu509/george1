@@ -40,3 +40,7 @@ class Solution:
         return cnt
 ```
 pass
+
+解釋為何用cnt+=r-l:
+step1:  [ l, r ] = [ 0, 3 ]  value=17 ---> cnt+=3 代表 [ 0, 3 ], [ 0, 2 ], [ 0, 1 ]
+step2:  [ l, r ] = [ 1, 3 ]  value=22 ---> cnt+=3 代表 [ 1, 3 ], [ 1, 2 ]

@@ -1240,6 +1240,140 @@ for images, labels in train_loader:
 2. 使用交叉熵損失函數和 Adam 優化器。
 3. 測試模型，運行一個批次的數據。
 
+#### **1. `for images, labels in train_loader:`**
+
+##### **作用**
+
+- `train_loader` 是一個 **數據加載器（DataLoader）**，它可以自動從數據集讀取批量（batch）數據。
+- 這是一個**迴圈（Loop）**，每次從 `train_loader` 讀取一個 batch（批量）的 `images` 和 `labels`，直到遍歷完整個訓練集。
+
+##### ** 具體步驟**
+
+1. **`train_loader` 內部使用了 `Dataset` 和 `DataLoader`**：
+    
+    - `Dataset` 會返回 `(image, label)`。
+    - `DataLoader` 會自動批量化這些資料。
+2. **假設批量大小 `batch_size=32`，則**：
+    
+    - `images` 形狀（假設輸入為 1024×10241024 \times 10241024×1024 RGB 影像）：`(32, 3, 1024, 1024)`
+    - `labels` 形狀（假設是 10 類分類任務）：`(32,)`（每個數值代表對應影像的類別）
+
+---
+
+#### ** 2. `outputs = model(images)`**
+
+##### **作用**
+
+- **進行前向傳播（Forward Pass）**，讓 `images` 經過 `model`，計算預測結果 `outputs`。
+
+##### **具體步驟**
+
+1. **輸入 `images` 進入 `model`**
+
+    `outputs = model(images)`
+    
+2. **模型執行前向傳播，通常會經過多層結構，如 CNN 或 Transformer**
+
+    `# 假設是一個 CNN x = conv1(images)  # 第一層卷積 x = relu(x)        # 激活函數 x = fc(x)          # 最後的全連接層`
+    
+3. **`outputs` 是模型對每個影像的預測結果**
+    - 假設分類問題，`outputs` 的形狀通常是 `(32, 10)`，代表 32 張圖片，每張圖片有 10 個類別的預測分數。
+
+---
+
+#### ** 3. `loss = criterion(outputs, labels)`**
+
+##### ** 作用**
+
+- 計算模型預測 (`outputs`) 與真實標籤 (`labels`) 之間的損失（Loss）。
+
+##### ** 具體步驟**
+
+1. **損失函數 `criterion` 計算誤差**
+
+    `criterion = nn.CrossEntropyLoss()`
+    
+2. **計算 `outputs`（預測） 與 `labels`（真實值） 之間的差異**
+
+    `loss = criterion(outputs, labels)`
+    
+3. **舉例**
+    - **假設 `outputs`（模型預測結果）**：
+
+        `tensor([[0.1, 2.5, -1.2, 1.8, 0.6], ...])  # 5 個類別的 logits 分數`
+        
+    - **假設 `labels`（真實標籤）**：
+
+        `tensor([1, 3, 0, 4, 2, ...])  # 對應影像的真實類別`
+        
+    - **交叉熵損失（CrossEntropyLoss）會比較 `outputs` 與 `labels`，計算損失值 `loss`**。
+
+---
+
+#### ** 4. `optimizer.zero_grad()`**
+
+##### ** 作用**
+
+- **清除舊的梯度資訊，以免影響下一步的梯度計算。**
+
+##### **具體步驟**
+
+1. **在 PyTorch 中，每次執行 `loss.backward()` 時，梯度會** **累積（accumulate）**。
+
+    `optimizer.zero_grad()`
+    
+    **這行代碼將 `model.parameters()` 內所有的 `.grad` 屬性歸零。**
+2. **如果不加這一步，梯度會累積，導致錯誤的梯度更新！**
+
+---
+
+#### ** 5. `loss.backward()`**
+
+##### **作用**
+
+- **進行反向傳播（Backward Propagation），計算每個參數的梯度。**
+- **梯度會儲存在 `model.parameters()` 內的 `.grad` 屬性中。**
+
+##### ** 具體步驟**
+
+1. **計算 `loss` 相對於 `model.parameters()` 的梯度**
+
+    `loss.backward()`
+    
+2. **PyTorch 自動計算所有可訓練參數的梯度**
+
+    `weight.grad = ∂Loss / ∂weight bias.grad = ∂Loss / ∂bias`
+    
+3. **每個 `model.parameters()` 內的 `requires_grad=True` 的變數，會獲得梯度資訊。**
+
+---
+
+#### ** 6. `optimizer.step()`**
+
+##### ** 作用**
+
+- **根據計算出的梯度，更新模型的參數（權重和偏置）。**
+- **讓模型在下一次前向傳播時使用新的參數。**
+
+##### ** 具體步驟**
+
+1. **Adam 優化器使用梯度來更新參數**
+
+    `optimizer.step()`
+    
+2. **具體的數學公式（以 SGD 為例）**
+
+    `weight = weight - learning_rate * weight.grad bias = bias - learning_rate * bias.grad`
+    
+3. **這一步完成後，模型的 `model.parameters()` 內的權重已經更新。**
+
+## **CNN 設計時該用哪一個？**
+**✔️ 推薦**
+1. **`nn.ReLU()`** → 如果你在 `__init__()` 定義層，並希望 ReLU 作為 **模型的一部分**。
+2. **`F.relu()`** → 如果你希望在 `forward()` **直接調用 ReLU，而不額外定義 ReLU 層**。
+**❌ 避免**
+- **`torch.relu()`** → 不適合 CNN 設計，因為它不屬於 `torch.nn.Module`，不能存儲於 `state_dict()`，也不支持 `inplace=True`。
+
 perplexity
 ```python
 import torch

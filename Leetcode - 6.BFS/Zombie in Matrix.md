@@ -64,47 +64,35 @@ Example:
 ```python
 class Solution:
     def zombie(self, grid):
-        n = len(grid)
-        if n == 0:
-            return 0
-
-        m = len(grid[0])
-        if m == 0:
-            return 0
-
-        # 初始化队列，存储所有僵尸的位置
-        q = []
-        for i in range(n):
-            for j in range(m):
-                if grid[i][j] == 1:
-                    q.append((i, j))
-
-        # 定义四个方向
-        directions = [[0, -1], [0, 1], [-1, 0], [1, 0]]
-        days = 0
-
-        # BFS 遍历
-        while q:
-            days += 1
-            new_q = []
-            for node in q:
-                for dx, dy in directions:
-                    x = node[0] + dx
-                    y = node[1] + dy
-                    # 检查是否可以感染相邻的人类
-                    if 0 <= x < n and 0 <= y < m and grid[x][y] == 0:
-                        grid[x][y] = 1  # 感染
-                        new_q.append((x, y))
-            q = new_q
-
-        # 检查是否有未被感染的人类
-        for i in range(n):
-            for j in range(m):
-                if grid[i][j] == 0:
-                    return -1
-
-        return days - 1
-
+7        # write your code here
+8        if len(grid) == 0 or len(grid[0]) == 0:
+9            return 0
+10        m, n = len(grid), len(grid[0])
+11        queue = collections.deque()
+12        for i in range(m):
+13            for j in range(n):
+14                if grid[i][j] == 1:
+15                    queue.append((i, j))
+16        day = 0
+17        while queue:
+18            size = len(queue)
+19            day += 1
+20            for k in range(size):
+21                (i, j) = queue.popleft()
+22                DIR = [(1, 0), (-1, 0), (0, 1), (0, -1)]
+23                for (di, dj) in DIR:
+24                    next_i, next_j = i + di, j + dj
+25                    if next_i < 0 or next_i >= m or next_j < 0 or next_j >= n:
+26                        continue
+27                    if grid[next_i][next_j] == 1 or grid[next_i][next_j] == 2:
+28                        continue
+29                    grid[next_i][next_j] = 1
+30                    queue.append((next_i, next_j))
+31        for i in range(m):
+32            for j in range(n):
+33                if grid[i][j] == 0:
+34                    return -1
+35        return day - 1
 ```
 pass
 

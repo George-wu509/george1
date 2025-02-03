@@ -4,39 +4,53 @@
     "type": "split",
     "children": [
       {
-        "id": "6c10ac76bb2f5a56",
+        "id": "57e8eff6d40e3ff6",
         "type": "tabs",
         "children": [
           {
-            "id": "b6c1e5d448494fdb",
+            "id": "80e9c6450052306d",
             "type": "leaf",
             "state": {
               "type": "markdown",
               "state": {
-                "file": "Interview - AI projects/AI model Summary architecture.md",
+                "file": "Data Structure Summary.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "AI model Summary architecture"
+              "title": "Data Structure Summary"
             }
           },
           {
-            "id": "58fe446bbde08e7f",
+            "id": "b754c31ae11e612e",
             "type": "leaf",
             "state": {
               "type": "markdown",
               "state": {
-                "file": "Interview - handon AI model/Pytorch coding exercise.md",
+                "file": "Leetcode - 7.DFS/DFS.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "Pytorch coding exercise"
+              "title": "DFS"
+            }
+          },
+          {
+            "id": "ed9e8a3adfd754d5",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "Leetcode - 7.DFS/Generate Parentheses.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "Generate Parentheses"
             }
           }
         ],
-        "currentTab": 1
+        "currentTab": 2
       }
     ],
     "direction": "vertical"
@@ -55,7 +69,8 @@
             "state": {
               "type": "file-explorer",
               "state": {
-                "sortOrder": "alphabetical"
+                "sortOrder": "alphabetical",
+                "autoReveal": false
               },
               "icon": "lucide-folder-closed",
               "title": "檔案瀏覽器"
@@ -179,44 +194,44 @@
       "table-editor-obsidian:Advanced Tables Toolbar": false
     }
   },
-  "active": "58fe446bbde08e7f",
+  "active": "ed9e8a3adfd754d5",
   "lastOpenFiles": [
-    "DL - Environment/autoseg_env1.md",
-    "Interview - handon AI model/Pytorch coding exercise.md",
-    "Interview - AI projects/AI model Summary architecture.md",
-    "DL - Latest update/AI Latest update.md",
+    "Data Structure Summary.md",
+    "Leetcode - 7.DFS/Generate Parentheses.md",
+    "Leetcode - 7.DFS/DFS.md",
+    "Leetcode - 9.Data Structure/Valid Parentheses.md",
+    "Leetcode - 7.DFS/SubsetsII.md",
+    "Leetcode - 7.DFS/Subsets.md",
+    "Leetcode - 3.Two Pointers/雙指針.md",
+    "Leetcode - 6.BFS/BFS.md",
+    "Leetcode - 6.BFS/Clone Graph.md",
+    "Leetcode - 6.BFS/Word Ladder.md",
+    "Leetcode - 6.BFS/Alien Dictionary.md",
+    "Leetcode - 6.BFS/Course Schedule II.md",
+    "Leetcode - 6.BFS/Course Schedule.md",
+    "Leetcode - 6.BFS/Knight Shortest Path II.md",
+    "Leetcode - 6.BFS/Topological Sorting.md",
+    "Leetcode - 6.BFS/Sequence Reconstruction.md",
+    "Leetcode - 6.BFS/Shortest Distance from All Buildings.md",
+    "Leetcode - 6.BFS/Course Schedule IV.md",
+    "Leetcode - 6.BFS/Build Post Office II.md",
+    "Leetcode - 6.BFS/Keys and Rooms.md",
+    "Leetcode - 6.BFS/Sliding Puzzle III.md",
+    "Leetcode - 6.BFS/The Maze III.md",
+    "Leetcode - 6.BFS/Sliding Puzzle II.md",
+    "Leetcode - 6.BFS/Lake Escape.md",
+    "Leetcode - 6.BFS/Modern Ludo I.md",
+    "Leetcode - 6.BFS/Zombie in Matrix.md",
+    "materials/Pasted image 20250113145750.png",
     "materials/Pasted image 20250127224233.png",
     "materials/Pasted image 20250127232140.png",
     "materials/Pasted image 20250127231625.png",
     "materials/Pasted image 20250127231347.png",
     "materials/Pasted image 20250127225412.png",
-    "DL - CLIP/CLIP base.md",
-    "DL - CLIP/CLIP - Contrastive Learning.md",
     "materials/Pasted image 20250127225004.png",
-    "DL - Transformer and ViT/Transformer and ViT - architecture.md",
-    "DL - GAN/GAN - Real-ESRGAN colab.md",
     "materials/Pasted image 20250127220601.png",
-    "Interview - handon AI model/Interview - handon AI model.md",
-    "Interview - AI projects/AI model Summary.md",
-    "Data Structure Summary.md",
-    "Interview - DL AI/计算机视觉面试题 - AI 優化目標函數.md",
-    "Interview - DL AI/ML-interview - optimizer.md",
-    "Leetcode - 3.Two Pointers/雙指針.md",
-    "Leetcode - 7.DFS/k Sum II.md",
-    "Leetcode - 4.Binary Search/二分法.md",
-    "Leetcode - 3.Two Pointers/Longest Palindromic Substring.md",
-    "Leetcode - 3.Two Pointers/Remove Duplicate Numbers in Array.md",
-    "Leetcode - 3.Two Pointers/Two Sum - Greater than target.md",
-    "Leetcode - 3.Two Pointers/Two Sum - Less than or equal to target.md",
-    "Leetcode - 3.Two Pointers/Two Sum - Difference equals to target.md",
-    "Leetcode - 3.Two Pointers/Two Sum.md",
-    "Leetcode - 3.Two Pointers/Two Sum III.md",
-    "Leetcode - 6.BFS/BFS.md",
-    "Leetcode - 7.DFS/DFS.md",
-    "Interview - AI projects/CenterMask2 segmentation compression - CenterMask2.md",
     "materials/summary.jpg",
     "materials/v2-d518bd32a1a22bed46e4cc843e3c8503_r.jpg",
-    "materials/Pasted image 20250113145750.png",
     "New folder",
     "未命名",
     "Leetcode - 11.other QA",

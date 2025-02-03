@@ -48,3 +48,7 @@ def twoSum(self, numbers, target):
 	return [-1, -1]
 ```
 pass
+
+排序的兩種方法
+nums = **sorted**(nums)
+nums.**sort**()

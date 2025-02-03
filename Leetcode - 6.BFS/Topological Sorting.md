@@ -11,6 +11,32 @@
 
 - 拓扑排序是对一个有向无环图（DAG）的顶点排序，使得每条有向边 `(u, v)` 中的顶点 `u` 都排在 `v` 前面。
 
+```python
+    # 定義 Node 類別
+class Node:
+    def __init__(self, label):
+        self.label = label  # 節點的值
+        self.neighbors = []  # 這個節點指向的鄰居節點列表
+
+    def __repr__(self):
+        return str(self.label)  # 方便輸出節點
+
+
+    # 創建節點
+    nodes = {i: Node(i) for i in range(6)}
+    # nodes = {0: Node(0), 1: Node(1), 2: Node(2), 
+    #          3: Node(3), 4: Node(4), 5: Node(5)}
+
+    # 構建圖（有向圖）
+    # nodes[0].neighbors = [nodes[1], nodes[2], nodes[3]]
+    # nodes[1].neighbors = [nodes[4]]
+    # nodes[2].neighbors = [nodes[4], nodes[5]]
+    # nodes[3].neighbors = [nodes[4], nodes[5]]
+    # nodes[4].neighbors = []
+    # nodes[5].neighbors = []
+
+```
+
 ---
 
 ### 解法：BFS（广度优先搜索）
@@ -40,11 +66,11 @@
 ---
 Example:
 输入：
-```
+```python
 graph = {0,1,2,3#1,4#2,4,5#3,4,5#4#5}
 ```
 输出：
-```
+```python
 [0, 1, 2, 3, 4, 5]
 ```
 解释：
@@ -106,8 +132,7 @@ pass
 ### 示例输入输出
 
 #### 输入
-
-`graph = {     0: Node(0, [1, 2, 3]),     1: Node(1, [4]),     2: Node(2, [4, 5]),     3: Node(3, [4, 5]),     4: Node(4, []),     5: Node(5, []) }`
+graph = { 0: Node(0, [1, 2, 3]), 1: Node(1, [4]), 2: Node(2, [4, 5]), 3: Node(3, [4, 5]), 4: Node(4, []),     5: Node(5, []) }
 
 #### 运行过程
 

@@ -93,12 +93,12 @@ lintcode 615
 ---
 Example:
 例1:
-```
+```python
 输入: n = 2, prerequisites = [[1,0]] 
 输出: true
 ```
 例2:
-```
+```python
 输入: n = 2, prerequisites = [[1,0],[0,1]] 
 输出: false
 ```

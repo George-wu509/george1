@@ -1,5 +1,6 @@
 1643
 小红去果园采水果。有2个篮子，可以装无数个水果，但是只能装一种水果。从任意位置的树开始，往右采。遇到2种情况退出，1. 遇到第三种水果，没有篮子可以放了，2. 到头了。返回可以采摘的最多的水果个数。水果数组用`arr`表示。
+解釋: 在數列arr中找尋最大的子數列只含有兩種數字 
 
 **样例 1:**
 ```python
@@ -33,3 +34,7 @@ def pick_fruits(self, arr: List[int]) -> int:
 	return ans
 ```
 pass
+
+解釋:
+step1: Create Counter儲存數字的frequency
+step2: 用兩個雙指針遍歷arr. 第一個指針j 在for loop從id=0到end. 

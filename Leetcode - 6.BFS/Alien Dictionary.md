@@ -17,10 +17,6 @@ python
 
 **输出**：
 
-python
-
-複製程式碼
-
 `"wertf"`
 
 ---
@@ -48,7 +44,7 @@ python
 ---
 Example:
 **样例 1:**
-```
+```python
 输入：["wrt","wrf","er","ett","rftt"]
 输出："wertf"
 解释：
@@ -59,7 +55,7 @@ Example:
 所以返回 "wertf"
 ```
 **样例 2:**
-```
+```python
 输入：["z","x"]
 输出："zx"
 解释：

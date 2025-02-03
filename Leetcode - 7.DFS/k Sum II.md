@@ -59,6 +59,27 @@ class Solution:
 ```
 pass
 
+解釋:
+A=[1, 3, 4, 6]
+k=3, target=8
+subset = [], subsets = []
+
+dfs(A, 0, k, target, [], subsets)
+	i=0
+	dfs(A, i+1, k-1, target-A[0], subset=[1], subsets=[])
+			-->   dfs(A, i+1, k-1, target-A[1], subset=[1,3], subsets=[])
+			    dfs(A, i+1, k-1, target-A[2], subset=[1,4], subsets=[])
+				dfs(A, i+1, k-1, target-A[3], subset=[1,5], subsets=[])
+				
+	i=1
+	dfs(A, i+1, k-1, target-A[1], subset=[3], subsets=[])
+	i=2
+	dfs(A, i+1, k-1, target-A[2], subset=[4], subsets=[])
+	i=3
+	dfs(A, i+1, k-1, target-A[3], subset=[6], subsets=[])
+	
+	
+
 ### **LintCode 90 k Sum II**
 
 #### **題目描述**

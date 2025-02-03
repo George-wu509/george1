@@ -1400,6 +1400,10 @@ if __name__ == "__main__":
 
 **U-Net** 是一種專為醫學影像分割（Medical Image Segmentation）設計的卷積神經網絡。該模型以 "U" 字形結構命名，由一個對稱的編碼器（Encoder）和解碼器（Decoder）組成，並通過跳躍連接（Skip Connections）將高分辨率特徵融入解碼器中，實現了高效且準確的像素級分割。
 
+ref:  [UNet理解，pytorch实现，源码解读](https://zhuanlan.zhihu.com/p/571760241)
+ref: [Unet论文超级详解（附图文：超细节超容易理解）](https://zhuanlan.zhihu.com/p/716339396)
+ref: [U-Net原理分析与代码解读](https://zhuanlan.zhihu.com/p/150579454)
+
 ---
 
 ### **1. 設計特點**
