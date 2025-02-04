@@ -1,298 +1,238 @@
 
 LintCode 360 的問題 **Sliding Window Median** 要求找到一個滑動窗口的中位數，當窗口從左至右滑動時，中位數應隨著窗口內容的變化而更新。這是一個經典的問題，涉及到數據結構的靈活應用。以下是問題的詳細解法、例子及複雜度分析。
 
----
-
-## **題目分析**
-
-給定一個整數數組 `nums` 和一個窗口大小 `k`，需要計算每次滑動窗口中所有元素的中位數。滑動窗口從數組的開頭滑動到末尾，每次滑動一格。
-
-- **中位數**：如果窗口大小是奇數，取排序後的中間元素；如果是偶數，取排序後兩個中間元素的平均值。
+## **LintCode 360：滑动窗口的中位数**
 
 ---
 
-## **解法：使用兩個平衡堆**
+### **題目描述**
 
-我們可以通過兩個堆來高效維護滑動窗口中的數字排序：
+給定一個數組 `nums` 和一個整數 `k`，我們需要計算 **滑動窗口的中位數**。即：
 
-1. **最大堆 (max-heap)**：用於存儲窗口中較小的一半數字。
-2. **最小堆 (min-heap)**：用於存儲窗口中較大的一半數字。
+- 每當窗口從 `nums[i:i+k]` 滑動時，求出當前窗口的中位數。
 
-這種方法的關鍵在於：
+**示例**
 
-- 最大堆的頂部元素是較小的一半的最大值。
-- 最小堆的頂部元素是較大的一半的最小值。
+`輸入： nums = [1,2,7,8,5], k = 3  輸出： [2, 7, 7]`
 
----
+**解釋**
 
-### **算法步驟**
+複製編輯
 
-1. 初始化兩個堆：最大堆和最小堆。
-2. 遍歷數組，依次將當前元素插入堆，確保最大堆和最小堆的平衡。
-3. 當窗口大小達到 `k` 時：
-    - 獲取中位數：若窗口大小為奇數，中位數是最大堆的堆頂；否則，中位數是兩個堆頂的平均值。
-    - 將窗口的左端元素移出堆，並調整堆的平衡。
-4. 滑動窗口繼續向右移動，重複以上步驟，直到遍歷完整個數組。
+`窗口 [1,2,7] => 中位數 2 窗口 [2,7,8] => 中位數 7 窗口 [7,8,5] => 中位數 7`
 
 ---
 
-### **具體實現 (Python)**
+## **解法：雙堆（最大堆 + 最小堆）**
+
+### **核心思路**
+
+1. **維護兩個堆**
+    
+    - **`max_heap`（最大堆）**：存儲窗口內 **較小的一半數字**，並將值取負來模擬最大堆（Python 默認是最小堆）。
+    - **`min_heap`（最小堆）**：存儲窗口內 **較大的一半數字**。
+2. **維護平衡**
+    
+    - 讓 `max_heap` 和 `min_heap` 的大小保持相近（相差不超過 1）。
+    - 當 `min_heap` 元素比 `max_heap` 多時，將 `min_heap` 的最小值取出放到 `max_heap`。
+3. **滑動窗口**
+    
+    - 插入當前數字到正確的堆（確保 `max_heap` 存較小的 `k/2` 個數，`min_heap` 存較大的 `k/2` 個數）。
+    - 移除過期的數字（即 `nums[i-k]`）。
+    - 調整堆的平衡，確保 `max_heap` 的大小 `≤ min_heap + 1`。
+4. **取中位數**
+    
+    - 若 `max_heap` 比 `min_heap` 大，則 `max_heap` 的頂部就是中位數。
+    - 若 `min_heap` 比 `max_heap` 大，則 `min_heap` 的頂部就是中位數。
+
+---
+
+### **代碼解析**
 
 ```python
-import heapq
+from heapq import heappush, heappop
 
-class SlidingWindowMedian:
+# 自定義堆類
+class Heap:
     def __init__(self):
-        self.max_heap = []  # 最大堆，存儲較小的一半（取負數模擬最大堆）
-        self.min_heap = []  # 最小堆，存儲較大的一半
+        self.heap = []
+        self.deleted = {}  # 紀錄被刪除但尚未從堆中移除的元素
+        self._len = 0
 
-    def add_num(self, num):
-        if not self.max_heap or num <= -self.max_heap[0]:
-            heapq.heappush(self.max_heap, -num)
+    def push(self, val):
+        heappush(self.heap, val)
+        self._len += 1
+
+    def pop(self):
+        self._clean_top()
+        self._len -= 1
+        return heappop(self.heap)
+
+    def remove(self, val):
+        self.deleted[val] = self.deleted.get(val, 0) + 1
+        self._len -= 1  # 記錄刪除，但不立即從堆移除
+
+    def top(self):
+        self._clean_top()
+        return self.heap[0]
+
+    def _clean_top(self):
+        while self.heap and self.deleted.get(self.heap[0]):
+            self.deleted[self.heap[0]] -= 1
+            heappop(self.heap)
+
+    def __len__(self):
+        return self._len
+
+class Solution:
+    def median_sliding_window(self, nums, k):
+        ans = []
+        if not nums or len(nums) < 1 or k <= 0:
+            return ans
+
+        self.min_heap = Heap()  # 存儲較大的數
+        self.max_heap = Heap()  # 存儲較小的數（取負值）
+
+        for i in range(len(nums)):
+            # **移除過期元素**
+            if i >= k:
+                if len(self.min_heap) and nums[i - k] >= self.min_heap.top():
+                    self.min_heap.remove(nums[i - k])
+                else:
+                    self.max_heap.remove(- nums[i - k])
+
+            # **插入新元素**
+            if len(self.min_heap) and nums[i] > self.min_heap.top():
+                self.min_heap.push(nums[i])
+            else:
+                self.max_heap.push(- nums[i])  # 取負模擬最大堆
+
+            self.balance()
+
+            # **獲取中位數**
+            if i + 1 >= k:
+                ans.append(self.get_median())
+
+        return ans
+
+    # **維持平衡**
+    def balance(self):
+        l = len(self.max_heap)
+        r = len(self.min_heap)
+        if abs(r - l) <= 1:
+            return
+        if r > l:
+            self.max_heap.push(- self.min_heap.pop())
         else:
-            heapq.heappush(self.min_heap, num)
-        self.balance_heaps()
+            self.min_heap.push(- self.max_heap.pop())
+        self.balance()
 
-    def remove_num(self, num):
-        if num <= -self.max_heap[0]:
-            self.max_heap.remove(-num)
-            heapq.heapify(self.max_heap)
+    # **獲取中位數**
+    def get_median(self):
+        l = len(self.max_heap)
+        r = len(self.min_heap)
+        if r > l:
+            return self.min_heap.top()
         else:
-            self.min_heap.remove(num)
-            heapq.heapify(self.min_heap)
-        self.balance_heaps()
-
-    def balance_heaps(self):
-        if len(self.max_heap) > len(self.min_heap) + 1:
-            heapq.heappush(self.min_heap, -heapq.heappop(self.max_heap))
-        elif len(self.min_heap) > len(self.max_heap):
-            heapq.heappush(self.max_heap, -heapq.heappop(self.min_heap))
-
-    def find_median(self):
-        if len(self.max_heap) == len(self.min_heap):
-            return (-self.max_heap[0] + self.min_heap[0]) / 2
-        return -self.max_heap[0]
-
-def medianSlidingWindow(nums, k):
-    result = []
-    swm = SlidingWindowMedian()
-    for i in range(len(nums)):
-        swm.add_num(nums[i])
-        if i >= k - 1:
-            result.append(swm.find_median())
-            swm.remove_num(nums[i - k + 1])
-    return result
+            return - self.max_heap.top()
 
 ```
-runtime error
+---
+
+## **逐步執行分析**
+
+### **輸入**
+
+`nums = [1,2,7,8,5] k = 3`
+
+### **初始化**
+
+- `max_heap = []`（較小的一半數字，存負數）。
+- `min_heap = []`（較大的一半數字）。
+
+### **第一個窗口 [1,2,7]**
+
+- 插入 `1`：放入 `max_heap → [-1]`
+- 插入 `2`：放入 `min_heap → [2]`
+- 插入 `7`：放入 `min_heap → [2, 7]`
+- 平衡：移動 `2` 到 `max_heap`
+- **中位數：2**
+
+### **第二個窗口 [2,7,8]**
+
+- 移除 `1`：從 `max_heap` 刪除
+- 插入 `8`：放入 `min_heap → [7, 8]`
+- **中位數：7**
+
+### **第三個窗口 [7,8,5]**
+
+- 移除 `2`：從 `max_heap` 刪除
+- 插入 `5`：放入 `max_heap → [-5]`
+- 平衡：移動 `7` 到 `max_heap`
+- **中位數：7**
+
+### **輸出**
+
+`[2, 7, 7]`
 
 ---
 
-### **例子**
+## **時間與空間複雜度分析**
 
-#### **輸入**
+### **時間複雜度**
 
-python
+- 插入堆 `O(log k)`
+- 刪除元素 `O(log k)`
+- 獲取中位數 `O(1)`
+- **總時間複雜度：`O(n log k)`**
 
-複製程式碼
+### **空間複雜度**
 
-`nums = [1, 3, -1, -3, 5, 3, 6, 7] k = 3`
-
-#### **步驟分析**
-
-1. 初始化兩個堆。
-2. 遍歷數組，窗口大小為 `k=3`：
-    - 第 1 次窗口：[1, 3, -1] → 中位數是 1。
-    - 第 2 次窗口：[3, -1, -3] → 中位數是 -1。
-    - 第 3 次窗口：[-1, -3, 5] → 中位數是 -1。
-    - 第 4 次窗口：[-3, 5, 3] → 中位數是 3。
-    - 第 5 次窗口：[5, 3, 6] → 中位數是 5。
-    - 第 6 次窗口：[3, 6, 7] → 中位數是 6。
-
-#### **輸出**
-
-`[1, -1, -1, 3, 5, 6]`
+- 兩個堆的大小為 `O(k)`
+- **總空間複雜度：`O(k)`**
 
 ---
 
-### **時間與空間複雜度**
+## **其他解法**
 
-- **插入/刪除操作**：每次操作需要 `O(log k)` 時間。
-- **遍歷數組**：每個元素進行插入和刪除操作，共需 `O(n log k)` 時間。
-- **總時間複雜度**：`O(n log k)`。
-- **空間複雜度**：使用兩個堆存儲 `k` 個元素，因此空間複雜度為 `O(k)`。
+### **1. 暴力法（O(nk log k)）**
 
----
+- 每次窗口變動時，重新排序並獲取中位數。
+- 時間複雜度過高。
 
-### **其他解法**
+### **2. 使用平衡樹（O(n log k)）**
 
-1. **排序窗口法**：每次滑動窗口後對窗口數組排序取中位數。
-    
-    - 時間複雜度：`O(n * k log k)`。
-    - 缺點：效率較低。
-2. **平衡樹法**（如 `SortedList`）：使用平衡二叉樹結構維護窗口元素排序，支持高效插入和刪除。
-    
-    - 時間複雜度：`O(n log k)`。
-    - 空間複雜度：`O(k)`。
-
-3. **雙端隊列法**：僅適用於特定情況（如窗口中位數僅依賴極值）。
-
-
-在解法中，造成 **Time Limit Exceeded (TLE)** 的原因主要在於兩個地方：
-
-1. **`remove_num` 方法的效率**：從堆中移除元素後重新 `heapify` 需要線性時間（`O(k)`），因此對於大數據集或窗口大小很大時，會導致性能瓶頸。
-2. **每次窗口滑動的操作代價過高**：插入和移除元素的時間複雜度未能有效控制。
-
-為了解決這些問題，我們可以改進方法，使用更高效的數據結構來實現。
-
----
-
-## **改進方法：使用 `SortedList`**
-
-`SortedList` 是 Python `sortedcontainers` 模塊中的一個高效數據結構，適合這個問題。它支持以下操作：
-
-- 插入元素 (`add`)：時間複雜度為 `O(log k)`。
-- 移除元素 (`remove`)：時間複雜度為 `O(log k)`。
-- 獲取中位數 (`access by index`)：時間複雜度為 `O(1)`。
-
-這樣，每次滑動窗口的操作代價會大幅降低。
-
----
-
-### **算法步驟**
-
-1. 使用 `SortedList` 來存儲滑動窗口內的數字。
-2. 每次添加新數字到窗口後，移除過期的數字（窗口左邊界的數字）。
-3. 利用 `SortedList` 的索引訪問特性，快速獲取中位數。
-    - 如果窗口大小為奇數，取中間元素。
-    - 如果窗口大小為偶數，取中間兩個元素的平均值。
-
-
-我們需要在計算窗口中位數時，針對窗口大小為偶數的情況，直接取排序後的左側中間值，而不是計算平均值。
-
----
-
-### **具體實現 (Python)**
-
+- 使用 `SortedList` 來維護窗口內的數字，獲取中位數為 `O(1)`。
 ```python
 from sortedcontainers import SortedList
 
-def medianSlidingWindow(nums, k):
-    sorted_window = SortedList()  # 用於維護滑動窗口內的元素
-    result = []  # 存儲中位數結果
+def median_sliding_window(nums, k):
+    ans = []
+    window = SortedList()
 
     for i in range(len(nums)):
-        # 添加當前數字到窗口
-        sorted_window.add(nums[i])
-        
-        # 移除超出窗口範圍的數字
         if i >= k:
-            sorted_window.remove(nums[i - k])
-        
-        # 當窗口大小達到 k，計算中位數
-        if i >= k - 1:
-            # 取左側中間值作為中位數
-            median = sorted_window[(k - 1) // 2]
-            result.append(median)
-    
-    return result
+            window.remove(nums[i - k])
 
+        window.add(nums[i])
+
+        if i + 1 >= k:
+            ans.append(window[(k - 1) // 2])
+
+    return ans
 
 ```
-pass
+- **時間複雜度：`O(n log k)`**
+- **適用場景：`k` 很小，`n` 很大時，比雙堆更高效。**
 
 ---
 
-### **例子**
+## **總結**
 
-#### **輸入**
+|方法|時間複雜度|空間複雜度|適用情境|
+|---|---|---|---|
+|**雙堆（最優解）**|`O(n log k)`|`O(k)`|**適用於一般情況**|
+|暴力排序|`O(n k log k)`|`O(k)`|**小數據適用**|
+|平衡樹|`O(n log k)`|`O(k)`|**適用於 `k` 小，`n` 大的情況**|
 
-python
-
-複製程式碼
-
-`nums = [1, 2, 7, 7, 2, 10, 3, 4, 5] k = 2`
-
-#### **步驟分析**
-
-1. 初始化 `SortedList`。
-2. 遍歷數組，對於每個數字：
-    - 第 1 次窗口：[1, 2]，排序後為 `[1, 2]` → 中位數是 `1`。
-    - 第 2 次窗口：[2, 7]，排序後為 `[2, 7]` → 中位數是 `2`。
-    - 第 3 次窗口：[7, 7]，排序後為 `[7, 7]` → 中位數是 `7`。
-    - 第 4 次窗口：[7, 2]，排序後為 `[2, 7]` → 中位數是 `2`。
-    - 第 5 次窗口：[2, 10]，排序後為 `[2, 10]` → 中位數是 `2`。
-    - 第 6 次窗口：[10, 3]，排序後為 `[3, 10]` → 中位數是 `3`。
-    - 第 7 次窗口：[3, 4]，排序後為 `[3, 4]` → 中位數是 `3`。
-    - 第 8 次窗口：[4, 5]，排序後為 `[4, 5]` → 中位數是 `4`。
-
-#### **輸出**
-
-python
-
-複製程式碼
-
-`[1, 2, 7, 2, 2, 3, 3, 4]`
-
----
-
-### **時間與空間複雜度**
-
-#### **時間複雜度**
-
-1. **插入與刪除操作**：
-    - 每次滑動窗口需要執行插入和刪除操作，`SortedList` 的插入和刪除為 `O(log k)`。
-2. **遍歷數組**：
-    - 數組長度為 `n`，需要進行 `n` 次滑動操作。
-3. **總時間複雜度**：
-    - `O(n log k)`。
-
-#### **空間複雜度**
-
-- 使用 `SortedList` 存儲窗口內的 `k` 個元素。
-- 空間複雜度為 `O(k)`。
-
----
-
-### **關鍵點修正**
-
-- 之前的錯誤是因為對窗口大小為偶數時計算中位數的方式不符題目要求。
-- 現在改為直接取 `SortedList[(k - 1) // 2]`，這是滑動窗口中位數的正確定義。
-
----
-
-### **測試更多案例**
-
-#### 測試輸入 1
-
-python
-
-複製程式碼
-
-`nums = [1, 3, -1, -3, 5, 3, 6, 7] k = 3`
-
-#### 預期輸出
-
-python
-
-複製程式碼
-
-`[1, -1, -1, 3, 5, 6]`
-
-#### 測試輸入 2
-
-python
-
-複製程式碼
-
-`nums = [1, 2, 3, 4, 5] k = 2`
-
-#### 預期輸出
-
-python
-
-複製程式碼
-
-`[1, 2, 3, 4]`
-
-測試結果均符合預期，說明修正後的解法正確。
+🚀 **雙堆法是這道題的最佳解法，平衡了查找與刪除的性能！**
