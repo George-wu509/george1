@@ -1,12 +1,14 @@
+Lintcode 8
+给定一个字符数组 `s` 和一个偏移量offset，根据偏移量**原地旋转**字符数组(从左向右旋转)。
 
 **样例 1：**
 输入：
-```
+```python
 s = "abcdefg"
 offset = 3
 ```
 输出：
-```
+```python
 "efgabcd"
 ```
 解释：
@@ -14,12 +16,12 @@ offset = 3
 
 **样例 2：**
 输入：
-```
+```python
 s = "abcdefg"
 offset = 0
 ```
 输出：
-```
+```python
 "abcdefg"
 ```
 解释：
@@ -27,12 +29,12 @@ offset = 0
 
 **样例 3：**
 输入：
-```
+```python
 s = "abcdefg"
 offset = 1
 ```
 输出：
-```
+```python
 "gabcdef"
 ```
 解释：
@@ -40,12 +42,12 @@ offset = 1
 
 **样例 4：**
 输入：
-```
+```python
 s = "abcdefg"
 offset = 2
 ```
 输出：
-```
+```python
 "fgabcde"
 ```
 解释：
@@ -53,12 +55,12 @@ offset = 2
 
 **样例 5：**
 输入：
-```
+```python
 s = "abcdefg"
 offset = 10
 ```
 输出：
-```
+```python
 "efgabcd"
 ```
 解释：
