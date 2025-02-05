@@ -58,7 +58,7 @@ pass
 1. **利用前缀和 `presum[i]`**
     
     - `presum[i]` 表示从 `a[0]` 到 `a[i]` 的累积和。
-    - 子数组 `a[l:r]` 的和等于： presum[r]−presum[l−1]presum[r] - presum[l-1]presum[r]−presum[l−1]
+    - 子数组 `a[l:r]` 的和等于：`presum[r] - presum[l-1]`
     - **目标**：找到 `l` 和 `r` 使得 `presum[r] - presum[l-1]` 最大。
 2. **维护 `minsum` 记录最小前缀和**
     
