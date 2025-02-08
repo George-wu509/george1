@@ -1,6 +1,9 @@
+Lintcode 943
+给一个整数数组 nums，求出下标从 `i` 到 `j` 的元素和`(i ≤ j)`，`i` 跟 `j`对应的元素也包括在内
 
 **样例1**
-```
+```python
+"""
 输入: nums = [-2, 0, 3, -5, 2, -1]
 sumRange(0, 2)
 sumRange(2, 5)
@@ -15,7 +18,8 @@ sumRange(2, 5) -> 3 + (-5) + 2 + (-1) = -1
 sumRange(0, 5) -> (-2) + 0 + 3 + (-5) + 2 + (-1) = -3
 ```
 **样例2**
-```
+```python
+"""
 输入: 
 nums = [-4, -5]
 sumRange(0, 0)
@@ -63,3 +67,7 @@ class NumArray(object):
             return self.array[j] - self.array[i-1]
 ```
 pass
+
+解釋:
+前缀和
+
