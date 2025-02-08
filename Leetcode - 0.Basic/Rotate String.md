@@ -4,11 +4,13 @@ Lintcode 8
 **样例 1：**
 输入：
 ```python
+"""
 s = "abcdefg"
 offset = 3
 ```
 输出：
 ```python
+"""
 "efgabcd"
 ```
 解释
@@ -17,11 +19,13 @@ offset = 3
 **样例 2：**
 输入：
 ```python
+"""
 s = "abcdefg"
 offset = 0
 ```
 输出：
 ```python
+"""
 "abcdefg"
 ```
 解释：
@@ -30,6 +34,7 @@ offset = 0
 **样例 3：**
 输入：
 ```python
+"""
 s = "abcdefg"
 offset = 1
 ```
@@ -69,6 +74,7 @@ offset = 10
 
 
 ```python
+"""
 class Solution:
     # @param s: a list of char
     # @param offset: an integer 

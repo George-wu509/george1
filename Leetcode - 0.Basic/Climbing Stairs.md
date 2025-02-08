@@ -4,6 +4,7 @@ Lintcode 111
 **样例 1：**
 输入：
 ```python
+"""
 n = 3
 ```
 输出：
@@ -19,6 +20,7 @@ n = 3
 **样例 2：**
 输入：
 ```python
+"""
 n = 1
 ```
 输出：
@@ -148,19 +150,21 @@ Dp[n] = Dp[n-1] + Dp[n-2].
 如果 `n` 很大，例如 `n > 10^6`，建議使用 **O(log n) 的矩陣快速幂** 來求解，而不是 `O(n)` 的動態規劃方法。
 
 
-## **LintCode 上類似的動態規劃題目（符合 DP[n] = DP[n-1] + DP[n-2] 類型）**
+## **LintCode 爬楼梯类问题整理**
 
-這類題目通常是 **狀態轉移依賴前兩步的動態規劃問題**，例如樓梯問題、解碼問題、數獨等。
-
-|**題號**|**題目名稱**|**難度**|**說明**|
+|**题号**|**题目名称**|**问题类型**|**解法**|
 |---|---|---|---|
-|**LintCode 111**|Climbing Stairs（爬樓梯）|⭐⭐|**經典 DP 問題，斐波那契數列解法**|
-|**LintCode 512**|Decode Ways（解碼方式）|⭐⭐⭐|**`DP[i] = DP[i-1] + DP[i-2]`，每個數字可以獨立解碼或與前一個數組合**|
-|**LintCode 513**|Perfect Squares（完全平方數）|⭐⭐⭐|**計算最少數量的平方數和，可轉換為 DP[i] = min(DP[i - j*j] + 1)**|
-|**LintCode 514**|House Robber（搶劫問題）|⭐⭐⭐|**類似爬樓梯，但 `DP[i] = max(DP[i-1], DP[i-2] + nums[i])`**|
-|**LintCode 515**|Paint House（油漆房子）|⭐⭐⭐|**塗房子的最小成本，需要考慮前 `i-1` 步的最小選擇**|
-|**LintCode 556**|Coin Change（換硬幣）|⭐⭐⭐|**計算兌換硬幣所需的最少數量，可轉化為 `DP[i] = min(DP[i - coin] + 1)`**|
-|**LintCode 563**|Backpack V（背包問題 V）|⭐⭐⭐|**類似爬樓梯，每次可以選擇不同大小的物品放入背包**|
-|**LintCode 798**|Unique Paths（不同的路徑）|⭐⭐⭐|**計算從左上角走到右下角的方法數，類似爬樓梯的 DP**|
-|**LintCode 629**|Minimum Path Sum（最小路徑和）|⭐⭐⭐|**類似爬樓梯，`DP[i][j]` 依賴 `DP[i-1][j]` 和 `DP[i][j-1]`**|
-|**LintCode 92**|Backpack（背包問題 I）|⭐⭐⭐|**經典 0/1 背包問題，DP[i] 依賴於 DP[i-1] 和 DP[i-2]**|
+|**LintCode 111**|Climbing Stairs（爬楼梯）|**1D 走楼梯，每次走 1 或 2 步，求方案数**|**动态规划 DP[n] = DP[n-1] + DP[n-2]**，类似 Fibonacci 数列|
+|**LintCode 512**|Decode Ways（解码方法）|**1D 字符串解码，每次解 1 或 2 个字符，求方案数**|**动态规划 DP[i] = DP[i-1] + DP[i-2]（需符合解码条件）**|
+|**LintCode 514**|House Robber（抢劫房屋）|**1D 线性路径，每次跳 1 或 2 个房子，求最大收益**|**动态规划 DP[i] = max(DP[i-1], DP[i-2] + nums[i])**|
+|**LintCode 602**|Russian Doll Envelopes（俄罗斯套娃信封）|**1D 排序 + LIS（最长递增子序列）**|**动态规划 + 二分查找 O(n log n)**|
+|**LintCode 798**|Unique Paths（不同的路径）|**2D 网格，每次向右或向下移动，求路径数**|**动态规划 DP[i][j] = DP[i-1][j] + DP[i][j-1]**|
+|**LintCode 114**|Unique Paths II（不同的路径 II）|**2D 网格，带障碍物，每次向右或向下移动，求路径数**|**动态规划 DP[i][j] = DP[i-1][j] + DP[i][j-1]，障碍物设为 0**|
+|**LintCode 116**|Jump Game（跳跃游戏）|**1D 数组，每个位置 `nums[i]` 表示最多能跳的步数，判断是否能到终点**|**贪心（Greedy）+ 动态规划**|
+|**LintCode 117**|Jump Game II（跳跃游戏 II）|**1D 数组，每个位置 `nums[i]` 表示最多能跳的步数，求最少跳跃次数**|**贪心（BFS 最短路径）**|
+|**LintCode 630**|Knight Shortest Path（骑士最短路径）|**2D 棋盘，马走日字，求最短步数**|**BFS（广度优先搜索）**|
+|**LintCode 1293**|Shortest Path in Grid with Obstacles Elimination|**2D 网格，每次向右或向下，最多能消除 k 个障碍物，求最短路径**|**BFS + 状态存储 (`(i, j, k)`)**|
+|**LintCode 200**|Longest Increasing Path in a Matrix（矩阵最长递增路径）|**2D 矩阵，每次移动到递增的相邻单元格，求最长路径**|**记忆化搜索 + DFS**|
+|**LintCode 152**|Best Time to Buy and Sell Stock II|**1D 数组，每天买卖股票（可以多次交易），求最大收益**|**贪心（局部最优）、动态规划**|
+|**LintCode 515**|Paint House（涂房子）|**2D 动态规划，选择不同颜色最小化成本**|**动态规划 DP[i][c] = min(DP[i-1][其他颜色]) + cost[i][c]**|
+|**LintCode 514**|Paint House II（涂房子 II）|**2D 动态规划，多个颜色最小化成本**|**动态规划 + 滚动数组优化**|
