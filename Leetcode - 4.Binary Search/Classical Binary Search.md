@@ -1,17 +1,21 @@
-
+Lintcode 457
+在一个排序数组中找一个数，返回该数出现的任意位置，如果不存在，返回 `-1`。
 
 **样例 1：**
 ```python
+"""
 输入：nums = [1,2,2,4,5,5], target = 2
 输出：1 或者 2
 ```
 **样例 2：**
 ```python
+"""
 输入：nums = [1,2,2,4,5,5], target = 6
 输出：-1
 ```
 
 ```python
+"""
     def binarySearch(self, nums, target):
         if not nums:
             return -1
