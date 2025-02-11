@@ -1,6 +1,15 @@
+Lintcode 855
+给出两个句子“words1”、“words2”(每个单词都表示为字符串数组) 和一组相似的单词对“pair”，判断两个句子是否相似。  
+例如，' words1 = ["great"， "acting"，" skills"]和' words2 = ["fine"， "drama"， "talent"]是相似的，如果相似的单词对是' pair = [[great"， "good"]， ["fine"， "good"]， ["acting"，"drama"]， ["skills"，"talent"]]。  
+注意，相似性关系是可传递的。例如，如果“great”和“good”相似，“fine”和“good”相似，那么“great”和“fine”**相似。**  
+相似性也是对称的。例如，“great”和“fine”相似等同于“fine”和“great”相似。  
+而且，一个单词总是和它自己相似。例如，' words1 = ["great"] '、' words2 = ["great"] '、' pair =[] '这几个句子是相似的，即使没有指定相似的单词对。  
+最后，句子只有在单词数量相同的情况下才能相似。所以像words1 = ["great"]这样的句子永远不可能和words2 = ["doubleplus"，"good"]相似。
+
 
 **样例 1:**
-```
+```python
+"""
 输入:
 ["7", "5", "4", "11", "13", "15", "19", "12", "0", "10"]
 ["16", "1", "7", "3", "15", "10", "13", "2", "19", "8"]
@@ -9,7 +18,8 @@
 true
 ```
 **样例 2:**
-```
+```python
+"""
 输入:
 ["great","acting","skills"]
 ["fine","drama","talent"]

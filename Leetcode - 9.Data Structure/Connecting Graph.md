@@ -1,5 +1,13 @@
+Lintcode 589
+给一个图中的`n`个节点, 记为 `1` 到 `n` . 在开始的时候图中没有边。  
+你需要完成下面两个方法:
+
+1. `connect(a, b)`, 添加连接节点 `a`, `b` 的边.
+2. `query(a, b)`, 检验两个节点是否联通
+
 例1:
-```
+```python
+"""
 输入:
 ConnectingGraph(5)
 query(1, 2)
@@ -11,7 +19,8 @@ query(1, 4)
 [false,false,true]
 ```
 例2:
-```
+```python
+"""
 输入:
 ConnectingGraph(6)
 query(1, 2)

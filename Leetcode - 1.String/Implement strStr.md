@@ -1,12 +1,16 @@
+Lintcode 13
+对于一个给定的 `source` 字符串和一个 `target` 字符串，你应该在 source 字符串中找出 target 字符串出现的第一个位置(从`0`开始)。如果不存在，则返回 `-1`。
 
 **样例 1：**
 输入：
-```
+```python
+"""
 source = "source"
 target = "target"
 ```
 输出：
-```
+```python
+"""
 -1        
 ```
 解释：
@@ -14,12 +18,14 @@ target = "target"
 
 **样例 2：**
 输入：
-```
+```python
+"""
 source = "abcdabcdefg"
 target = "bcd"
 ```
 输出：
-```
+```python
+"""
 1             
 ```
 解释：
@@ -27,12 +33,14 @@ target = "bcd"
 
 **样例 3：**
 输入：
-```
+```python
+"""
 source = "lintcode"
 target = ""
 ```
 输出：
-```
+```python
+"""```
 0             
 ```
 

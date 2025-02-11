@@ -1,5 +1,13 @@
+Lintcode 903
+假设你有一个长度为`n`的数组，数组的所有元素初始化为`0`，并且给定`k`个更新操作。
 
-```
+每个更新操作表示为一个三元组：`[startIndex, endIndex, inc]`。这个更新操作给子数组 `A[startIndex ... endIndex]`（包括startIndex和endIndex）中的每一个元素增加 `inc`。
+
+返回执行`k`个更新操作后的新数组。
+
+
+```python
+"""
 给定：
 长度 = 5,
 更新操作 = 

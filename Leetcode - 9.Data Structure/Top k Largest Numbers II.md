@@ -1,7 +1,10 @@
+Lintcode
+
 
 **样例1**
 
-```
+```python
+"""
 输入: 
 s = new Solution(3);
 s.add(3)
@@ -42,7 +45,8 @@ s.topk()
 
 **样例2**
 
-```
+```python
+"""
 输入: 
 s = new Solution(1);
 s.add(3)

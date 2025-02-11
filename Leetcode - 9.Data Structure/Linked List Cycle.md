@@ -1,13 +1,16 @@
-
+Lintcode 102
+给定一个链表，判断它是否有环。
 
 **样例 1：**
 输入：
-```
+```python
+"""
 linked list = 21->10->4->5
 tail connects to node index 1(value 10).
 ```
 输出：
-```
+```python
+"""
 true
 ```
 解释：
@@ -15,11 +18,13 @@ true
 
 **样例 2：**
 输入：
-```
+```python
+"""
 linked list = 21->10->4->5->null
 ```
 输出：
-```
+```python
+"""
 false
 ```
 解释：

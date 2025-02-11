@@ -1,5 +1,13 @@
 
-lintcode859 最大栈 Max Stack
+lintcode859
+设计一个支持push，pop，top，peekMax和popMax操作的最大栈。
+
+1. push(x) -- 将元素x添加到栈中。
+2. pop() -- 删除栈中最顶端的元素并将其返回。
+3. top() -- 返回栈中最顶端的元素。
+4. peekMax() -- 返回栈中最大的元素。
+5. popMax() -- 返回栈中最大的元素，并将其删除。如果有多于一个最大的元素，只删除最靠近顶端的一个元素。
+
 
 Example
 输入:

@@ -1,7 +1,10 @@
+Lintcode 684
+给出两个字符串，你需要找到缺少的字符串
 
 **样例 1:**
 
-```
+```python
+"""
 输入 : str1 = "This is an example", str2 = "is example"
 输出 : ["This", "an"]
 ```

@@ -1,4 +1,11 @@
-**lintcode 12 Min Stack带最小值操作的栈**
+intcode 12
+实现一个栈, 支持以下操作:
+
+- `push(val)` 将 val 压入栈
+- `pop()` 将栈顶元素弹出, 并返回这个弹出的元素
+- `min()` 返回栈中元素的最小值
+
+要求 O(1) 开销
 
 Example:
 

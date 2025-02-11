@@ -1,3 +1,5 @@
+Lintcode 1860
+给你一个 m * n 的矩阵，矩阵中的元素不是 0 就是 1，请你统计并返回其中完全由 0 组成的**子矩阵**的个数。
 
 ### **LintCode 1860 - The Number of 0-submatrices 解法詳細步驟**
 

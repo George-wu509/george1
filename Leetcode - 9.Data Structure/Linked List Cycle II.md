@@ -1,11 +1,15 @@
+Lintcode 103
+给定一个链表，如果链表中存在环，则返回到链表中环的起始节点，如果没有环，返回`null`。
 
 **样例 1：**
 输入：
-```
+```python
+"""
 null，no cycle
 ```
 输出：
-```
+```python
+"""
 no cycle
 ```
 解释：
@@ -13,11 +17,13 @@ no cycle
 
 **样例 2：**
 输入：
-```
+```python
+"""
 -21->10->4->5，tail connects to node index 1
 ```
 输出：
-```
+```python
+"""
 10
 ```
 解释：

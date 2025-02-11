@@ -1,5 +1,6 @@
 
 leetcode 363
+给出 _n_ 个非负整数，代表一张X轴上每个区域宽度为 `1` 的海拔图, 计算这个海拔图最多能接住多少（面积）雨水。
 
 ### LintCode 363: Trapping Rain Water （接雨水）
 

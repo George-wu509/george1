@@ -1,6 +1,14 @@
+Lintcode 591
+给一个图中的 `n` 个节点，记为 `1` 到 `n` 。`ConnectingGraph3(n)` 会创建 `n` 个节点，在开始的时候图中没有边。  
+你需要完成下面两个方法：
+
+1. `connect(a, b)`，添加一条连接节点 a, b的边
+2. `query()`，返回图中连通区域个数
+
 
 例1:
-```
+```python
+"""
 输入:
 ConnectingGraph3(5)
 query()
@@ -14,7 +22,8 @@ query()
 输出:[5,4,3,3]
 ```
 例2:
-```
+```python
+"""
 输入:
 ConnectingGraph3(6)
 query()

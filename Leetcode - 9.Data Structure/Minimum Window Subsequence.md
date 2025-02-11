@@ -1,12 +1,16 @@
+Lintcode
+
 
 **样例 1:**
-```
+```python
+"""
 输入：S="jmeqksfrsdcmsiwvaovztaqenprpvnbstl"，T="u"
 输出：""
 解释： 无法匹配
 ```
 **样例 2:**
-```
+```python
+"""
 输入：S = "abcdebdde"， T = "bde"
 输出："bcde"
 解释："bcde"是答案，"deb"不是一个较小的窗口，因为窗口中的T元素必须按顺序发生。

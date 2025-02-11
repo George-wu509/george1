@@ -1,5 +1,8 @@
 
-LintCode 1297題目是「Count of Smaller Numbers After Self」，即對於一個數組，計算每個元素右側比它小的數的個數。以下用 **單調棧（monotonic stack）** 方法來解釋，並舉例說明。
+LintCode 1297
+给定一个整数数组`nums`，返回一个新的`counts`数组。counts[i]表示：nums[i]右侧比它小的数的个数。
+
+
 
 ---
 

@@ -1,11 +1,15 @@
+Lintcode 53
+给定一个字符串，逐个翻转字符串中的每个单词
 
 **样例 1：**
 输入：
-```
+```python
+"""
 s = "the sky is blue"
 ```
 输出：
-```
+```python
+"""
 "blue is sky the"
 ```
 解释：
@@ -13,11 +17,13 @@ s = "the sky is blue"
 
 **样例 2：**
 输入：
-```
+```python
+"""
 s = "hello world"
 ```
 输出：
-```
+```python
+"""
 "world hello"
 ```
 解释：

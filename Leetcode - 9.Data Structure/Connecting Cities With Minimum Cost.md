@@ -1,12 +1,21 @@
+Lintcode 3672
+在本题中共存在 `n` 个城市，其编号范围为 1 到 n。
+
+同时存在一个 `connections` 数组且 connections[i]=[ai,bi,ci]connections[i]=[ai​,bi​,ci​]，其含义为联通城市 aiai​ 和 bibi​ 的成本为 cici​。
+
+请返回连通全部城市所需要的最低成本。如果无法联通全部城市，返回 **-1**。
+
 
 **样例 1**
 输入：
-```plaintext
+```python
+"""
 3
 [[1,2,1], [2,3,2], [1,3,3]]
 ```
 输出：
-```plaintext
+```python
+"""
 3
 ```
 解释：
@@ -14,12 +23,14 @@
 
 **样例 2**
 输入：
-```plaintext
+```python
+"""
 3
 [[1,2,1]]
 ```
 输出：
-```plaintext
+```python
+"""
 -1
 ```
 解释：

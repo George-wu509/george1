@@ -1,8 +1,11 @@
+Lintcode
+
 
 样例
 
 ![图片](https://media.jiuzhang.com/media/markdown/images/11/19/fd09b8a4-0a5f-11ea-8a23-0242ac110002.jpg)
-```
+```python
+"""
 示例1:
 输入: [[5,4,5],[1,2,6],[7,4,6]]
 输出: 4
@@ -12,7 +15,8 @@
 
 ![图片](https://media.jiuzhang.com/media/markdown/images/11/19/2aa2c08a-0a60-11ea-8a23-0242ac110002.jpg)
 
-```
+```python
+"""
 示例2:
 输入: [[2,2,1,2,2,2],[1,2,2,2,1,2]]
 输出: 2
@@ -20,7 +24,8 @@
 
 ![图片](https://media.jiuzhang.com/media/markdown/images/11/19/3c9095b0-0a60-11ea-8a23-0242ac110002.jpg)
 
-```
+```python
+"""
 示例3:
 输入: [[3,4,6,3,4],[0,2,1,1,7],[8,8,3,2,7],[3,2,4,9,8],[4,1,2,0,0],[4,6,5,4,3]]
 输出: 3

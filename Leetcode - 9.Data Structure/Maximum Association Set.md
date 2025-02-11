@@ -1,5 +1,9 @@
+Lintcode 805
+亚麻卖书，每本书都有与其关联性很强的书，给出ListA与ListB，表示`ListA[i]`与`ListB[i]`有关联，输出互相关联的最大集合。(输出任意顺序)，题目保证只有一个最大的集合。
 
-```
+
+```python
+"""
 样例 1:
 	输入:  ListA = ["abc","abc","abc"], ListB = ["bcd","acd","def"]
 	输出:  ["abc","acd","bcd","def"]

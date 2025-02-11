@@ -1,6 +1,14 @@
+Lintcode 590
+给一个图中的 `n` 个节点, 记为 `1` 到 `n` .在开始的时候图中没有边.  
+你需要完成下面两个方法：
+
+1. `connect(a, b)`, 添加一条连接节点 a, b的边
+2. `query(a)`, 返回图中含 `a` 的联通区域内节点个数
+
 
 例1:
-```
+```python
+"""
 输入:
 ConnectingGraph2(5)
 query(1)
@@ -16,7 +24,8 @@ query(1)
 
 ```
 例2:
-```
+```python
+"""
 输入:
 ConnectingGraph2(6)
 query(1)

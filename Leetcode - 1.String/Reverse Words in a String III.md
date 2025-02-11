@@ -1,5 +1,8 @@
+Lintcode 1173
+给定一个字符串句子，反转句子中每一个单词的所有字母，同时保持空格和最初的单词顺序。
 
-```
+```python
+"""
 输入: "Let's take LeetCode contest"
 输出: "s'teL ekat edoCteeL tsetnoc"
 ```

@@ -1,7 +1,13 @@
+Lintcode 444
+请你设计一个数据结构，支持以下两种操作：
+
+- `void addEdge(int a, int b)`：在编号为aa的点和编号为bb的点之间链接一条边。保证不会出现自环和重边。
+- `bool isValidTree()`：判断当前已经出现的点和边是否能形成一棵树。
 
 **Example 1**
 
-```plain
+```python
+"""
 输入:
 addEdge(1, 2)
 isValidTree()
