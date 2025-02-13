@@ -22,21 +22,20 @@
             }
           },
           {
-            "id": "f9b0adc32dcb5e0c",
+            "id": "44809e3d1c2c6630",
             "type": "leaf",
             "state": {
               "type": "markdown",
               "state": {
-                "file": "Leetcode - 1.String/String Permutation.md",
+                "file": "Leetcode - 1.String/Anagrams.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "String Permutation"
+              "title": "Anagrams"
             }
           }
-        ],
-        "currentTab": 1
+        ]
       }
     ],
     "direction": "vertical"
@@ -180,11 +179,15 @@
       "table-editor-obsidian:Advanced Tables Toolbar": false
     }
   },
-  "active": "f9b0adc32dcb5e0c",
+  "active": "1b1039038f64d0a4",
   "lastOpenFiles": [
+    "Leetcode - 1.String/Anagrams.md",
     "Data Structure Summary.md",
-    "Leetcode - 1.String/String Permutation.md",
+    "Leetcode - 1.String/Add Bold Tag in String.md",
     "Leetcode - 1.String/String Permutation II.md",
+    "Leetcode - 1.String/String Permutation.md",
+    "Leetcode - 1.String/strStr II.md",
+    "Leetcode - 1.String/Implement strStr.md",
     "Leetcode - 1.String/Repeated String Match.md",
     "Leetcode - 1.String/Permutation in String.md",
     "Leetcode - 1.String/Reorganize String.md",
@@ -192,7 +195,6 @@
     "Leetcode - 1.String/Repeated Substring Pattern.md",
     "Leetcode - 1.String/Number of Segments in a String.md",
     "Leetcode - 1.String/Length of Last Word.md",
-    "Leetcode - 1.String/Implement strStr.md",
     "Leetcode - 1.String/Add Strings.md",
     "Leetcode - 1.String/Longest Palindrome.md",
     "Leetcode - 1.String/First Unique Character in a String.md",
@@ -205,9 +207,6 @@
     "Leetcode - 0.Basic/Contains Duplicate.md",
     "Leetcode - 8.Dynamic programming/動態規劃.md",
     "Leetcode - 1.String/Reverse Vowels of a String.md",
-    "Leetcode - 1.String/Reverse Words in a String.md",
-    "Leetcode - 1.String/Reverse Words in a String II.md",
-    "Interview - Programming/Programming - Python Advance.md",
     "materials/Pasted image 20250113145750.png",
     "materials/Pasted image 20250127224233.png",
     "materials/Pasted image 20250127232140.png",
