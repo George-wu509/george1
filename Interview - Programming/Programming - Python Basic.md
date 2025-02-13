@@ -2129,6 +2129,7 @@ Python 提供了 ==**`split()` 方法**==，用於根據指定的分隔符將字
 
 #### 示例代碼：
 ```python
+"""
 text = "apple,banana,cherry"
 
 # 使用逗號分割字符串
@@ -2166,6 +2167,7 @@ Python 提供了 **`join()` 方法**，可以將列表中的元素連接成一�
 
 #### 示例代碼：
 ```python
+"""
 words = ["Hello", "Python", "world"]
 
 # 使用空格連接

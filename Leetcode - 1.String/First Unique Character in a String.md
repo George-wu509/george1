@@ -22,14 +22,14 @@ Lintcode 209
 
 
 ```python
-    def first_uniq_char(self, str):
-        counter = {}
+"""
+from collections import Counter
 
-        for c in str:
-            counter[c] = counter.get(c, 0) + 1
+def first_uniq_char(self, str):
+	counter = Counter(str)
 
-        for c in str:
-            if counter[c] == 1:
-                return c
+	for c in str:
+		if counter[c] == 1:
+			return c
 ```
 pass

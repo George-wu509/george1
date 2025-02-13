@@ -18,8 +18,26 @@ Lintcode 773
 
 ```python
     def is_anagram(self, s, t):
-        if len(s) != len(t):
+
+        #如果字符串s 不等于 t, 但是他们生成的字典（{字符:计数}）相同，则为true
+        if s == t:
             return False
-        return sorted(s) == sorted(t)
+        dict_1 = {}
+        dict_2 = {}
+        for ch in s:
+            if ch in dict_1:
+                dict_1[ch] += 1
+            else:
+                dict_1[ch] = 1
+
+        for ch in t:
+            if ch in dict_2:
+                dict_2[ch] += 1
+            else:
+                dict_2[ch] = 1     
+
+        if dict_1 == dict_2:
+            return True
+        return False
 ```
 pass
