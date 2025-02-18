@@ -23,7 +23,15 @@ leetcode 363
 
 **解释：** 在索引 2 和 3 之间可以接住 1 单位的雨水，在索引 5 和 7 之间可以接住 5 单位的雨水，总共接住 6 单位的雨水。
 
-![[Pasted image 20250217131448.png]]
+![[Pasted image 20250217145851.png]]
+單調棧:
+step1: 先create stack=[]. 
+step2: 從id=0開始往右, 如果stack是空的, 則將id=0加入stack, 變成stack = [0]
+step3: id往右, 如果id的數值比stack棧頂數值小, 直接加入stack. 譬如id=2, stack=[1] - > stack=[1,2] 或者id=3到5, stack=[3] -> stack=[3,4,5]
+step4: id往右, 如果id的數值比stack棧頂數值大, 譬如id=3(value=2), stack=[1,2] (value=1,0). 將棧頂彈出(id=2, value=0). 再每一步彈出棧頂試著計算width(id到新的棧頂的位置-1 = 3-1-1=1), height( min(id=3的數值, 新的棧頂的位置數值)-被彈出的舊棧頂數值=min(2,1)-0=1).
+step5: id往右, 如果id的數值比stack棧頂數值大, 譬如id=3(value=2), stack=[1] (value=1). 將棧頂彈出(id=1, value=1). 再每一步彈出棧頂計算width, height無法接水. 
+step6: 當stack內沒有小於id=3(value), 將3壓入棧 stack=[3]
+
 
 ---
 
