@@ -187,3 +187,19 @@ Shinohara, Hiroki, et al. "Automatic detection of vessel structure by deep learn
 
 [2] https://link.springer.com/article/10.1007/s13239-023-00654-6
 Arora, Priyanka, et al. "A state-of-the-art review on coronary artery border segmentation algorithms for intravascular ultrasound (IVUS) images." _Cardiovascular Engineering and Technology_ 14.2 (2023): 264-295.
+
+[3] https://pmc.ncbi.nlm.nih.gov/articles/PMC10685628/
+Dong, Liang, et al. "Comparison of deep learning-based image segmentation methods for intravascular ultrasound on retrospective and large image cohort study." _BioMedical Engineering OnLine_ 22.1 (2023): 111.
+
+[4]https://www.sciencedirect.com/science/article/abs/pii/S0895611113001298
+Balocco, Simone, et al. "Standardized evaluation methodology and reference database for evaluating IVUS image segmentation." _Computerized medical imaging and graphics_ 38.2 (2014): 70-90.
+
+
+Dataset and github
+[1] https://github.com/Kulbear/ivus-segmentation-icsm2018
+IVUS Image Segmentation - ICSM 2018
+
+[2]https://insilico.world/datasets/
+隸屬於In Silico World計畫的StentValid數據庫（[https://insilico.world/datasets/）提供支架置入後即時與6個月追蹤的冠狀動脈幾何資訊，包含管腔與血管壁的高解析度IVUS影像](https://insilico.world/datasets/%EF%BC%89%E6%8F%90%E4%BE%9B%E6%94%AF%E6%9E%B6%E7%BD%AE%E5%85%A5%E5%BE%8C%E5%8D%B3%E6%99%82%E8%88%876%E5%80%8B%E6%9C%88%E8%BF%BD%E8%B9%A4%E7%9A%84%E5%86%A0%E7%8B%80%E5%8B%95%E8%84%88%E5%B9%BE%E4%BD%95%E8%B3%87%E8%A8%8A%EF%BC%8C%E5%8C%85%E5%90%AB%E7%AE%A1%E8%85%94%E8%88%87%E8%A1%80%E7%AE%A1%E5%A3%81%E7%9A%84%E9%AB%98%E8%A7%A3%E6%9E%90%E5%BA%A6IVUS%E5%BD%B1%E5%83%8F)[7](https://insilico.world/datasets/)。該數據集特別針對支架內再狹窄現象設計，包含完整的三維血管重建數據與血流動力學參數，適用於長期療效評估模型的開發。
+
+[3]

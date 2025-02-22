@@ -22,3 +22,5 @@ def lowercase_to_uppercase(self, character):
 	return chr(ord(character) - 32)
 ```
 pass
+
+也可使用 s.upper()  
