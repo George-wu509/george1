@@ -14,6 +14,8 @@
 
 [AI绘画新突破-ControlNet精准控图](https://zhuanlan.zhihu.com/p/607139523)
 
+Stable Diffusion：从理论到代码实现！超级详细通俗的干货教程！ - 沐辞臣的文章 - 知乎
+https://zhuanlan.zhihu.com/p/1030490902
 
 
 ##### Notebook
