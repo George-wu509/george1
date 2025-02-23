@@ -4,11 +4,11 @@
     "type": "split",
     "children": [
       {
-        "id": "a4a7779a2c3430b2",
+        "id": "908eb9417f766ce6",
         "type": "tabs",
         "children": [
           {
-            "id": "57789b7b537d62c3",
+            "id": "6cc289eb96414c67",
             "type": "leaf",
             "state": {
               "type": "markdown",
@@ -22,31 +22,38 @@
             }
           },
           {
-            "id": "e55d94193a32bb80",
+            "id": "349b8e2681bd5ef1",
             "type": "leaf",
             "state": {
               "type": "markdown",
               "state": {
-                "file": "Leetcode - 9.Data Structure/Combinations.md",
+                "file": "Leetcode - 7.DFS/DFS.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "Combinations"
+              "title": "DFS"
             }
-          },
+          }
+        ],
+        "currentTab": 1
+      },
+      {
+        "id": "5ad4185e355bbb41",
+        "type": "tabs",
+        "children": [
           {
-            "id": "6c115784f1205177",
+            "id": "2422629a71d626e2",
             "type": "leaf",
             "state": {
               "type": "markdown",
               "state": {
-                "file": "Leetcode - 9.Data Structure/Combination Sum II.md",
+                "file": "Data Structure Summary.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "Combination Sum II"
+              "title": "Data Structure Summary"
             }
           }
         ]
@@ -193,34 +200,34 @@
       "table-editor-obsidian:Advanced Tables Toolbar": false
     }
   },
-  "active": "57789b7b537d62c3",
+  "active": "2422629a71d626e2",
   "lastOpenFiles": [
+    "Leetcode - 6.BFS/BFS.md",
     "Data Structure Summary.md",
-    "Leetcode - 9.Data Structure/Combinations.md",
-    "Leetcode - 9.Data Structure/Combination Sum II.md",
-    "Leetcode - 9.Data Structure/Minimum Depth of Binary Tree.md",
-    "Leetcode - 9.Data Structure/Regular Expression Matching.md",
-    "Leetcode - 9.Data Structure/Longest Consecutive Sequence.md",
-    "Leetcode - 9.Data Structure/Narcissistic Number.md",
-    "Leetcode - 4.Binary Search/Search for a Range.md",
+    "Leetcode - 7.DFS/DFS.md",
     "Leetcode - 4.Binary Search/二分法.md",
-    "Leetcode - 4.Binary Search/Sort Colors.md",
-    "Leetcode - 9.Data Structure/O(1) Check Power of 2.md",
-    "Leetcode - 3.Two Pointers/Guess Number Higher or Lower II.md",
-    "Leetcode - 3.Two Pointers/Guess Number Higher or Lower.md",
-    "Leetcode - 4.Binary Search/Fibonacciseries.md",
-    "Leetcode - 4.Binary Search/Search a 2D Matrix II.md",
-    "Leetcode - 4.Binary Search/Search in Rotated Sorted Array.md",
+    "Leetcode - 10.Advanced/掃描線.md",
+    "Leetcode - 6.BFS/Topological Sorting.md",
+    "Leetcode - 6.BFS/Max Area of Island.md",
     "Leetcode - 3.Two Pointers/雙指針.md",
-    "Leetcode - 9.Data Structure/Fast Power.md",
-    "Leetcode - 4.Binary Search/Interleaving Positive and Negative Numbers.md",
-    "Leetcode - 4.Binary Search/Sort Colors II.md",
-    "Leetcode - 1.String/Lowercase to Uppercase II.md",
-    "Leetcode - 1.String/Add Bold Tag in String.md",
-    "Leetcode - 1.String/String Permutation.md",
-    "Leetcode - 1.String/Lowercase to Uppercase.md",
-    "Leetcode - 1.String/Backspace String Compare.md",
-    "Leetcode - 1.String/Buddy Strings.md",
+    "Leetcode - 4.Binary Search/Search in Rotated Sorted Array.md",
+    "Leetcode - 4.Binary Search/Find Minimum in Rotated Sorted Array.md",
+    "Leetcode - 4.Binary Search/Maximum Number in Mountain Sequence.md",
+    "Leetcode - 4.Binary Search/Search in a Big Sorted Array.md",
+    "Leetcode - 4.Binary Search/Binary Search.md",
+    "Leetcode - 4.Binary Search/Last Position of Target.md",
+    "Leetcode - 9.Data Structure/First Unique Number in Data Stream II.md",
+    "Leetcode - 9.Data Structure/Hash Function.md",
+    "Leetcode - 9.Data Structure/Rehashing.md",
+    "Leetcode - 9.Data Structure/High Five.md",
+    "Leetcode - 9.Data Structure/Data Stream as Disjoint Intervals.md",
+    "Leetcode - 9.Data Structure/Intersection of Two Arrays II.md",
+    "Leetcode - 9.Data Structure/Insert Delete GetRandom O(1).md",
+    "Leetcode - 9.Data Structure/Intersection of Two Arrays.md",
+    "Leetcode - 5.Binary Search Tree/Lowest Common Ancestor of a Binary Tree.md",
+    "Leetcode - 5.Binary Search Tree/Binary Tree Inorder Traversal.md",
+    "Leetcode - 5.Binary Search Tree/Binary Tree Level Order Traversal II.md",
+    "Leetcode - 5.Binary Search Tree/Binary Tree Postorder Traversal.md",
     "materials/Pasted image 20250219122933.png",
     "materials/Pasted image 20250219115707.png",
     "materials/Pasted image 20250219111452.png",
