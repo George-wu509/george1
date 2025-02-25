@@ -121,34 +121,71 @@ pass
 
 我們需要一個 **字典 `f` 來記錄父節點**，初始時，每個節點的父節點指向自己。
 
-`for node in nodes:     self.f[node.label] = node.label`
+`for node in nodes:     
+	 self.f[node.label] = node.label`
 
 - **示例**：
 
-    `節點: [1, 2, 3, 4, 5] 初始 self.f: { 1: 1, 2: 2, 3: 3, 4: 4, 5: 5 }`
+    `節點: [1, 2, 3, 4, 5] 
+    初始 self.f: { 1: 1, 2: 2, 3: 3, 4: 4, 5: 5 }`
     
 
 ### **Step 2: 合併所有鄰居**
 
 遍歷所有節點，對於 `node.label → neighbor.label`，視為無向邊，進行合併：
 
-`for node in nodes:     for nei in node.neighbors:         self.merge(node.label, nei.label)`
+```python
+for node in nodes:
+    for nei in node.neighbors:
+        self.merge(node.label, nei.label)
+```
 
 - **示例**：
+```python
+給定有向圖:
+   1 → 2
+   2 → 3
+   4 → 5
+   
+轉換為無向連接:
+   1 - 2 - 3  (變成一個連通分量)
+   4 - 5      (變成另一個連通分量)
+   
+合併後的 self.f:
+{ 1: 2, 2: 3, 3: 3, 4: 5, 5: 5 }
 
-    `給定有向圖:    1 → 2    2 → 3    4 → 5     轉換為無向連接:    1 - 2 - 3  (變成一個連通分量)    4 - 5      (變成另一個連通分量)     合併後的 self.f: { 1: 2, 2: 3, 3: 3, 4: 5, 5: 5 }`
+```
     
 
 ### **Step 3: 收集連通分量**
 
 我們建立一個字典 `g` 來存儲「根節點 → 該集合的索引」，並用 `result` 存儲最終的 WCC：
 
-`for node in nodes:     x = self.find(node.label)  # 找到該節點的根     if x not in g:         cnt += 1         g[x] = cnt  # 紀錄該根節點對應的索引          if len(result) < cnt:         result.append([])      result[g[x] - 1].append(node.label)`
+```python
+for node in nodes:
+    x = self.find(node.label)  # 找到該節點的根
+    if x not in g:
+        cnt += 1
+        g[x] = cnt  # 紀錄該根節點對應的索引
+    
+    if len(result) < cnt:
+        result.append([])
+
+    result[g[x] - 1].append(node.label)
+```
 
 - **示例**：
+```python
+self.f 經過 find() 壓縮後:
+{ 1: 3, 2: 3, 3: 3, 4: 5, 5: 5 }
 
-    `self.f 經過 find() 壓縮後: { 1: 3, 2: 3, 3: 3, 4: 5, 5: 5 }  g 映射: { 3: 1, 5: 2 }  # 3 對應 WCC-1，5 對應 WCC-2  result 最終輸出: [[1, 2, 3], [4, 5]]`
-    
+g 映射:
+{ 3: 1, 5: 2 }  # 3 對應 WCC-1，5 對應 WCC-2
+
+result 最終輸出:
+[[1, 2, 3], [4, 5]]
+
+```
 
 ### **Step 4: 輸出結果**
 
