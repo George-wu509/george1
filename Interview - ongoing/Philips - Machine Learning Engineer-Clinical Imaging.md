@@ -26,7 +26,7 @@ Philips在IVUS系統中整合多層次AI技術架構，形成從影像採集到�
 
 影像分析層面，系統部署的卷積神經網絡（CNN）模型可實現<mark style="background: #FFB86CA6;">斑塊成分的自動分類</mark>。針對鈣化斑塊的識別，AI模型通過<mark style="background: #FFF3A3A6;">分析聲波衰減模式與回聲特徵</mark>，達到98.7%的敏感度與95.2%的特異性，顯著優於傳統視覺評估方法[14](https://www.usa.philips.com/healthcare/education-resources/technologies/igt/intravascular-ultrasound-ivus/coronary/coronary-ivus)[16](https://apps.apple.com/us/app/philips-coronary-ivus-tutor/id1102922767)。在血栓檢測方面，時序遞歸神經網絡（RNN）可動態分析血流動力學變化，實現急性血栓的早期預警[9](https://www.usa.philips.com/healthcare/education-resources/technologies/igt/intravascular-ultrasound-ivus)。
 
-臨床決策支持系統整合機器學習算法，基於超過50萬例手術數據構建預測模型。該系統可自動生成治療建議，包括支架尺寸選擇、擴張壓力預測等關鍵參數。多中心臨床驗證顯示，AI輔助決策使主要心血管不良事件（MACE）發生率降低27%[4](https://www.usa.philips.com/healthcare/education-resources/technologies/igt/intravascular-ultrasound-ivus/peripheral/peripheral-ivus)[12](https://www.philips.com/a-w/about/news/archive/standard/news/press/2024/multidisciplinary-panel-of-experts-from-prominent-cardiovascular-societies-advocate-for-broader-adoption-of-ivus-in-peripheral-interventions-to-improve-patient-care.html)。此外，系統的自然語言處理（NLP）模塊可自動生成結構化報告，使術後文檔處理時間縮短65%[15](https://www.philips.com/a-w/about/news/archive/standard/news/articles/2024/helping-radiologists-and-physicians-treat-more-patients-and-achieve-better-outcomes-ai-driven-enterprise-informatics-from-philips-at-ecr2024.html)。
+臨床決策支持系統整合機器學習算法，基於超過50萬例手術數據構建預測模型。該系統可<mark style="background: #FFB86CA6;">自動生成治療建議</mark>，包括支架尺寸選擇、擴張壓力預測等關鍵參數。多中心臨床驗證顯示，AI輔助決策使主要心血管不良事件（MACE）發生率降低27%[4](https://www.usa.philips.com/healthcare/education-resources/technologies/igt/intravascular-ultrasound-ivus/peripheral/peripheral-ivus)[12](https://www.philips.com/a-w/about/news/archive/standard/news/press/2024/multidisciplinary-panel-of-experts-from-prominent-cardiovascular-societies-advocate-for-broader-adoption-of-ivus-in-peripheral-interventions-to-improve-patient-care.html)。此外，系統的自然語言處理（NLP）模塊可<mark style="background: #FFB86CA6;">自動生成結構化報告</mark>，使術後文檔處理時間縮短65%[15](https://www.philips.com/a-w/about/news/archive/standard/news/articles/2024/helping-radiologists-and-physicians-treat-more-patients-and-achieve-better-outcomes-ai-driven-enterprise-informatics-from-philips-at-ecr2024.html)。
 
 ## AI驅動的IVUS技術革新方向
 
@@ -708,6 +708,197 @@ Philips IVUS系統通過深度整合AI技術，實現了從影像採集到臨床
 |**Complex Calcified Lesions（複雜鈣化病變）**|多尺度分析、3D CNN|影像增強、AI CAD 分析|評估動脈狹窄風險、支架輔助植入|
 
 這些方法能夠有效提升 **IVUS AI 模型** 在**鈣化與偽影處理**上的準確性與穩定性，從而提高臨床診斷的可靠性 🚀！
+
+
+# **MLOps Pipeline 詳細介紹（機器學習運營管道）**
+
+## **1. 什麼是 MLOps？**
+
+MLOps（Machine Learning Operations）是將 **機器學習（ML）** 與 **軟體工程（DevOps）** 相結合的一種技術方法，旨在**自動化、標準化** 機器學習模型的開發、部署、監控和維護過程。MLOps 主要解決 **模型開發與運營之間的落差（Model Development-Deployment Gap）**，確保機器學習系統可以**穩定、高效、可擴展**地運行。
+
+💡 **MLOps 目標**：
+
+1. **標準化** 機器學習模型的開發與部署
+2. **自動化** 數據處理、模型訓練、監控與維護
+3. **提高可重現性**（Reproducibility），確保每次模型訓練與部署結果一致
+4. **提升 CI/CD（Continuous Integration & Continuous Deployment）效率**，讓 ML 模型快速部署到生產環境
+5. **監控模型性能**，及時發現偏差與漂移（Drift），自動更新模型
+
+---
+
+## **2. MLOps Pipeline（機器學習運營管道）架構**
+
+MLOps Pipeline 的流程可以分為 **6 個主要階段**：
+
+1. **數據工程（Data Engineering）**
+2. **特徵工程（Feature Engineering）**
+3. **模型開發（Model Development & Training）**
+4. **模型評估與驗證（Model Evaluation & Validation）**
+5. **模型部署（Model Deployment）**
+6. **模型監控與維護（Model Monitoring & Maintenance）**
+
+📌 **完整 MLOps Pipeline 流程圖**：
+
+複製編輯
+
+`數據收集 → 數據處理 → 特徵工程 → 模型開發 → 模型評估 → 模型部署 → 監控 & 更新`
+
+---
+
+## **3. MLOps Pipeline 詳細步驟**
+
+### **(1) 數據工程（Data Engineering）**
+
+📌 **目標**：收集、清理、存儲數據，確保數據質量
+
+🔹 **步驟**：
+
+1. **數據收集（Data Ingestion）**
+    
+    - 來源：資料庫（SQL, NoSQL）、API、IOT 感測器、雲端數據
+    - **工具**：
+        - Apache Kafka、AWS Kinesis（串流數據）
+        - Airflow（ETL 排程）
+2. **數據預處理（Data Preprocessing）**
+    
+    - 缺失值處理（Imputation）
+    - 數據標準化（Normalization, Scaling）
+    - 去除異常值（Outlier Detection）
+3. **數據存儲（Data Storage & Management）**
+    
+    - **數據湖（Data Lake）**：適用於大數據（Hadoop、AWS S3）
+    - **數據倉儲（Data Warehouse）**：適用於結構化數據（Snowflake, Google BigQuery）
+
+---
+
+### **(2) 特徵工程（Feature Engineering）**
+
+📌 **目標**：選取並轉換對模型有價值的特徵，提高模型效能
+
+🔹 **步驟**：
+
+1. **特徵選擇（Feature Selection）**
+    
+    - 移除低相關特徵（如低變異性特徵）
+    - **工具**：Boruta、Lasso Regression、PCA
+2. **特徵轉換（Feature Transformation）**
+    
+    - One-Hot Encoding（類別數據）
+    - 連續數據標準化（Z-score, Min-Max Scaling）
+3. **特徵存儲（Feature Store）**
+    
+    - **作用**：統一特徵管理，確保可重現性
+    - **工具**：Feast（Feature Store for ML）
+
+---
+
+### **(3) 模型開發（Model Development & Training）**
+
+📌 **目標**：建立 ML 模型並進行訓練與調優
+
+🔹 **步驟**：
+
+1. **選擇演算法（Algorithm Selection）**
+    
+    - 監督學習（Supervised）：XGBoost, Random Forest, CNN
+    - 非監督學習（Unsupervised）：K-Means, DBSCAN
+2. **超參數調整（Hyperparameter Tuning）**
+    
+    - **方法**：
+        - Grid Search（網格搜尋）
+        - Bayesian Optimization（貝葉斯優化）
+    - **工具**：
+        - Optuna、Hyperopt、Ray Tune
+3. **分散式訓練（Distributed Training）**
+    
+    - 多 GPU / TPU 訓練（Horovod, PyTorch Lightning）
+
+---
+
+### **(4) 模型評估與驗證（Model Evaluation & Validation）**
+
+📌 **目標**：確保模型性能良好，避免過擬合
+
+🔹 **步驟**：
+
+1. **模型測試（Model Testing）**
+    
+    - 指標評估（Accuracy, Precision, Recall, F1-Score, AUC-ROC）
+    - 交叉驗證（Cross Validation）
+2. **模型版本控制（Model Versioning）**
+    
+    - 使用 **MLflow / DVC** 進行版本管理
+3. **模型公平性（Bias & Fairness Testing）**
+    
+    - 避免模型對某些群體產生偏見
+    - **工具**：AI Fairness 360, SHAP（Explainable AI）
+
+---
+
+### **(5) 模型部署（Model Deployment & CI/CD Pipeline）**
+
+📌 **目標**：將 ML 模型部署到生產環境，使其可供用戶使用
+
+🔹 **步驟**：
+
+1. **模型封裝（Model Packaging）**
+    
+    - 使用 **Docker** 建立容器
+    - 使用 **ONNX / TensorRT** 進行模型加速
+2. **部署方式**
+    
+    - **批次處理（Batch Inference）**：每天處理一次
+    - **即時推論（Real-time Inference）**：使用 **REST API（Flask, FastAPI, gRPC）**
+    - **邊緣部署（Edge Deployment）**：用於 IoT 設備（TensorFlow Lite, NVIDIA Jetson）
+3. **CI/CD 自動化部署**
+    
+    - **工具**：
+        - Jenkins / GitHub Actions（自動測試）
+        - Kubernetes（K8s）+ Kubeflow（管理 ML 服務）
+
+---
+
+### **(6) 模型監控與維護（Model Monitoring & Maintenance）**
+
+📌 **目標**：監控模型效能，應對數據漂移（Data Drift）
+
+🔹 **步驟**：
+
+1. **模型監控**
+    
+    - 監控模型準確率變化
+    - **工具**：Prometheus, Grafana
+2. **數據漂移偵測（Data & Concept Drift）**
+    
+    - 監測數據分佈變化
+    - **工具**：Evidently AI, WhyLabs
+3. **自動模型更新（AutoML Retraining）**
+    
+    - 觸發新數據訓練新模型
+    - **工具**：Kubeflow Pipelines, TFX（TensorFlow Extended）
+
+---
+
+## **4. MLOps Pipeline 工具總結**
+
+|階段|工具|
+|---|---|
+|數據處理|Apache Kafka, Airflow, Snowflake|
+|特徵工程|Feast, Pandas, Scikit-learn|
+|模型訓練|TensorFlow, PyTorch, XGBoost|
+|超參數調整|Optuna, Ray Tune|
+|模型管理|MLflow, DVC|
+|部署|Docker, Kubernetes, FastAPI|
+|監控|Prometheus, Grafana, Evidently AI|
+
+---
+
+## **5. 總結**
+
+MLOps Pipeline 透過自動化數據處理、特徵工程、模型訓練、部署與監控，**大幅提高 AI 模型的開發與運營效率**，讓 ML 產品可以穩定運行，並隨時更新以應對數據變化。🚀
+
+企業如 **Google, Microsoft, AWS** 都已廣泛採用 **MLOps**，未來將成為 **AI 產品落地的關鍵技術**！
+
 
 
 

@@ -2681,19 +2681,11 @@ for epoch in range(epochs):
 
 您還可以記錄模型的超參數和訓練配置，這有助於以後的實驗比較。
 
-python
-
-複製程式碼
-
 `run.log('batch_size', batch_size) run.log('learning_rate', learning_rate)`
 
 #### **2. 使用TensorBoard進行可視化**
 
 Azure ML也支持將 **TensorBoard** 與Azure Machine Learning集成，用來實時監控訓練過程。
-
-python
-
-複製程式碼
 
 `from azureml.tensorboard import Tensorboard tensorboard = Tensorboard(log_dir='./logs') tensorboard.start()`
 
@@ -2702,10 +2694,6 @@ python
 #### **3. 監控資源利用率**
 
 Azure ML還可以與 **Azure Monitor** 和 **Application Insights** 集成，幫助監控訓練過程中的資源使用情況（如GPU、CPU使用率、內存消耗等）。
-
-python
-
-複製程式碼
 
 `# 用Azure Monitor追踪資源消耗 from azureml.core.monitor import Monitor  monitor = Monitor(workspace=ws) monitor.track_resources()`
 
@@ -2731,10 +2719,6 @@ Azure ML會自動保存訓練過程中的所有標準輸出和錯誤信息，這
 
 每當訓練完成後，可以將模型註冊到工作區（Workspace）的模型庫中，並自動分配版本號。
 
-python
-
-複製程式碼
-
 `from azureml.core import Model  model = Model.register(workspace=ws,                        model_name="cell_survival_model",  # 模型名稱                        model_path="outputs/model.pkl")  # 本地模型的路徑`
 
 註冊完成後，可以在 Azure ML Studio 中查看模型及其版本信息。
@@ -2743,19 +2727,11 @@ python
 
 每次新的訓練完成後，可以以相同的名稱註冊模型，Azure ML 會自動為每次註冊的模型分配一個版本號。
 
-python
-
-複製程式碼
-
 `model = Model.register(workspace=ws,                        model_name="cell_survival_model",                         model_path="outputs/new_model.pkl")  # 新版本模型`
 
 ##### **獲取特定版本的模型**
 
 可以通過模型名稱和版本號來獲取特定的模型版本。
-
-python
-
-複製程式碼
 
 `model = Model(workspace=ws, name="cell_survival_model", version=2)`
 
@@ -2769,17 +2745,9 @@ Azure ML 提供 **Dataset** 類來管理數據集，支持版本控制，這對�
 
 從本地文件或雲存儲中加載數據，並將其註冊到工作區中。
 
-python
-
-複製程式碼
-
 `from azureml.core import Dataset  # 從本地文件創建數據集 data = Dataset.Tabular.from_delimited_files(path="data/train.csv")  # 註冊數據集 data.register(workspace=ws,               name="cell_dataset",               description="Training data for cell survival prediction",               create_new_version=True)  # 創建新版本`
 
 ##### **獲取特定版本的數據集**
-
-python
-
-複製程式碼
 
 `dataset = Dataset.get_by_name(workspace=ws, name="cell_dataset", version=2)`
 
@@ -2804,19 +2772,11 @@ python
 
 在訓練腳本中，可以設置多GPU分布式訓練：
 
-python
-
-複製程式碼
-
 `import torch.distributed as dist  # 初始化分布式進程 dist.init_process_group(backend='nccl', init_method='env://') rank = dist.get_rank()  # 設置分布式模型 model = torch.nn.parallel.DistributedDataParallel(model)`
 
 ##### **在Azure中啟動分布式訓練**
 
 在提交作業時，指定使用多個節點和GPU：
-
-python
-
-複製程式碼
 
 `from azureml.core import ScriptRunConfig, AmlCompute  compute_target = AmlCompute(ws, 'gpu-cluster')  src = ScriptRunConfig(source_directory='./scripts',                       script='train.py',                       arguments=['--epochs', 50],                       compute_target=compute_target,                       distributed_job_config=MpiConfiguration(node_count=4))`
 
@@ -2830,17 +2790,9 @@ Azure ML 提供了 **HyperDrive** 來執行超參數搜索，支持多個作業�
 
 定義需要優化的超參數和搜索空間：
 
-python
-
-複製程式碼
-
 `from azureml.train.hyperdrive import RandomParameterSampling, choice  param_sampling = RandomParameterSampling({     'learning_rate': choice(0.01, 0.001, 0.0001),     'batch_size': choice(16, 32, 64) })`
 
 ##### **提交超參數搜索作業**
-
-python
-
-複製程式碼
 
 `from azureml.train.hyperdrive import HyperDriveConfig, PrimaryMetricGoal  hd_config = HyperDriveConfig(run_config=src,                              hyperparameter_sampling=param_sampling,                              primary_metric_name='accuracy',                              primary_metric_goal=PrimaryMetricGoal.MAXIMIZE,                              max_total_runs=20,                              max_concurrent_runs=4)  # 最大並行數量  hd_run = experiment.submit(hd_config)`
 
@@ -2860,19 +2812,11 @@ python
 
 對少數類別進行過採樣，增加其樣本數量。例如，可以使用 SMOTE（Synthetic Minority Over-sampling Technique）技術。
 
-python
-
-複製程式碼
-
 `from imblearn.over_sampling import SMOTE  smote = SMOTE() X_resampled, y_resampled = smote.fit_resample(X_train, y_train)`
 
 ##### **欠採樣（Undersampling）**
 
 對多數類別進行欠採樣，減少其樣本數量。
-
-python
-
-複製程式碼
 
 `from imblearn.under_sampling import RandomUnderSampler  rus = RandomUnderSampler() X_resampled, y_resampled = rus.fit_resample(X_train, y_train)`
 
@@ -2888,19 +2832,11 @@ python
 
 在訓練過程中，為不同的類別分配不同的權重，讓模型更加關注少數類別。
 
-python
-
-複製程式碼
-
 `import torch.nn as nn  weights = torch.tensor([0.2, 0.8])  # 為多數和少數類別設置權重 loss_fn = nn.CrossEntropyLoss(weight=weights)`
 
 ##### **調整類別比例**
 
 可以在訓練時，使用 `class_weight` 參數（例如在 sklearn 的分類器中）。
-
-python
-
-複製程式碼
 
 `from sklearn.linear_model import LogisticRegression  clf = LogisticRegression(class_weight='balanced') clf.fit(X_train, y_train)`
 
@@ -2913,10 +2849,6 @@ python
 #### **3. 使用Azure AutoML自動處理**
 
 Azure AutoML 支持自動處理數據不平衡問題。只需要在配置中啟用相關參數：
-
-python
-
-複製程式碼
 
 `from azureml.train.automl import AutoMLConfig  automl_config = AutoMLConfig(     task='classification',     training_data=train_data,     label_column_name='label',     enable_early_stopping=True,     featurization='auto',     class_balancing=True  # 啟用自動類別平衡 )`
 
@@ -2934,10 +2866,6 @@ python
 - **數據加載**：將訓練數據集上傳至 Azure Blob Storage 或 Data Store。
 - **數據集註冊**：使用 `Dataset` 將數據集註冊到 Azure 工作區，實現數據的版本管理和重用。
 
-python
-
-複製程式碼
-
 `from azureml.core import Dataset  datastore = ws.get_default_datastore() dataset = Dataset.Tabular.from_delimited_files(path=(datastore, "data/train.csv")) dataset.register(workspace=ws, name="training_dataset", create_new_version=True)`
 
 ---
@@ -2947,17 +2875,9 @@ python
 - **設置計算資源**：選擇適合的計算資源（如 GPU 集群）。
 - **設置訓練腳本**：編寫訓練腳本，包括數據加載、模型定義、訓練和保存模型。
 
-python
-
-複製程式碼
-
 `from azureml.core import ScriptRunConfig  compute_target = ws.compute_targets['gpu-cluster'] env = Environment(name='training-env') src = ScriptRunConfig(source_directory='./scripts', script='train.py', environment=env, compute_target=compute_target)`
 
 - **提交訓練作業**：
-
-python
-
-複製程式碼
 
 `from azureml.core import Experiment  experiment = Experiment(workspace=ws, name="train-experiment") run = experiment.submit(src)`
 
@@ -2967,10 +2887,6 @@ python
 
 - **模型註冊**：將訓練完成的模型保存並註冊到模型庫中。
 
-python
-
-複製程式碼
-
 `from azureml.core.model import Model  model = Model.register(workspace=ws, model_name="trained_model", model_path="./outputs/model.onnx")`
 
 ---
@@ -2979,25 +2895,13 @@ python
 
 - **設置推理環境（Inference Environment）**： 配置環境，確保模型的推理所需的依賴庫。
 
-python
-
-複製程式碼
-
 `env = Environment.from_conda_specification(name='inference-env', file_path='environment.yml')`
 
 - **創建部署配置**： 定義部署目標（如 Azure Kubernetes Service 或 Azure Container Instances）。
 
-python
-
-複製程式碼
-
 `from azureml.core.webservice import AciWebservice, Webservice  deployment_config = AciWebservice.deploy_configuration(cpu_cores=1, memory_gb=2)`
 
 - **模型部署到Web服務**：
-
-python
-
-複製程式碼
 
 `from azureml.core.model import InferenceConfig  inference_config = InferenceConfig(entry_script='score.py', environment=env) service = Model.deploy(workspace=ws, name='onnx-service', models=[model], inference_config=inference_config, deployment_config=deployment_config) service.wait_for_deployment(show_output=True)`
 
@@ -3030,10 +2934,6 @@ torch.onnx.export(model, dummy_input, "model.onnx", export_params=True)`
 
 在訓練完成後，通過 `Run` 的完成回調將模型註冊並部署。
 
-python
-
-複製程式碼
-
 `from azureml.core.model import Model from azureml.core.webservice import AciWebservice from azureml.core.model import InferenceConfig  # 假設訓練完成後的作業 run.register_model(model_name="onnx_model", model_path="./outputs/model.onnx")  # 配置推理環境 inference_config = InferenceConfig(entry_script="score.py", environment=env)  # 部署配置 deployment_config = AciWebservice.deploy_configuration(cpu_cores=1, memory_gb=2)  # 自動部署模型 service = Model.deploy(workspace=ws,                        name="onnx-service",                        models=[model],                        inference_config=inference_config,                        deployment_config=deployment_config) service.wait_for_deployment(show_output=True)`
 
 ---
@@ -3041,10 +2941,6 @@ python
 #### **3. 使用Pipeline實現訓練到部署的自動化**
 
 Azure ML Pipeline 可以將訓練作業和部署作業串聯，實現端到端的自動化流程。
-
-python
-
-複製程式碼
 
 `from azureml.pipeline.steps import PythonScriptStep from azureml.pipeline.core import Pipeline  train_step = PythonScriptStep(script_name="train.py", compute_target=compute_target, source_directory=".") deploy_step = PythonScriptStep(script_name="deploy.py", compute_target=compute_target, source_directory=".")  pipeline = Pipeline(workspace=ws, steps=[train_step, deploy_step]) pipeline.submit("TrainAndDeployPipeline")`
 
@@ -3572,12 +3468,10 @@ register_custom_op_symbolic("::CustomOp", custom_op_symbolic, 11)
 **ONNX Runtime** 是一個高效的推理引擎，適合進行基準測試。以下步驟介紹如何使用它來測試ONNX模型的性能。
 
 ##### **步驟 1: 加載ONNX模型**
-
-python
-
-複製程式碼
-
+```python
 `import onnxruntime as ort import numpy as np import time  # 加載ONNX模型 session = ort.InferenceSession("model.onnx")  # 獲取模型的輸入形狀 input_name = session.get_inputs()[0].name input_shape = session.get_inputs()[0].shape print(f"輸入名稱: {input_name}, 輸入形狀: {input_shape}")`
+```
+
 
 ##### **步驟 2: 模擬輸入數據**
 
@@ -3592,20 +3486,14 @@ python
 ##### **步驟 3: 推理並計時**
 
 多次推理以計算平均延遲時間。
-
-python
-
-複製程式碼
-
+```python
 `# 推理並計算平均延遲 num_iterations = 100 start_time = time.time()  for _ in range(num_iterations):     outputs = session.run(None, {input_name: input_data})  end_time = time.time()  # 計算平均延遲時間 avg_latency = (end_time - start_time) / num_iterations print(f"平均延遲時間: {avg_latency:.6f} 秒")`
+```
+
 
 ##### **步驟 4: 計算吞吐量**
 
 吞吐量是每秒處理的輸入數量。
-
-python
-
-複製程式碼
 
 `throughput = batch_size / avg_latency print(f"吞吐量: {throughput:.2f} samples/second")`
 
@@ -3617,17 +3505,9 @@ python
 
 ##### **安裝工具**
 
-bash
-
-複製程式碼
-
 `pip install onnxruntime-tools`
 
 ##### **運行基準測試**
-
-bash
-
-複製程式碼
 
 `onnxruntime_benchmark --model model.onnx --batch_size 32 --iterations 100`
 
@@ -3636,10 +3516,6 @@ bash
 #### **3. 使用多平台測試**
 
 在不同硬體環境（如 CPU、GPU）上進行測試，以比較性能表現。例如，對於 GPU，可以設置執行提供程序（Execution Provider）為 CUDA。
-
-python
-
-複製程式碼
 
 `# 使用CUDA執行提供程序 session = ort.InferenceSession("model.onnx", providers=["CUDAExecutionProvider"])`
 
@@ -3667,12 +3543,10 @@ ONNX 可以通過 **ONNX Runtime C++ API** 與 C++ 集成，實現高效推理�
 - **獲取輸出結果**。
 
 ##### **Example: 基本推理代碼**
+```c++
+#include <onnxruntime/core/session/onnxruntime_cxx_api.h> #include <vector> #include <iostream>  int main() {     // 初始化 ONNX Runtime 環境     Ort::Env env(ORT_LOGGING_LEVEL_WARNING, "ONNXRuntime");      // 加載模型     Ort::SessionOptions session_options;     session_options.SetIntraOpNumThreads(1);     Ort::Session session(env, "model.onnx", session_options);      // 獲取模型輸入輸出信息     auto input_tensor_info = session.GetInputTypeInfo(0).GetTensorTypeAndShapeInfo();     std::vector<int64_t> input_dims = input_tensor_info.GetShape();     std::cout << "模型輸入維度: ";     for (auto dim : input_dims) std::cout << dim << " ";     std::cout << std::endl;      // 準備輸入數據     std::vector<float> input_tensor_values(input_dims[0] * input_dims[1] * input_dims[2] * input_dims[3], 1.0f);      // 創建輸入張量     std::vector<const char*> input_names = {"input"};     std::vector<Ort::Value> input_tensors;     input_tensors.push_back(Ort::Value::CreateTensor<float>(         Ort::MemoryInfo::CreateCpu(OrtArenaAllocator, OrtMemTypeDefault),         input_tensor_values.data(),         input_tensor_values.size(),         input_dims.data(),         input_dims.size()     ));      // 運行推理     std::vector<const char*> output_names = {"output"};     auto output_tensors = session.Run(Ort::RunOptions{nullptr}, input_names.data(), input_tensors.data(), 1, output_names.data(), 1);      // 獲取輸出     float* output_data = output_tensors[0].GetTensorMutableData<float>();     std::cout << "輸出第一個值: " << output_data[0] << std::endl;      return 0; }`
+```
 
-cpp
-
-複製程式碼
-
-`#include <onnxruntime/core/session/onnxruntime_cxx_api.h> #include <vector> #include <iostream>  int main() {     // 初始化 ONNX Runtime 環境     Ort::Env env(ORT_LOGGING_LEVEL_WARNING, "ONNXRuntime");      // 加載模型     Ort::SessionOptions session_options;     session_options.SetIntraOpNumThreads(1);     Ort::Session session(env, "model.onnx", session_options);      // 獲取模型輸入輸出信息     auto input_tensor_info = session.GetInputTypeInfo(0).GetTensorTypeAndShapeInfo();     std::vector<int64_t> input_dims = input_tensor_info.GetShape();     std::cout << "模型輸入維度: ";     for (auto dim : input_dims) std::cout << dim << " ";     std::cout << std::endl;      // 準備輸入數據     std::vector<float> input_tensor_values(input_dims[0] * input_dims[1] * input_dims[2] * input_dims[3], 1.0f);      // 創建輸入張量     std::vector<const char*> input_names = {"input"};     std::vector<Ort::Value> input_tensors;     input_tensors.push_back(Ort::Value::CreateTensor<float>(         Ort::MemoryInfo::CreateCpu(OrtArenaAllocator, OrtMemTypeDefault),         input_tensor_values.data(),         input_tensor_values.size(),         input_dims.data(),         input_dims.size()     ));      // 運行推理     std::vector<const char*> output_names = {"output"};     auto output_tensors = session.Run(Ort::RunOptions{nullptr}, input_names.data(), input_tensors.data(), 1, output_names.data(), 1);      // 獲取輸出     float* output_data = output_tensors[0].GetTensorMutableData<float>();     std::cout << "輸出第一個值: " << output_data[0] << std::endl;      return 0; }`
 
 ---
 
@@ -3680,10 +3554,6 @@ cpp
 
 - **多線程支持**：通過 `SetIntraOpNumThreads` 或 `SetInterOpNumThreads` 設置多線程數量。
 - **CUDA加速**：在 `SessionOptions` 中啟用 GPU 提供程序。
-
-cpp
-
-複製程式碼
 
 `session_options.AppendExecutionProvider_CUDA(0);  // 使用第一塊 GPU`
 
@@ -3700,12 +3570,14 @@ ONNX 模型優化旨在提高推理速度、降低內存佔用，並充分利用
 **ONNX Runtime** 支持自動優化計算圖，通過消除冗餘操作和融合運算來提高性能。
 
 ##### **啟用圖優化**
+```python
+import onnxruntime as ort  
 
-python
+session_options = ort.SessionOptions() 
+session_options.graph_optimization_level = ort.GraphOptimizationLevel.ORT_ENABLE_ALL 
 
-複製程式碼
-
-`import onnxruntime as ort  session_options = ort.SessionOptions() session_options.graph_optimization_level = ort.GraphOptimizationLevel.ORT_ENABLE_ALL session = ort.InferenceSession("model.onnx", session_options)`
+session = ort.InferenceSession("model.onnx", session_options)
+```
 
 ---
 
@@ -3716,22 +3588,17 @@ python
 ##### **靜態量化**
 
 需要事先校準數據。
-
-bash
-
-複製程式碼
-
-`python -m onnxruntime.quantization.quantize_static --input model.onnx --output model_int8.onnx --calibrate data/`
+```python
+python -m onnxruntime.quantization.quantize_static --input model.onnx --output model_int8.onnx --calibrate data/`
+```
 
 ##### **動態量化**
 
 不需要校準數據。
-
-bash
-
-複製程式碼
-
+```python
 `python -m onnxruntime.quantization.quantize_dynamic --input model.onnx --output model_int8.onnx`
+```
+
 
 ---
 
@@ -3742,10 +3609,6 @@ bash
 ##### **ONNX轉TensorRT**
 
 使用 TensorRT 將 ONNX 模型轉換為優化的推理引擎：
-
-bash
-
-複製程式碼
 
 `trtexec --onnx=model.onnx --saveEngine=model.trt`
 
@@ -3829,10 +3692,6 @@ TensorRT 使用低精度的 **FP16（半精度浮點）** 和 **INT8（整數）
 - TensorRT 自動將模型中的 FP32 運算轉換為 FP16 運算（如果硬體支持）。
 - 在生成 TensorRT 引擎時啟用 FP16：
 
-bash
-
-複製程式碼
-
 `trtexec --onnx=model.onnx --fp16 --saveEngine=model_fp16.trt`
 
 ##### **1.3 FP16優勢**
@@ -3858,10 +3717,6 @@ bash
 2. **啟用 INT8**
     
     - 在生成 TensorRT 引擎時啟用 INT8 模式，並指定校準數據集。
-
-bash
-
-複製程式碼
 
 `trtexec --onnx=model.onnx --int8 --calib=data/ --saveEngine=model_int8.trt`
 
@@ -3890,10 +3745,6 @@ TensorRT 通過運算符融合將多個操作合併為一個計算內核，減�
 
 運算符融合在 TensorRT 中是自動進行的，無需手動設置。
 
-bash
-
-複製程式碼
-
 `trtexec --onnx=model.onnx --saveEngine=model.trt`
 
 ---
@@ -3904,17 +3755,9 @@ bash
 
 ##### **Example: 啟用FP16**
 
-bash
-
-複製程式碼
-
 `trtexec --onnx=model.onnx --fp16 --saveEngine=model_fp16.trt`
 
 ##### **Example: 啟用INT8**
-
-bash
-
-複製程式碼
 
 `trtexec --onnx=model.onnx --int8 --calib=data/ --saveEngine=model_int8.trt`
 
@@ -3923,10 +3766,6 @@ bash
 #### **3. 減少內存拷貝和數據傳輸**
 
 - **固定批量大小（Fixed Batch Size）**：如果輸入批量大小是固定的，可以減少內存分配的開銷。
-
-bash
-
-複製程式碼
 
 `trtexec --onnx=model.onnx --minShapes=input:1x3x224x224 --optShapes=input:4x3x224x224 --maxShapes=input:8x3x224x224`
 
@@ -3937,10 +3776,6 @@ bash
 - TensorRT 支持多流並行執行，可以同時處理多個請求。
 - 啟用多流推理：
 
-bash
-
-複製程式碼
-
 `trtexec --onnx=model.onnx --streams=4`
 
 ---
@@ -3948,10 +3783,6 @@ bash
 #### **5. 設置工作區大小**
 
 - 增大 TensorRT 的工作區內存可以加速大模型的推理。
-
-bash
-
-複製程式碼
 
 `trtexec --onnx=model.onnx --workspace=2048`
 
@@ -3966,10 +3797,6 @@ bash
 #### **7. 測試優化效果**
 
 使用 TensorRT 提供的性能測試工具 `trtexec` 測試優化效果：
-
-bash
-
-複製程式碼
 
 `trtexec --loadEngine=model.trt`
 
@@ -4001,19 +3828,16 @@ TensorRT 自動將 FP32 運算轉換為 FP16，前提是 GPU 支持 FP16。
 
 - **命令行示例**：
 
-bash
-
-複製程式碼
-
 `trtexec --onnx=model.onnx --fp16 --saveEngine=model_fp16.trt`
 
 - **Python示例**：
 
-python
+`import tensorrt as trt  # 構建 FP16 引擎 
+builder = trt.Builder(TRT_LOGGER) 
+config = builder.create_builder_config() 
+config.set_flag(trt.BuilderFlag.FP16)  # 啟用 FP16 
 
-複製程式碼
-
-`import tensorrt as trt  # 構建 FP16 引擎 builder = trt.Builder(TRT_LOGGER) config = builder.create_builder_config() config.set_flag(trt.BuilderFlag.FP16)  # 啟用 FP16 engine = builder.build_engine(network, config)`
+engine = builder.build_engine(network, config)`
 
 ---
 
@@ -4038,10 +3862,6 @@ INT8 量化需要校準數據集（Calibration Dataset）來估算模型中的�
 ##### **實現方法**
 
 - **命令行示例**：
-
-bash
-
-複製程式碼
 
 `trtexec --onnx=model.onnx --int8 --calib=data/ --saveEngine=model_int8.trt`
 
@@ -4435,17 +4255,9 @@ TensorRT 提供 `trtexec` 工具，將 ONNX 模型轉換為高效的 TensorRT �
 
 - **INT8**（整數量化）：
 
-bash
-
-複製程式碼
-
 `trtexec --onnx=model.onnx --int8 --calib=data/ --saveEngine=model_int8.trt`
 
 - **動態批量大小**：
-
-bash
-
-複製程式碼
 
 `trtexec --onnx=model.onnx --optShapes=input:1x3x224x224 --maxShapes=input:16x3x1024x1024 --saveEngine=model_dynamic.trt`
 

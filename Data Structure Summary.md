@@ -2782,38 +2782,59 @@ def isAnagram(s: str, t: str) -> bool:
 ###### 併查集
 ---
 
-## **一、并查集的原理与特点**
+## **并查集（Union-Find）概念詳解**
 
-### **1. 原理**
+并查集（**Union-Find**）是一種用來處理**不相交集合合併（Union）**與**查找（Find）**問題的數據結構。它主要用於**動態連通性問題**，適用於處理一組元素分組與合併的問題，如網絡連通性、最小生成樹（Kruskal 算法）、動態連通性問題等。
 
-- **并查集（Union-Find）** 是一种用于管理**不相交集合（Disjoint Sets）** 的数据结构。
-- 它支持两种核心操作：
-    - **合并（Union）**：将两个元素所属的集合合并为一个集合。
-    - **查找（Find）**：确定某个元素属于哪个集合，通常返回该集合的代表元素（根节点）。
+### **主要操作**
 
-### **2. 特点**
+1. **Find（查找）**
+    
+    - 用來查詢某個元素所屬的集合，通常返回該集合的代表元素（根節點）。
+    - 使用**路徑壓縮（Path Compression）**優化，使查找操作幾乎是 O(1) 的時間複雜度。
+2. **Union（合併）**
+    
+    - 把兩個集合合併成一個集合，將一個集合的根節點指向另一個集合的根節點。
+    - 使用**按秩合併（Union by Rank）**優化，確保合併後的樹盡量平衡，減少未來的查找成本。
+3. **Connected（是否連通）**
+    
+    - 通常是基於 `Find(x) == Find(y)` 來判斷兩個元素是否屬於同一個集合。
 
-- **树结构表示集合**：并查集使用**树**的形式来表示集合，每个集合的元素指向一个**根节点**，根节点代表集合的标识。
-- **路径压缩**：在查找操作中，将路径上的节点直接连接到根节点，从而加速查找操作。
-- **按秩合并**：合并时将较小的树挂到较大的树上，保证树的高度尽量小。
-- **时间复杂度**：
-    - **查找（Find）** 和 **合并（Union）** 的平均时间复杂度为 O(α(n))O(\alpha(n))O(α(n))，其中 α(n)\alpha(n)α(n) 是**阿克曼函数的反函数**，接近常数时间。
-- **适用场景**：
-    - 解决**连通性**问题。
-    - 最小生成树算法（如 Kruskal 算法）。
-    - 群组分类或动态连接问题。
+### **並查集的實現**
+
+並查集通常使用**樹結構（森林）**來表示集合，每個節點指向其父節點，根節點表示整個集合的代表。
 
 ---
 
 ## **二、具体例子**
 
-假设有以下元素与集合：
+### **例 1：動態連通性問題**
 
-- 初始状态：`{1} {2} {3} {4}`（每个元素是一个独立的集合）。
-- 执行操作：
-    - **Union(1, 2)**：将 `1` 和 `2` 合并，结果：`{1, 2} {3} {4}`。
-    - **Union(2, 3)**：将 `2` 和 `3` 合并，结果：`{1, 2, 3} {4}`。
-    - **Find(3)**：返回 `3` 所在集合的代表元素（根节点 `1`）。
+假設有 **n** 個節點，最初彼此獨立，並且隨著時間的推移，我們不斷地合併一些節點，然後查詢兩個節點是否已經連通。
+
+**問題：** 假設有 5 個節點（`0, 1, 2, 3, 4`），我們按以下步驟合併並查詢：
+
+1. 合併 `(0,1)`
+2. 合併 `(2,3)`
+3. 合併 `(1,3)`
+4. 查詢 `(0,3)` 是否連通？（應該回傳 True）
+5. 查詢 `(1,4)` 是否連通？（應該回傳 False）
+
+解釋:
+step1:
+parent = [0,1,2,3,4],  rank = [1,1,1,1,1]
+
+step2:  合併(0,1)
+parent = [0,0,2,3,4],  rank = [2,1,1,1,1]
+
+step3:  合併(2,3)
+parent = [0,0,2,2,4],  rank = [2,1,2,1,1]
+
+step4:  合併(1,3)
+parent = [0,0,0,2,4],  rank = [3,1,2,1,1]
+
+step5:  查詢(0,3)
+判斷兩個節點是否在同一個集合內
 
 ---
 
@@ -2821,41 +2842,58 @@ def isAnagram(s: str, t: str) -> bool:
 
 ### **并查集基本实现**
 ```python
-class UnionFind:
-    def __init__(self, n):
-        self.parent = [i for i in range(n)]  # 初始化每个元素的父节点为自己
-        self.rank = [1] * n  # 记录树的高度（秩）
+"""
+class Solution:
+    def __init__(self):
+        self.f = {}
 
-    # 查找操作，路径压缩
+    def merge(self, x, y):
+        x = self.find(x)
+        y = self.find(y)
+        if x != y:
+            self.f[x] = y
+
     def find(self, x):
-        if self.parent[x] != x:
-            self.parent[x] = self.find(self.parent[x])  # 路径压缩
-        return self.parent[x]
+        if self.f[x] == x:
+            return x
+        
+        self.f[x] = self.find(self.f[x])
+        return self.f[x]
 
-    # 合并操作，按秩合并
-    def union(self, x, y):
-        root_x = self.find(x)
-        root_y = self.find(y)
+    # @param {DirectedGraphNode[]} nodes a array of directed graph node
+    # @return {int[][]} a connected set of a directed graph
+    def connectedSet2(self, nodes):
+        for node in nodes:
+            self.f[node.label] = node.label
 
-        if root_x != root_y:  # 只有根节点不同才合并
-            if self.rank[root_x] > self.rank[root_y]:
-                self.parent[root_y] = root_x
-            elif self.rank[root_x] < self.rank[root_y]:
-                self.parent[root_x] = root_y
-            else:
-                self.parent[root_y] = root_x
-                self.rank[root_x] += 1
+        for node in nodes:
+            for nei in node.neighbors:
+                self.merge(node.label, nei.label)
 
-    # 判断两个元素是否在同一集合
-    def connected(self, x, y):
-        return self.find(x) == self.find(y)
+        result = []
+        g = {}
+        cnt = 0
 
-# 示例
-uf = UnionFind(5)  # 初始化 5 个元素
+        for node in nodes:
+            x = self.find(node.label)
+            if not x in g:
+                cnt += 1
+                g[x] = cnt
+            
+            if len(result) < cnt:
+                result.append([])
+        
+            result[g[x] - 1].append(node.label)
+
+        return result
+
+uf = UnionFind(5)
 uf.union(0, 1)
-uf.union(1, 2)
-print(uf.connected(0, 2))  # 输出: True
-print(uf.connected(0, 3))  # 输出: False
+uf.union(2, 3)
+uf.union(1, 3)
+
+print(uf.connected(0, 3))  # True
+print(uf.connected(1, 4))  # False
 
 ```
 
