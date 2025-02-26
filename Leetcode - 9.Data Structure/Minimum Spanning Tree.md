@@ -127,7 +127,13 @@ pass
 
 題目提供的 `connections` 是一個**無向加權圖**，每條邊表示兩個城市之間的連接及其成本：
 
-`connections = [     Connection("A", "B", 1),     Connection("B", "C", 2),     Connection("A", "C", 3) ]`
+```python
+connections = [
+    Connection("A", "B", 1),
+    Connection("B", "C", 2),
+    Connection("A", "C", 3)
+]
+```
 
 這裡的 `Connection` 類包含：
 
@@ -150,24 +156,28 @@ pass
 3. **如果 `city1` 也相同，按 `city2` 字母序排序**。
 
 舉例：
-
-less
-
-複製編輯
-
-`原始邊: [("A", "C", 3), ("A", "B", 1), ("B", "C", 2)] 排序後: [("A", "B", 1), ("B", "C", 2), ("A", "C", 3)]`
+```python
+原始邊: [("A", "C", 3), ("A", "B", 1), ("B", "C", 2)]
+排序後: [("A", "B", 1), ("B", "C", 2), ("A", "C", 3)]
+```
 
 ---
 
 ### **Step 3: 建立城市對應的數字編號**
 
 我們需要對城市進行**數字映射**，這樣並查集可以用數組表示：
+```python
+hash = {}   
+n = 0
+for connection in connections:
+    if connection.city1 not in hash:
+        n += 1
+        hash[connection.city1] = n
 
-python
-
-複製編輯
-
-`hash = {}    n = 0 for connection in connections:     if connection.city1 not in hash:         n += 1         hash[connection.city1] = n      if connection.city2 not in hash:         n += 1         hash[connection.city2] = n`
+    if connection.city2 not in hash:
+        n += 1
+        hash[connection.city2] = n
+```
 
 - `hash["A"] = 1`
 - `hash["B"] = 2`
@@ -177,10 +187,6 @@ python
 
 ### **Step 4: 初始化並查集**
 
-python
-
-複製編輯
-
 `father = [0 for _ in range(n + 1)]`
 
 這裡 `father[i]` 表示編號 `i` 所屬的集合代表元素（初始時 `i` 指向自己）。
@@ -189,11 +195,20 @@ python
 
 ### **Step 5: 遍歷邊並執行 Kruskal 演算法**
 
-python
+```python
+results = []
+for connection in connections:
+    num1 = hash[connection.city1]
+    num2 = hash[connection.city2]
 
-複製編輯
+    root1 = self.find(num1, father)
+    root2 = self.find(num2, father)
 
-`results = [] for connection in connections:     num1 = hash[connection.city1]     num2 = hash[connection.city2]      root1 = self.find(num1, father)     root2 = self.find(num2, father)      if root1 != root2:  # 不在同一個集合，則選擇這條邊         father[root1] = root2         results.append(connection)`
+    if root1 != root2:  # 不在同一個集合，則選擇這條邊
+        father[root1] = root2
+        results.append(connection)
+
+```
 
 這裡：
 
@@ -206,12 +221,10 @@ python
 
 ### **Step 6: 檢查最小生成樹是否構成**
 
-python
-
-複製編輯
-
-`if len(results) != n - 1:     return []`
-
+```python
+if len(results) != n - 1:
+    return []
+```
 - **MST 必須有 `n-1` 條邊**，否則無法構成連通圖。
 - 如果邊數少於 `n-1`，表示有節點未連接，返回 `[]`。
 
@@ -266,4 +279,230 @@ Kruskal + 并查集是一種**簡單、高效且易於實現**的方法，因此
 
   
 
-O
+
+
+## **詳細解析 Kruskal 算法求解最小生成樹（MST）**
+
+Kruskal 算法是一種**貪心算法（Greedy Algorithm）**，用來計算**無向加權圖**的**最小生成樹（MST, Minimum Spanning Tree）**。它的基本思路是：
+
+1. **將所有邊按照權重排序**（從小到大）。
+2. **逐步加入邊，確保不形成環**（用**並查集**來檢查是否連通）。
+3. **直到 MST 包含 `n-1` 條邊**（其中 `n` 是節點數）。
+
+---
+
+## **問題描述**
+
+給定一個無向圖，其中的邊格式為 `(u, v, w)`，表示從節點 `u` 到節點 `v` 的邊，權重為 `w`：
+```python
+"""
+edges = [(0, 1, 1),  # 節點 0 和 1 之間的邊，權重 1
+         (1, 2, 2),  # 節點 1 和 2 之間的邊，權重 2
+         (0, 2, 3),  # 節點 0 和 2 之間的邊，權重 3
+         (1, 3, 4)]  # 節點 1 和 3 之間的邊，權重 4
+```
+
+![[Pasted image 20250225100709.png]]
+
+我們要構造一棵**最小生成樹（MST）**，使得：
+
+- **所有節點連通**
+- **權重總和最小**
+- **不能形成環**
+
+解釋:
+step1:
+parent = [0, 1, 2, 3] rank = [1, 1, 1, 1]
+
+step2: 加入(0,1,1)
+parent = [1, 1, 2, 3], weight=1
+
+step3: 加入(1,2,2)
+parent = [1, 2, 2, 3], weight=3
+
+step4: 加入(0,2,3)
+**跳過這條邊（避免形成環）**。
+
+---
+
+## **Kruskal 算法的解法步驟**
+
+### **Step 1: 將所有邊按權重排序**
+
+`edges.sort(key=lambda x: x[2])  # 按照邊權重升序排序`
+
+排序後的 `edges`：
+
+`[(0, 1, 1), (1, 2, 2), (0, 2, 3), (1, 3, 4)]`
+
+這樣我們可以確保**優先選擇最小權重的邊**來構造 MST。
+
+---
+
+### **Step 2: 初始化並查集**
+
+我們使用**並查集（Union-Find）**來檢查邊是否會形成環：
+
+`uf = UnionFind(4)  # 4 個節點 (0, 1, 2, 3)`
+
+初始化的 `UnionFind` 結構：
+```python
+"""
+parent = [0, 1, 2, 3]  # 每個節點的父節點先指向自己
+rank = [1, 1, 1, 1]  # 初始化秩為 1
+```
+
+---
+
+### **Step 3: 遍歷邊並執行 Kruskal 算法**
+
+遍歷排序後的邊，每次嘗試將邊 `(u, v, w)` 加入最小生成樹：
+```python
+"""
+mst_weight = 0
+mst_edges = []
+
+for u, v, w in edges:
+    if not uf.connected(u, v):  # 如果 u 和 v 不在同一個集合
+        uf.union(u, v)  # 合併兩個節點
+        mst_weight += w  # 累加 MST 的總權重
+        mst_edges.append((u, v, w))  # 記錄選中的邊
+
+```
+
+---
+
+## **具體步驟拆解**
+
+### **初始化**
+```python
+"""
+parent = [0, 1, 2, 3]
+rank = [1, 1, 1, 1]
+
+```
+
+### **遍歷排序後的邊**
+
+#### **1. 選擇 (0,1,1)**
+
+- `find(0) = 0`，`find(1) = 1`（不同集合）。
+- **Union(0,1)**：將 `0` 合併到 `1`。
+- **更新 `parent`**：
+
+    `parent = [1, 1, 2, 3]`
+    
+- **MST 邊集合**：
+
+    `[(0, 1, 1)]`
+    
+- **當前權重和**：
+
+    `mst_weight = 1`
+    
+
+---
+
+#### **2. 選擇 (1,2,2)**
+
+- `find(1) = 1`，`find(2) = 2`（不同集合）。
+- **Union(1,2)**：將 `1` 合併到 `2`。
+- **更新 `parent`**：
+
+    `parent = [1, 2, 2, 3]`
+    
+- **MST 邊集合**：
+
+    `[(0, 1, 1), (1, 2, 2)]`
+    
+- **當前權重和**：
+
+    `mst_weight = 3`
+    
+
+---
+
+#### **3. 選擇 (0,2,3)**
+
+- `find(0) = 2`，`find(2) = 2`（同一集合）。
+- **跳過這條邊（避免形成環）**。
+
+---
+
+#### **4. 選擇 (1,3,4)**
+
+- `find(1) = 2`，`find(3) = 3`（不同集合）。
+- **Union(1,3)**：將 `2` 合併到 `3`。
+- **更新 `parent`**：
+
+    `parent = [1, 2, 3, 3]`
+    
+- **MST 邊集合**：
+
+    `[(0, 1, 1), (1, 2, 2), (1, 3, 4)]`
+    
+- **當前權重和**：
+
+    `mst_weight = 7`
+    
+
+---
+
+### **Step 4: 返回最小生成樹結果**
+
+`print("MST weight:", mst_weight)  # 輸出 7 print("MST edges:", mst_edges)  # 輸出 [(0,1,1), (1,2,2), (1,3,4)]`
+
+最終的 **MST**：
+
+  `1  / \ 0   2     |     3`
+
+這是一棵 **連通樹**，包含所有節點，且權重最小。
+
+---
+
+## **時間複雜度分析**
+
+假設：
+
+- `V` 是節點數
+- `E` 是邊數
+
+|步驟|複雜度|
+|---|---|
+|**邊排序** `edges.sort()`|`O(E log E)`|
+|**並查集初始化**|`O(V)`|
+|**遍歷邊並執行 Union-Find**|`O(E α(V))`（幾乎是 `O(E)`)|
+|**總計**|`O(E log E)`|
+
+**為何 `O(E log E)` 是最佳解法？**
+
+- **排序是 Kruskal 的主要成本**，使用快排或合併排序，時間複雜度 `O(E log E)`。
+- **Union-Find 的 `Find` 和 `Union` 操作幾乎是 `O(1)`（阿克曼函數的反函數 `α(V) ≈ O(1)`)。
+- **對於稀疏圖（E ≪ V^2），比 Prim 更優**。
+
+---
+
+## **其他解法（不需代碼）**
+
+### **1. Prim 算法**
+
+- **適用於密集圖（E ≈ V^2）**
+- **時間複雜度 `O(E log V)`**
+- **使用優先隊列（Heap）每次選最小邊**
+- **比 Kruskal 更適合邊數很多的情況**
+
+### **2. Borůvka 算法**
+
+- **適用於並行計算**
+- **每輪找所有連通分量的最小邊，合併直到形成一棵樹**
+- **時間複雜度 `O(E log V)`**
+- **適用於超大規模分布式計算**
+
+---
+
+## **總結**
+
+- **Kruskal + Union-Find 是求 MST 最優解法之一，時間複雜度 `O(E log E)`，適用於稀疏圖（E ≪ V^2）。**
+- **Prim 更適合稠密圖（E ≈ V^2）。**
+- **Borůvka 適用於並行計算。**
+- **Kruskal 方法簡單易懂，適用範圍廣泛。**
