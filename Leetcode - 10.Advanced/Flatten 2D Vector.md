@@ -17,6 +17,7 @@ Lintcode 601
 
 
 ```python
+"""
 ```python
 class Vector2D(object):
 2
