@@ -163,3 +163,16 @@ $(a^n) \mod b$
 |**矩陣快速冪**|`O(log n)`|適用於線性遞推|適用範圍受限|
 
 最佳選擇仍然是 **快速冪 (Binary Exponent**
+
+
+
+## **快速幂取模的思路是否來自以下性質？**
+
+$\large (a \cdot b) \mod N \equiv [(a \mod N) \cdot (b \mod N)] \mod N$
+
+✅ **是正確的！** 快速幂取模的核心思想確實基於這個數論性質，也被稱為 **模運算的分配律**，這條性質允許我們在計算 **冪次運算時逐步取模**，以避免數字過大造成溢出。
+
+https://leetcode.cn/problems/powx-n/solutions/241471/50-powx-n-kuai-su-mi-qing-xi-tu-jie-by-jyd/
+![[Pasted image 20250227115131.png]]
+
+![[Pasted image 20250227115424.png]]
