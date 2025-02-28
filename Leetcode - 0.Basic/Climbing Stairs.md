@@ -12,10 +12,10 @@ n = 3
 3
 ```
 解释：
-1. 1, 1, 1
-2. 1, 2
-3. 2, 1
-共3种
+	1, 1, 1
+	1, 2
+	2, 1
+	共3种
 
 **样例 2：**
 输入：
@@ -43,6 +43,19 @@ def climb_stairs(self, n: int) -> int:
 	return result[-1]
 ```
 pass
+
+```python
+def climb_stairs(self, n: int) -> int:
+	if n == 0:
+		return 0
+	if n <= 2:
+		return n
+	result=[1,2]
+	for i in range(n-2):
+		result[i%2] = result[0] + result[1]
+	return result[i%2]
+```
+
 
 n=3 -> result=3
 1. 1, 1, 1
