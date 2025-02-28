@@ -4,17 +4,21 @@
     "type": "split",
     "children": [
       {
-        "id": "f5a75a1ecd417a62",
+        "id": "f8e9cdc1f197ddf9",
         "type": "tabs",
         "children": [
           {
-            "id": "b9b4110a15c5cedf",
+            "id": "cbb6ad5c06bf2854",
             "type": "leaf",
             "state": {
-              "type": "empty",
-              "state": {},
+              "type": "markdown",
+              "state": {
+                "file": "Leetcode - 11.other QA/Prefix summary.md",
+                "mode": "source",
+                "source": false
+              },
               "icon": "lucide-file",
-              "title": "新分頁"
+              "title": "Prefix summary"
             }
           }
         ]
@@ -49,7 +53,7 @@
             "state": {
               "type": "search",
               "state": {
-                "query": "eigen",
+                "query": "前綴積",
                 "matchingCase": false,
                 "explainSearch": false,
                 "collapseAll": false,
@@ -74,7 +78,8 @@
       }
     ],
     "direction": "horizontal",
-    "width": 301.5
+    "width": 301.5,
+    "collapsed": true
   },
   "right": {
     "id": "7870daaab79c7df9",
@@ -160,36 +165,36 @@
       "table-editor-obsidian:Advanced Tables Toolbar": false
     }
   },
-  "active": "b9b4110a15c5cedf",
+  "active": "cbb6ad5c06bf2854",
   "lastOpenFiles": [
-    "Data Structure Summary.md",
-    "Leetcode - 0.Basic/Recover Rotated Sorted Array.md",
-    "Leetcode - 0.Basic/Longest Continuous Increasing Subsequence.md",
-    "Leetcode - 0.Basic/Contains Duplicate.md",
-    "Leetcode - 0.Basic/Single Number.md",
-    "Leetcode - 0.Basic/Pascal's Triangle II.md",
-    "Leetcode - 0.Basic/Pascal's Triangle.md",
-    "Leetcode - 0.Basic/Merge Intervals.md",
-    "Leetcode - 0.Basic/Rotate String.md",
-    "Leetcode - 0.Basic/Remove Duplicates.md",
-    "Leetcode - 4.Binary Search/Search in Rotated Sorted Array.md",
-    "Leetcode - 0.Basic/Insert Interval.md",
-    "Leetcode - 0.Basic/Majority Number.md",
-    "Leetcode - 0.Basic/Remove Duplicates from Sorted Array II.md",
+    "Leetcode - 11.other QA/Prefix summary.md",
     "Leetcode - 0.Basic/Product of Array Exclude Itself.md",
-    "Leetcode - 0.Basic/Climbing Stairs.md",
-    "Leetcode - 0.Basic/Set Matrix Zeroes.md",
-    "Leetcode - 0.Basic/Product of Array Except Self.md",
-    "Leetcode - 4.Binary Search/Search in Rotated Sorted Array II.md",
-    "Leetcode - 9.Data Structure/Paper Review.md",
-    "Leetcode - 9.Data Structure/Find the Weak Connected Component in the Directed Graph.md",
+    "Data Structure Summary.md",
+    "Leetcode - 3.Two Pointers/雙指針.md",
+    "Leetcode - 9.Data Structure/Rehashing.md",
+    "Leetcode - 9.Data Structure/Longest Consecutive Sequence.md",
+    "Leetcode - 9.Data Structure/Fast Power.md",
+    "Leetcode - 9.Data Structure/Sqrt(x).md",
     "Leetcode - 9.Data Structure/Graph Valid Tree II.md",
-    "Leetcode - 9.Data Structure/Connecting Graph II.md",
-    "Leetcode - 9.Data Structure/Connecting Graph III.md",
-    "Leetcode - 9.Data Structure/Sentence Similarity II.md",
-    "Leetcode - 9.Data Structure/The Earliest Moment When Everyone Become Friends.md",
-    "Pasted image 20250227142307.png",
+    "Leetcode - 9.Data Structure/Connecting Cities With Minimum Cost.md",
+    "Leetcode - 9.Data Structure/Subarray Sum Closest.md",
+    "Leetcode - 9.Data Structure/Subarray Sum.md",
+    "Code - Python/Python data structure.md",
+    "Leetcode - 9.Data Structure/Subarray Sum Equals K.md",
+    "Leetcode - 2.Sorting/排序.md",
+    "Leetcode - 10.Advanced/掃描線.md",
+    "Interview - ML/Data Science interview.md",
+    "Interview - ML/ML Engineer interviews.md",
     "materials/Pasted image 20250227115424.png",
+    "materials/Pasted image 20250227142307.png",
+    "Leetcode - 8.Dynamic programming/動態規劃.md",
+    "Interview - QA_positions/ML-interview -  (ZEISS)X-Ray Microscopes.md",
+    "Interview - ML/Traditional ML - Bootstrapping, Bagging, SVM, L1L2 Loss.md",
+    "Interview - handon AI model/Interview - handon AI model.md",
+    "Interview - handon AI model/Pytorch coding exercise.md",
+    "Interview - ongoing/ML-interview - Azure and Docker.md",
+    "Interview - ongoing/Philips - Machine Learning Engineer-Clinical Imaging.md",
+    "Interview - QA_positions/未命名.md",
     "materials/Pasted image 20250227115131.png",
     "materials/Pasted image 20250226225101.png",
     "materials/Pasted image 20250226225036.png",
