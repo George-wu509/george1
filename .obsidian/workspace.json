@@ -8,7 +8,21 @@
         "type": "tabs",
         "children": [
           {
-            "id": "cbb6ad5c06bf2854",
+            "id": "10dc0fbb55805576",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "Data Structure Summary.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "Data Structure Summary"
+            }
+          },
+          {
+            "id": "595c86b8641ba2f0",
             "type": "leaf",
             "state": {
               "type": "markdown",
@@ -21,7 +35,8 @@
               "title": "Prefix summary"
             }
           }
-        ]
+        ],
+        "currentTab": 1
       }
     ],
     "direction": "vertical"
@@ -165,11 +180,13 @@
       "table-editor-obsidian:Advanced Tables Toolbar": false
     }
   },
-  "active": "cbb6ad5c06bf2854",
+  "active": "595c86b8641ba2f0",
   "lastOpenFiles": [
-    "Leetcode - 11.other QA/Prefix summary.md",
-    "Leetcode - 0.Basic/Product of Array Exclude Itself.md",
     "Data Structure Summary.md",
+    "Leetcode - 11.other QA/Prefix summary.md",
+    "Leetcode - 2.Sorting/排序.md",
+    "Leetcode - 10.Advanced/掃描線.md",
+    "Leetcode - 0.Basic/Product of Array Exclude Itself.md",
     "Leetcode - 3.Two Pointers/雙指針.md",
     "Leetcode - 9.Data Structure/Rehashing.md",
     "Leetcode - 9.Data Structure/Longest Consecutive Sequence.md",
@@ -181,8 +198,6 @@
     "Leetcode - 9.Data Structure/Subarray Sum.md",
     "Code - Python/Python data structure.md",
     "Leetcode - 9.Data Structure/Subarray Sum Equals K.md",
-    "Leetcode - 2.Sorting/排序.md",
-    "Leetcode - 10.Advanced/掃描線.md",
     "Interview - ML/Data Science interview.md",
     "Interview - ML/ML Engineer interviews.md",
     "materials/Pasted image 20250227115424.png",

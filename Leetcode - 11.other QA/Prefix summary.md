@@ -17,14 +17,15 @@
     prefix_sum[2] = 1 + 2 + 3 = 6 
     prefix_sum[3] = 1 + 2 + 3 + 4 = 10`
     
-
 **結果**：
 
 `prefix_sum = [1, 3, 6, 10]`
 
 **應用**：
+	Sum[1,2,3] = nums[1]+ nums[2]+ nums[3] 
+	= prefix-sum[3] - prefix-sum[0] =10-1 = 9 
 
-- **區間和查詢 (Range Sum Query, RSQ)**，用來快速計算某段範圍 `[l, r]` 的總和，時間複雜度從 `O(n)` 降至 `O(1)`。
+- **區間和查詢 (Range Sum Query, RSQ)**，用來快速計算某段範圍 `[l, r]` 的總和 ，時間複雜度從 `O(n)` 降至 `O(1)`。總和=prefix[r] - prefix[l-1]
 - **動態規劃 (Dynamic Programming)** 的狀態轉移時，常用來快速查詢累計和。
 
 ---
@@ -40,14 +41,13 @@
     
     複製編輯
     
-    `suffix_sum[3] = 4 suffix_sum[2] = 3 + 4 = 7 suffix_sum[1] = 2 + 3 + 4 = 9 suffix_sum[0] = 1 + 2 + 3 + 4 = 10`
+    suffix_sum[3] = 4 
+    suffix_sum[2] = 3 + 4 = 7 
+    suffix_sum[1] = 2 + 3 + 4 = 9 
+    suffix_sum[0] = 1 + 2 + 3 + 4 = 10`
     
 
 **結果**：
-
-ini
-
-複製編輯
 
 `suffix_sum = [10, 9, 7, 4]`
 
@@ -65,23 +65,26 @@ ini
 
 - `prefix_product[i] = nums[0] * nums[1] * ... * nums[i]`
 - 以 `nums = [1, 2, 3, 4]` 為例：
-    
-    複製編輯
-    
-    `prefix_product[0] = 1 prefix_product[1] = 1 * 2 = 2 prefix_product[2] = 1 * 2 * 3 = 6 prefix_product[3] = 1 * 2 * 3 * 4 = 24`
+
+	prefix_product[0] = 1
+	prefix_product[1] = 1 * 2 = 2 
+	prefix_product[2] = 1 * 2 * 3 = 6 
+	prefix_product[3] = 1 * 2 * 3 * 4 = 24`
     
 
 **結果**：
 
-ini
-
-複製編輯
-
 `prefix_product = [1, 2, 6, 24]`
 
 **應用**：
+    Product[1,2,3] = nums[1]  * nums[2]  * nums[3] 
 
 - 用於 **乘積查詢問題** 或 **求某元素除自身外的乘積 (Product of Array Except Self)**，這在 Leetcode/Lintcode 上是一道經典題。
+- **解法（使用前綴積與後綴積）**：
+
+1. 計算 `prefix_product`，存儲從 `0` 到 `i-1` 的乘積。prefix_product[i-1] 
+2. 計算 `suffix_product`，存儲從 `i+1` 到 `n-1` 的乘積。prefix_product[i+1] 
+3. `output[i] = prefix_product[i-1] × suffix_product[i+1]`
 
 ---
 
@@ -93,17 +96,14 @@ ini
 
 - `suffix_product[i] = nums[i] * nums[i+1] * ... * nums[n-1]`
 - 以 `nums = [1, 2, 3, 4]` 為例：
-    
-    複製編輯
-    
-    `suffix_product[3] = 4 suffix_product[2] = 3 * 4 = 12 suffix_product[1] = 2 * 3 * 4 = 24 suffix_product[0] = 1 * 2 * 3 * 4 = 24`
+
+    suffix_product[3] = 4 
+    suffix_product[2] = 3 * 4 = 12 
+    suffix_product[1] = 2 * 3 * 4 = 24 
+    suffix_product[0] = 1 * 2 * 3 * 4 = 24`
     
 
 **結果**：
-
-ini
-
-複製編輯
 
 `suffix_product = [24, 24, 12, 4]`
 
