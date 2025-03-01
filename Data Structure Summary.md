@@ -544,13 +544,13 @@ def lengthOfLongestSubstring(s: str) -> int:
     
 - 定義：
     
-    $prefix\_sum[i] = nums[0] + nums[1] + \dots + nums[i-1]$
-    - **prefix_sum** 的第 iii 個位置表示原數組前 i−1i-1i−1 個元素的總和。
+    $prefix\_sum[i] = nums[0] + nums[1] + \dots + nums[i]$
+    - **prefix_sum** 的第 i 個位置表示原數組前 0~i 個元素的總和。
     
 - **區間和計算公式**：  
-    對於原數組的任意區間 [i,j][i, j][i,j]：
+    對於原數組的任意區間 [i, j]：
     
-    $sum(i, j) = prefix\_sum[j+1] - prefix\_sum[i]$
+    $sum(i, j) = prefix\_sum[j] - prefix\_sum[i-1]$
     
     這樣，區間和的計算時間複雜度可從 O(n)優化為 O(1)。
     
@@ -571,12 +571,11 @@ def lengthOfLongestSubstring(s: str) -> int:
 
 1. **構建前綴和數組**：
     
-    - `prefix_sum[0] = 0`
-    - `prefix_sum[1] = 1`
-    - `prefix_sum[2] = 1 + 4 = 5`
-    - `prefix_sum[3] = 1 + 4 + 6 = 11`
-    - `prefix_sum[4] = 1 + 4 + 6 + 8 = 19`  
-        結果：`prefix_sum = [0, 1, 5, 11, 19]`
+    - `prefix_sum[0] = 1`
+    - `prefix_sum[1] = 1 + 4 = 5`
+    - `prefix_sum[2] = 1 + 4 + 6 = 11`
+    - `prefix_sum[3] = 1 + 4 + 6 + 8 = 19`  
+        結果：`prefix_sum = [1, 5, 11, 19]`
 2. **查詢區間和**：
     
     - 求區間 `[1, 3]` 的和： =nums[1]+nums[2]+nums[3] sum(1,3)=prefix_sum[4]−prefix_sum[1]=19−1=18sum(1, 3) = prefix\_sum[4] - prefix\_sum[1] = 19 - 1 = 18sum(1,3)=prefix_sum[4]−prefix_sum[1]=19−1=18
