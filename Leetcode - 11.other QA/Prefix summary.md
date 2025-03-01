@@ -12,18 +12,19 @@
 - `prefix_sum[i] = nums[0] + nums[1] + ... + nums[i]`
 - 以 `nums = [1, 2, 3, 4]` 為例：
 
-prefix_sum[0] = 1
-prefix_sum[1] = 1 + 2 = 3
-prefix_sum[2] = 1 + 2 + 3 = 6
-prefix_sum[3] = 1 + 2 + 3 + 4 = 10
- 
+
+`prefix_sum[0] = 1`
+`prefix_sum[1] = 1 + 2 = 3`
+`prefix_sum[2] = 1 + 2 + 3 = 6`
+`prefix_sum[3] = 1 + 2 + 3 + 4 = 10`
+
 **結果**：
 
 `prefix_sum = [1, 3, 6, 10]`
 
 **應用**：
-	Sum[1,2,3] = nums[1]+ nums[2]+ nums[3] 
-	= prefix-sum[3] - prefix-sum[0] =10-1 = 9 
+	`Sum[1,2,3] = nums[1]+ nums[2]+ nums[3]`
+	`= prefix-sum[3] - prefix-sum[0] =10-1 = 9` 
 
 - **區間和查詢 (Range Sum Query, RSQ)**，用來快速計算某段範圍 `[l, r]` 的總和 ，時間複雜度從 `O(n)` 降至 `O(1)`。總和=prefix[r] - prefix[l-1]
 - **動態規劃 (Dynamic Programming)** 的狀態轉移時，常用來快速查詢累計和。
@@ -39,10 +40,10 @@ prefix_sum[3] = 1 + 2 + 3 + 4 = 10
 - `suffix_sum[i] = nums[i] + nums[i+1] + ... + nums[n-1]`
 - 以 `nums = [1, 2, 3, 4]` 為例：
 
-suffix_sum[3] = 4
-suffix_sum[2] = 3 + 4 = 7
-suffix_sum[1] = 2 + 3 + 4 = 9
-suffix_sum[0] = 1 + 2 + 3 + 4 = 10
+`suffix_sum[3] = 4`
+`suffix_sum[2] = 3 + 4 = 7`
+`suffix_sum[1] = 2 + 3 + 4 = 9`
+`suffix_sum[0] = 1 + 2 + 3 + 4 = 10`
 
 **結果**：
 
@@ -63,10 +64,10 @@ suffix_sum[0] = 1 + 2 + 3 + 4 = 10
 - `prefix_product[i] = nums[0] * nums[1] * ... * nums[i]`
 - 以 `nums = [1, 2, 3, 4]` 為例：
 
-prefix_product[0] = 1
-prefix_product[1] = 1 * 2 = 2
-prefix_product[2] = 1 * 2 * 3 = 6
-prefix_product[3] = 1 * 2 * 3 * 4 = 24
+`prefix_product[0] = 1`
+`prefix_product[1] = 1 * 2 = 2`
+`prefix_product[2] = 1 * 2 * 3 = 6`
+`prefix_product[3] = 1 * 2 * 3 * 4 = 24`
 
 
 **結果**：
@@ -94,10 +95,10 @@ prefix_product[3] = 1 * 2 * 3 * 4 = 24
 - `suffix_product[i] = nums[i] * nums[i+1] * ... * nums[n-1]`
 - 以 `nums = [1, 2, 3, 4]` 為例：
 
-suffix_product[3] = 4
-suffix_product[2] = 3 * 4 = 12
-suffix_product[1] = 2 * 3 * 4 = 24
-suffix_product[0] = 1 * 2 * 3 * 4 = 24
+`suffix_product[3] = 4`
+`suffix_product[2] = 3 * 4 = 12`
+`suffix_product[1] = 2 * 3 * 4 = 24`
+`suffix_product[0] = 1 * 2 * 3 * 4 = 24`
 
 
 **結果**：
@@ -131,3 +132,10 @@ suffix_product[0] = 1 * 2 * 3 * 4 = 24
     - 利用前綴和搭配哈希表來高效計算連續子數組總和為 `k` 的次數。
 
 這些技巧能大幅提升演算法的效率，避免暴力 `O(n^2)` 的計算方式，讓某些問題可以在 `O(n)` 或 `O(log n)` 時間內解決。
+
+[^1]: 
+
+[^2]: prefix_sum[0] = 1
+	prefix_sum[1] = 1 + 2 = 3
+	prefix_sum[2] = 1 + 2 + 3 = 6
+	prefix_sum[3] = 1 + 2 + 3 + 4 = 10
