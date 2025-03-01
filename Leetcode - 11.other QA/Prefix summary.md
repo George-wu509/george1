@@ -12,11 +12,10 @@
 - `prefix_sum[i] = nums[0] + nums[1] + ... + nums[i]`
 - 以 `nums = [1, 2, 3, 4]` 為例：
 
-
-`prefix_sum[0] = 1`
-`prefix_sum[1] = 1 + 2 = 3`
-`prefix_sum[2] = 1 + 2 + 3 = 6`
-`prefix_sum[3] = 1 + 2 + 3 + 4 = 10`
+prefix_sum[0] = 1  
+prefix_sum[1] = 1 + 2 = 3  
+prefix_sum[2] = 1 + 2 + 3 = 6  
+prefix_sum[3] = 1 + 2 + 3 + 4 = 10  
 
 **結果**：
 
@@ -40,10 +39,10 @@
 - `suffix_sum[i] = nums[i] + nums[i+1] + ... + nums[n-1]`
 - 以 `nums = [1, 2, 3, 4]` 為例：
 
-`suffix_sum[3] = 4`
-`suffix_sum[2] = 3 + 4 = 7`
-`suffix_sum[1] = 2 + 3 + 4 = 9`
-`suffix_sum[0] = 1 + 2 + 3 + 4 = 10`
+suffix_sum[3] = 4 \
+suffix_sum[2] = 3 + 4 = 7 \
+suffix_sum[1] = 2 + 3 + 4 = 9 \
+suffix_sum[0] = 1 + 2 + 3 + 4 = 10 \
 
 **結果**：
 
