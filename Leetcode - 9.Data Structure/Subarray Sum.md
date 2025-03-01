@@ -30,13 +30,13 @@ Lintcode 138
 ```
 pass
 
-nums =  [-3, 1, 2, -3, 4]
-解釋:
-step1: 用dict建立一個hash table, 另一個變數prefix_sum是前缀和.
-step2: 從id=0往右, 每個id計算prefix_sum, 並把每個prefix_sum加入hash table
-step3: 每一個step計算新的prefix_sum, 並check是否在hash table裡有跟當前prefix_sum一樣的值
-因為這代表新的id的prefix_sum(new)到以前存的prefix_sum(old)
-prefix_sum(new)-prefix_sum(old)=0
+nums =  [-3, 1, 2, -3, 4]  
+解釋:  
+step1: 用dict建立一個hash table, 另一個變數prefix_sum是前缀和.  
+step2: 從id=0往右, 每個id計算prefix_sum, 並把每個prefix_sum加入hash table  
+step3: 每一個step計算新的prefix_sum, 並check是否在hash table裡有跟當前prefix_sum一樣的值  
+因為這代表新的id的prefix_sum(new)到以前存的prefix_sum(old)  
+prefix_sum(new)-prefix_sum(old)=0  
 
 # **LintCode 138: Subarray Sum（子数组和）**
 

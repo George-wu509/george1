@@ -1,18 +1,20 @@
 
+
+
 |             |                                                                                                                 |
 | ----------- | --------------------------------------------------------------------------------------------------------------- |
-| 目標檢測        | 交叉熵損失(Cross-Entropy Loss)<br>邊界框回歸損失(Bounding Box Regression Loss)<br>IoU損失(Intersection over Union Loss)       |
-| 圖像分割        | 交叉熵損失（Cross-Entropy Loss）<br>Dice損失（Dice Loss）<br>Jaccard損失（Jaccard Loss）                                       |
+| **目標檢測**    | 交叉熵損失(Cross-Entropy Loss)<br>邊界框回歸損失(Bounding Box Regression Loss)<br>IoU損失(Intersection over Union Loss)       |
+| **圖像分割**    | 交叉熵損失（Cross-Entropy Loss）<br>Dice損失（Dice Loss）<br>Jaccard損失（Jaccard Loss）                                       |
+| **圖像分類**    | 交叉熵損失（Cross-Entropy Loss）                                                                                       |
+| **圖像重建去噪**  | 均方誤差（MSE）, L1損失                                                                                                 |
+| **圖像生成**    | 對抗損失（Adversarial Loss）                                                                                          |
+|             |                                                                                                                 |
 | Mask R-CNN  | 分類損失（Classification Loss）<br>邊界框回歸損失（Bounding Box Regression Loss）<br>掩碼損失（Mask Loss）                           |
 | CenterMask2 | 分類損失（Classification Loss）<br>中心度損失（Centerness Loss）<br>邊界框回歸損失（Bounding Box Regression Loss）<br>掩碼損失（Mask Loss） |
-| 圖像分類        | 交叉熵損失（Cross-Entropy Loss）                                                                                       |
-| 圖像重建        | 均方誤差（Mean Squared Error, MSE）                                                                                   |
-| 圖像生成        | 對抗損失（Adversarial Loss）                                                                                          |
 | 圖像超分辨率      | 像素損失（Pixel Loss）<br>感知損失（Perceptual Loss）<br>對抗損失（Adversarial Loss）                                             |
-| 圖像去噪        | 均方誤差（MSE）<br>L1損失                                                                                               |
 | 圖像配準        | 互信息（Mutual Information）<br>均方誤差（MSE）                                                                            |
 | 圖像風格轉換      | 內容損失（Content Loss）<br>風格損失（Style Loss）                                                                          |
-|             |                                                                                                                 |
+
 
 |                                                                          |                               |
 | ------------------------------------------------------------------------ | ----------------------------- |
@@ -34,11 +36,6 @@
 
 
 
-
-
-
-
-
 在目標檢測和圖像分割任務中，常用的目標函數主要用來衡量模型的預測結果和真實標籤之間的差異。以下是一些常見的目標函數：
 
 ### 目標檢測
@@ -46,177 +43,44 @@
 1. **交叉熵損失（Cross-Entropy Loss）**
     
     - 交叉熵損失主要用於分類任務，評估預測概率分布與真實分布之間的差異。對於目標檢測，這部分用於判斷每個候選框是否包含物體。
-    - 公式：$\text{Loss} = -\sum_{i} y_i \log(p_i)$ 其中，yiy_iyi​ 是真實標籤（0 或 1），pip_ipi​ 是模型預測的概率。
+    
+    - 公式：$\Huge\text{Loss} = -\sum_{i} y_i \log(p_i)$ 
+    
+    - 其中，$y_i$​ 是真實標籤（0 或 1），$p_i$ 是模型預測的概率。
+    - 
 2. **邊界框回歸損失（Bounding Box Regression Loss）**
-    
     - 用於評估預測框與真實框之間的差異。常用的回歸損失包括L1損失和L2損失。
-    - 公式：L1 Loss=∑i∣xi−yi∣\text{L1 Loss} = \sum_{i} |x_i - y_i|L1 Loss=∑i​∣xi​−yi​∣ 或 L2 Loss=∑i(xi−yi)2\text{L2 Loss} = \sum_{i} (x_i - y_i)^2L2 Loss=∑i​(xi​−yi​)2 其中，xix_ixi​ 是預測的框坐標，yiy_iyi​ 是真實框坐標。
-3. **IoU損失（Intersection over Union Loss）**
     
+    - 公式：$\large \text{L1 Loss} = \sum_{i} |x_i - y_i|$    或    $\large \text{L2 Loss} = \sum_{i} (x_i - y_i)^2$ 
+    
+    - 其中，xi​ 是預測的框坐標，yi​ 是真實框坐標。
+    
+3. **IoU損失（Intersection over Union Loss）**
     - 衡量預測框和真實框之間的重疊程度。IoU損失越小，表示預測框與真實框越接近。
-    - 公式：IoU=Intersection AreaUnion Area\text{IoU} = \frac{\text{Intersection Area}}{\text{Union Area}}IoU=Union AreaIntersection Area​
+    
+    - 公式：$\Huge \text{IoU} = \frac{\text{Intersection Area}}{\text{Union Area}}$
 
 ### 圖像分割
 
 1. **交叉熵損失（Cross-Entropy Loss）**
     
     - 同樣適用於圖像分割中的像素級別分類。對每個像素進行二分類或多分類。
-    - 公式：Loss=−∑i∑cyi,clog⁡(pi,c)\text{Loss} = -\sum_{i} \sum_{c} y_{i,c} \log(p_{i,c})Loss=−∑i​∑c​yi,c​log(pi,c​) 其中，yi,cy_{i,c}yi,c​ 是像素 iii 的真實標籤（one-hot 編碼），pi,cp_{i,c}pi,c​ 是模型對像素 iii 的類別 ccc 的預測概率。
+    
+    - 公式：$\Huge \text{Loss} = -\sum_{i} \sum_{c} y_{i,c} \log(p_{i,c})$ 
+    
+    - 其中，$y_{i,c}$ 是像素 i 的真實標籤（one-hot 編碼），$p_{i,c}$​ 是模型對像素 i 的類別 c 的預測概率。
 2. **Dice損失（Dice Loss）**
     - 特別適用於處理數據不平衡的問題，如醫學圖像中的小目標分割。衡量預測結果與真實標籤的重疊程度。
-    - 公式：Dice Coefficient=2×∣A∩B∣∣A∣+∣B∣\text{Dice Coefficient} = \frac{2 \times |A \cap B|}{|A| + |B|}Dice Coefficient=∣A∣+∣B∣2×∣A∩B∣​ Dice損失為 1 減去 Dice係數。
+    
+    - 公式：$\Huge \text{Dice Coefficient} = \frac{2 \times |A \cap B|}{|A| + |B|}$ Dice損失為 1 減去 Dice係數。
+    
 3. **Jaccard損失（Jaccard Loss）**
     
     - 又稱為IoU損失，與Dice損失類似，衡量預測與真實之間的交並比。
-    - 公式：Jaccard Index=∣A∩B∣∣A∪B∣\text{Jaccard Index} = \frac{|A \cap B|}{|A \cup B|}Jaccard Index=∣A∪B∣∣A∩B∣​ Jaccard損失為 1 減去 Jaccard指數。
-
-這些目標函數在不同的應用場景中各有優劣，通常根據具體的任務需求選擇合適的損失函數來優化模型。
-
-
-Mask R-CNN 和 CenterMask2 是兩種常用的目標檢測和圖像分割模型。以下是對它們的目標函數的詳細解釋：
-
-### Mask R-CNN 目標函數
-
-Mask R-CNN 是一種基於 R-CNN（Region-based Convolutional Neural Networks）框架的模型，專門用於對象檢測和分割。它的目標函數包含三個主要部分：分類損失、邊界框回歸損失和掩碼損失。
-
-1. **分類損失（Classification Loss）**
     
-    - 使用交叉熵損失來計算每個候選框的分類損失。這部分負責判斷每個候選框內的對象類別。
-    - 公式：Lcls=−∑iyilog⁡(pi)L_{\text{cls}} = -\sum_{i} y_i \log(p_i)Lcls​=−∑i​yi​log(pi​) 其中，yiy_iyi​ 是真實類別標籤，pip_ipi​ 是模型預測的類別概率。
-2. **邊界框回歸損失（Bounding Box Regression Loss）**
+    - 公式：$\Huge \text{Jaccard Index} = \frac{|A \cap B|}{|A \cup B|}$ 
     
-    - 使用平滑 L1 損失（Smooth L1 Loss）來衡量預測框和真實框之間的差異。平滑 L1 損失在近似零點時是二次的，在遠離零點時是線性的，這樣可以減少對異常值的敏感度。
-    - 公式：Lbbox=∑iSmooth L1(ti−ti∗)L_{\text{bbox}} = \sum_{i} \text{Smooth L1}(t_i - t_i^*)Lbbox​=∑i​Smooth L1(ti​−ti∗​) 其中，tit_iti​ 是預測的邊界框參數，ti∗t_i^*ti∗​ 是真實的邊界框參數。
-3. **掩碼損失（Mask Loss）**
-    
-    - 使用二元交叉熵損失（Binary Cross-Entropy Loss）來計算每個像素的分割掩碼損失。這部分負責生成每個對象的二元分割掩碼。
-    - 公式：Lmask=−∑i,j[yijlog⁡(pij)+(1−yij)log⁡(1−pij)]L_{\text{mask}} = -\sum_{i,j} [y_{ij} \log(p_{ij}) + (1 - y_{ij}) \log(1 - p_{ij})]Lmask​=−∑i,j​[yij​log(pij​)+(1−yij​)log(1−pij​)] 其中，yijy_{ij}yij​ 是像素 (i,j)(i,j)(i,j) 的真實標籤，pijp_{ij}pij​ 是像素 (i,j)(i,j)(i,j) 的預測概率。
-
-整體損失函數為這三個部分的加權和： L=Lcls+Lbbox+LmaskL = L_{\text{cls}} + L_{\text{bbox}} + L_{\text{mask}}L=Lcls​+Lbbox​+Lmask​
-
-### CenterMask2 目標函數
-
-CenterMask2 是基於 CenterNet 和 FCOS 的先進目標檢測和分割模型。它的目標函數包含四個主要部分：分類損失、中心度損失（centerness loss）、邊界框回歸損失和掩碼損失。
-
-1. **分類損失（Classification Loss）**
-    
-    - 使用 Focal Loss 來計算每個像素的分類損失。Focal Loss 用於解決類別不平衡問題，使模型更關注困難的樣本。
-    - 公式：Lcls=−∑iα(1−pi)γlog⁡(pi)L_{\text{cls}} = -\sum_{i} \alpha (1 - p_i)^\gamma \log(p_i)Lcls​=−∑i​α(1−pi​)γlog(pi​) 其中，α\alphaα 和 γ\gammaγ 是調節參數，pip_ipi​ 是預測概率。
-2. **中心度損失（Centerness Loss）**
-    
-    - 使用二元交叉熵損失來計算每個像素的中心度分數。中心度反映了該像素相對於目標框中心的接近程度。
-    - 公式：Lcenterness=−∑i[cilog⁡(pi)+(1−ci)log⁡(1−pi)]L_{\text{centerness}} = -\sum_{i} [c_i \log(p_i) + (1 - c_i) \log(1 - p_i)]Lcenterness​=−∑i​[ci​log(pi​)+(1−ci​)log(1−pi​)] 其中，cic_ici​ 是真實的中心度標籤，pip_ipi​ 是預測的中心度概率。
-3. **邊界框回歸損失（Bounding Box Regression Loss）**
-    
-    - 使用 IOU Loss 或 GIOU Loss 來衡量預測框和真實框之間的差異。這些損失函數更強調框的重疊區域。
-    - 公式：Lbbox=1−IOUL_{\text{bbox}} = 1 - \text{IOU}Lbbox​=1−IOU 或 Lbbox=1−GIOUL_{\text{bbox}} = 1 - \text{GIOU}Lbbox​=1−GIOU
-4. **掩碼損失（Mask Loss）**
-    
-    - 使用二元交叉熵損失來計算每個像素的分割掩碼損失，與 Mask R-CNN 類似。
-    - 公式：Lmask=−∑i,j[yijlog⁡(pij)+(1−yij)log⁡(1−pij)]L_{\text{mask}} = -\sum_{i,j} [y_{ij} \log(p_{ij}) + (1 - y_{ij}) \log(1 - p_{ij})]Lmask​=−∑i,j​[yij​log(pij​)+(1−yij​)log(1−pij​)]
-
-整體損失函數為這四個部分的加權和： L=Lcls+Lcenterness+Lbbox+LmaskL = L_{\text{cls}} + L_{\text{centerness}} + L_{\text{bbox}} + L_{\text{mask}}L=Lcls​+Lcenterness​+Lbbox​+Lmask​
-
-這些目標函數共同作用，使得模型能夠準確地檢測和分割圖像中的目標。
-
-### 1. **圖像分類（Image Classification）**
-
-**常用目標函數：交叉熵損失（Cross-Entropy Loss）**
-
-圖像分類是最常見的影像任務之一，目標是將圖像分到特定的類別中。交叉熵損失（Cross-Entropy Loss）是圖像分類的常用損失函數，用來衡量模型預測的類別概率分佈與真實類別之間的差異。
-
-- **公式**： L=−∑iyilog⁡(pi)L = -\sum_{i} y_i \log(p_i)L=−i∑​yi​log(pi​) 其中，yiy_iyi​ 是真實標籤，pip_ipi​ 是模型對應類別的預測概率。
-
-### 2. **圖像重建（Image Reconstruction）**
-
-**常用目標函數：均方誤差（Mean Squared Error, MSE）**
-
-圖像重建旨在從受損圖像中重建原始圖像，這在自動編碼器（Autoencoder）和去噪自動編碼器（Denoising Autoencoder）中非常常見。均方誤差（MSE）是圖像重建的常用損失函數，用來衡量重建圖像與原始圖像之間的像素級別誤差。
-
-- **公式**： LMSE=1n∑i=1n(xi−xi^)2L_{\text{MSE}} = \frac{1}{n} \sum_{i=1}^{n} (x_i - \hat{x_i})^2LMSE​=n1​i=1∑n​(xi​−xi​^​)2 其中，xix_ixi​ 是真實圖像的像素值，xi^\hat{x_i}xi​^​ 是重建圖像的像素值。
-
-### 3. **圖像生成（Image Generation）**
-
-**常用目標函數：生成對抗損失（Adversarial Loss）和L1損失**
-
-在生成對抗網絡（GANs）中，圖像生成任務的目標是生成逼真的圖像。這裡常用的目標函數包括生成對抗損失和L1損失。
-
-- **生成對抗損失**： 生成對抗損失用於衡量生成圖像是否能夠騙過判別器，即生成器的目標是最小化判別器對生成圖像的判斷錯誤。
-    
-    - **公式**： LG=−log⁡D(G(z))L_G = -\log D(G(z))LG​=−logD(G(z)) 其中，G(z)G(z)G(z) 是生成器的輸出，DDD 是判別器。
-- **L1損失**： 在一些任務（如圖像超分辨率或圖像到圖像轉換）中，L1損失用於約束生成圖像與目標圖像之間的像素差異，確保生成圖像盡可能接近目標圖像。
-    
-    - **公式**： LL1=∑i∣xi−xi^∣L_{\text{L1}} = \sum_{i} |x_i - \hat{x_i}|LL1​=i∑​∣xi​−xi​^​∣
-
-### 4. **圖像超分辨率（Image Super-Resolution）**
-
-**常用目標函數：像素損失（Pixel Loss）、感知損失（Perceptual Loss）、對抗損失（Adversarial Loss）**
-
-圖像超分辨率的目標是將低分辨率圖像重建為高分辨率圖像，常用的目標函數包括像素損失、感知損失和對抗損失。
-
-- **像素損失（Pixel Loss）**：可以是均方誤差（MSE）或L1損失，用於衡量高分辨率重建圖像與原始高分辨率圖像的像素差異。
-    
-    LMSE=1n∑i=1n(xi−xi^)2L_{\text{MSE}} = \frac{1}{n} \sum_{i=1}^{n} (x_i - \hat{x_i})^2LMSE​=n1​i=1∑n​(xi​−xi​^​)2
-- **感知損失（Perceptual Loss）**：衡量生成的高分辨率圖像與真實高分辨率圖像在高層特徵空間中的差異，通常使用預訓練的卷積神經網絡（如VGG）提取高層特徵。
-    
-    Lperceptual=∑i∥ϕ(xi)−ϕ(xi^)∥L_{\text{perceptual}} = \sum_{i} \| \phi(x_i) - \phi(\hat{x_i}) \|Lperceptual​=i∑​∥ϕ(xi​)−ϕ(xi​^​)∥
-    
-    其中，ϕ\phiϕ 表示預訓練網絡的特徵提取。
-    
-- **對抗損失（Adversarial Loss）**：使用生成對抗網絡（GAN）的對抗損失來生成更真實的圖像，與圖像生成中的對抗損失類似。
-    
-
-### 5. **圖像去噪（Image Denoising）**
-
-**常用目標函數：均方誤差（MSE）、L1損失**
-
-圖像去噪的目標是從含噪圖像中去除噪聲，重建出干淨的圖像。均方誤差（MSE）和L1損失是常用的目標函數。
-
-- **均方誤差（MSE）**：
-    
-    LMSE=1n∑i=1n(xi−xi^)2L_{\text{MSE}} = \frac{1}{n} \sum_{i=1}^{n} (x_i - \hat{x_i})^2LMSE​=n1​i=1∑n​(xi​−xi​^​)2
-    
-    這裡 xix_ixi​ 是無噪聲圖像，xi^\hat{x_i}xi​^​ 是去噪後的圖像。
-    
-- **L1損失**： L1損失也是常用的圖像去噪損失函數，適用於強調圖像重建的稀疏性。
-    
-    LL1=∑i∣xi−xi^∣L_{\text{L1}} = \sum_{i} |x_i - \hat{x_i}|LL1​=i∑​∣xi​−xi​^​∣
-
-### 6. **圖像配準（Image Registration）**
-
-**常用目標函數：互信息（Mutual Information）、均方誤差（MSE）**
-
-圖像配準是將兩幅圖像對齊的過程。常用的損失函數包括互信息（Mutual Information）和均方誤差（MSE），其中互信息常用於多模態影像的配準，而MSE則常用於單模態影像的配準。
-
-- **互信息（Mutual Information）**：互信息衡量兩幅圖像之間的共同信息量，通常應用於多模態影像，如CT和MRI的配準。
-    
-    MI(X,Y)=H(X)+H(Y)−H(X,Y)MI(X, Y) = H(X) + H(Y) - H(X, Y)MI(X,Y)=H(X)+H(Y)−H(X,Y)
-- **均方誤差（MSE）**：常用於單模態影像的配準，通過最小化兩幅對齊圖像之間的像素差異來實現對齊。
-    
-
-### 7. **圖像風格轉換（Style Transfer）**
-
-**常用目標函數：內容損失（Content Loss）、風格損失（Style Loss）**
-
-圖像風格轉換的目標是將一幅圖像的內容結合上另一幅圖像的風格。內容損失和風格損失是常用的目標函數。
-
-- **內容損失（Content Loss）**：內容損失用於衡量生成圖像與內容圖像在高層特徵上的差異。
-    
-    Lcontent=∥ϕcontent(xgenerated)−ϕcontent(xcontent)∥L_{\text{content}} = \| \phi_{\text{content}}(x_{\text{generated}}) - \phi_{\text{content}}(x_{\text{content}}) \|Lcontent​=∥ϕcontent​(xgenerated​)−ϕcontent​(xcontent​)∥
-    
-    其中，ϕcontent\phi_{\text{content}}ϕcontent​ 是內容圖像經過預訓練網絡提取的高層特徵。
-    
-- **風格損失（Style Loss）**：風格損失用於衡量生成圖像與風格圖像之間的風格一致性，通常使用Gram矩陣來捕捉風格信息。
-    
-    Lstyle=∑l∥Gϕl(xgenerated)−Gϕl(xstyle)∥L_{\text{style}} = \sum_{l} \| G_{\phi_l}(x_{\text{generated}}) - G_{\phi_l}(x_{\text{style}}) \|Lstyle​=l∑​∥Gϕl​​(xgenerated​)−Gϕl​​(xstyle​)∥
-    
-    其中，GϕlG_{\phi_l}Gϕl​​ 是第 lll 層的Gram矩陣。
-    
-
-### 總結
-
-AI圖像影像任務中的目標函數因任務而異，每一種目標函數
-
+    - Jaccard損失為 1 減去 Jaccard指數。
 
 
 

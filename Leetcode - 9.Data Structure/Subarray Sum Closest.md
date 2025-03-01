@@ -39,14 +39,14 @@ Lintcode 139
 ```
 pass
 
-nums =  [-3, 1, 1, -3, 5]
-解釋:
-step1. 從id=0遍歷到尾然後將前缀和跟id都存起來
-prefix_sum = [(0,-1),(-3,0),(-2,1),(-1,2),(-4,3),(1,4)]
-step2. 排序prefix_sum
-prefix_sum = [(-4,3),(-3,0),(-2,1),(-1,2),(0,-1),(1,4)]
-step3. 從id=0遍歷到尾計算排序過的prefix_sum, 比相鄰的prefix_sum. 譬如:
- prefix_sum[3]- prefix_sum[0] 等同於從id1,2,3的和  1+1+-3=-1 
+nums =  [-3, 1, 1, -3, 5]  
+解釋:  
+step1. 從id=0遍歷到尾然後將前缀和跟id都存起來  
+prefix_sum = [(0,-1),(-3,0),(-2,1),(-1,2),(-4,3),(1,4)]  
+step2. 排序prefix_sum  
+prefix_sum = [(-4,3),(-3,0),(-2,1),(-1,2),(0,-1),(1,4)]  
+step3. 從id=0遍歷到尾計算排序過的prefix_sum, 比相鄰的prefix_sum. 譬如:  
+ prefix_sum[3]- prefix_sum[0] 等同於從id1,2,3的和  1+1+-3=-1   
 
 
 # **LintCode 139: Subarray Sum Closest（最接近零的子数组和）**

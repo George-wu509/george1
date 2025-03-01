@@ -250,3 +250,130 @@ prefix[5][4] - prefix[2][4] - prefix[5][1] + prefix[2][1]
     - **前缀和优化矩阵查询**
     - **动态规划式 `prefix[i][j]` 计算**
     - **快速 `O(1)` 计算区域和**
+-
+
+
+## **二维前缀和（2D Prefix Sum）的计算与应用**
+
+### **1. 二维前缀和的定义**
+
+对于一个二维矩阵 `matrix`，二维前缀和 `prefix_sum[i][j]` 代表从矩阵的左上角 `(0,0)` 到 `(i,j)` 这个子矩阵内所有元素的累加和：
+
+prefix_sum[i][j]=∑x=0i∑y=0jmatrix[x][y]prefix\_sum[i][j] = \sum_{x=0}^{i} \sum_{y=0}^{j} matrix[x][y]prefix_sum[i][j]=x=0∑i​y=0∑j​matrix[x][y]
+
+这意味着 `prefix_sum[i][j]` 代表矩阵 `matrix` **从左上角 (0,0) 到 (i,j) 形成的矩形区域的总和**。
+
+---
+
+### **2. 二维前缀和的计算公式**
+
+要计算二维前缀和，我们可以使用以下递推公式：
+
+prefix_sum[i][j]=matrix[i][j]+prefix_sum[i−1][j]+prefix_sum[i][j−1]−prefix_sum[i−1][j−1]prefix\_sum[i][j] = matrix[i][j] + prefix\_sum[i-1][j] + prefix\_sum[i][j-1] - prefix\_sum[i-1][j-1]prefix_sum[i][j]=matrix[i][j]+prefix_sum[i−1][j]+prefix_sum[i][j−1]−prefix_sum[i−1][j−1]
+
+其中：
+
+- `matrix[i][j]`：当前元素的值
+- `prefix_sum[i-1][j]`：上一行的前缀和
+- `prefix_sum[i][j-1]`：左边列的前缀和
+- `prefix_sum[i-1][j-1]`：由于 `prefix_sum[i-1][j]` 和 `prefix_sum[i][j-1]` **都包含了 `prefix_sum[i-1][j-1]`**，所以需要减去一次以避免重复计算
+
+---
+
+### **3. 示例计算**
+
+假设我们有以下 `4x4` 矩阵：
+
+makefile
+
+複製編輯
+
+`matrix = 1  2  3  4 5  6  7  8 9 10 11 12 13 14 15 16`
+
+计算 `prefix_sum`：
+
+|`i,j`|`matrix[i][j]`|`prefix_sum[i-1][j]`|`prefix_sum[i][j-1]`|`prefix_sum[i-1][j-1]`|`prefix_sum[i][j]`|
+|---|---|---|---|---|---|
+|(0,0)|1|0|0|0|1|
+|(0,1)|2|0|1|0|3|
+|(0,2)|3|0|3|0|6|
+|(0,3)|4|0|6|0|10|
+|(1,0)|5|1|0|0|6|
+|(1,1)|6|3|6|1|14|
+|(1,2)|7|6|14|3|24|
+|(1,3)|8|10|24|6|36|
+|(2,0)|9|6|0|0|15|
+|(2,1)|10|14|15|6|33|
+|(2,2)|11|24|33|14|54|
+|(2,3)|12|36|54|24|78|
+|(3,0)|13|15|0|0|28|
+|(3,1)|14|33|28|15|60|
+|(3,2)|15|54|60|33|96|
+|(3,3)|16|78|96|54|136|
+
+最终 `prefix_sum` 结果：
+
+複製編輯
+
+`1   3   6   10 6   14  24  36 15  33  54  78 28  60  96  136`
+
+---
+
+### **4. 使用二维前缀和查询子矩阵的和**
+
+如果我们想查询 **任意子矩阵 `(r1, c1)` 到 `(r2, c2)` 之间的元素和**，可以用：
+
+sum(r1,c1,r2,c2)=prefix_sum[r2][c2]−prefix_sum[r1−1][c2]−prefix_sum[r2][c1−1]+prefix_sum[r1−1][c1−1]sum(r1, c1, r2, c2) = prefix\_sum[r2][c2] - prefix\_sum[r1-1][c2] - prefix\_sum[r2][c1-1] + prefix\_sum[r1-1][c1-1]sum(r1,c1,r2,c2)=prefix_sum[r2][c2]−prefix_sum[r1−1][c2]−prefix_sum[r2][c1−1]+prefix_sum[r1−1][c1−1]
+
+#### **例子**
+
+查询 `(1,1)` 到 `(2,2)` 这个子矩阵的和：
+
+複製編輯
+
+`6  7 10 11`
+
+代入公式：
+
+sum(1,1,2,2)=prefix_sum[2][2]−prefix_sum[0][2]−prefix_sum[2][0]+prefix_sum[0][0]sum(1,1,2,2) = prefix\_sum[2][2] - prefix\_sum[0][2] - prefix\_sum[2][0] + prefix\_sum[0][0]sum(1,1,2,2)=prefix_sum[2][2]−prefix_sum[0][2]−prefix_sum[2][0]+prefix_sum[0][0] =54−6−15+1=34= 54 - 6 - 15 + 1 = 34=54−6−15+1=34
+
+---
+
+### **5. 代码实现**
+
+python
+
+複製編輯
+
+`def compute_prefix_sum(matrix):     rows, cols = len(matrix), len(matrix[0])     prefix_sum = [[0] * cols for _ in range(rows)]      for i in range(rows):         for j in range(cols):             prefix_sum[i][j] = matrix[i][j]             if i > 0:                 prefix_sum[i][j] += prefix_sum[i - 1][j]             if j > 0:                 prefix_sum[i][j] += prefix_sum[i][j - 1]             if i > 0 and j > 0:                 prefix_sum[i][j] -= prefix_sum[i - 1][j - 1]      return prefix_sum  def query_sum(prefix_sum, r1, c1, r2, c2):     result = prefix_sum[r2][c2]     if r1 > 0:         result -= prefix_sum[r1 - 1][c2]     if c1 > 0:         result -= prefix_sum[r2][c1 - 1]     if r1 > 0 and c1 > 0:         result += prefix_sum[r1 - 1][c1 - 1]     return result  # 測試 matrix = [     [1, 2, 3, 4],     [5, 6, 7, 8],     [9, 10, 11, 12],     [13, 14, 15, 16] ] prefix_sum = compute_prefix_sum(matrix)  # 查詢 (1,1) 到 (2,2) 的子矩陣和 print(query_sum(prefix_sum, 1, 1, 2, 2))  # 34`
+
+---
+
+### **6. 二维前缀和的应用**
+
+1. **快速计算子矩阵和**：
+    - 适用于 `K` 次查询矩阵和的问题，如 Lintcode 1315 **“Range Sum Query 2D”**。
+2. **最大子矩阵和（Kadane’s Algorithm 变体）**：
+    - Lintcode 944 **“最大子矩阵”**。
+3. **前缀和优化 DP 问题**：
+    - 如 **“最大正方形”** Lintcode 436。
+4. **动态窗口处理问题**：
+    - 如滑动窗口最大值。
+
+---
+
+### **7. 总结**
+
+- **二维前缀和** 扩展了一维前缀和概念，可高效计算子矩阵和。
+- **时间复杂度**：
+    - **预处理**：`O(n*m)`
+    - **查询子矩阵和**：`O(1)`
+- **适用于**：多次区间查询、动态规划优化、最大子矩阵和问题等。
+
+掌握 **二维前缀和** 可以大幅度提高矩阵查询相关问题的效率，是许多动态规划和数学优化问题的关键技巧！
+
+  
+
+O
+
+搜尋
