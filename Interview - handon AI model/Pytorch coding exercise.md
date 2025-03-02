@@ -1033,9 +1033,9 @@ outputs = model(data)
 loss = criterion(outputs, labels)
 
 # 反向傳播
-optimizer.zero_grad()
-loss.backward()
-optimizer.step()
+optimizer.zero_grad()   # 清空之前的梯度，避免梯度累積
+loss.backward()   # 反向傳播（Backward Pass），計算每個參數的梯度（誤差對權重的導數）
+optimizer.step()  # 使用Adam 優化器 根據計算出的梯度 更新權重
 
 print("Loss:", loss.item())
 

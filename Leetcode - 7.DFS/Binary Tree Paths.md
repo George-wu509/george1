@@ -1,3 +1,6 @@
+### **LintCode 480：Binary Tree Paths**
+
+给一棵二叉树，找出从根节点到叶子节点的所有路径。
 
 Example:
 **样例 1:**
