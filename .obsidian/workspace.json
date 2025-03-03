@@ -41,12 +41,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "Leetcode - 6.BFS/BFS.md",
+                "file": "Leetcode - 6.BFS/Word Ladder.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "BFS"
+              "title": "Word Ladder"
             }
           }
         ],
@@ -196,17 +196,25 @@
   },
   "active": "fd34b6f1610cd821",
   "lastOpenFiles": [
-    "Leetcode - 6.BFS/Number of Islands.md",
     "Leetcode - 6.BFS/BFS.md",
+    "Leetcode - 6.BFS/Word Ladder.md",
     "Leetcode - 7.DFS/DFS.md",
+    "Leetcode - 7.DFS/SubsetsII.md",
+    "Leetcode - 9.Data Structure/Combination Sum II.md",
+    "Leetcode - 7.DFS/Traveling Salesman Problem.md",
+    "Leetcode - 7.DFS/Permutations.md",
+    "Leetcode - 6.BFS/Knight Shortest Path.md",
+    "Leetcode - 6.BFS/Max Area of Island.md",
+    "Leetcode - 6.BFS/Knight Shortest Path II.md",
+    "Leetcode - 6.BFS/Zombie in Matrix.md",
+    "Leetcode - 6.BFS/Number of Islands.md",
+    "Data Structure Summary.md",
     "Leetcode - 6.BFS/Sliding Puzzle III.md",
     "Leetcode - 6.BFS/Sequence Reconstruction.md",
     "Leetcode - 6.BFS/Shortest Distance from All Buildings.md",
     "Leetcode - 6.BFS/The Maze III.md",
     "Leetcode - 6.BFS/Build Post Office II.md",
     "Leetcode - 6.BFS/Course Schedule II.md",
-    "Leetcode - 6.BFS/Zombie in Matrix.md",
-    "Leetcode - 6.BFS/Knight Shortest Path II.md",
     "Leetcode - 6.BFS/01 Matrix Walking Problem.md",
     "Leetcode - 6.BFS/Modern Ludo I.md",
     "Leetcode - 6.BFS/01 Matrix.md",
@@ -214,14 +222,6 @@
     "Leetcode - 6.BFS/Clone Graph.md",
     "Leetcode - 6.BFS/Rotting Oranges.md",
     "Leetcode - 6.BFS/Tree.md",
-    "Leetcode - 6.BFS/Course Schedule.md",
-    "Leetcode - 6.BFS/Course Schedule IV.md",
-    "Leetcode - 6.BFS/Alien Dictionary.md",
-    "Leetcode - 6.BFS/Topological Sorting.md",
-    "Leetcode - 6.BFS/Knight Shortest Path.md",
-    "Leetcode - 6.BFS/Max Area of Island.md",
-    "Leetcode - 6.BFS/Sliding Puzzle II.md",
-    "Leetcode - 6.BFS/Lake Escape.md",
     "materials/Pasted image 20250301171830.png",
     "materials/Pasted image 20250301165742.png",
     "materials/Pasted image 20250301165721.png",
