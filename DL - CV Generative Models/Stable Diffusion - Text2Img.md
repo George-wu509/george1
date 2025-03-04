@@ -71,6 +71,7 @@ Decoded images shape: torch.Size([1, 3, 512, 512])
 
 #### 3b. Component - Tokenizer and text encoder
 ```python hlredt:pipe hlbluet:tokenizer
+# method1
 # Tokenizing and encoding an example prompt manually
 
 # Tokenize
@@ -86,12 +87,13 @@ with torch.no_grad():
 print("Text embeddings shape:", text_embeddings.shape)
 
 
-
+# method2
 # Get the final text embeddings using the pipeline's encode_prompt function
 text_embeddings = pipe._encode_prompt("A painting of a flooble", device, 1, False, '')
 text_embeddings.shape
 
 ```
+text = "A painting of a flooble"
 input_ids = \[[49406, 320, 3086, 539, 320, 4062, 1059, 49407]]  
 Input ID -> decoded token 
 49406 -> <|startoftext|> 

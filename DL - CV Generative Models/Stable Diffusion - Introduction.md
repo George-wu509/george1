@@ -4,6 +4,8 @@
 
 [十分钟读懂Stable Diffusion](https://zhuanlan.zhihu.com/p/600251419)
 
+[十分钟读懂Diffusion：图解Diffusion扩散模型](https://zhuanlan.zhihu.com/p/599887666)
+
 [深入浅出完整解析Stable Diffusion（SD）核心基础知识](https://zhuanlan.zhihu.com/p/632809634)
 
 [How to Use Stable Diffusion Effectively](https://machinelearningmastery.com/how-to-use-stable-diffusion-effectively/)
