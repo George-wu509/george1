@@ -75,7 +75,7 @@
 22. 什麼是Python中的 `elif`？
 23. 如何寫一個多條件的 `if` 語句？
 24. `for` 循環如何使用？  
-@25. 如何遍歷列表中的所有元素？  ==for, while, enumerate()==    
+25. @ 如何遍歷列表中的所有元素？  ==for, while, enumerate()==    
 26. 使用 `while` 循環的結構是什麼？
 27. 如何在Python中實現無限循環？
 28. 如何在循環中使用 `break` 和 `continue`？
@@ -85,11 +85,11 @@
 ### 4. 列表和元組
 
 31. 如何創建列表(list) ？  
-@32. 如何向列表中添加元素？==append(), insert(), extend()==       
-@33. 如何從列表中刪除指定元素？==value=pop(), remove()==      
- 34. `pop()` 和 `remove()` 方法的區別是什麼？ 
-@35. 如何對列表中的元素進行排序？ ==L.sort(), L1=sorted(L)==    
-@@36. 列表推導式(List comprehension)是什麼？  
+32. @ 如何向列表中添加元素？==append(), insert(), extend()==       
+33. @ 如何從列表中刪除指定元素？==value=pop(), remove()==      
+34. `pop()` 和 `remove()` 方法的區別是什麼？ 
+35. @ 如何對列表中的元素進行排序？ ==L.sort(), L1=sorted(L)==    
+36. @@ 列表推導式(List comprehension)是什麼？  
 37. 什麼是元組（tuple）？
 38. 元組可以修改嗎？
 39. 如何將列表轉換為元組？
