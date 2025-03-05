@@ -119,18 +119,30 @@
 
 ref:
 https://www.finalroundai.com/blog/pytorch-interview-questions
+
 https://www.adaface.com/blog/pytorch-interview-questions/
+
 https://github.com/Devinterview-io/pytorch-interview-questions
+
 https://interview-questions.org/pytorch/
+
 https://github.com/topics/ai-interview-questions
+
 https://github.com/topics/machine-learning-interview-questions
+
 https://github.com/youssefHosni/Data-Science-Interview-Questions-Answers
+
 https://blog.csdn.net/Vampire_2017/article/details/141529546
+
 https://interviewprep.org/pytorch-interview-questions/
+
 https://climbtheladder.com/pytorch-interview-questions/
+
 https://www.devopsschool.com/blog/top-50-interview-questions-and-answers-of-pytorch/
+
 https://github.com/Devinterview-io/pytorch-interview-questions/blob/main/README.md
-https://github.com/lcylmhlcy/Awesome-algorithm-interview
+
+https://github.com/lcylmhlcy/Awesome-algorithm-interview  
 
 
 ---
