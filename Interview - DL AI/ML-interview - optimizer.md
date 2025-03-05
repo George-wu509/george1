@@ -352,3 +352,7 @@ python
 - **Adagrad、RMSProp** 適合 NLP、RNN。
 - **Adam** 適用於大部分深度學習應用。
 - **AdamW** 適合 Transformer 類模型。
+
+
+首先，严格来说[Transformer](https://zhida.zhihu.com/search?content_id=463651099&content_type=Answer&match_order=1&q=Transformer&zhida_source=entity)用的是[AdamW](https://zhida.zhihu.com/search?content_id=463651099&content_type=Answer&match_order=1&q=AdamW&zhida_source=entity)，只不过现在的框架都把Adam偷偷换成了AdamW，所以没什么人在意这件事情了。如果是AdamW和[SGD](https://zhida.zhihu.com/search?content_id=463651099&content_type=Answer&match_order=1&q=SGD&zhida_source=entity)的比较，简单来说就是：AdamW收敛得更快，更容易过拟合一点点；SGD收敛得相对慢一些，但是如果能给更长的训练轮次，最后的效果会略好于AdamW一些。由于基于Transformer的模型都很巨大，考虑到非常难收敛且不容易过拟合的特性，因此很多模型都使用AdamW。而一些[CNN](https://zhida.zhihu.com/search?content_id=463651099&content_type=Answer&match_order=1&q=CNN&zhida_source=entity)模型，相对比较容易收敛，且相比Transformer更容易过拟合一些，因此选择SGD。
+https://www.zhihu.com/question/519307910/answer/2384626354

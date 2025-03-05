@@ -803,13 +803,13 @@ Hybrid Modeling 是 **Digital Twin 的關鍵技術**，它能夠提升模擬準�
 
 ### **📌 常見微分方程求解方法**
 
-|**方法**|**公式/描述**|**應用場景**|
-|---|---|---|
-|**Euler 方法**|yn+1=yn+hf(yn)y_{n+1} = y_n + h f(y_n)yn+1​=yn​+hf(yn​)|適用於簡單 ODE|
-|**Runge-Kutta 方法（RK4）**|四階方法，比 Euler 方法精度更高|適用於剛性系統，如機械運動|
-|**有限差分法（Finite Difference Method, FDM）**|∂u∂x≈u(x+h)−u(x)h\frac{\partial u}{\partial x} \approx \frac{u(x+h) - u(x)}{h}∂x∂u​≈hu(x+h)−u(x)​|適用於 PDE，如 CFD|
-|**有限體積法（Finite Volume Method, FVM）**|計算每個網格內的變量平均值|適用於流體模擬|
-|**有限元素法（Finite Element Method, FEM）**|把連續域拆分為有限個離散單元，求解 PDE|結構分析，材料模擬|
+| **方法**                                   | **公式/描述**                                                                                         | **應用場景**      |
+| ---------------------------------------- | ------------------------------------------------------------------------------------------------- | ------------- |
+| **Euler 方法**                             | yn+1=yn+hf(yn)y_{n+1} = y_n + h f(y_n)yn+1​=yn​+hf(yn​)                                           | 適用於簡單 ODE     |
+| **Runge-Kutta 方法（RK4）**                  | 四階方法，比 Euler 方法精度更高                                                                               | 適用於剛性系統，如機械運動 |
+| **有限差分法（Finite Difference Method, FDM）** | ∂u∂x≈u(x+h)−u(x)h\frac{\partial u}{\partial x} \approx \frac{u(x+h) - u(x)}{h}∂x∂u​≈hu(x+h)−u(x)​ | 適用於 PDE，如 CFD |
+| **有限體積法（Finite Volume Method, FVM）**     | 計算每個網格內的變量平均值                                                                                     | 適用於流體模擬       |
+| **有限元素法（Finite Element Method, FEM）**    | 把連續域拆分為有限個離散單元，求解 PDE                                                                             | 結構分析，材料模擬     |
 
 📌 **應用案例** 1️⃣ **飛機結構分析**：用 FEM 計算機身應力分佈  
 2️⃣ **智慧交通模擬**：用 PDE 求解城市交通流動  

@@ -1,28 +1,36 @@
 
+[神经网络算法 - 一文搞懂Transformer中的三种注意力机制](https://www.53ai.com/news/qianyanjishu/1079.html)
+
+
+
+
 **自注意力（Self-Attention）机制在vision transformer中是指image中的patches 請詳細解釋Self-Attention如何跟抽取image features有關係, 以及跟cnn的比較差別**
 
-ChatGPT:
+
 在 Vision Transformer (ViT) 中，自注意力（Self-Attention）机制是图像特征提取的核心步骤之一。它通过将图像划分为小块（patches），并利用自注意力机制来捕捉这些小块之间的全局关系，从而提取图像的特征。以下是对自注意力如何与图像特征提取相关联的详细解释，以及与卷积神经网络（CNN）的比较。
 
-Self-Attention机制与图像特征提取的关系
+##### Self-Attention机制与图像特征提取的关系
 图像划分为 Patches： 在 ViT 中，首先将输入图像划分为多个不重叠的小块，称为 patches。每个 patch 通常是一个固定大小的图像区域（例如 16x16 像素）。这些 patches 被展平为向量，并通过线性投影映射到固定维度的表示空间中，形成序列化的表示。
 
 Self-Attention 计算过程： 自注意力机制的核心是通过每个 patch 与其他所有 patches 之间的相互关系，动态计算其重要性。具体步骤如下：
 
-Query（Q）、Key（K）和 Value（V）生成：对每个 patch 进行线性变换，得到三个向量：查询（Query）、键（Key）、和值（Value）。这些向量用于计算不同 patches 之间的相似性。
-计算注意力权重：将每个 Query 与所有的 Key 进行点积，计算每个 patch 与其他所有 patch 之间的相似度。这些相似度通过 Softmax 函数归一化，得到注意力权重。
-加权求和：对所有的 Value 向量按照注意力权重加权求和，得到最终的表示。这一过程可以看作是每个 patch 的表示被所有其他 patches 的信息重新调整，从而捕捉全局的上下文信息。
-图像特征的全局建模： 自注意力机制使每个 patch 的输出都能与其他所有 patches 进行交互。这样，模型能够在全局范围内捕捉到图像中不同区域之间的长距离依赖关系。这一点与卷积操作只在局部范围内处理信息不同。ViT 的设计可以帮助模型更加灵活地捕捉图像中的全局特征，尤其适用于需要全局感知的任务。
+Query（Q）、Key（K）和 Value（V）生成：对每个 patch 进行线性变换，得到三个向量：<mark style="background: #BBFABBA6;">查询（Query）、键（Key）、和值（Value）</mark>。这些向量用于计算不同 patches 之间的相似性。
+计算注意力权重：<mark style="background: #FFF3A3A6;">将每个 Query 与所有的 Key 进行点积，计算每个 patch 与其他所有 patch 之间的相似度。</mark>这些相似度通过 Softmax 函数归一化，得到注意力权重。
+加权求和：<mark style="background: #ABF7F7A6;">对所有的 Value 向量按照注意力权重加权求和</mark>，得到最终的表示。这一过程可以看作是每个 patch 的表示被所有其他 patches 的信息重新调整，从而捕捉全局的上下文信息。
+
+图像特征的全局建模： <mark style="background: #FFB86CA6;">自注意力机制使每个 patch 的输出都能与其他所有 patches 进行交互。</mark>这样，模型能够在全局范围内捕捉到图像中不同区域之间的长距离依赖关系。这一点与卷积操作只在局部范围内处理信息不同。ViT 的设计可以帮助模型更加灵活地捕捉图像中的全局特征，尤其适用于需要全局感知的任务。
+
+![[Pasted image 20250304091635.png]]
+https://www.cnblogs.com/hbuwyg/p/16978264.html
 
 与 CNN 的比较
-局部 vs 全局特征提取：
-
+##### 局部 vs 全局特征提取：
 CNN：卷积神经网络通过卷积核（filters）在图像的局部区域上滑动，提取局部特征。随着层数加深，CNN 可以逐步扩大感受野，从而捕捉更广泛的上下文信息。然而，CNN 的局部特性意味着在较浅的层次上，只能捕捉到较小的区域特征。
 ViT：通过自注意力机制，ViT 从一开始就可以捕捉到图像中不同区域的全局依赖关系，因为每个 patch 都可以与其他所有 patches 进行交互。这种全局感知能力使 ViT 在捕捉复杂的空间关系时具有优势，尤其是在需要长距离依赖的任务中表现突出。
-特征的表征方式：
 
+##### 特征的表征方式：
 CNN：CNN 中的卷积操作是通过共享的卷积核对图像区域进行局部加权求和来提取特征。卷积核的大小和步幅决定了局部感受野的大小。CNN 的特征提取过程更倾向于逐层提炼出低级到高级的特征，逐渐构建从边缘、纹理到更抽象的对象表征。
-ViT：ViT 利用自注意力机制，不需要卷积核的局部限制。通过多头注意力（Multi-Head Attention），每个 patch 可以从不同的子空间中学习多样化的全局特征，因此 ViT 可以在更少的层次中学习到全局表征，而不需要依赖卷积操作。
+ViT：ViT 利用自注意力机制，不需要卷积核的局部限制。<mark style="background: #FFF3A3A6;">通过多头注意力（Multi-Head Attention），每个 patch 可以从不同的子空间中学习多样化的全局特征</mark>，因此 ViT 可以在更少的层次中学习到全局表征，而不需要依赖卷积操作。
 并行化能力：
 
 CNN：由于卷积是局部操作，特征提取需要层层叠加，尽管可以进行一定程度的并行化，但仍受限于卷积的依赖结构。
@@ -32,13 +40,13 @@ ViT：自注意力机制可以完全并行化处理每个 patch，因为计算�
 CNN：卷积层主要捕捉的是空间上的局部特征，并通过逐层堆叠扩大感受野，逐渐提取到空间维度上的全局信息。
 ViT：自注意力机制通过学习不同 patches 之间的全局关系，可以更自然地捕捉到跨越图像多个区域的长距离依赖。ViT 的每个层次可以直接处理全局特征，而无需像 CNN 那样层层逐步提取。
 总结
-ViT 中的自注意力机制通过捕捉图像不同区域之间的长距离依赖关系，来有效提取全局特征。而 CNN 则依赖卷积核逐步提取局部特征，并通过堆叠多层卷积扩大感受野。相比之下，ViT 能更高效地捕捉全局特征，且具备更强的并行处理能力，但 CNN 在提取局部特征上具有传统优势。两者各有侧重点，ViT 更适合需要捕捉全局依赖的任务，CNN 则在高效的局部特征提取任务中表现更优。
+ViT 中的<mark style="background: #BBFABBA6;">自注意力机制通过捕捉图像不同区域之间的长距离依赖关系，来有效提取全局特征。</mark>而 CNN 则依赖卷积核逐步提取局部特征，并通过堆叠多层卷积扩大感受野。相比之下，ViT 能更高效地捕捉全局特征，且具备更强的并行处理能力，但 CNN 在提取局部特征上具有传统优势。两者各有侧重点，ViT 更适合需要捕捉全局依赖的任务，CNN 则在高效的局部特征提取任务中表现更优。
 
 ----------------------------------------------------------
 
 **Q: 为什么在进行 Softmax 之前需要对 Attention 进行 Scaled（为什么除以 dk 的平方根）？**
 
-在 Self-Attention 中，Attention 分数是通过查询向量（Q）和键向量（K）进行点积计算得到的。如果不进行缩放，随着查询和键向量维度的增加，点积的结果会变得非常大，这样会导致 Softmax 函数的梯度在反向传播时变得非常小，影响模型的训练。
+在 Self-Attention 中，Attention 分数是通过<mark style="background: #FFF3A3A6;">查询向量（Q）和键向量（K）进行点积计算</mark>得到的。如果不进行缩放，随着查询和键向量维度的增加，点积的结果会变得非常大，这样会导致 Softmax 函数的梯度在反向传播时变得非常小，影响模型的训练。
 
 因此，Scaled Attention 的公式是：
 
@@ -46,9 +54,9 @@ $$
 Attention(Q,K,V)=Softmax(​​\frac{QK^{T}}{d_{k}})V
 $$
 
-其中，dkd_kdk​ 是查询和键向量的维度，通过除以 dk\sqrt{d_k}dk​​ 对点积结果进行缩放，保持值在一个适中的范围内，防止 Softmax 的梯度消失。
+其中，dk​ 是查询和键向量的维度，通过除以 $\sqrt{d_k}$​​ 对点积结果进行缩放，保持值在一个适中的范围内，防止 Softmax 的梯度消失。
 
-**推导**：查询和键的点积会导致期望的值在数量级上随着向量维度 dkd_kdk​ 增加，呈现正比增长。为了减轻这种影响，缩放值 dk\sqrt{d_k}dk​​ 平衡了输入的增长，确保每个向量维度对输出的贡献不会过大，从而使 Softmax 函数能够更稳定地工作。
+**推导**：查询和键(key)的点积会导致期望的值在数量级上随着向量维度 dkd_kdk​ 增加，呈现正比增长。为了减轻这种影响，缩放值 dk\sqrt{d_k}dk​​ 平衡了输入的增长，确保每个向量维度对输出的贡献不会过大，从而使 Softmax 函数能够更稳定地工作。
 
 
 ----------------------------------------------------------
@@ -71,4 +79,30 @@ $$
 
 降维的目的不仅是为了减少计算成本，还能让每个头关注不同的特征维度，捕捉到输入数据的多样化信息。
 
+Reference:
+transformer中QKV的通俗理解(渣男与备胎的故事)
+https://blog.csdn.net/Weary_PJ/article/details/123531732
 
+Self-Attention：Learning QKV step by step
+https://www.cnblogs.com/hbuwyg/p/16978264.html
+
+神经网络算法 - 一文搞懂Transformer中的三种注意力机制
+https://www.53ai.com/news/qianyanjishu/1079.html
+
+深度学习 自注意层的作用 自注意力机制qkv
+https://blog.51cto.com/u_14405/9057355
+
+为什么Self-Attention要通过线性变换计算Q K V，背后的原理或直观解释是什么？ - 7号床的回答 - 知乎
+https://www.zhihu.com/question/592626839/answer/3304714001
+
+注意力机制（四）：多头注意力
+https://blog.csdn.net/qq_51957239/article/details/129732592
+
+Transformer详解:基于self-attention的大杀器
+https://blog.csdn.net/weixin_44607838/article/details/110732728
+
+从人脑到Transformer：轻松理解注意力机制中的QKV
+https://zhuanlan.zhihu.com/p/688660519
+
+【经典精读】万字长文解读Transformer模型和Attention机制 - 潘小小的文章 - 知乎
+https://zhuanlan.zhihu.com/p/104393915
