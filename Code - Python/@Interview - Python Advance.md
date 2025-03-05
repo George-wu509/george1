@@ -127,7 +127,7 @@
 
 ### 4. 進階Python主題
 
-@81. 說明Python中的生成器（Generators）。 ==Generator expression==
+81. @ 說明Python中的生成器（Generators）。 ==Generator expression==
 82. 如何在Python中實現自動化測試(Automated Testing)？
 83. 在Python中什麼是閉包（Closure）？
 84. 說明Python中的上下文管理器（Context Manager）。
