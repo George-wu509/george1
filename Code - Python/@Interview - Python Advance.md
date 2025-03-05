@@ -42,32 +42,32 @@
 1. 解釋Python中`List`、`Tuple`、`Dictionary`和`Set`的不同之處。
 2. 如何檢查變量的數據類型？
 3. Python中的`None`和`False`有何區別？
-@4. 說明Python的`==`和`is`操作符的差異。
-@5. 如何處理異常？請舉例說明`try`、`except`、`finally`的用法。
-@@6. Python中的`assert`語句的作用是什麼？
-@@@7. 解釋什麼是裝飾器(Decorator)？如何創建一個簡單的裝飾器？
-@8. 說明Python中的`*args`和`**kwargs`。
-@@9. 如何在Python中實現生成器（Generator）？
-@10. 說明什麼是Python中的閉包（Closure）？
+4. @ 說明Python的`==`和`is`操作符的差異。
+5. @如何處理異常？請舉例說明`try`、`except`、`finally`的用法。
+6. @@Python中的`assert`語句的作用是什麼？
+7. @@ 解釋什麼是裝飾器(Decorator)？如何創建一個簡單的裝飾器？
+8. @ 說明Python中的`*args`和`**kwargs`。
+9. @@ 如何在Python中實現生成器（Generator）？
+10. @ 說明什麼是Python中的閉包（Closure）？
 11. 什麼是Python中的`yield`關鍵字？
 12. 解釋Python中的範圍函數`range()`。
-@@13. 說明什麼是Python中的`map()`、`filter()`和`reduce()`函數。
-@14. Python的`join()`方法的作用是什麼？
-@15. 說明什麼是列表解析式（List Comprehension）？提供一個例子。
-@16. Python中的`lambda`表達式有什麼用？
+13. @@ 說明什麼是Python中的`map()`、`filter()`和`reduce()`函數。
+14. @ Python的`join()`方法的作用是什麼？
+15. @ 說明什麼是列表解析式（List Comprehension）？提供一個例子。
+16. @ Python中的`lambda`表達式有什麼用？
 17. 如何在Python中反轉字符串？
-@18. 解釋Python中的`with`語句。
-@@19. 如何在Python中合併多個字典？   ==解構運算符 ==
-@20. Python中的`global`和`nonlocal`關鍵字的區別是什麼？
+18. @ 解釋Python中的`with`語句。
+19. @@ 如何在Python中合併多個字典？   ==解構運算符 ==
+20. @ Python中的`global`和`nonlocal`關鍵字的區別是什麼？
 21. 1. Python是一種動態語言(dynamic language)嗎？說明原因。
-@@@22. Python的GIL（Global interpreter Lock 全局解釋器鎖）是什麼？如何影響多線程？
+22. @@@ Python的GIL（Global interpreter Lock 全局解釋器鎖）是什麼？如何影響多線程？
 23. Python的可變和不可變類型有哪些？
 24. 列表推導式(list comprehension)是什麼？
 25. 說明 `__init__` 方法的作用。
 26. Python中的裝飾器（decorators）是什麼？如何使用？
 ### 2. **物件導向程式設計（OOP）：**
 
-@27. 說明Python中的封裝(Encapsulation)、繼承(Inheritance)和多態(Polymorphism)
+27. @ 說明Python中的封裝(Encapsulation)、繼承(Inheritance)和多態(Polymorphism)
 28. Python中的私有(private)變量和私有方法是什麼？
 29. 解釋Python中的類(class)和物件(object)。
 30. Python中如何定義和調用方法(Method)？
@@ -75,20 +75,20 @@
 32. 說明什麼是繼承(inheritance)，並提供Python代碼示例。
 33. 解釋Python中的多重繼承(Multiple Inheritance)，並提供示例。
 34. 說明什麼是多型性(Polymorphism)？提供Python多型性示例。
-@@35. Python中如何實現抽象類別(Abstract class)？舉例說明。
-@36. 解釋Python中的MRO（Method Resolution Order）。
+35. @@ Python中如何實現抽象類別(Abstract class)？舉例說明。
+36. @ 解釋Python中的MRO（Method Resolution Order）。
 37. 什麼是封裝（Encapsulation）？如何在Python中實現？
-@38. 說明什麼是類方法（Class Method）和靜態方法（Static Method）。
+38. @ 說明什麼是類方法（Class Method）和靜態方法（Static Method）。
 39. 如何在Python中創建私有屬性？
 40. 什麼是`super()`函數？如何使用它？
 41. 解釋什麼是方法覆寫（Method Overriding）。
-@@42. Python中如何實現運算符重載(Operator overloading)？
-@43. 解釋Python中的`__str__`和`__repr__`的作用。
+42. @@ Python中如何實現運算符重載(Operator overloading)？
+43. @ 解釋Python中的`__str__`和`__repr__`的作用。
 44. Python中的`@classmethod`和`@staticmethod`裝飾器有什麼不同？
-@@45. 什麼是單例模式(Singleton Pattern)？如何在Python中實現？
-@46. 說明什麼是接口（Interface）？Python中如何實現？
-@47. Python中的`__init__`和`__new__`方法有什麼區別？
-@48. 如何在Python中進行對象序列化(Serialization)和反序列化(Deserialization)？
+45. @@ 什麼是單例模式(Singleton Pattern)？如何在Python中實現？
+46. @ 說明什麼是接口（Interface）？Python中如何實現？
+47. @ Python中的`__init__`和`__new__`方法有什麼區別？
+48. @ 如何在Python中進行對象序列化(Serialization)和反序列化(Deserialization)？
 49. 請中文詳細解釋python class中的function, 何時需要加上@staticmethod, @classmethod 為何
 50. 如何實現單例模式（Singleton Pattern）？
 51. 什麼是成員方法(instance method)、類方法(class method)和靜態方法(static method)的用法場景？
