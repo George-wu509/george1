@@ -1,4 +1,20 @@
 
+|     |                                                                                                                                   |
+| --- | --------------------------------------------------------------------------------------------------------------------------------- |
+|     | import torch<br>import torch.nn as nn                                                                                             |
+|     |                                                                                                                                   |
+|     | ten1 = torch.tensor([1,2,3])<br>ten1 = torch.tensor(2.0, requires_grad=True)<br>ten2 = torch.rand(3,3)<br>ten3 = torch.zeros(3,3) |
+|     |                                                                                                                                   |
+|     | ten3 = torch.matmul(ten1, ten2)                                                                                                   |
+|     |                                                                                                                                   |
+|     | ten2 = ten1.numpy()<br>ten2 = ten1.T 轉置矩陣<br>mean = ten1.mean(dim=0)<br>std = ten1.std(dim=0)                                     |
+|     |                                                                                                                                   |
+|     | ten1.backward() 計算梯度<br>ten1.fill_diagonal_(1) 對角線元素設置為 1                                                                         |
+|     |                                                                                                                                   |
+|     | layer1 = nn.Linear(3, 2) 創建一個線性層<br>nn.init.normal_(layer1.weight, mean=0, std=0.2)<br>nn.init.constant_(layer1.bias, 0)          |
+|     |                                                                                                                                   |
+|     | if torch.cuda.is_available():<br>    ten1 = torch.tensor([1,2,3], device='cuda')<br>    ten2 = ten1.to('cpu') GPU 張量轉移到 CPU       |
+
 
 ### **PyTorch 基礎**
 
@@ -289,6 +305,9 @@ print("Gradient (dy/dx) at x = 2:", x.grad.item())
 4. 使用 `x.grad` 獲取 xxx 的梯度值，並打印出來。
     - 在 x=2x = 2x=2 時，梯度為 dy/dx=3x2+4x−5=3(2)2+4(2)−5=23dy/dx = 3x^2 + 4x - 5 = 3(2)^2 + 4(2) - 5 = 23dy/dx=3x2+4x−5=3(2)2+4(2)−5=23。
 
+解釋: `requires_grad=True` 表示 PyTorch 會追蹤對 `x` 進行的所有運算，以便之後計算梯度 (Gradient)。這讓 `x` 變成了一個 **可微分變數**，PyTorch 會構建一個 **計算圖 (computation graph)** 來記錄與 `x` 相關的所有運算。
+執行 `y.backward()`之後 `y` 的數值 **不會改變**. `x.grad` 會存儲 `y` 相對於 `x` 的梯度
+
 ### **6. 編寫代碼創建一個 GPU 張量，並將其轉移到 CPU**
 
 #### 代碼
@@ -370,6 +389,8 @@ print("Euclidean Distance:", distance.item())
     - 使用 `(tensor1 - tensor2) ** 2` 計算平方差。
     - 使用 `torch.sum` 求和，並使用 `torch.sqrt` 計算平方根。
 2. 測試時創建兩個張量，並計算它們的距離。
+解釋:
+`distance` 仍然是一個 **PyTorch Tensor**，而不是純 Python 數值. `.item()` 會從張量中提取純 Python **標量值** (`float`)，並移除 PyTorch 的計算圖等額外資訊
 
 ---
 

@@ -79,4 +79,4 @@ If you’re excited to build foundational AI models that redefine what’s possi
 
 ref: [一文搞懂SFT、RLHF、DPO、IFT](https://blog.csdn.net/qq_27590277/article/details/141021131)
 
-以下是30個技術面試問題，專門針對Kiva的AI Researcher/Scientist職位，涵蓋語言處理、多模態模型開發及優化的相關領域：  [[ML-interview - (Kiva)MultiModal]]
+以下是30個技術面試問題，專門針對Kiva的AI Researcher/Scientist職位，涵蓋語言處理、多模態模型開發及優化的相關領域：  [[ML-interview - NLP and RLHF]]

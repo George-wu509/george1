@@ -99,7 +99,7 @@ How will you get here?
 
 
 以下是針對 **Glaukos - SR Engineer(AI)** 職位的 50 道技術面試問題，涵蓋 **2D/3D U-Net**、**CenterMask vs Mask R-CNN**、**ViT 和 DINOv2**、**模型壓縮**、**PyTorch 和 ONNX** 以及 **醫療設備行業的法規和技術文檔準備**等主題：
-[[ML-interview - (Glaukos)medical device]]
+[[ML-interview - Medical device]]
 
 
 |                                           |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |

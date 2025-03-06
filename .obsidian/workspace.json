@@ -4,24 +4,39 @@
     "type": "split",
     "children": [
       {
-        "id": "95e2fc8ef4f14a71",
+        "id": "752c84560747bde5",
         "type": "tabs",
         "children": [
           {
-            "id": "e2ab292af7c5ab3c",
+            "id": "d57e512dcf2fb3e8",
             "type": "leaf",
             "state": {
               "type": "markdown",
               "state": {
-                "file": "Code - AI/@Interview - PyTorch.md",
+                "file": "DL - RCNN/Centermask2.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "@Interview - PyTorch"
+              "title": "Centermask2"
+            }
+          },
+          {
+            "id": "acfb42ef196cf715",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "DL - RCNN/Centermask2.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "Centermask2"
             }
           }
-        ]
+        ],
+        "currentTab": 1
       }
     ],
     "direction": "vertical"
@@ -78,8 +93,7 @@
       }
     ],
     "direction": "horizontal",
-    "width": 301.5,
-    "collapsed": true
+    "width": 301.5
   },
   "right": {
     "id": "7870daaab79c7df9",
@@ -165,46 +179,46 @@
       "table-editor-obsidian:Advanced Tables Toolbar": false
     }
   },
-  "active": "e2ab292af7c5ab3c",
+  "active": "7210625e0140b47b",
   "lastOpenFiles": [
-    "Code - Python/@Interview - Python Advance.md",
-    "Code - Python/@Interview - Python Basic.md",
-    "Code - AI/@Interview - AI model Archecture.md",
-    "Code - AI/@Interview - PyTorch.md",
-    "Code - Python/Python - Import images.md",
-    "Code - C++/Programming - C++ Basic.md",
-    "Code - C++",
-    "Code - C++/Programming - C++ Basic 1.md",
-    "Interview - AI projects/AI photo enhancement - Intro of LLAMA.md",
-    "Interview - AI projects/AI model Summary architecture.md",
-    "Interview - AI projects/AI model Summary.md",
-    "Code - AI",
-    "Interview - ongoing/Philips - Machine Learning Engineer-Clinical Imaging.md",
-    "Interview - ongoing/Ansys - AI ML R&D engineer II.md",
-    "DL - Transformer and ViT/Transformer and ViT - encoder &decoder.md",
+    "Interview - AI projects/CenterMask2 segmentation compression - Projects QA.md",
+    "DL - Pytorch/Pytorch - tensor.md",
+    "DL - Pytorch/Pytorch - basic.md",
+    "DL - Others/GPU Utilization and nvidia-smi command.md",
+    "DL - Others/GPU Utilization and nvidia-smi command 1.md",
+    "DL - Others/model compression.md",
+    "DL - Others/Nvidia Docker.md",
+    "DL - Others/ONNX Runtime.md",
+    "DL - Others/SSL CERTIFICATE issue.md",
+    "DL - Others/TensorRT.md",
+    "DL - Others/Use Nvidia Tesla in WSL2.md",
+    "DL - CLIP/CLIP - Colab.md",
+    "DL - CLIP/CLIP - Contrastive Learning.md",
+    "DL - CLIP/CLIP base.md",
+    "DL - Basic/GAN.md",
+    "DL - Basic/ResNet.md",
+    "DL - Basic/CNN architecture.md",
+    "DL - Basic/CNN.md",
+    "DL - Autonomous-Driving/Autonomous-Driving - Waymo.md",
+    "DL - Autonomous-Driving/Autonomous-Driving - Tesla.md",
+    "DL - 3D Image,CV and Camera/World to camera to pixel coordinate.md",
+    "DL - 3D Image,CV and Camera/3D segmentation.md",
     "DL - Transformer and ViT/Transformer and ViT - ViT Encoder block.md",
+    "DL - Transformer and ViT/Transformer and ViT basic.md",
+    "DL - Transformer and ViT/ViT vs Transformer.md",
     "DL - Transformer and ViT/Transformer and ViT - architecture.md",
-    "Interview - DL AI/ML-interview - Normalization and dropout.md",
+    "Interview - DL AI/ch01_数学基础/img/ch1/prob_distribution_3.png",
+    "Interview - DL AI/ch01_数学基础/img/ch1/prob_distribution_2.png",
+    "Interview - DL AI/ch01_数学基础/img/ch1/prob_distribution_1.png",
+    "Interview - DL AI/ch01_数学基础/img/ch1/conditional_probability.jpg",
+    "Code - C++",
+    "Code - AI",
     "materials/Pasted image 20250304150551.png",
     "materials/Pasted image 20250304153502.png",
     "materials/Pasted image 20250304153426.png",
     "materials/Pasted image 20250304153405.png",
-    "DL - Transformer and ViT/Transformer and ViT - Attention.md",
-    "Interview - DL AI/ML-interview - optimizer.md",
     "materials/Pasted image 20250304091635.png",
-    "DL - CV Generative Models/Stable Diffusion - QKV.md",
-    "DL - CV Generative Models/Stable Diffusion - Introduction.md",
-    "DL - Transformer and ViT/Transformer and ViT basic.md",
-    "DL - Transformer and ViT/ViT vs Transformer.md",
-    "Interview - ongoing/Canopy - AI Engineer.md",
-    "Interview - ongoing/Kiva - AI Researcher  Scientist.md",
-    "Interview - ongoing/metalenz - Senior Software Engineer Computer Vision Optimization.md",
-    "Interview - ongoing/Reply to Linkedln.md",
     "materials/Pasted image 20250303114702.png",
-    "materials/Pasted image 20250301171830.png",
-    "materials/Pasted image 20250301165742.png",
-    "materials/Pasted image 20250301165721.png",
-    "materials/Pasted image 20250301161255.png",
     "New folder",
     "Leetcode - 11.other QA",
     "DL - 3D Image,CV and Camera"

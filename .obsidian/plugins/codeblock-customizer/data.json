@@ -373,7 +373,7 @@
       "light": {
         "codeblock": {
           "activeLineColor": "#1A1715CF",
-          "backgroundColor": "#000000",
+          "backgroundColor": "#FCF6E4",
           "highlightColor": "#1E23F2",
           "alternateHighlightColors": {
             "hlred": "#D71010",
@@ -420,7 +420,7 @@
   "alternateHighlightColorName": "",
   "languageBorderColorName": "",
   "foldAllCommand": false,
-  "settingsType": "alternateHighlight",
+  "settingsType": "codeblock",
   "langSpecificSettingsType": "",
   "languageSpecificLanguageName": ""
 }

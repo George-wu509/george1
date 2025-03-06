@@ -113,6 +113,6 @@ Reality Defender’s real-time voice detection helps call centers, verification 
 Insurance fraud. Romance scams. Phishing attacks. Fraudsters weaponize large language models (LLMs) to target ordinary citizens and enterprises. Reality Defender’s Text Detection platform shines a light on what’s real and what’s synthetic before any harm can be done. 保險詐騙。浪漫騙局。網路釣魚攻擊。詐欺者利用大型語言模型 (LLM) 來攻擊普通公民和企業。 Reality Defender 的文字偵測平台可在造成任何傷害之前識別出真實內容和合成內容。
 --> Generation
 
-Interview questions:  [[ML-interview - (Reality defender)Model compression]]
+Interview questions:  [[ML-interview - Model compression]]
 
 	
