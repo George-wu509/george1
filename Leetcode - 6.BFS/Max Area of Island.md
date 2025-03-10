@@ -42,3 +42,7 @@ class Solution:
         return ans
 ```
 pass
+
+解釋:
+step1  遍歷grid, 找到value=1的格子然後用BFS並計算這格BFS的面積.  
+step2  ans = max(ans, area)並輸出最大面積

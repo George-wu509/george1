@@ -95,6 +95,11 @@ class Solution:
 35        return day - 1
 ```
 pass
+解釋:
+step1  先遍歷一次grid找出所有僵尸(=1), 都加入deque  
+step2  while queue迴圈之後day+1, 然後for loop將deque列表裡每一個元素做一次BFS(pop一次, 然後加入前後左右進去deque).   
+step3  持續上面的步驟並增加day直到deque為空  
+step4  最後再遍歷一次grid, 如果還有人類(0)則return -1  
 
 ### 示例输入输出
 

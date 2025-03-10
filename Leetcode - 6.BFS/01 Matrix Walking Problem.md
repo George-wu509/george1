@@ -4,13 +4,26 @@
 ---
 
 ### 问题描述
+给定一个大小为 `n*m` 的 `01` 矩阵 `grid` ，`1` 是墙，`0` 是路，你现在可以把 `grid` 中的一个 `1` 变成 `0`，请问从左上角走到右下角是否有路可走？如果有路可走，最少要走多少步？
 
-在一个 `n x m` 的二维网格 `grid` 中，每个格子可以是：
-
-- `0`：表示可以通行的路。
-- `1`：表示障碍物，可以被破坏一次。
-
-从左上角 `(0, 0)` 出发，到右下角 `(n-1, m-1)`，问最少需要多少步才能到达。如果无法到达，返回 `-1`。
+Example:
+**样例 1：**
+```python
+输入：a = [
+[0,1,0,0,0],
+[0,0,0,1,0],
+[1,1,0,1,0],
+[1,1,1,1,0]] 
+输出：7
+解释：将（0,1）处的 `1` 变成 `0`，最短路径如下：
+ (0,0)->(0,1)->(0,2)->(0,3)->(0,4)->(1,4)->(2,4)->(3,4) 其他长度为 `7` 的方案还有很多，这里不一一列举。
+```
+**样例 2：**
+```python
+输入：a = [[0,1,1],[1,1,0],[1,1,0]]
+输出：-1 
+解释：不管把哪个 `1` 变成 `0`，都没有可行的路径。
+```
 
 ---
 
@@ -26,6 +39,10 @@
     - 使用三维数组 `visit[x][y][i]` 记录是否访问过位置 `(x, y)`，其中 `i` 表示状态：
         - `i = 0` 表示未破坏过障碍物。
         - `i = 1` 表示已经破坏过障碍物。
+        [ [ [0, 0], [0, 0], [0, 0], [0, 0], [0, 0] ], 
+		[ [0, 0], [0, 0], [0, 0], [0, 0], [0, 0] ], 
+		[ [0, 0], [0, 0], [0, 0], [0, 0], [0, 0] ], 
+		[ [0, 0], [0, 0], [0, 0], [0, 0], [0, 0] ]]
 2. **状态初始化**：
     
     - 如果起点 `(0, 0)` 是 `0`，从未破坏障碍物状态开始搜索。
@@ -41,84 +58,66 @@
     - 如果到达终点 `(n-1, m-1)`，返回当前步数。
     - 如果队列为空，且未到达终点，返回 `-1`。
 
----
-Example:
-**样例 1：**
-```python
-输入：a = [[0,1,0,0,0],[0,0,0,1,0],[1,1,0,1,0],[1,1,1,1,0]] 
-输出：7
-解释：将（0,1）处的 `1` 变成 `0`，最短路径如下：
- (0,0)->(0,1)->(0,2)->(0,3)->(0,4)->(1,4)->(2,4)->(3,4) 其他长度为 `7` 的方案还有很多，这里不一一列举。
-```
-**样例 2：**
-```python
-输入：a = [[0,1,1],[1,1,0],[1,1,0]]
-输出：-1 
-解释：不管把哪个 `1` 变成 `0`，都没有可行的路径。
-```
-
-
 ### 代码实现
 
 ```python
-class Node:
-    def __init__(self, x=0, y=0, broken=0, steps=0):
-        self.x = x  # 当前所在行
-        self.y = y  # 当前所在列
-        self.broken = broken  # 是否已经破坏过障碍物
-        self.steps = steps  # 当前走的步数
-
+from collections import deque
+class node:
+	def __init__(self, a = 0, b = 0, i = 0, s = 0):
+		self.x = a
+		self.y = b
+		self.i = i
+		self.step = s
 class Solution:
     """
-    @param grid: The grid
+    @param grid: The gird
     @return: Return the steps you need at least
     """
     def get_best_road(self, grid):
-        # 定义四个方向
-        directions = [(1, 0), (-1, 0), (0, 1), (0, -1)]
-        n, m = len(grid), len(grid[0])
-
-        # 访问状态：visit[x][y][i] 表示是否访问过 (x, y) 状态 i
-        visit = [[[0 for _ in range(2)] for _ in range(m)] for _ in range(n)]
-
-        # 初始化队列
-        queue = []
-        if grid[0][0] == 0:
-            start_node = Node(0, 0, 0, 0)
-            visit[0][0][0] = 1
+        # Write your code here
+        direction = [[1,0],[-1,0],[0,1],[0,-1]]
+        n = len(grid)
+        m = len(grid[0])
+        # print(n,m)
+        visit = [[[0 for i in range(2)] for i in range(m)] for i in range(n)]
+        p = []
+        if (grid[0][0] == 0):
+        	new = node(0,0,0,0)
+        	visit[0][0][0] = 1;
         else:
-            start_node = Node(0, 0, 1, 0)
-        visit[0][0][1] = 1
-        queue.append(start_node)
+        	new=node(0,0,1,0)
+        p.append(new)
+        flag = -1;
+        visit[0][0][1] = 1;
+        cnt = 0
+        while cnt < len(p):
+        	a = p[cnt]
+        	cnt += 1
+        	# print(a.x,a.y,a.i,a.step)
+        	if a.x == n-1 and a.y == m-1:
+        		flag = a.step
+        		break
+        	else:
+        		for i in range(0,4):
+        			new_x = a.x + direction[i][0]
+        			new_y = a.y + direction[i][1]
+        			if  new_x <= n-1 and new_x >= 0 and new_y <= m-1 and new_y >= 0:
+        				if grid[new_x][new_y] == 0 and visit[new_x][new_y][a.i] == 0:
+        					visit[new_x][new_y][a.i]=1
+        					visit[new_x][new_y][1]=1
+        					p.append(node(new_x , new_y , a.i , a.step+1 ))
+        				if grid[new_x][new_y] == 1 and a.i == 0 and visit[new_x][new_y][1] == 0:
+        					visit[new_x][new_y][1] = 1
+        					p.append(node(new_x , new_y,1 , a.step+1))
+        return flag
 
-        # BFS 遍历
-        while queue:
-            current = queue.pop(0)
-
-            # 如果到达终点，返回步数
-            if current.x == n - 1 and current.y == m - 1:
-                return current.steps
-
-            # 尝试移动到四个方向
-            for dx, dy in directions:
-                new_x, new_y = current.x + dx, current.y + dy
-
-                # 检查是否越界
-                if 0 <= new_x < n and 0 <= new_y < m:
-                    if grid[new_x][new_y] == 0 and visit[new_x][new_y][current.broken] == 0:
-                        # 如果是空地，直接移动
-                        visit[new_x][new_y][current.broken] = 1
-                        queue.append(Node(new_x, new_y, current.broken, current.steps + 1))
-                    elif grid[new_x][new_y] == 1 and current.broken == 0 and visit[new_x][new_y][1] == 0:
-                        # 如果是障碍物且未破坏过
-                        visit[new_x][new_y][1] = 1
-                        queue.append(Node(new_x, new_y, 1, current.steps + 1))
-
-        # 无法到达终点
-        return -1
 
 ```
 pass
+解釋:
+step1  建立visit matrix, 除了x, y還有是否破壞障礙物.  
+step2  從初始位置開始用BFS, 如果有遇到障礙則在這一輪BFS移除障礙, 而且其他障礙不能再移除. 
+step3  比較這些BFS的選最短路徑
 
 ### 示例输入输出
 

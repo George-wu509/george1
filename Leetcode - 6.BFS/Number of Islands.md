@@ -111,6 +111,11 @@ class Solution:
 
 ```
 pass
+解釋:
+step1 在num_islands function遍歷整個grid, 如果有數值=1而且visited=0, 則bfs()  
+step2 在bfs()用BFS, deque 將相鄰的格子visited=1  
+step3  回到num_islands function裡對每個bfs(), islands +1  
+
 
 ### 示例输入输出
 

@@ -7,6 +7,26 @@
 
 给定一个有向图，返回其任意一个拓扑排序。
 
+Example:
+输入：
+```python
+graph = {0,1,2,3#1,4#2,4,5#3,4,5#4#5}
+```
+输出：
+```python
+[0, 1, 2, 3, 4, 5]
+```
+解释：
+图如下所示:
+
+![91cf07d2-b7ea-11e9-bb77-0242ac110002.jpg](https://media-cn.lintcode.com/new_storage_v2/public/202211/6da9543e-4e23-4ff1-a33e-e99f380c1b40.jpg)
+
+拓扑排序可以为:  
+[0, 1, 2, 3, 4, 5]  
+[0, 2, 3, 1, 5, 4]  
+...  
+您只需要返回给定图的任何一种拓扑顺序。
+
 **拓扑排序**定义：
 
 - 拓扑排序是对一个有向无环图（DAG）的顶点排序，使得每条有向边 `(u, v)` 中的顶点 `u` 都排在 `v` 前面。
@@ -21,7 +41,7 @@ class Node:
     def __repr__(self):
         return str(self.label)  # 方便輸出節點
 
-
+# Example - node
     # 創建節點
     nodes = {i: Node(i) for i in range(6)}
     # nodes = {0: Node(0), 1: Node(1), 2: Node(2), 
@@ -35,6 +55,10 @@ class Node:
     # nodes[4].neighbors = []
     # nodes[5].neighbors = []
 
+    # 舉例 
+    #   nodes = {0:Node(0), 1:Node(1)....}  
+    #      nodes[0].label = 0
+    #      nodes[0].neighbors = [1, 2, 3]  
 ```
 
 ---
@@ -62,27 +86,6 @@ class Node:
 3. **注意事项**：
     
     - 如果图中存在环，则无法生成拓扑排序。
-
----
-Example:
-输入：
-```python
-graph = {0,1,2,3#1,4#2,4,5#3,4,5#4#5}
-```
-输出：
-```python
-[0, 1, 2, 3, 4, 5]
-```
-解释：
-图如下所示:
-
-![91cf07d2-b7ea-11e9-bb77-0242ac110002.jpg](https://media-cn.lintcode.com/new_storage_v2/public/202211/6da9543e-4e23-4ff1-a33e-e99f380c1b40.jpg)
-
-拓扑排序可以为:  
-[0, 1, 2, 3, 4, 5]  
-[0, 2, 3, 1, 5, 4]  
-...  
-您只需要返回给定图的任何一种拓扑顺序。
 
 
 ### 代码实现
@@ -128,6 +131,13 @@ class Solution:
 
 ```
 pass
+解釋:
+step1  用get_indegree() function從graph輸出 node_to_indegree (是個dict)  
+node_to_indegree = {0:0, 1:1, 2:1, 3:1, 4:3, 5:2}  
+step2  找indegree=0的就是start node ([0]), 然後加入deque  
+step3  開始BFS, pop出來的node就加入order, 然後用for loop node.neighbors每個neighbor (代表從node往後指的其他nodes), 並indegree-1  
+step4  一步步加入order就是結果
+
 
 ### 示例输入输出
 
