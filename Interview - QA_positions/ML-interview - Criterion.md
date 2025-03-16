@@ -1,5 +1,18 @@
 
 
+|                      |                                          |
+| -------------------- | ---------------------------------------- |
+| 模型複雜度                | Parms, FLOPs                             |
+| 性能指标                 | Latency, Throughput                      |
+| 计算资源消耗               | Memory consumption, MACs                 |
+|                      |                                          |
+| Object detection     | mAP, IoU, Precision/Recall/F1            |
+| Image classification | Top-1/Top-5準確率, Precision/Recall/F1      |
+| Image Segmentation   | Dice, mIoU                               |
+| Image quality        | PSNR, SSIM                               |
+|                      |                                          |
+| 影片分析                 | Cold start, throughput                   |
+| 硬體層級                 | GPU usage, Peak Memory, Token throughput |
 
 |             | Loss function                                                                                                    | Index                                                                              |
 | ----------- | ---------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
@@ -18,7 +31,6 @@
 目標檢測的損失函數通常由兩部分組成：
 1. **分類損失（Classification Loss）**：判斷目標物體的類別
 2. **回歸損失（Localization Loss）**：調整預測框的位置與大小
-
 
 
 

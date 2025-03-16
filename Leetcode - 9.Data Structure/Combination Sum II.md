@@ -1,6 +1,15 @@
 Lintcode 153
 给定一个数组 `num` 和一个整数 `target`. 找到 `num` 中所有的数字之和为 `target` 的组合.
 
+| **類別**                     | **適用條件**               | **解法**             | **LintCode 題目**            |
+| -------------------------- | ---------------------- | ------------------ | -------------------------- |
+| 固定數量的元素求和 = target         | 找兩個數 or K個數 = `target` | **雙指針**或**二分搜索**尋找 | Two Sum, K Sum II          |
+| 任意數量的元素求和 = target         | 任意數字 = `target`        | DFS, DP            | [[Combinations]]           |
+| 連續子序列求和 = target           | 連續區間和 = `target`       | 前綴和 + 哈希表          | Subarray Sum               |
+| 最接近 target 的數組和            | K個數字的和最接近 `target`     | **雙指針**或**二分搜索**尋找 | 3Sum Closest               |
+| 數組元素是否能夠被分組使得每組的和等於 target | 能否分成兩組，使得每組的和相等        | DP, Bitmask DP     | Partition Equal Subset Sum |
+| 找到數組內的元素和符合某種條件            | 找最大和的連續子數組             | Kadane's Algorithm |                            |
+
 
 **样例 1:**
 ```python

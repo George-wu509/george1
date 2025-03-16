@@ -4,35 +4,112 @@
     "type": "split",
     "children": [
       {
-        "id": "b849b21b51eda00a",
+        "id": "80e01d0c0dedb73d",
         "type": "tabs",
         "children": [
           {
-            "id": "e76d24ece088ac21",
+            "id": "18a29c9971a26133",
             "type": "leaf",
             "state": {
               "type": "markdown",
               "state": {
-                "file": "Daily Update.md",
+                "file": "Interview - ongoing/Flock Safety - Staff ML Engineer.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "Daily Update"
+              "title": "Flock Safety - Staff ML Engineer"
             }
           },
           {
-            "id": "85a3f5a0af060d51",
+            "id": "3f9a3e3f9315bc04",
             "type": "leaf",
             "state": {
               "type": "markdown",
               "state": {
-                "file": "Leetcode - 7.DFS/DFS.md",
+                "file": "Interview - QA_positions/ML-interview - AI model的量化指標.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "DFS"
+              "title": "ML-interview - AI model的量化指標"
+            }
+          },
+          {
+            "id": "b51bbfb61837cd6f",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "Interview - QA_positions/ML-interview - Criterion.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "ML-interview - Criterion"
+            }
+          },
+          {
+            "id": "7de7c0b5214cd82b",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "YOLO - Introduction.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "YOLO - Introduction"
+            }
+          },
+          {
+            "id": "7740d76e4c22a30f",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "CNN vs FCN.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "CNN vs FCN"
+            }
+          }
+        ],
+        "currentTab": 4
+      },
+      {
+        "id": "185d0356f09c4e3f",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "cd41a46f98ebc05f",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "Interview - ongoing/Flock Safety - Staff ML Engineer.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "Flock Safety - Staff ML Engineer"
+            }
+          },
+          {
+            "id": "49726b3695ace440",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "Interview - QA_positions/ML-interview - object detection.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "ML-interview - object detection"
             }
           }
         ],
@@ -68,7 +145,7 @@
             "state": {
               "type": "search",
               "state": {
-                "query": "字母大小写转换",
+                "query": "",
                 "matchingCase": false,
                 "explainSearch": false,
                 "collapseAll": false,
@@ -180,38 +257,43 @@
       "table-editor-obsidian:Advanced Tables Toolbar": false
     }
   },
-  "active": "85a3f5a0af060d51",
+  "active": "7740d76e4c22a30f",
   "lastOpenFiles": [
-    "Leetcode - 6.BFS/BFS.md",
-    "Leetcode - 6.BFS/01 Matrix Walking Problem.md",
-    "Leetcode - 6.BFS/Zombie in Matrix.md",
-    "Leetcode - 6.BFS/Modern Ludo I.md",
-    "Leetcode - 6.BFS/Knight Shortest Path II.md",
-    "Leetcode - 6.BFS/Keys and Rooms.md",
-    "Leetcode - 6.BFS/Max Area of Island.md",
-    "Leetcode - 6.BFS/Number of Islands.md",
-    "Leetcode - 6.BFS/Shortest Distance from All Buildings.md",
-    "Leetcode - 6.BFS/Alien Dictionary.md",
-    "Leetcode - 6.BFS/Sequence Reconstruction.md",
-    "Leetcode - 6.BFS/Word Ladder.md",
-    "Leetcode - 6.BFS/Lake Escape.md",
-    "Leetcode - 6.BFS/Sliding Puzzle III.md",
-    "Leetcode - 6.BFS/Sliding Puzzle II.md",
-    "Leetcode - 6.BFS/Course Schedule II.md",
-    "Leetcode - 6.BFS/Topological Sorting.md",
-    "Leetcode - 6.BFS/Course Schedule.md",
-    "Leetcode - 6.BFS/Tree.md",
+    "YOLO - Introduction.md",
+    "CNN vs FCN.md",
+    "DL - CNN",
+    "Pasted image 20250315215556.png",
+    "Interview - QA_positions/ML-interview - AI model的量化指標.md",
+    "Interview - QA_positions/ML-interview - object detection.md",
+    "Interview - ongoing/Flock Safety - Staff ML Engineer.md",
+    "DL - YOLO",
+    "Interview - QA_positions/ML-interview - Criterion.md",
+    "DL - Latest update/Interview - update.md",
+    "Interview - QA_positions/ML-interview - AI Profiling tools.md",
+    "Interview - ongoing/Security Clearance.md",
+    "Interview - QA_positions/ML-interview - CUDA computation.md",
+    "Interview - QA_positions/ML-interview - AWS and AzureML.md",
+    "Interview - QA_positions/ML-interview - 模型压缩加速.md",
+    "DL - Cloud/AWS - Install and setup.md",
+    "Interview - ongoing/Ansys - AI ML R&D engineer II.md",
+    "DL - CUDA programming/CUDA programming - Basic.md",
+    "DL - CUDA programming/GPU vs CPU.md",
+    "DL - Latest update/Daily Update.md",
+    "DL - Cloud",
+    "Data Structure Summary.md",
+    "Leetcode - 7.DFS/DFS.md",
     "Leetcode - 6.BFS/Rotting Oranges.md",
-    "Leetcode - 6.BFS/Clone Graph.md",
+    "Leetcode - 6.BFS/Number of Islands.md",
     "Leetcode - 6.BFS/Knight Shortest Path.md",
-    "Daily Update.md",
-    "0, 0], [0, 0], [0, 0], [0, 0], [0, 0.md",
-    "Leetcode - 6.BFS/01 Matrix.md",
-    "Leetcode - 6.BFS/Course Schedule IV.md",
-    "Interview - DL AI/ch01_数学基础/img/ch1/prob_distribution_3.png",
-    "Interview - DL AI/ch01_数学基础/img/ch1/prob_distribution_2.png",
-    "Interview - DL AI/ch01_数学基础/img/ch1/prob_distribution_1.png",
-    "Interview - DL AI/ch01_数学基础/img/ch1/conditional_probability.jpg",
+    "Leetcode - 6.BFS/Max Area of Island.md",
+    "Leetcode - 6.BFS/Knight Shortest Path II.md",
+    "Leetcode - 6.BFS/Zombie in Matrix.md",
+    "Leetcode - 6.BFS/BFS.md",
+    "DL - CUDA programming",
+    "CVML - DL AI/ch01_数学基础/img/ch1/prob_distribution_3.png",
+    "CVML - DL AI/ch01_数学基础/img/ch1/prob_distribution_2.png",
+    "CVML - DL AI/ch01_数学基础/img/ch1/prob_distribution_1.png",
+    "CVML - DL AI/ch01_数学基础/img/ch1/conditional_probability.jpg",
     "Code - C++",
     "Code - AI",
     "materials/Pasted image 20250304150551.png",
@@ -219,7 +301,6 @@
     "materials/Pasted image 20250304153426.png",
     "materials/Pasted image 20250304153405.png",
     "materials/Pasted image 20250304091635.png",
-    "materials/Pasted image 20250303114702.png",
     "New folder",
     "Leetcode - 11.other QA",
     "DL - 3D Image,CV and Camera"
