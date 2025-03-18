@@ -7,21 +7,26 @@
 | [[###YOLO跟RCNN的backbone, neck, head比較]] |     |
 | [[###YOLO 系列模型版本演進]]                    |     |
 |                                         |     |
+|                                         |     |
+|                                         |     |
+|                                         |     |
+|                                         |     |
+|                                         |     |
 
 **YOLO 系列演進表**
 
-|模型|Backbone|Neck|Head|主要特點與功能|其他功能|效能提升|
-|:--|:--|:--|:--|:--|:--|:--|
-|YOLOv1|GoogLeNet|無|全連接層|單階段檢測、快速|物件偵測|開創性，速度快但精度較低|
-|YOLOv2|Darknet-19|無|卷積層|Anchor boxes、多尺度訓練|物件偵測|精度與速度提升|
-|YOLOv3|Darknet-53|FPN|卷積層|多尺度檢測、更好的小目標檢測|物件偵測|小目標檢測能力提升|
-|YOLOv4|CSPDarknet53|SPP、PAN|卷積層|CSP 結構、Mosaic 資料增強|物件偵測|精度大幅提升|
-|YOLOv5|CSPDarknet53|SPP、PAN|卷積層|PyTorch 實現、自動化 Anchor boxes|物件偵測|易於使用，速度與精度平衡|
-|YOLOX|Darknet53|FPN|Decoupled Head|Anchor-free、SimOTA 標籤分配|物件偵測|精度與速度的進一步提升|
-|YOLOv6|EfficientRep|Rep-PAN|Efficient Decoupled Head|Rep 算子、硬體友善|物件偵測|針對工業應用優化|
-|YOLOv7|ELAN|SPP、PAN|卷積層|ELAN 結構、輔助訓練頭|物件偵測|在速度和準確性方面都超越了所有已知的目標檢測器|
-|YOLOv8|C2f|C2f、SPPF、PAN|Decoupled Head|Anchor-free、任務模式切換(分類，分割，檢測)|物件偵測，圖像分割，圖像分類|多功能、易於使用|
-|YOLO-NAS|NAS 搜尋|PAN|Decoupled Head|神經架構搜尋、最佳硬體延遲|物件偵測|針對特定硬體平台優化|
+| 模型       | Backbone     | Neck         | Head                     | 主要特點與功能                      | 其他功能           | 效能提升                    |
+| :------- | :----------- | :----------- | :----------------------- | :--------------------------- | :------------- | :---------------------- |
+| YOLOv1   | GoogLeNet    | 無            | 全連接層                     | 單階段檢測、快速                     | 物件偵測           | 開創性，速度快但精度較低            |
+| YOLOv2   | Darknet-19   | 無            | 卷積層                      | Anchor boxes、多尺度訓練           | 物件偵測           | 精度與速度提升                 |
+| YOLOv3   | Darknet-53   | FPN          | 卷積層                      | 多尺度檢測、更好的小目標檢測               | 物件偵測           | 小目標檢測能力提升               |
+| YOLOv4   | CSPDarknet53 | SPP、PAN      | 卷積層                      | CSP 結構、Mosaic 資料增強           | 物件偵測           | 精度大幅提升                  |
+| YOLOv5   | CSPDarknet53 | SPP、PAN      | 卷積層                      | PyTorch 實現、自動化 Anchor boxes  | 物件偵測           | 易於使用，速度與精度平衡            |
+| YOLOX    | Darknet53    | FPN          | Decoupled Head           | Anchor-free、SimOTA 標籤分配      | 物件偵測           | 精度與速度的進一步提升             |
+| YOLOv6   | EfficientRep | Rep-PAN      | Efficient Decoupled Head | Rep 算子、硬體友善                  | 物件偵測           | 針對工業應用優化                |
+| YOLOv7   | ELAN         | SPP、PAN      | 卷積層                      | ELAN 結構、輔助訓練頭                | 物件偵測           | 在速度和準確性方面都超越了所有已知的目標檢測器 |
+| YOLOv8   | C2f          | C2f、SPPF、PAN | Decoupled Head           | Anchor-free、任務模式切換(分類，分割，檢測) | 物件偵測，圖像分割，圖像分類 | 多功能、易於使用                |
+| YOLO-NAS | NAS 搜尋       | PAN          | Decoupled Head           | 神經架構搜尋、最佳硬體延遲                | 物件偵測           | 針對特定硬體平台優化              |
 
 
 
@@ -304,3 +309,21 @@ https://zhuanlan.zhihu.com/p/675877274
 
 YOLO模型详解 - 山河动人的文章 - 知乎
 https://zhuanlan.zhihu.com/p/624060603
+
+目标检测新手如何阅读YOLOX的源代码呢？ - 3D视觉开发者社区的回答 - 知乎
+https://www.zhihu.com/question/482419414/answer/2427219945
+
+YOLOX源码解析--十分详细，建议收藏！ - 来一块葱花饼的文章 - 知乎  
+[https://zhuanlan.zhihu.com/p/411045300](https://www.google.com/url?q=https://zhuanlan.zhihu.com/p/411045300&sa=D&source=calendar&usd=2&usg=AOvVaw3jWIgIao-nfUSCL7ZFwavk)
+
+爆肝总结！！YoloV3源码详解 - xc谈算法的文章 - 知乎  
+[https://zhuanlan.zhihu.com/p/679672749](https://www.google.com/url?q=https://zhuanlan.zhihu.com/p/679672749&sa=D&source=calendar&usd=2&usg=AOvVaw0BClm9rT9K4ir33s1of2Ju)
+
+YOLOe问世，实时观察一切，统一开放物体检测和分割 - 机器之心的文章 - 知乎  
+[https://zhuanlan.zhihu.com/p/29912457801](https://www.google.com/url?q=https://zhuanlan.zhihu.com/p/29912457801&sa=D&source=calendar&usd=2&usg=AOvVaw1Viz8Up_XxLBdF7Wjg4Jwp)
+
+YOLO-NAS对象检测算法再一次颠覆YOLO系列算法——已超越YOLOv8 - 人工智能研究所的文章 - 知乎
+https://zhuanlan.zhihu.com/p/632626074
+
+[CV - Object Detection]目标检测YOLO系列综述（全） - Pascal算法摆渡人的文章 - 知乎
+https://zhuanlan.zhihu.com/p/558217700

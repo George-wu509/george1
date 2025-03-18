@@ -4,11 +4,11 @@
     "type": "split",
     "children": [
       {
-        "id": "80e01d0c0dedb73d",
+        "id": "ed28b9ba14c52b69",
         "type": "tabs",
         "children": [
           {
-            "id": "18a29c9971a26133",
+            "id": "80feca042ce4d766",
             "type": "leaf",
             "state": {
               "type": "markdown",
@@ -22,89 +22,12 @@
             }
           },
           {
-            "id": "3f9a3e3f9315bc04",
+            "id": "b0ce3b9e03b596d6",
             "type": "leaf",
             "state": {
               "type": "markdown",
               "state": {
-                "file": "Interview - QA_positions/ML-interview - AI model的量化指標.md",
-                "mode": "source",
-                "source": false
-              },
-              "icon": "lucide-file",
-              "title": "ML-interview - AI model的量化指標"
-            }
-          },
-          {
-            "id": "b51bbfb61837cd6f",
-            "type": "leaf",
-            "state": {
-              "type": "markdown",
-              "state": {
-                "file": "Interview - QA_positions/ML-interview - Criterion.md",
-                "mode": "source",
-                "source": false
-              },
-              "icon": "lucide-file",
-              "title": "ML-interview - Criterion"
-            }
-          },
-          {
-            "id": "7de7c0b5214cd82b",
-            "type": "leaf",
-            "state": {
-              "type": "markdown",
-              "state": {
-                "file": "YOLO - Introduction.md",
-                "mode": "source",
-                "source": false
-              },
-              "icon": "lucide-file",
-              "title": "YOLO - Introduction"
-            }
-          },
-          {
-            "id": "7740d76e4c22a30f",
-            "type": "leaf",
-            "state": {
-              "type": "markdown",
-              "state": {
-                "file": "CNN vs FCN.md",
-                "mode": "source",
-                "source": false
-              },
-              "icon": "lucide-file",
-              "title": "CNN vs FCN"
-            }
-          }
-        ],
-        "currentTab": 4
-      },
-      {
-        "id": "185d0356f09c4e3f",
-        "type": "tabs",
-        "children": [
-          {
-            "id": "cd41a46f98ebc05f",
-            "type": "leaf",
-            "state": {
-              "type": "markdown",
-              "state": {
-                "file": "Interview - ongoing/Flock Safety - Staff ML Engineer.md",
-                "mode": "source",
-                "source": false
-              },
-              "icon": "lucide-file",
-              "title": "Flock Safety - Staff ML Engineer"
-            }
-          },
-          {
-            "id": "49726b3695ace440",
-            "type": "leaf",
-            "state": {
-              "type": "markdown",
-              "state": {
-                "file": "Interview - QA_positions/ML-interview - object detection.md",
+                "file": "Interview - AI model QA list/ML-interview - object detection.md",
                 "mode": "source",
                 "source": false
               },
@@ -112,8 +35,7 @@
               "title": "ML-interview - object detection"
             }
           }
-        ],
-        "currentTab": 1
+        ]
       }
     ],
     "direction": "vertical"
@@ -257,38 +179,43 @@
       "table-editor-obsidian:Advanced Tables Toolbar": false
     }
   },
-  "active": "7740d76e4c22a30f",
+  "active": "80feca042ce4d766",
   "lastOpenFiles": [
-    "YOLO - Introduction.md",
-    "CNN vs FCN.md",
-    "DL - CNN",
-    "Pasted image 20250315215556.png",
-    "Interview - QA_positions/ML-interview - AI model的量化指標.md",
-    "Interview - QA_positions/ML-interview - object detection.md",
+    "Interview - AI model QA list/ML-interview - object detection.md",
     "Interview - ongoing/Flock Safety - Staff ML Engineer.md",
-    "DL - YOLO",
-    "Interview - QA_positions/ML-interview - Criterion.md",
-    "DL - Latest update/Interview - update.md",
-    "Interview - QA_positions/ML-interview - AI Profiling tools.md",
-    "Interview - ongoing/Security Clearance.md",
-    "Interview - QA_positions/ML-interview - CUDA computation.md",
-    "Interview - QA_positions/ML-interview - AWS and AzureML.md",
-    "Interview - QA_positions/ML-interview - 模型压缩加速.md",
-    "DL - Cloud/AWS - Install and setup.md",
-    "Interview - ongoing/Ansys - AI ML R&D engineer II.md",
-    "DL - CUDA programming/CUDA programming - Basic.md",
-    "DL - CUDA programming/GPU vs CPU.md",
+    "DL - YOLO and object detection/Object detection - summary.md",
+    "Interview - ongoing/Tera AI - AI Researcher (PhD, Visual Foundation Models for Autonomy).md",
+    "DL - Tracking/Tracking - Summary.md",
+    "DL - Tracking/Tracking and ReID.md",
+    "DL - YOLO and object detection/YOLO - Introduction.md",
+    "materials/Pasted image 20250317092029.png",
+    "Interview - AI model QA list/ML-interview - AI model的量化指標.md",
+    "DL - Tracking",
+    "DL - CNN/CNN - Basic.md",
+    "materials/Pasted image 20250316142318.png",
+    "DL - CNN/Depthwise Separable Convolution.md",
+    "materials/Pasted image 20250316215548.png",
+    "materials/Pasted image 20250316215533.png",
+    "DL - YOLO and object detection/YOLO - object detection on edge.md",
     "DL - Latest update/Daily Update.md",
+    "DL - Latest update/Interview - update.md",
+    "DL - Latest update/AI Latest update.md",
+    "DL - CUDA programming/GPU vs CPU.md",
+    "DL - CUDA programming/CUDA programming - Basic.md",
+    "DL - YOLO and object detection/YOLO - YOLO1 code.md",
+    "DL - YOLO and object detection/YOLO - NMS.md",
+    "Interview - AI model QA list/ML-interview - Criterion.md",
+    "DL - CNN/CNN vs FCN.md",
+    "DL - CNN",
+    "materials/Pasted image 20250315215556.png",
+    "DL - YOLO and object detection",
+    "Interview - AI model QA list/ML-interview - AI Profiling tools.md",
+    "Interview - ongoing/Security Clearance.md",
+    "Interview - AI model QA list/ML-interview - CUDA computation.md",
+    "Interview - AI model QA list/ML-interview - AWS and AzureML.md",
+    "Interview - AI model QA list/ML-interview - 模型压缩加速.md",
+    "DL - Cloud/AWS - Install and setup.md",
     "DL - Cloud",
-    "Data Structure Summary.md",
-    "Leetcode - 7.DFS/DFS.md",
-    "Leetcode - 6.BFS/Rotting Oranges.md",
-    "Leetcode - 6.BFS/Number of Islands.md",
-    "Leetcode - 6.BFS/Knight Shortest Path.md",
-    "Leetcode - 6.BFS/Max Area of Island.md",
-    "Leetcode - 6.BFS/Knight Shortest Path II.md",
-    "Leetcode - 6.BFS/Zombie in Matrix.md",
-    "Leetcode - 6.BFS/BFS.md",
     "DL - CUDA programming",
     "CVML - DL AI/ch01_数学基础/img/ch1/prob_distribution_3.png",
     "CVML - DL AI/ch01_数学基础/img/ch1/prob_distribution_2.png",
@@ -297,10 +224,6 @@
     "Code - C++",
     "Code - AI",
     "materials/Pasted image 20250304150551.png",
-    "materials/Pasted image 20250304153502.png",
-    "materials/Pasted image 20250304153426.png",
-    "materials/Pasted image 20250304153405.png",
-    "materials/Pasted image 20250304091635.png",
     "New folder",
     "Leetcode - 11.other QA",
     "DL - 3D Image,CV and Camera"

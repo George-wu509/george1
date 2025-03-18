@@ -1451,3 +1451,5 @@ Reference:
 
 [深入GPU硬件架构及运行机制](https://www.cnblogs.com/timlly/p/11471507.html)
 
+[CUDA_101] 基础硬件知识相关整理 - LustofLife的文章 - 知乎
+https://zhuanlan.zhihu.com/p/719710816
