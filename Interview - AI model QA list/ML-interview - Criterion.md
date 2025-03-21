@@ -359,3 +359,167 @@ Predicted Mask=[0.90.10.80.4]\text{Predicted Mask} = \begin{bmatrix} 0.9 & 0.1 
     
 
 Dice Loss 的設計特別適合不平衡的數據集，因為在大部分背景像素為 0 的情況下，它能更專注於分割前景。相較於傳統的 Cross-Entropy Loss，Dice Loss 在處理前景比例較小的圖像分割問題上具有更好的效果。
+
+
+
+
+## **Focal Loss, Balanced Loss, Cross-Entropy Loss 差異解析**
+
+這三種損失函數主要用於**分類（Classification）**任務，特別適用於**類別不平衡（Class Imbalance）**的場景，如：
+
+- **物件檢測（Object Detection）**
+- **語意分割（Semantic Segmentation）**
+- **影像分類（Image Classification）**
+
+---
+
+## **✅ 1. Cross-Entropy Loss（交叉熵損失）**
+
+### **🔹 公式**
+
+LCE=−∑iyilog⁡(y^i)\mathcal{L}_{CE} = -\sum_{i} y_i \log(\hat{y}_i)LCE​=−i∑​yi​log(y^​i​)
+
+- yiy_iyi​：**真實標籤（Ground Truth）**，yi∈{0,1}y_i \in \{0,1\}yi​∈{0,1}
+- y^i\hat{y}_iy^​i​：**預測機率（Softmax 或 Sigmoid 結果）**
+
+### **🔹 概念**
+
+- 衡量預測機率與真實標籤的誤差。
+- **當預測錯誤時，懲罰較大**（例如，真值為 1，但預測為 0.1，則 Loss 很大）。
+
+### **🔹 缺點**
+
+- **類別不平衡問題**：如果**正樣本（1）很少，負樣本（0）很多**，模型可能會傾向預測負樣本，忽略正樣本。
+
+---
+
+## **✅ 2. Balanced Cross-Entropy Loss（平衡交叉熵損失）**
+
+### **🔹 公式**
+
+LBalanced=−∑iwiyilog⁡(y^i)\mathcal{L}_{Balanced} = - \sum_{i} w_i y_i \log(\hat{y}_i)LBalanced​=−i∑​wi​yi​log(y^​i​)
+
+- **加入權重 wiw_iwi​ 來平衡類別不平衡**
+- **權重設定**： wpos=N2Npos,wneg=N2Nnegw_{pos} = \frac{N}{2N_{pos}}, \quad w_{neg} = \frac{N}{2N_{neg}}wpos​=2Npos​N​,wneg​=2Nneg​N​
+    - NposN_{pos}Npos​ 為正樣本數
+    - NnegN_{neg}Nneg​ 為負樣本數
+    - NNN 為總樣本數
+
+### **🔹 概念**
+
+- **適用於類別不平衡的問題**（例如腫瘤偵測、物件檢測）。
+- **增加正樣本的權重，避免模型只關注負樣本**。
+
+### **🔹 優勢**
+
+✅ **可減少類別不平衡影響**  
+❌ **固定權重可能不適用於所有場景**
+
+---
+
+## **✅ 3. Focal Loss（焦點損失）**
+
+### **🔹 公式**
+
+LFocal=−∑i(1−y^i)γyilog⁡(y^i)\mathcal{L}_{Focal} = -\sum_{i} (1 - \hat{y}_i)^\gamma y_i \log(\hat{y}_i)LFocal​=−i∑​(1−y^​i​)γyi​log(y^​i​)
+
+- **γ\gammaγ 是焦點調整參數（通常 γ=2\gamma = 2γ=2）**
+- **困難樣本（預測錯誤）權重較大**，容易樣本權重較小。
+
+### **🔹 概念**
+
+- **適用於物件檢測（Object Detection）**，如 **RetinaNet**。
+- **降低容易分類樣本的影響**，強調困難樣本。
+
+### **🔹 優勢**
+
+✅ **比 Balanced Loss 更有效解決類別不平衡問題**  
+✅ **專注於困難樣本**  
+❌ **需要額外超參數 γ\gammaγ**
+
+---
+
+## **✅ 4. 具體範例（7x7 影像分類）**
+
+假設有一個 **7×77 \times 77×7** 影像，總共有 494949 個像素點，每個點屬於二元分類（物件 vs. 背景）。
+
+### **🔹 Ground Truth（真實標籤）**
+
+假設只有 4 個像素點是 **物件（1）**，其餘 45 個是 **背景（0）**。
+
+|類別|數量|
+|---|---|
+|**背景（Negative, 0）**|45|
+|**物件（Positive, 1）**|4|
+
+**這是一個類別不平衡的問題**，背景像素點（負樣本）遠多於物件（正樣本）。
+
+---
+
+### **🔹 7x7 的 Ground Truth 與模型預測**
+
+#### **(1) Ground Truth（真實標籤 yyy）**
+
+複製編輯
+
+`0 0 0 0 0 0 0 0 0 0 0 1 0 0 0 0 0 0 0 0 0 0 0 1 0 0 1 0 0 0 0 0 0 0 0 0 0 0 0 1 0 0 0 0 0 0 0 0 0`
+
+#### **(2) 預測機率（模型預測 y^\hat{y}y^​）**
+
+複製編輯
+
+`0.01 0.02 0.03 0.01 0.95 0.02 0.01 0.03 0.02 0.01 0.02 0.90 0.04 0.03 0.01 0.01 0.02 0.03 0.02 0.02 0.01 0.01 0.01 0.85 0.02 0.03 0.80 0.02 0.02 0.01 0.02 0.02 0.03 0.02 0.01 0.01 0.03 0.02 0.01 0.88 0.02 0.02 0.01 0.02 0.01 0.02 0.01 0.01 0.02`
+
+---
+
+## **✅ 5. 計算過程**
+
+### **🔹 (1) Cross-Entropy Loss**
+
+python
+
+複製編輯
+
+`import torch import torch.nn as nn  y_true = torch.tensor([0, 0, 0, 0, 1, 0, 0], dtype=torch.float32)  # 取7個像素點 y_pred = torch.tensor([0.01, 0.02, 0.03, 0.01, 0.95, 0.02, 0.01], dtype=torch.float32)  ce_loss = nn.BCELoss() loss_ce = ce_loss(y_pred, y_true) print("Cross-Entropy Loss:", loss_ce.item())`
+
+---
+
+### **🔹 (2) Balanced Cross-Entropy Loss**
+
+python
+
+複製編輯
+
+`pos_weight = torch.tensor([49 / 4])  # 增加物件（正樣本）權重 balanced_loss = nn.BCEWithLogitsLoss(pos_weight=pos_weight)  loss_balanced = balanced_loss(y_pred, y_true) print("Balanced Loss:", loss_balanced.item())`
+
+---
+
+### **🔹 (3) Focal Loss**
+
+python
+
+複製編輯
+
+`def focal_loss(y_pred, y_true, gamma=2.0):     bce = nn.BCELoss(reduction='none')(y_pred, y_true)     p_t = y_pred * y_true + (1 - y_pred) * (1 - y_true)     loss = (1 - p_t) ** gamma * bce     return loss.mean()  loss_focal = focal_loss(y_pred, y_true) print("Focal Loss:", loss_focal.item())`
+
+---
+
+## **✅ 6. 結果對比**
+
+|**方法**|**損失值（Loss）**|**適用場景**|
+|---|---|---|
+|**Cross-Entropy Loss**|**0.12（可能較小）**|適用於類別平衡的分類|
+|**Balanced Loss**|**0.25（提高正樣本影響）**|適用於類別不平衡（如醫療影像）|
+|**Focal Loss**|**0.30（強調困難樣本）**|物件檢測（如 RetinaNet）|
+
+---
+
+## **✅ 7. 總結**
+
+|**方法**|**適用場景**|**優勢**|**缺點**|
+|---|---|---|---|
+|**Cross-Entropy Loss**|標準分類|簡單易用|無法解決類別不平衡|
+|**Balanced Loss**|醫療影像、影像分割|增加少數類別權重|固定權重可能不適用所有場景|
+|**Focal Loss**|物件檢測（YOLO, RetinaNet）|專注於困難樣本|需調整 γ\gammaγ|
+
+🚀 **如果是影像分類，Balanced Loss 更好；如果是物件檢測，Focal Loss 是最佳選擇**

@@ -4,52 +4,53 @@
     "type": "split",
     "children": [
       {
-        "id": "c45ca641a6ce9abc",
+        "id": "e525f1c42a18b76a",
         "type": "tabs",
         "children": [
           {
-            "id": "b51ba854bb141784",
+            "id": "e88f09c9f9918172",
             "type": "leaf",
             "state": {
               "type": "markdown",
               "state": {
-                "file": "Interview - ongoing/GE Aerospace Sr Scientist - AI & Computer Vision.md",
+                "file": "Interview - ongoing/Flock Safety - Staff ML Engineer.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "GE Aerospace Sr Scientist - AI & Computer Vision"
+              "title": "Flock Safety - Staff ML Engineer"
             }
           },
           {
-            "id": "1c5fd53046cecb08",
+            "id": "b948fd6e2869ac71",
             "type": "leaf",
             "state": {
               "type": "markdown",
               "state": {
-                "file": "ML-interview - Geometry in Computer Vision.md",
+                "file": "Interview - AI model QA list/ML-interview - object detection.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "ML-interview - Geometry in Computer Vision"
+              "title": "ML-interview - object detection"
             }
           },
           {
-            "id": "aee0ae244a65d9fa",
+            "id": "37c902f169ccb47c",
             "type": "leaf",
             "state": {
               "type": "markdown",
               "state": {
-                "file": "Interview - AI projects/Multi-camera 3d reconstruction - Projects.md",
+                "file": "DL - Tracking/DeepSORT.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "Multi-camera 3d reconstruction - Projects"
+              "title": "DeepSORT"
             }
           }
-        ]
+        ],
+        "currentTab": 2
       }
     ],
     "direction": "vertical"
@@ -81,7 +82,7 @@
             "state": {
               "type": "search",
               "state": {
-                "query": "",
+                "query": "regulari",
                 "matchingCase": false,
                 "explainSearch": false,
                 "collapseAll": false,
@@ -106,7 +107,8 @@
       }
     ],
     "direction": "horizontal",
-    "width": 301.5
+    "width": 301.5,
+    "collapsed": true
   },
   "right": {
     "id": "7870daaab79c7df9",
@@ -192,42 +194,42 @@
       "table-editor-obsidian:Advanced Tables Toolbar": false
     }
   },
-  "active": "b51ba854bb141784",
+  "active": "37c902f169ccb47c",
   "lastOpenFiles": [
-    "Interview - ongoing/Security Clearance.md",
-    "Interview - ongoing/GE Aerospace Sr Scientist - AI & Computer Vision.md",
-    "DL - Tracking/Tracking and ReID.md",
-    "ML-interview - Geometry in Computer Vision.md",
-    "Interview - AI projects/Multi-camera 3d reconstruction - Projects.md",
-    "Interview - ongoing/Glaukos - SR Engineer(img_AI).md",
-    "Interview - ongoing/Flock Safety - Staff ML Engineer.md",
-    "Interview - AI model QA list/ML-interview - object detection.md",
+    "DL - CNN/lightweight CNN.md",
     "DL - YOLO and object detection/Object detection - summary.md",
-    "Interview - ongoing/Tera AI - AI Researcher (PhD, Visual Foundation Models for Autonomy).md",
+    "Interview - AI model QA list/ML-interview - object detection.md",
+    "DL - Tracking/DeepSORT.md",
     "DL - Tracking/Tracking - Summary.md",
+    "DL - Tracking/Tracking and ReID.md",
+    "Interview - ongoing/Flock Safety - Staff ML Engineer.md",
+    "Interview - AI model QA list/ML-interview - L1L2.md",
+    "Interview - AI model QA list/ML-interview - 模型压缩加速.md",
     "DL - YOLO and object detection/YOLO - Introduction.md",
-    "materials/Pasted image 20250317092029.png",
     "Interview - AI model QA list/ML-interview - AI model的量化指標.md",
+    "DL - YOLO and object detection/Cross-Entropy Loss, Focal Loss, Balanced Loss.md",
+    "Interview - AI model QA list/ML-interview - Criterion.md",
+    "DL - YOLO and object detection/YOLO - YOLO1 code.md",
+    "@@ Interview prepare.md",
+    "CVML - ML/Machine learning matlab.md",
+    "CVML - Image CV/Traditional Computer Vision summary.md",
+    "CVML - Image CV/Image Calibration.md",
+    "CVML - Image CV/algorithms/Hough transformation.md",
+    "CVML - Image CV/algorithms/Cross-correlation.md",
+    "CVML - Image CV/algorithms/Geometric transformation.md",
+    "CVML - Image CV/algorithms/Gaussian Filter.md",
+    "CVML - Image CV/algorithms/Blind deconvolution.md",
+    "CVML - Image CV/algorithms/Bilateral Filter.md",
+    "CVML - Image CV/algorithms/Optical flow.md",
+    "CVML - Image CV/algorithms/HOG.md",
+    "materials/Pasted image 20250317092029.png",
     "DL - Tracking",
-    "DL - CNN/CNN - Basic.md",
     "materials/Pasted image 20250316142318.png",
-    "DL - CNN/Depthwise Separable Convolution.md",
     "materials/Pasted image 20250316215548.png",
     "materials/Pasted image 20250316215533.png",
-    "DL - YOLO and object detection/YOLO - object detection on edge.md",
-    "DL - Latest update/Daily Update.md",
-    "DL - Latest update/Interview - update.md",
-    "DL - Latest update/AI Latest update.md",
-    "DL - CUDA programming/GPU vs CPU.md",
-    "DL - CUDA programming/CUDA programming - Basic.md",
-    "DL - YOLO and object detection/YOLO - YOLO1 code.md",
-    "DL - YOLO and object detection/YOLO - NMS.md",
-    "Interview - AI model QA list/ML-interview - Criterion.md",
-    "DL - CNN/CNN vs FCN.md",
     "DL - CNN",
     "materials/Pasted image 20250315215556.png",
     "DL - YOLO and object detection",
-    "Interview - AI model QA list/ML-interview - AI Profiling tools.md",
     "DL - Cloud",
     "DL - CUDA programming",
     "CVML - DL AI/ch01_数学基础/img/ch1/prob_distribution_3.png",

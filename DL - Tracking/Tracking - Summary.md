@@ -1,6 +1,17 @@
 
 
 
+|                 | Detection                          | Tracking                  |
+| --------------- | ---------------------------------- | ------------------------- |
+| 2D 圖像，單一物體      | R-CNN, YOLO, SSD, DETR             | no                        |
+| 2D 圖像，多個物體      | R-CNN, YOLO, SSD, DETR             | no                        |
+| 2D 影片，單一物體      | R-CNN, YOLO, SSD, DETR             | KCF, DeepSORT             |
+| 2D 影片，多個物體      | R-CNN, YOLO, SSD, DETR             | DeepSORT, Tracktor, MOTDT |
+| 多攝影機 3D 影片，單一物體 | 2D detection + Multi-View Geometry |                           |
+| 多攝影機 3D 影片，多個物體 |                                    |                           |
+
+
+
 **多目标跟踪MOT(multiple object tracking)或者MTT(multiple target tracking)**
 
 **单目标跟踪SOT(single object tracking)**

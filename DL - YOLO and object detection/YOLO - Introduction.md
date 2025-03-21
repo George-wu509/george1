@@ -1,5 +1,47 @@
 
+YOLOv1 速度最快，但精度較低。
+YOLOv3 在小目標檢測方面有顯著提升。
+YOLOv4 和 YOLOv5 在精度和速度之間取得了較好的平衡。
+YOLOX，YOLOv6，YOLOv7，YOLOv8在精度和速度上都持續的進步。
+YOLO-NAS針對硬體有額外的優化。
+YOLOv8 新增了圖像分割和圖像分類功能
 
+```python
+import cv2
+import torch
+from ultralytics import YOLO
+
+# 載入 YOLOv8 模型
+model = YOLO("yolov8n.pt")  # 使用 YOLOv8n（nano 版本）
+
+# 讀取影像
+image_path = "image.jpg"
+image = cv2.imread(image_path)
+
+# 進行物件偵測
+results = model(image)
+
+# 繪製 Bounding Box
+for result in results:
+    for box in result.boxes:
+        x1, y1, x2, y2 = map(int, box.xyxy[0])  # 取得 Bounding Box 座標
+        conf = box.conf[0].item()  # 置信度
+        class_id = int(box.cls[0].item())  # 類別 ID
+        label = f"Class {class_id}: {conf:.2f}"
+        
+        # 畫框 & 加入標籤
+        cv2.rectangle(image, (x1, y1), (x2, y2), (0, 255, 0), 2)
+        cv2.putText(image, label, (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
+
+# 顯示結果
+cv2.imshow("YOLO Detection", image)
+cv2.waitKey(0)
+cv2.destroyAllWindows()
+
+```
+
+
+不同版本的 YOLO **輸入（input）** 大多都是一張圖像，但 **輸出（output）** 格式可能略有不同，特別是 bounding box 的回歸方式、類別表示方式、是否加入 mask（如 YOLOv8-Seg）等。
 
 |                                         |     |
 | --------------------------------------- | --- |
@@ -14,6 +56,7 @@
 |                                         |     |
 
 **YOLO 系列演進表**
+YOLOv8
 
 | 模型       | Backbone     | Neck         | Head                     | 主要特點與功能                      | 其他功能           | 效能提升                    |
 | :------- | :----------- | :----------- | :----------------------- | :--------------------------- | :------------- | :---------------------- |
@@ -327,3 +370,6 @@ https://zhuanlan.zhihu.com/p/632626074
 
 [CV - Object Detection]目标检测YOLO系列综述（全） - Pascal算法摆渡人的文章 - 知乎
 https://zhuanlan.zhihu.com/p/558217700
+
+建议收藏！超实用的 YOLO 训练和测试技巧合集 - OpenMMLab的文章 - 知乎
+https://zhuanlan.zhihu.com/p/617677829
