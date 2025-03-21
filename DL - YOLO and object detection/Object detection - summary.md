@@ -3,8 +3,8 @@
 从2014年为分割，之前的工作都是traditional detector，之后的都是DL-based detector。从以下三个方面介绍了相应的milestone detectors。
 
 1. Traditional detectors:  Viola Jones,  HOG,  DPM
-2. _CNN based Two-stage Detectors:  RCNN series(RCNN, Fast RCNN, Faster RCNN),  SPPNet
-3. _CNN based One-stage Detectors:  YOLO series,  SSD,  RetainNet
+2. _CNN based Two-stage Detectors:  **RCNN series(RCNN, Fast RCNN, Faster RCNN),  SPPNet**
+3. CNN based One-stage Detectors:  **YOLO series,  SSD,  RetainNet, EfficientDet, DETR, MobileNet-SSD**
 
 
 ![[Pasted image 20250317092029.png]]
@@ -78,6 +78,76 @@
     - RetinaNet 使用 Focal Loss 解決了單階段檢測中前景-背景不均衡的問題，提高了檢測精度。
 
 總結來說，若需即時應用則 YOLO v8 是目前最佳選擇，而如果需要高精度但可接受較高計算成本，Faster R-CNN 或 RetinaNet 是較好的選擇。
+
+
+在物件偵測領域，模型的選擇對於性能和效率有很大的影響。以下是對您提到的幾個物件偵測模型的詳細介紹，包括它們的特點以及它們屬於 one-stage 或 two-stage：
+
+**1. SSD (Single Shot MultiBox Detector)**
+
+- **特點：**
+    - One-stage 偵測器：直接從特徵圖預測目標的邊界框和類別。
+    - 多尺度特徵圖：使用不同層次的特徵圖進行預測，以檢測不同尺寸的目標。
+    - 預設框（Default Boxes）：在每個特徵圖單元位置放置一組預設框，用於加速目標定位。
+    - 具有快速的檢測速度，適合即時應用。
+- **Stage：** One-stage。
+
+**2. RetinaNet**
+
+- **特點：**
+    - One-stage 偵測器。
+    - 引入 Focal Loss：解決 one-stage 偵測器中前景和背景類別不平衡的問題，提高檢測精度。
+    - Feature Pyramid Network (FPN)：利用多尺度特徵圖，提高對不同尺寸目標的檢測能力。
+- **Stage：** One-stage。
+
+**3. EfficientDet**
+
+- **特點：**
+    - One-stage 偵測器。
+    - 基於 EfficientNet 骨幹網路：通過複合縮放（compound scaling）方法，平衡模型的精度和效率。
+    - BiFPN（Bi-directional Feature Pyramid Network）：改進 FPN 結構，實現更高效的多尺度特徵融合。
+- **Stage：** One-stage。
+
+**4. DETR (DEtection TRansformer)**
+
+- **特點：**
+    - One-stage 偵測器（但結構與傳統 one-stage 不同）。
+    - 基於 Transformer 架構：將目標檢測視為一個集合預測問題，利用 Transformer 的注意力機制進行目標定位和分類。
+    - 無需預設框或 Non-Maximum Suppression (NMS)：直接預測一組目標，並使用集合損失函數進行訓練。
+    - 相對於傳統物件偵測模型有較為不同的運作方法。
+- **Stage：** One-stage (transformer based)。
+
+**5. MobileNet-SSD**
+
+- **特點：**
+    - One-stage 偵測器。
+    - 結合 MobileNet 和 SSD：使用 MobileNet 作為骨幹網路，以實現輕量級和高效的目標檢測。
+    - 適用於行動裝置和嵌入式系統。
+- **Stage：** One-stage。
+
+**6. SqueezeNet**
+
+- **特點：**
+    - 輕量級 CNN 架構，主要用於圖像分類。
+    - 使用 "fire modules" 減少模型的參數數量，同時保持較高的準確度。
+    - 有論文將squeezenet當作backbone來做object detection, 產生輕量的物件偵測模型。
+    - 相較於上面提及的模型，在物件偵測上的應用較少。
+- 不算是object detection的模型。常作為backbone。
+
+**One-Stage 與 Two-Stage 的區別：**
+
+- **One-Stage：**
+    - 直接從輸入圖像預測目標的邊界框和類別。
+    - 速度快，適合即時應用。
+    - 但通常精度稍遜於 two-stage 偵測器。
+- **Two-Stage：**
+    - 首先生成候選區域（Region Proposals）。
+    - 然後對候選區域進行分類和邊界框回歸。
+    - 精度高，但速度較慢。
+
+
+
+
+
 
 
 
