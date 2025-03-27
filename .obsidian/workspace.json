@@ -4,59 +4,8 @@
     "type": "split",
     "children": [
       {
-        "id": "7769f096bbd2cc38",
-        "type": "tabs",
-        "dimension": 49.21436588103255,
-        "children": [
-          {
-            "id": "a8c10626f46ea4c0",
-            "type": "leaf",
-            "state": {
-              "type": "markdown",
-              "state": {
-                "file": "DL - YOLO and object detection/Object detection - summary.md",
-                "mode": "source",
-                "source": false
-              },
-              "icon": "lucide-file",
-              "title": "Object detection - summary"
-            }
-          },
-          {
-            "id": "e4b2cdc57c7beb21",
-            "type": "leaf",
-            "state": {
-              "type": "markdown",
-              "state": {
-                "file": "DL - Tracking/Tracking - Summary.md",
-                "mode": "source",
-                "source": false
-              },
-              "icon": "lucide-file",
-              "title": "Tracking - Summary"
-            }
-          },
-          {
-            "id": "b2dad2acd7558ed9",
-            "type": "leaf",
-            "state": {
-              "type": "markdown",
-              "state": {
-                "file": "DL - GAN/GAN - Summary.md",
-                "mode": "source",
-                "source": false
-              },
-              "icon": "lucide-file",
-              "title": "GAN - Summary"
-            }
-          }
-        ],
-        "currentTab": 1
-      },
-      {
         "id": "4d7c01480ccf8570",
         "type": "tabs",
-        "dimension": 50.78563411896745,
         "children": [
           {
             "id": "3d6d617b0195df96",
@@ -216,24 +165,32 @@
       "table-editor-obsidian:Advanced Tables Toolbar": false
     }
   },
-  "active": "e4b2cdc57c7beb21",
+  "active": "3d6d617b0195df96",
   "lastOpenFiles": [
-    "DL - GAN/GAN - Summary.md",
+    "DL - CUDA programming/CUDA programming - Basic.md",
     "@@ Interview prepare.md",
+    "DL - CUDA programming/Performance optimization summary.md",
+    "DL - CNN/AI model Summary architecture.md",
+    "DL - CNN/CNN - Setting.md",
+    "DL - GAN/GAN - Real-ESRGAN colab.md",
+    "materials/Pasted image 20250327041059.png",
+    "Pasted image 20250327041012.png",
+    "materials/Pasted image 20250327035409.png",
+    "materials/Pasted image 20250327035326.png",
+    "DL - GAN/GAN - Summary.md",
+    "Pasted image 20250327041033.png",
+    "DL - GAN/GAN.md",
+    "DL - Tracking/Tracking and ReID.md",
     "DL - Tracking/Tracking - Summary.md",
+    "DL - YOLO and object detection/YOLO.md",
+    "DL - CNN/AI model Summary.md",
     "DL - Segmentation/Image segmentation summary.md",
+    "DL - CNN/AI model的量化指標.md",
     "DL - CNN/CNN - Basic.md",
     "DL - YOLO and object detection/Object detection - summary.md",
-    "DL - YOLO and object detection/YOLO.md",
-    "DL - CNN/AI model的量化指標.md",
-    "DL - CNN/AI model Summary architecture.md",
     "CVML - ML/Machine learning matlab.md",
-    "DL - CNN/CNN - Setting.md",
     "CVML - Image CV/Traditional Computer Vision summary.md",
     "DL - Cloud/AWS and AzureML.md",
-    "DL - CUDA programming/Performance optimization summary.md",
-    "DL - CNN/AI model Summary.md",
-    "DL - Tracking/Tracking and ReID.md",
     "DL - Transformer and ViT/Transformer and ViT - Summary.md",
     "DL - YOLO and object detection/RF-DETR.md",
     "DL - Latest update/AI Latest update.md",
@@ -241,19 +198,11 @@
     "DL - Latest update/AI Latest update - projects.md",
     "DL - Latest update/Daily Update.md",
     "DL - Latest update/Interview - update.md",
-    "DL - Latest update/TOP10 ML algorithm.md",
-    "DL - YOLO and object detection/FCOS.md",
-    "DL - Tracking/Tracking - Algorithms.md",
     "materials/Pasted image 20250326222902.png",
     "materials/Pasted image 20250326132826.png",
     "materials/Pasted image 20250326115854.png",
     "materials/Pasted image 20250326030411.png",
     "materials/Pasted image 20250325230522.png",
-    "materials/Pasted image 20250325223023.png",
-    "materials/Pasted image 20250325222318.png",
-    "materials/Pasted image 20250325203329.png",
-    "materials/Pasted image 20250325192309.png",
-    "materials/Pasted image 20250325192253.png",
     "DL - Segmentation",
     "DL - Tools",
     "DL - Tracking",
