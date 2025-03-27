@@ -6,7 +6,6 @@
 | ESRGAN      | 在 GAN 的基礎上進行了改進，提高了圖像重建的品質。    |
 | Real-ESRGAN | 專注於處理真實世界圖像的複雜退化，使其在實際應用中更具優勢。 |
 
-
 GAN、ESRGAN 和 Real-ESRGAN 的架構，以及它們在超解析度（Super Resolution）方面的能力和優缺點：
 
 

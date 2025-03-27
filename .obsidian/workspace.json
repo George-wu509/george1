@@ -8,7 +8,27 @@
         "type": "tabs",
         "children": [
           {
-            "id": "3d6d617b0195df96",
+            "id": "7b50fe015b885d1c",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "DL - Transformer and ViT/Transformer and ViT - Summary.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "Transformer and ViT - Summary"
+            }
+          }
+        ]
+      },
+      {
+        "id": "a9810ac0d002aa36",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "a043d74570b5e034",
             "type": "leaf",
             "state": {
               "type": "markdown",
@@ -165,39 +185,39 @@
       "table-editor-obsidian:Advanced Tables Toolbar": false
     }
   },
-  "active": "3d6d617b0195df96",
+  "active": "a043d74570b5e034",
   "lastOpenFiles": [
-    "DL - CUDA programming/CUDA programming - Basic.md",
+    "CVML - Image CV/Traditional Computer Vision summary.md",
     "@@ Interview prepare.md",
-    "DL - CUDA programming/Performance optimization summary.md",
-    "DL - CNN/AI model Summary architecture.md",
+    "CVML - ML/Machine learning matlab.md",
     "DL - CNN/CNN - Setting.md",
-    "DL - GAN/GAN - Real-ESRGAN colab.md",
+    "DL - GAN/GAN - Summary.md",
+    "DL - CNN/AI model Summary architecture.md",
+    "DL - Transformer and ViT/Transformer and ViT - positional encoding.md",
+    "DL - Transformer and ViT/Transformer and ViT - Attention.md",
+    "DL - Transformer and ViT/Transformer and ViT - Summary.md",
+    "DL - MultiModal/MultiModal - Introduction.md",
+    "DL - CV Generative Models/CV Generative Models - Introduction.md",
+    "DL - Autonomous-Driving/Autonomous-Driving - Summary.md",
+    "DL - CLIP/CLIP base.md",
+    "DL - CUDA programming/CUDA programming - Basic.md",
+    "DL - CUDA programming/Performance optimization summary.md",
+    "DL - Cloud/AWS and AzureML.md",
+    "DL - MLOPs/MLOPs - Introduction.md",
+    "DL - SAM/SAM - SAM.md",
+    "DL - YOLO and object detection/Object detection - summary.md",
+    "DL - CNN/AI model的量化指標.md",
+    "DL - YOLO and object detection/YOLO.md",
+    "DL - Transformer and ViT/Transformer and ViT basic.md",
+    "DL - Transformer and ViT/Transformer and ViT - ViT Encoder block.md",
+    "DL - Transformer and ViT/Transformer and ViT - encoder &decoder.md",
+    "DL - Transformer and ViT/Transformer and ViT - architecture.md",
+    "DL - Transformer and ViT/ViT vs Transformer.md",
     "materials/Pasted image 20250327041059.png",
     "Pasted image 20250327041012.png",
     "materials/Pasted image 20250327035409.png",
     "materials/Pasted image 20250327035326.png",
-    "DL - GAN/GAN - Summary.md",
     "Pasted image 20250327041033.png",
-    "DL - GAN/GAN.md",
-    "DL - Tracking/Tracking and ReID.md",
-    "DL - Tracking/Tracking - Summary.md",
-    "DL - YOLO and object detection/YOLO.md",
-    "DL - CNN/AI model Summary.md",
-    "DL - Segmentation/Image segmentation summary.md",
-    "DL - CNN/AI model的量化指標.md",
-    "DL - CNN/CNN - Basic.md",
-    "DL - YOLO and object detection/Object detection - summary.md",
-    "CVML - ML/Machine learning matlab.md",
-    "CVML - Image CV/Traditional Computer Vision summary.md",
-    "DL - Cloud/AWS and AzureML.md",
-    "DL - Transformer and ViT/Transformer and ViT - Summary.md",
-    "DL - YOLO and object detection/RF-DETR.md",
-    "DL - Latest update/AI Latest update.md",
-    "DL - Latest update/AI Jobs salary.md",
-    "DL - Latest update/AI Latest update - projects.md",
-    "DL - Latest update/Daily Update.md",
-    "DL - Latest update/Interview - update.md",
     "materials/Pasted image 20250326222902.png",
     "materials/Pasted image 20250326132826.png",
     "materials/Pasted image 20250326115854.png",
