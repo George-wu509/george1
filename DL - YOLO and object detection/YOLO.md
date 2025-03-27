@@ -4,7 +4,7 @@ YOLOv3 在小目標檢測方面有顯著提升。
 YOLOv4 和 YOLOv5 在精度和速度之間取得了較好的平衡。
 YOLOX，YOLOv6，YOLOv7，YOLOv8在精度和速度上都持續的進步。
 YOLO-NAS針對硬體有額外的優化。
-YOLOv8 新增了圖像分割和圖像分類功能
+[[YOLOv8]] 新增了圖像分割和圖像分類功能
 
 ```python
 import cv2

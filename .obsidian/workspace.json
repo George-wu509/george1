@@ -4,11 +4,62 @@
     "type": "split",
     "children": [
       {
-        "id": "22ffdc8e48f282b6",
+        "id": "7769f096bbd2cc38",
         "type": "tabs",
+        "dimension": 49.21436588103255,
         "children": [
           {
-            "id": "90d3816296dd09a4",
+            "id": "a8c10626f46ea4c0",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "DL - YOLO and object detection/Object detection - summary.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "Object detection - summary"
+            }
+          },
+          {
+            "id": "e4b2cdc57c7beb21",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "DL - Tracking/Tracking - Summary.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "Tracking - Summary"
+            }
+          },
+          {
+            "id": "b2dad2acd7558ed9",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "DL - GAN/GAN - Summary.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "GAN - Summary"
+            }
+          }
+        ],
+        "currentTab": 1
+      },
+      {
+        "id": "4d7c01480ccf8570",
+        "type": "tabs",
+        "dimension": 50.78563411896745,
+        "children": [
+          {
+            "id": "3d6d617b0195df96",
             "type": "leaf",
             "state": {
               "type": "markdown",
@@ -53,7 +104,7 @@
             "state": {
               "type": "search",
               "state": {
-                "query": "",
+                "query": "Hungarian Algorithm",
                 "matchingCase": false,
                 "explainSearch": false,
                 "collapseAll": false,
@@ -78,7 +129,8 @@
       }
     ],
     "direction": "horizontal",
-    "width": 301.5
+    "width": 296.5,
+    "collapsed": true
   },
   "right": {
     "id": "7870daaab79c7df9",
@@ -164,53 +216,53 @@
       "table-editor-obsidian:Advanced Tables Toolbar": false
     }
   },
-  "active": "90d3816296dd09a4",
+  "active": "e4b2cdc57c7beb21",
   "lastOpenFiles": [
-    "DL - Tracking/Tracking - Summary.md",
+    "DL - GAN/GAN - Summary.md",
     "@@ Interview prepare.md",
-    "Interview - ongoing/NBCUniversal-SR Deep Learning Engineer.md",
-    "DL - 3D Image,CV and Camera/Multi-camera multi-view system.md",
-    "Interview - ongoing/Philips - R&D AI Engineer - Computer Vision & Surgical Robotics.md",
-    "Interview - ongoing/BioRender - Machine Learning Engineer.md",
-    "Interview - ongoing/Ansys - AI ML R&D engineer II.md",
-    "Interview - ongoing/Canopy - AI Engineer.md",
-    "Interview - ongoing/Employee Termination and Offboarding Procedure - North America.md",
-    "Interview - ongoing/GE Aerospace - NDE Imaging Intelligence Engineer.md",
-    "Interview - ongoing/Glaukos - SR Engineer(img_AI).md",
-    "Interview - ongoing/MathWorks -  Technical Consultant.md",
-    "Interview - AI model QA list/ML-interview - Criterion.md",
+    "DL - Tracking/Tracking - Summary.md",
+    "DL - Segmentation/Image segmentation summary.md",
+    "DL - CNN/CNN - Basic.md",
     "DL - YOLO and object detection/Object detection - summary.md",
-    "DL - YOLO and object detection/YOLO - Introduction.md",
-    "Interview - ongoing/Flock Safety - Staff ML Engineer.md",
-    "DL - YOLO and object detection/Cross-Entropy Loss, Focal Loss, Balanced Loss.md",
-    "DL - Tracking/Tracking and ReID.md",
-    "DL - 3D Image,CV and Camera/Multi-Target Multi-Camera Tracking（MTMCT）.md",
+    "DL - YOLO and object detection/YOLO.md",
+    "DL - CNN/AI model的量化指標.md",
+    "DL - CNN/AI model Summary architecture.md",
     "CVML - ML/Machine learning matlab.md",
-    "Interview - AI model QA list/ML-interview - AI model的量化指標.md",
-    "Interview - AI model QA list/ML-interview - Normalization and dropout.md",
-    "Interview - AI model QA list/ML-interview - optimizer.md",
-    "Code - AI/@Interview - AI model Archecture.md",
-    "Interview - AI model QA list/ML-interview - Activation funs.md",
+    "DL - CNN/CNN - Setting.md",
     "CVML - Image CV/Traditional Computer Vision summary.md",
-    "materials/Pasted image 20250317092029.png",
+    "DL - Cloud/AWS and AzureML.md",
+    "DL - CUDA programming/Performance optimization summary.md",
+    "DL - CNN/AI model Summary.md",
+    "DL - Tracking/Tracking and ReID.md",
+    "DL - Transformer and ViT/Transformer and ViT - Summary.md",
+    "DL - YOLO and object detection/RF-DETR.md",
+    "DL - Latest update/AI Latest update.md",
+    "DL - Latest update/AI Jobs salary.md",
+    "DL - Latest update/AI Latest update - projects.md",
+    "DL - Latest update/Daily Update.md",
+    "DL - Latest update/Interview - update.md",
+    "DL - Latest update/TOP10 ML algorithm.md",
+    "DL - YOLO and object detection/FCOS.md",
+    "DL - Tracking/Tracking - Algorithms.md",
+    "materials/Pasted image 20250326222902.png",
+    "materials/Pasted image 20250326132826.png",
+    "materials/Pasted image 20250326115854.png",
+    "materials/Pasted image 20250326030411.png",
+    "materials/Pasted image 20250325230522.png",
+    "materials/Pasted image 20250325223023.png",
+    "materials/Pasted image 20250325222318.png",
+    "materials/Pasted image 20250325203329.png",
+    "materials/Pasted image 20250325192309.png",
+    "materials/Pasted image 20250325192253.png",
+    "DL - Segmentation",
+    "DL - Tools",
     "DL - Tracking",
-    "materials/Pasted image 20250316142318.png",
-    "materials/Pasted image 20250316215548.png",
-    "materials/Pasted image 20250316215533.png",
     "DL - CNN",
-    "materials/Pasted image 20250315215556.png",
     "DL - YOLO and object detection",
     "DL - Cloud",
     "DL - CUDA programming",
-    "CVML - DL AI/ch01_数学基础/img/ch1/prob_distribution_3.png",
-    "CVML - DL AI/ch01_数学基础/img/ch1/prob_distribution_2.png",
-    "CVML - DL AI/ch01_数学基础/img/ch1/prob_distribution_1.png",
-    "CVML - DL AI/ch01_数学基础/img/ch1/conditional_probability.jpg",
     "Code - C++",
     "Code - AI",
-    "materials/Pasted image 20250304150551.png",
-    "New folder",
-    "Leetcode - 11.other QA",
-    "DL - 3D Image,CV and Camera"
+    "New folder"
   ]
 }

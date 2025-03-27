@@ -76,4 +76,13 @@ https://zhuanlan.zhihu.com/p/26085074170
 卷积神经网络（CNN）原理深度剖析，带你彻底搞懂CNN！ - 算法程序员gcc的文章 - 知乎
 https://zhuanlan.zhihu.com/p/26489087531
 
+0323
+八年来，Google首次挑战transformer模型，新框架一战成名 - 人工智能研究所的文章 - 知乎
+https://zhuanlan.zhihu.com/p/30555217308
+
+
+
+震撼发布！RF-DETR：60.5 mAP + 6ms延迟，实时检测领域的新王者如何碾压YOLO？ - 墨风如雪的文章 - 知乎
+https://zhuanlan.zhihu.com/p/32205292924
+
 

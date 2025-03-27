@@ -4,9 +4,55 @@
 
 1. Traditional detectors:  Viola Jones,  HOG,  DPM
 2. _CNN based Two-stage Detectors:  **RCNN series(RCNN, Fast RCNN, Faster RCNN),  SPPNet**
-3. CNN based One-stage Detectors:  **YOLO series,  SSD,  RetainNet, EfficientDet, DETR, MobileNet-SSD**
+3. CNN based One-stage Detectors:  **YOLO series,  FCOS, SSD,  RetainNet, EfficientDet, DETR, MobileNet-SSD**
+
+New: 
+[RF-DETR](https://github.com/roboflow/rf-detr)：60.5 mAP + 6ms延迟，实时检测领域的新王者如何碾压YOLO？ [link](https://zhuanlan.zhihu.com/p/32205292924)
+
+==================================================
+
+| **模型**        | **Backbone 類型**            | **是否保留 FC 層** | **說明**                                        |
+| ------------- | -------------------------- | ------------- | --------------------------------------------- |
+| RCNN          | 類似 VGG/ResNet（預訓練分類模型）     | 是（需移除）        | 使用 VGG/ResNet，原始含 FC 層，檢測時移除 FC，保留特徵圖。        |
+| YOLO          | 自定義（如 Darknet/CSPDarknet）  | 否             | 全卷積設計，無 FC 層，專為檢測優化，直接輸出多尺度特徵圖。               |
+| FCOS          | 類似 VGG/ResNet（預訓練分類模型）     | 否             | 使用 ResNet/ResNeXt，移除 FC 層，搭配 FPN，直接適配無錨框檢測。   |
+| SSD           | 類似 VGG/ResNet（VGG 為主）      | 否             | 使用 VGG，移除 FC 層，附加多尺度特徵層，適配單階段檢測。              |
+| RetinaNet     | 類似 VGG/ResNet（ResNet 為主）   | 否             | 使用 ResNet，移除 FC 層，搭配 FPN 和 Focal Loss，提升檢測精度。 |
+| EfficientDet  | 自定義（EfficientNet 衍生）       | 否             | 基於 EfficientNet，移除 FC 層，加入 BiFPN，高效檢測設計。      |
+| MobileNet-SSD | 自定義（MobileNet 衍生）          | 否             | 基於 MobileNet，移除 FC 層，輕量化設計，適配移動設備檢測。          |
+| DETR          | Transformer-based（無傳統 CNN） | 否             | 使用 Transformer 架構，無 FC 層，直接基於注意力機制進行檢測。       |
+
+[[R-CNN]]: VGG/ResNet 加上 RoI Pooling(或RPN + RoI Align) 
+加上分類分支：FC+ Softmax,  回歸分支：FC + 邊框回歸
+
+[[YOLO]]: Backbone: ResNet, Neck: FPN, Head: feature image切成網格單元, 在每個單元上進行回歸預測
+[[YOLOv8]] 支持instance seg, Obb, pose等. Backbone 用C2f模組 + conv(改成用3x3).   neck用PAT取代FPN, head model: Anchor-free Decoupled Head
+
+[[FCOS]]:  保留Faster RCNN的ResNet backbone + FPN但移除FC層, head model則改為anchor-free, 而且是在每個pixel做classification跟regression. (就是保留RCNN(但移除FC)但把head model改成anchor-free)
+
+[[SSD]]: 使用 VGG(移除 FC 層)，neck不是用FPN而是添加額外卷積層成多尺度特徵層，不用region proposal而是適配單階段檢測(就是保留RCNN(但移除FC), Neck也不是用FPN而是多尺度特徵層. 也把head model改成anchor-free))。
+
+**RetainNet**: 该网络旨在解决一阶段（one-stage）目标检测器在精度上低于两阶段（two-stage）检测器的问题，尤其是当面对极度不平衡的正负样本比例时。
+
+**EfficientDet**:  EfficientNet (同時調整模型的depth、width和resolution) 作為backbone network, 用BiFPN（雙向特徵金字塔網路）更高效的多尺度特徵融合
+
+**MobileNet-SSD**:  MobileNet (具有Depthwise Separable Convolution) 作為backbone network, SSD 的多尺度預測層被添加到 MobileNet 的不同層次的特徵圖
+
+[[DETR]]: DETR 是第一個應用Transformer到object detection的Model. 流程是1. 用CNN(ResNet)生成feature images, 再經過經典Encoder, Decoder, 然後接上head model輸出bounding box跟類別. 主要結構依賴於一個編碼器-解碼器變形金剛架構，直接預測一組目標邊界框。特點是不需要NMS（非極大值抑制），但訓練速度較慢。
+
+[[RT-DETR]]: (Real-Time DETR) : 對實時目標檢測進行優化。結構上融入了YOLO系列的設計理念，在編碼器部分大量使用了類似YOLO的backbone和neck，在解碼端做了針對性的優化，使其擁有更快的處理速度，同時保持了較高的檢測精度。著重於提高推理速度，適用於需要快速響應的應用場景。
+
+[[RF-DETR]]: 此類算法的出現都是為了增加DETR系列的檢測的精準度，將RF(receptive field)感受野融入了DETR網絡結構中，加強網路對於目標多尺度的檢測能力。在原有的DETR結構中做了結構性的改進，融合了多尺度的感受野訊息。針對檢測效果加強，但相較於RT-DETR這類實時目標檢測算法在檢測速度上會有所差異。
+
+==================================================
+其他:
+[[lightweight CNN]]
+[[Cross-Entropy Loss, Focal Loss, Balanced Loss]]
+[[Object detection - Obb]]
+[[YOLO  - Training]]
 
 
+==================================================
 ![[Pasted image 20250317092029.png]]
 
 
@@ -147,6 +193,28 @@
 
 
 
+| Backbone |                                                                                                                                                                     |
+| -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| RCNN     | 使用預訓練的 CNN，如 VGG16 或 ResNet50，這些模型最初為圖像分類設計，包含多層卷積和池化層。<br>設計重點：利用分類模型的強大特徵提取能力，提取深層特徵圖（如 ResNet 的 Stage 4，2048 通道，7x7）。<br>與分類的關係：原始包含全連接層（FC）用於分類，檢測時移除 FC，保留卷積層。 |
+| FCOS     | 使用現代預訓練 CNN，如 ResNet50/101 或 ResNeXt，這些模型為分類設計，但檢測時移除全連接層。<br>設計重點：提取多層特徵圖（如 ResNet 的 Stage 2-4），提供從低層細節到高層語義的層次化特徵。<br>與分類的關係：移除 GAP 和 FC 層，保留卷積層，適應空間定位需求。        |
+| SSD      | 使用 VGG16 作為基礎，移除全連接層（FC），保留卷積層（如 conv1-5）。<br>設計重點：VGG16 提供深層特徵，但參數量大（約 138M），後期版本可替換為輕量化模型（如 MobileNet）。<br>與分類的關係：移除 FC 層，適應空間定位，與 FCOS 類似但結構更早。                  |
+
+| Neck |                                                                                                                                                                                                        |
+| ---- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| RCNN | 通常無明確 neck 結構。在 Fast RCNN 中，區域建議（region proposals）由外部方法（如選擇性搜索）生成，backbone 的特徵圖直接用於後續處理。<br>RoI pooling 可視為 neck 的一部分，將每個區域建議的特徵映射到固定尺寸（例如 7x7），但這更常被視為 head 的組成部分。<br>設計重點：無需特徵融合，簡單直接，適合兩階段檢測的區域處理。  |
+| FCOS | 使用 FPN（Feature Pyramid Network），從 backbone 的不同階段（通常 Stage 2-4）提取特徵圖，通過上採樣和側連接生成多尺度特徵金字塔。<br>設計重點：FPN 融合高層語義資訊（高層特徵）和低層空間細節（低層特徵），適應不同尺寸目標。<br>與 SSD 的差異：FPN 是標準化設計，相比 SSD 的額外卷積層更系統化。<br>與 RCNN 的差異：一樣 |
+| SSD  | 添加額外卷積層（conv6-11），從 backbone 的不同層提取特徵，形成多尺度特徵塔。<br>設計重點：這些層逐步下採樣，生成不同分辨率的特徵圖（如 38x38、19x19、10x10），適應多尺寸目標。<br>與 FCOS 的差異：SSD 的 neck 較為簡單，無 FPN，依賴預定義錨框。                                                |
+
+
+| Head |                                                                                                                                                                                                                                                    |
+| ---- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| RCNN | 包括 RoI pooling 和全連接層。RoI pooling 從特徵圖中提取每個區域建議的固定尺寸特徵向量，接著通過兩分支全連接層進行：<br>分類分支：輸出類別概率（softmax）。<br>回歸分支：輸出邊界框偏移量（bounding box regression）。<br>設計重點：兩階段設計確保高精度，適合複雜場景，但計算成本高（每個區域獨立處理）。<br>與現代頭部的差異：RCNN 的 head 依賴區域建議，與單階段模型（如 SSD、FCOS）無錨框設計形成對比。 |
+| FCOS | 對 FPN 每個層的特徵圖應用卷積層，預測三個部分：<br>中心性（centerness）：評估位置是否為物件中心，過濾邊緣預測。<br>類別概率：每個位置的物件類別（softmax）。<br>邊界框距離：到物件四邊的距離（4 個值），用於回歸。<br>設計重點：無錨框（anchor-free）設計，簡化超參數調整，基於像素級預測，提升模型靈活性。<br>與 RCNN/SSD 的差異：FCOS 的 head 無需預定義錨框，減少計算複雜度，適合密集場景。              |
+| SSD  | 每個特徵圖細胞預測多個預定義錨框（default boxes），每個錨框輸出：<br>類別概率：softmax 輸出。<br>邊界框偏移量：回歸邊界框位置。<br>設計重點：基於錨框的多尺度預測，適合實時應用，但錨框設計需調參，複雜度高於 FCOS。<br>與 RCNN 的差異：單階段設計，無區域建議，速度快於兩階段模型。                                                                                 |
+
+
+
+
 
 
 
@@ -180,5 +248,8 @@ https://zhuanlan.zhihu.com/p/28579286730
 Object Detection综述 - KHao426的文章 - 知乎
 https://zhuanlan.zhihu.com/p/266296069
 
+第一卷-目标检测大杂烩
+https://www.zhihu.com/column/c_1178388040400302080
 
-
+《目标检测大杂烩》-第14章-浅析RT-DETR - Kissrabbit的文章 - 知乎
+https://zhuanlan.zhihu.com/p/626659049

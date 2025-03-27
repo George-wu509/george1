@@ -22,6 +22,16 @@
 |**输出**|目标ID的连续轨迹|目标ID的匹配分数|
 |**常用方法**|运动模型（卡尔曼滤波、LSTM）、IOU匹配、深度学习匹配（DeepSORT）|深度学习特征提取（ResNet、ViT）、度量学习（Triplet Loss, Contrastive Loss）|
 
+|**类别**|**Re-identification（目标重识别）**|**Multi-Target Multi-Camera Tracking（MTMCT）**|
+|---|---|---|
+|**目标**|识别同一对象（如行人、车辆）在不同摄像机中的身份|在多个摄像机之间持续跟踪多个目标的轨迹|
+|**输入**|**Query 图像**（待识别目标） + **Gallery 数据库**（多个摄像头采集的候选目标）|多个摄像头的视频流（包含目标的运动信息）|
+|**核心技术**|深度学习特征提取（CNN、ViT）、度量学习（Triplet Loss, Contrastive Loss）|目标检测 + ReID + 轨迹关联（Trajectory Association）|
+|**输出**|Query 与 Gallery 中目标的匹配分数|各目标在多个摄像头间的完整轨迹|
+|**主要挑战**|视角变化、光照变化、遮挡、行人姿态变化、衣物变化|摄像机间时间同步、摄像机视野重叠度、遮挡、目标消失与重新出现|
+|**常用方法**|特征向量比对（余弦相似度、欧几里得距离）|运动模型（Kalman Filter）、外观匹配（ReID）、轨迹关联（Graph Matching, Hungarian Algorithm）|
+
+
 ---
 
 ## **Re-identification（ReID）的工作原理**

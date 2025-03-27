@@ -1,5 +1,5 @@
 
-## ResNet-50 架構概述
+#### ResNet-50 架構概述
 
 ResNet-50 是一個50層的深度殘差網絡,主要由Bottleneck blocks組成。它的整體架構如下:
 

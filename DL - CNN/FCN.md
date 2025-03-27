@@ -1,7 +1,5 @@
 
 
-
-
 |                         |     |
 | ----------------------- | --- |
 | [[###FCN 和 CNN 的介紹與比較]] |     |
@@ -10,12 +8,11 @@
 |                         |     |
 |                         |     |
 
-
 ### FCN 和 CNN 的介紹與比較
 
 #### 什麼是 FCN？
 
-FCN（Fully Convolutional Network，全卷積網絡）是一種專為圖像分割（Image Segmentation）任務設計的深度學習模型。與傳統的卷積神經網絡（CNN）不同，FCN 完全由卷積層組成，沒有全連接層（Fully Connected Layers），並且能夠處理任意大小的輸入圖像，輸出與輸入圖像空間尺寸相關的預測（如像素級分類）。
+FCN（Fully Convolutional Network，全卷積網絡）是一種專為圖像分割（Image Segmentation）任務設計的深度學習模型。與傳統的卷積神經網絡（CNN）不同，FCN 完全由卷積層組成，沒有全連接層（Fully Connected Layers），並且能夠處理任意大小的輸入圖像，輸出與輸入圖像空間尺寸相關的預測（如像素級分類）。FCN 是語義分割的開創性架構，它將 CNN 的全連接層FC（Fully Connected layers）替換成卷積層，實現端到端的 pixel-wise 預測。
 
 FCN 的核心思想是：
 
@@ -36,6 +33,13 @@ FCN 的核心思想是：
 簡單來說，CNN 適合全局分類任務（如這張圖是貓還是狗），而 FCN 適合空間細粒度的任務（如分割出圖像中的貓的每個像素）。
 
 ---
+
+![[Pasted image 20250323180612.png]]
+
+
+![[Pasted image 20250323180026.png]]
+
+![[Pasted image 20250323180644.png]]
 
 ### PyTorch 代碼示例
 

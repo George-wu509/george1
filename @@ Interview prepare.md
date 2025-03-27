@@ -1,13 +1,24 @@
 
 
 
-|                      |                                                               |
-| -------------------- | ------------------------------------------------------------- |
-| 傳統Computer Vision 技術 | [[Traditional Computer Vision summary]]                       |
-| 傳統Machine Learning技術 | [[Machine learning matlab]]                                   |
-|                      |                                                               |
-|                      |                                                               |
-| Object detection     | [[Object detection - summary]]<br><br>[[YOLO - Introduction]] |
-| Object tracking      | [[Tracking - Summary]]<br><br>[[Tracking and ReID]]           |
-|                      |                                                               |
+|                                                                                                                                                     |                                                                                                                                            |
+| --------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| 傳統Computer Vision 技術                                                                                                                                | [[Traditional Computer Vision summary]]                                                                                                    |
+| 傳統Machine Learning技術                                                                                                                                | [[Machine learning matlab]]                                                                                                                |
+|                                                                                                                                                     |                                                                                                                                            |
+| **<mark style="background: #FF5582A6;">CNN model</mark>**<br><br>**Backbone:**<br>VGG, ResNet, EfficientNet,<br>MobileNet, DenseNet                 | [[CNN - Basic]]<br><br>[[CNN - Setting]]<br><br>[[AI model的量化指標]]<br><br>[[AI model Summary]]<br><br>[[AI model Summary architecture]]<br> |
+|                                                                                                                                                     |                                                                                                                                            |
+| <mark style="background: #FF5582A6;">**Object detection**</mark><br><br>RCNN, YOLO, FCOS, SSD, <br>RetainNet, EfficientDet, <br>MobileNet-SSD, DETR | [[Object detection - summary]]<br><br>[[YOLO]]<br><br>[[AI model Summary architecture]]<br>                                                |
+| <mark style="background: #FF5582A6;">**Object tracking**</mark><br><br>YOLO-><br>SORT, DeepSORT, ByteTrack<br>(ReID)                                | [[Tracking - Summary]]<br><br>[[Tracking and ReID]]                                                                                        |
+| <mark style="background: #FF5582A6;">**Image segmentation**</mark><br><br>MaskRCNN, CenterMask<br>FCN, UNet,<br>SAM, DETR                           | [[Image segmentation summary]]<br><br>[[AI model Summary architecture]]                                                                    |
+| <mark style="background: #FF5582A6;">**Super Resolution**</mark><br><br>GAN, ESRGAN, <br>Real-ESRGAN                                                | [[GAN - Summary]]                                                                                                                          |
+| Vision Foundation Model                                                                                                                             | [[Transformer and ViT - Summary]]<br><br>[[SAM - SAM]]<br>                                                                                 |
+| Multimodal generative models                                                                                                                        | [[MultiModal - Introduction]]<br><br>[[CLIP base]]<br><br>[[CV Generative Models - Introduction]]<br>                                      |
+| deployment and compression                                                                                                                          | [[MLOPs - Introduction]]<br><br>[[AWS and AzureML]]<br><br>[[Performance optimization summary]]<br><br>[[CUDA programming - Basic]]<br>    |
+| 3D and Multi View camera                                                                                                                            | [[MultiModal - Introduction]]<br><br>[[CLIP base]]<br><br>[[CV Generative Models - Introduction]]                                          |
+| Applications                                                                                                                                        | [[Autonomous-Driving - Summary]]                                                                                                           |
+| Others                                                                                                                                              |                                                                                                                                            |
+|                                                                                                                                                     |                                                                                                                                            |
+|                                                                                                                                                     |                                                                                                                                            |
+|                                                                                                                                                     |                                                                                                                                            |
 

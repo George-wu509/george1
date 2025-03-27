@@ -1,4 +1,28 @@
 
+
+
+|      |     | backbone                   | neck                               | head                                                         |
+| ---- | --- | -------------------------- | ---------------------------------- | ------------------------------------------------------------ |
+| RCNN | DET | AlexNet or VGG             | region proposals, RoI pooling, FPN | FC layer，輸出類別分數（softmax）和邊界框回歸（bounding box regression）。     |
+| SSD  | DET | VGG16                      | 多尺度特徵層                             | 多尺度特徵圖上設置預定義錨框（default boxes）每個錨框預測類別分數和邊界框偏移量               |
+| FCOS | DET | ResNet or ResNetx          | FPN                                | anchor-free, 輸出類別分數（softmax）和邊界框回歸（bounding box regression）。 |
+|      |     |                            |                                    |                                                              |
+| YOLO | DET | CSPDarknet or EfficientNet | FPN                                | grid, bounding box and confidence                            |
+|      |     |                            |                                    |                                                              |
+| FCN  | seg | VGG or ResNet              | skip connections                   | upsampling(Transposed Convolution)                           |
+| UNet | seg | encoder                    | skip connections                   | decoder(Transposed Convolution)                              |
+RCNN, SSD FCOS  vs  YOLO  
+[[CNNs backbone vs YOLO backbone]]
+1. YOLO 移除FC layers, 減少downsampling, C2f減少計算量 
+
+RCNN, SSD FCOS  vs  FCN, UNet (語義分割)
+[[CNNs backbone vs FCN UNet backbone]]
+1. FCN移除FC layers (就等於轉為全卷積結構)
+2. UNet是FCN的特例, 用對稱設計, 淺層結構和跳躍連接確保低層特徵不丟失
+3. UNet 不追求多尺度檢測能力
+4. VGG和ResNet為分類設計, 靠 FC 層整合資訊. 當用於檢測與分割：移除 FC 層，保留特徵圖，添加 neck/head（如 FPN、上採樣），使其適應新任務。
+
+
 |     |                                            |
 | --- | ------------------------------------------ |
 |     | [[###### Generalized R-CNN]]               |

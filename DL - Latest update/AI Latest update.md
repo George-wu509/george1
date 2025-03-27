@@ -159,3 +159,8 @@ previous: gemmo、pika和runway
 [DeepSeek-R1 github](https://github.com/deepseek-ai/DeepSeek-R1)
 DeepSeek-R1 模型发布，性能对标 OpenAI o1 正式版，大家怎么看？ - 段小草的回答 - 知乎
 https://www.zhihu.com/question/10152040622/answer/84383440957
+
+2025.03.26  Introducing 4o Image Generation
+https://openai.com/index/introducing-4o-image-generation/
+如何看待 OpenAI 新推出的 4O Image Generation？ - 知乎
+https://www.zhihu.com/question/1888134409091266476

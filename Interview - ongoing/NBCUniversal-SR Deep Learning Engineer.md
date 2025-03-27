@@ -37,8 +37,6 @@ We are agnostic to your choice of development environment; however, we need a co
 - 3+ years of relevant industry experience in a fast paced, high growth tech environment. 在快節奏、高成長的科技環境中擁有 3 年以上相關產業經驗。
 - Proficiency in Python 精通 Python
 - Experience training artificial neural networks or adjacent experience (e.g. gradient descent / nonlinear optimization / classical machine-learning) 具有訓練人工神經網路的經驗或相關經驗（例如梯度下降/非線性最佳化/經典機器學習）
-- Team-oriented and collaborative approach with a demonstrated aptitude, enthusiasm and willingness to learn new methods, tools, practices and skills 注重團隊協作，具有出色的能力、熱情和學習新方法、工具、實踐和技能的意願
-- Strong communication skills with the ability to translate complex technical concepts into clear, accessible language for non-technical stakeholders. 具備強大的溝通能力，能夠將複雜的技術概念轉化為非技術利害關係人能夠理解的清晰、易懂的語言。
 - Hands-on experience with TensorFlow and Keras (or similar frameworks) in developing, training, and deploying deep learning models. 具有使用 TensorFlow 和 Keras（或類似框架）開發、訓練和部署深度學習模型的實務經驗。
 - Experience working with<mark style="background: #BBFABBA6;"> geospatial datasets and tools such as GIS, GeoPandas, or similar libraries</mark>. 具有使用地理空間資料集和工具（例如 GIS、GeoPandas 或類似函式庫）的經驗。  
 
