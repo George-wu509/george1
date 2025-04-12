@@ -35,13 +35,13 @@
 
 ### 📸 拍攝風格（Photographic Styles）
 
-|風格|Prompt 範例|
-|---|---|
-|📷 實拍感|_“hyper-realistic photography style”_|
-|🌅 金色時刻|_“golden hour lighting”_|
-|🌃 質感夜景|_“moody night photo, cinematic lighting”_|
-|🎞️ 膠片感|_“vintage film photography, Kodak Portra 400 look”_|
-|🌧️ 質感街景|_“street photography on a rainy day”_|
+| 風格       | Prompt 範例                                           |
+| -------- | --------------------------------------------------- |
+| 📷 實拍感   | _“hyper-realistic photography style”_               |
+| 🌅 金色時刻  | _“golden hour lighting”_                            |
+| 🌃 質感夜景  | _“moody night photo, cinematic lighting”_           |
+| 🎞️ 膠片感  | _“vintage film photography, Kodak Portra 400 look”_ |
+| 🌧️ 質感街景 | _“street photography on a rainy day”_               |
 
 ---
 

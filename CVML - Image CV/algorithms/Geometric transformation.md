@@ -1,5 +1,15 @@
 
-Geometric transformation包含
+
+|                                 |     |
+| ------------------------------- | --- |
+| [[###Geometric transformation]] |     |
+| [[###2D Affine Transformation]] |     |
+| [[###相机的几何参数标定、内参、外参与图像转换的关系]]  |     |
+|                                 |     |
+
+
+
+### Geometric transformation
 
 |                                 | 剛體變換 <br>Rigid Transformation | 仿射變換<br>Affine Transformation | 投影變換<br>Projective Transformation | 非線性變換<br>Nonlinear Transformation |
 | ------------------------------- | ----------------------------- | ----------------------------- | --------------------------------- | --------------------------------- |
@@ -69,6 +79,11 @@ https://zhuanlan.zhihu.com/p/465490024
 Affine transformation 是<mark style="background: #BBFABBA6;">线性变换与平移变换</mark>的组合，常用于图像处理、计算机视觉和计算几何。Affine transformation 包含四种基本操作：<mark style="background: #BBFABBA6;">平移 (Translation)，旋转 (Rotation)，缩放 (Scaling)，剪切 (Shearing)</mark>。
 
 在计算机视觉和图形学中，<mark style="background: #FFB86CA6;">齐次坐标系（Homogeneous Coordinates）</mark>常用于表示仿射变换，因为它可以将平移、旋转、缩放、剪切等变换统一为矩阵乘法形式。通过引入一个额外的维度，可以将线性变换和非线性变换（如平移）结合起来。在二维齐次坐标中，每个二维点 $(x, y)$ 可以用一个三维向量 $(x, y, 1)$ 表示。Affine 变换可以通过 $3 \times 3$ 矩阵完成，具体包括平移、旋转、缩放和剪切。
+
+
+
+
+
 
 ### 2D Affine Transformation
 
@@ -171,6 +186,8 @@ $\begin{pmatrix} x' \\ y' \\ w \end{pmatrix} = \begin{pmatrix} h_{11} & h_{12} &
 #### 5. **相似变换 (Similarity Transformation)**
 
 相似变换包括旋转、平移和统一缩放。它保持了物体的形状，但允许缩放和旋转。
+
+
 
 
 

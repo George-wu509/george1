@@ -21,6 +21,29 @@
 |          | Multi-GPU / Distributed Training            |
 |          |                                             |
 
+
+|                                               |                                                                                                                                                                                   |
+| --------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Transformer Architecture Optimization架構優化<br> | Analyze and optimize transformer-based models to improve inference and training performance. 分析和優化基於變壓器的模型，以提高推理和訓練性能                                                             |
+|                                               | Develop and implement novel techniques that enhance throughput and reduce latency in ML workloads. 開發並實施新技術，以提高吞吐量並減少 ML 工作負載的延遲                                                  |
+| Low-Level Performance Engineering 低階性能工程      | Write and optimize performance-critical code in C/C++ and Python 使用 C/C++ 和 Python 編寫和優化效能關鍵型程式碼                                                                                  |
+|                                               | Design, implement, and refine algorithms that leverage advanced vector and matrix operations for efficient numerical computation. 計、實作和改進利用高階向量和矩陣運算進行高效率數值計算的演算法                 |
+|                                               | Collaborate with hardware teams to align software optimizations with underlying architectural features. 與硬體團隊合作，使軟體最佳化與底層架構特性保持一致                                                 |
+| Compiler and IR Enhancements 編譯器和 IR 增強功能     | Utilize your understanding of compiler infrastructures, particularly MLIR and StableHLO, to optimize and transform ML code. - 利用您對編譯器基礎架構（特別是 MLIR 和 StableHLO）的理解來最佳化和轉換 ML 程式碼。 |
+|                                               | Develop custom passes or modifications to existing compiler flows to maximize performance benefits for ML workloads. 發自訂流程或修改現有的編譯器流程，以最大限度地提高 ML 工作負載的效能優勢                       |
+| Memory Scheduling and Quantization 記憶體調度和量化   | Engineer efficient memory placement and scheduling strategies to minimize bottlenecks and improve data throughput. 設計高效的記憶體放置和調度策略，以最大限度地減少瓶頸並提高資料吞吐量                             |
+|                                               | Implement and refine quantization techniques to reduce model size and computational overhead without sacrificing accuracy. 實施和改進量化技術，以在不犧牲準確性的情況下減少模型大小和計算開銷                      |
+| Performance Profiling and Debugging 效能分析與調試   | Use profiling and diagnostic tools to identify performance issues and iterate on solutions. 使用分析和診斷工具來識別效能問題並迭代解決方案                                                               |
+|                                               | Develop benchmarks and tests to measure the impact of your optimizations across various hardware platforms. 制定基準和測試來衡量您的優化在各種硬體平台上的影響                                             |
+https://www.linkedin.com/jobs/view/4197384889/?refId=88b5f727-aa0a-424e-807d-ca37a3bb7bbb&trackingId=OPiHv0a4SBCXqePQe6ExvQ%3D%3D
+ You will leverage your expertise in C/C++ and Python, combined with a deep understanding of compiler technologies, memory scheduling, and numeric operations.
+
+
+
+
+
+
+
 # **1. 模型層面最佳化**
 
 ## **1.1 使用更輕量的模型架構**

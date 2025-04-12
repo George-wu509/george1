@@ -14,20 +14,6 @@
 | 影片分析                 | Cold start, throughput                   |
 | 硬體層級                 | GPU usage, Peak Memory, Token throughput |
 
-|             | Loss function                                                                                                    | Index                                                                              |
-| ----------- | ---------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
-| **目標檢測**    | 交叉熵損失(Cross-Entropy Loss)<br>邊界框回歸損失(Bounding Box Regression Loss)<br>IoU損失(Intersection over Union Loss)        | mAP（Mean Average Precision）<br>IoU（Intersection over Union）<br>Precision-Recall 曲線 |
-| **圖像分割**    | 交叉熵損失（Cross-Entropy Loss）<br>Dice損失（Dice Loss）<br>IoU損失(Intersection over Union Loss)<br>Jaccard損失（Jaccard Loss） | mIoU（Mean Intersection over Union）<br>Dice Score（F1 Score for Segmentation）        |
-| **圖像分類**    | 交叉熵損失（Cross-Entropy Loss）<br>Focal Loss                                                                          | Top-1 Accuracy<br>Top-5 Accuracy                                                   |
-| **圖像重建去噪**  | 均方誤差（MSE）, L1損失                                                                                                  | PSNR（Peak Signal-to-Noise Ratio）<br>SSIM（Structural Similarity Index）              |
-| **圖像生成**    | 對抗損失（Adversarial Loss）<br>感知損失(Perceptual Loss）<br>風格損失(Style Loss)                                              | FID（Fréchet Inception Distance）<br>IS（Inception Score）                             |
-|             |                                                                                                                  |                                                                                    |
-| Mask R-CNN  | 分類損失（Classification Loss）<br>邊界框回歸損失（Bounding Box Regression Loss）<br>掩碼損失（Mask Loss）                            |                                                                                    |
-| CenterMask2 | 分類損失（Classification Loss）<br>中心度損失（Centerness Loss）<br>邊界框回歸損失（Bounding Box Regression Loss）<br>掩碼損失（Mask Loss）  |                                                                                    |
-| 圖像超分辨率      | 像素損失（Pixel Loss）<br>感知損失（Perceptual Loss）<br>對抗損失（Adversarial Loss）                                              |                                                                                    |
-| 圖像配準        | 互信息（Mutual Information）<br>均方誤差（MSE）                                                                             |                                                                                    |
-| 圖像風格轉換      | 內容損失（Content Loss）<br>風格損失（Style Loss）                                                                           |                                                                                    |
-|             |                                                                                                                  |                                                                                    |
 目標檢測的損失函數通常由兩部分組成：
 1. **分類損失（Classification Loss）**：判斷目標物體的類別
 2. **回歸損失（Localization Loss）**：調整預測框的位置與大小

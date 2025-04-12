@@ -32,3 +32,6 @@ https://zhuanlan.zhihu.com/p/32463510329
 大模型时代，对算法工程师这一岗位的能力要求有哪些变化？ - 大模型学习教程的回答 - 知乎
 https://www.zhihu.com/question/641666666/answer/130485418659
 
+秋招算法岗手撕代码题合集（非leetcode，含答案） - 无名氏的文章 - 知乎
+https://zhuanlan.zhihu.com/p/666849216
+

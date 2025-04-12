@@ -4,25 +4,30 @@ https://www.linkedin.com/jobs/view/4133836104/?refId=eb35c9ae-8a43-4636-8ddf-e5c
 
 Keywords:
 
+|                                                       |     |
+| ----------------------------------------------------- | --- |
+| [[###該職位可能涉及以下項目和技術]]                                 |     |
+| [[###匹配與增強的技能經驗]]                                     |     |
+| [[###面試流程分析報告]]                                       |     |
+|                                                       |     |
+| [[GE Aerospace Sr Scientist - AI & Computer Vision2]] |     |
+| [[GE Aerospace AI research]]                          |     |
+New peojects:
+(1)
+
+(2)
+
+(3)
 
 
-|                       |     |
-| --------------------- | --- |
-| [[###該職位可能涉及以下項目和技術]] |     |
-| [[###匹配與增強的技能經驗]]     |     |
-| [[###面試流程分析報告]]       |     |
-|                       |     |
-|                       |     |
+As a Senior Scientist with a Machine Learning focus, you will<mark style="background: #FFF3A3A6;"> design, experiment, analyze, improve, and apply new AI / CV technology</mark>, while helping to shape the strategic plan for further research investments in the domain. Along the way, you will investigate concepts from their fundamentals (theoretical and empirical) to their prototype and creation as new solutions that change the world. 作為專注於機器學習的高級科學家，您將設計、試驗、分析、改進和應用新的 AI/CV 技術，同時幫助制定該領域進一步研究投資的戰略計劃。在此過程中，您將研究概念從其基礎（理論和經驗）到其原型和創造，作為改變世界的新解決方案。
 
-
-As a Senior Scientist with a Machine Learning focus, you will design, experiment, analyze, improve, and apply new AI / CV technology, while helping to shape the strategic plan for further research investments in the domain. Along the way, you will investigate concepts from their fundamentals (theoretical and empirical) to their prototype and creation as new solutions that change the world. 作為專注於機器學習的高級科學家，您將設計、試驗、分析、改進和應用新的 AI/CV 技術，同時幫助制定該領域進一步研究投資的戰略計劃。在此過程中，您將研究概念從其基礎（理論和經驗）到其原型和創造，作為改變世界的新解決方案。
-
-You will develop algorithms and systems that will be used from design to manufacturing, testing to operation, reliability to replacement. This will involve leading new and continuing projects with GE Aerospace business units and a wide array of fellow researchers across disciplines and domains. It will also include the opportunity to work on government-sponsored, cutting-edge research programs with GE Aerospace’s external partners in academia and government. You will help drive the future of AI / CV research at GE and advance human scientific understanding among the broader global community. 您將開發從設計到製造、測試到操作、可靠性到替換所使用的演算法和系統。這將涉及與 GE 航空航天業務部門以及跨學科和領域的眾多研究人員一起領導新的和持續的專案。它還將包括與 GE 航空航天在學術界和政府的外部合作夥伴一起開展政府資助的尖端研究計畫的機會。您將協助推動通用電氣公司未來的人工智慧/電腦視覺研究，並促進全球更廣泛的社會對人類科學的理解。  
+You will develop algorithms and systems that will be used from <mark style="background: #FFF3A3A6;">design to manufacturing, testing to operation, reliability to replacement</mark>. This will involve leading new and continuing projects with GE Aerospace business units and a wide array of fellow researchers across disciplines and domains. It will also include the opportunity to work on government-sponsored, cutting-edge research programs with GE Aerospace’s external partners in academia and government. You will help drive the future of AI / CV research at GE and advance human scientific understanding among the broader global community. 您將開發從設計到製造、測試到操作、可靠性到替換所使用的演算法和系統。這將涉及與 GE 航空航天業務部門以及跨學科和領域的眾多研究人員一起領導新的和持續的專案。它還將包括與 GE 航空航天在學術界和政府的外部合作夥伴一起開展政府資助的尖端研究計畫的機會。您將協助推動通用電氣公司未來的人工智慧/電腦視覺研究，並促進全球更廣泛的社會對人類科學的理解。  
   
 **Roles and Responsibilities  
 
 - Work with and lead teams of researchers on new and continuing projects 與研究團隊合作並領導他們進行新專案和持續項目
-- Develop software solutions for the application of Artificial Intelligence to aerospace programs, ultimately impacting the product and service offerings of GE Aerospace as well as its internal tools and practices 開發將人工智慧應用於航空航天專案的軟體解決方案，最終影響 GE 航空航天的產品和服務以及其內部工具和實踐
+- Develop software solutions for the <mark style="background: #BBFABBA6;">application of Artificial Intelligence to aerospace programs</mark>, ultimately impacting the product and service offerings of GE Aerospace as well as its internal tools and practices 開發將人工智慧應用於航空航天專案的軟體解決方案，最終影響 GE 航空航天的產品和服務以及其內部工具和實踐
 - Implement and analyze prototypes and solutions for real-world problems 實作和分析實際問題的原型和解決方案
 - Employ software libraries, tools, and practices to implement efficient, scalable, and reusable solutions 使用軟體庫、工具和實踐來實現高效、可擴展和可重複使用的解決方案
 - Collaborate with GE Aerospace’s other AI / CV experts to define and pursue strategic advancement of new technologies 與 GE 航空的其他 AI/CV 專家合作，定義並追求新技術的策略進步

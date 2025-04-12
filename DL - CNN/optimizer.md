@@ -14,6 +14,8 @@ Ref: [十分钟速通优化器原理，通俗易懂（从SGD到AdamW）](https:/
 | **Adam**                                     | Adam是SGDM和Adagrad的结合(SGD算法主要在**优化梯度**问题，Adagrad方法在**优化学习率**问题，那么可以不可以把这两种方法结合起来呢?)，它基本解决了之前提到的梯度下降的一系列问题，比如随机小样本、自适应学习率、容易卡在梯度较小点等问题                                                                                                                         |
 | **AdamW**                                    | 在AdamW提出之前，Adam算法已经被广泛应用于深度学习模型训练中。但是人们发现，理论上更优的Adam算法，有时表现并不如SGD momentum好，尤其是在**模型泛化性**上. Adam算法弱化了L2范数的作用，所以导致了用Adam算法训练出来的模型泛化能力较弱. AdamW对这个问题的改进就是将权重衰减和Adam算法解耦                                                                                        |
 
+**AdamW收敛得更快，更容易过拟合一点点；SGD收敛得相对慢一些，但是如果能给更长的训练轮次，最后的效果会略好于AdamW一些**
+
 如上所示，SGDM在CV里面应用较多，而Adam则基本横扫NLP、RL、GAN、[语音合成](https://zhida.zhihu.com/search?content_id=134396393&content_type=Article&match_order=1&q=%E8%AF%AD%E9%9F%B3%E5%90%88%E6%88%90&zhida_source=entity)等领域。所以我们基本按照所属领域来使用就好了。比如NLP领域，Transformer、BERT这些经典模型均使用的Adam，及其变种AdamW。
 
 optimizer优化主要有三种方法

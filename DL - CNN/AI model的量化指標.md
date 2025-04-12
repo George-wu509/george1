@@ -2,7 +2,6 @@
 評估AI模型的量化指標可分為**通用效率指標**與**任務專用指標**兩大類，涵蓋模型效能、運算效率與應用場景表現。以下整合各領域關鍵指標：
 
 
-
 |                                    |     |
 | ---------------------------------- | --- |
 | [[###通用效率指標]]                      |     |
@@ -12,21 +11,13 @@
 |                                    |     |
 |                                    |     |
 
-
-|                      |                                          |
-| -------------------- | ---------------------------------------- |
-| 模型複雜度                | Parms, FLOPs                             |
-| 性能指标                 | Latency, Throughput                      |
-| 计算资源消耗               | Memory consumption, MACs                 |
-|                      |                                          |
-| Object detection     | mAP, IoU, Precision/Recall/F1            |
-| Image classification | Top-1/Top-5準確率, Precision/Recall/F1      |
-| Image Segmentation   | Dice, mIoU                               |
-| Image quality        | PSNR, SSIM                               |
-|                      |                                          |
-| 影片分析                 | Cold start, throughput                   |
-| 硬體層級                 | GPU usage, Peak Memory, Token throughput |
-
+|        |                                          |
+| ------ | ---------------------------------------- |
+| 模型複雜度  | Parms, FLOPs                             |
+| 性能指标   | Latency, Throughput                      |
+| 计算资源消耗 | Memory consumption, MACs                 |
+| 影片分析   | Cold start, throughput                   |
+| 硬體層級   | GPU usage, Peak Memory, Token throughput |
 
 
 

@@ -2,25 +2,21 @@
 | Model               | Parameters: LR, batch size, Epoch, weight decay |
 | ------------------- | ----------------------------------------------- |
 | VGG                 |                                                 |
-| ResNet深度殘差網絡        |                                                 |
-| FCN 全卷積網絡           |                                                 |
+| [[ResNet]]深度殘差網絡    |                                                 |
+| [[FCN]] 全卷積網絡       |                                                 |
 |                     |                                                 |
-| [[lightweight CNN]] |                                                 |
+| [[lightweight CNN]] | MobileNet, EfficientNet                         |
 |                     |                                                 |
 |                     |                                                 |
 
-| Layers        |                                                                                                                                                                                                                                                              |
-| ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| 卷積核 conv<br>  | Parameters: padding, stride<br>Kernel Size, In Channels, Out Channels<br><br>1x1 conv<br>[dilated conv 擴張卷積](https://zhuanlan.zhihu.com/p/585500690)<br>[transposed Conv 轉置卷積](https://zhuanlan.zhihu.com/p/28186857)<br>[[Depthwise Separable Convolution]] |
-| 池化層 pool      |                                                                                                                                                                                                                                                              |
-| 激活Activate    | [[Activation funs]]                                                                                                                                                                                                                                          |
-| 全連接層 FC       |                                                                                                                                                                                                                                                              |
-| Normalization | Batch Normalization<br>Layer Normalization                                                                                                                                                                                                                   |
-| Dropout層      | [[Normalization and dropout]]                                                                                                                                                                                                                                |
-|               |                                                                                                                                                                                                                                                              |
-| 殘差層           |                                                                                                                                                                                                                                                              |
-|               |                                                                                                                                                                                                                                                              |
-|               |                                                                                                                                                                                                                                                              |
+| Layers              |                                                                                                                                                                                                                                                                                                                                           |
+| ------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 卷積核 conv<br>[[CNN]] | Parameters: padding, stride<br>Kernel Size, In Channels, Out Channels<br><br>[[CNN architecture]]<br>[[AI model Summary architecture]]<br><br>[[1x1 conv]]<br>[dilated conv 擴張卷積](https://zhuanlan.zhihu.com/p/585500690)<br>[transposed Conv 轉置卷積](https://zhuanlan.zhihu.com/p/28186857)<br>[[Depthwise Separable Convolution]]<br><br> |
+| Normalization       | Batch Normalization<br>Layer Normalization                                                                                                                                                                                                                                                                                                |
+| 激活Activate          | [[Activation funs]]                                                                                                                                                                                                                                                                                                                       |
+| 池化層 pool            | max pooling                                                                                                                                                                                                                                                                                                                               |
+| Dropout層            | [[Normalization and dropout]]                                                                                                                                                                                                                                                                                                             |
+| 全連接層 FC             | Fully connected layer                                                                                                                                                                                                                                                                                                                     |
 
 | Block                     |                  |
 | ------------------------- | ---------------- |
@@ -31,12 +27,14 @@
 | Attention Block           |                  |
 |                           |                  |
 
-| Others                                                         |     |
-| -------------------------------------------------------------- | --- |
-| Receptive Field(感受野)                                           |     |
-| [Hard negative mining](https://zhuanlan.zhihu.com/p/574307045) |     |
-|                                                                |     |
-|                                                                |     |
+| Others                          |                             |
+| ------------------------------- | --------------------------- |
+| Receptive Field(感受野)            |                             |
+|                                 |                             |
+| object detection anchor正負樣本比例不均 |                             |
+| [[Hard Negative Mining]]        | 選擇困難負樣本放入訓練                 |
+| [[Focal Loss]]                  | 通過調整損失函數的權重，使模型更關注於難分類樣本的學習 |
+|                                 |                             |
 
 參考: [[第五章_卷积神经网络(CNN)]]
 

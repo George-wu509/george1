@@ -3,7 +3,7 @@
 从2014年为分割，之前的工作都是traditional detector，之后的都是DL-based detector。从以下三个方面介绍了相应的milestone detectors。
 
 1. Traditional detectors:  Viola Jones,  HOG,  DPM
-2. _CNN based Two-stage Detectors:  **RCNN series(RCNN, Fast RCNN, Faster RCNN),  SPPNet**
+2. _CNN based Two-stage Detectors:  **RCNN series(RCNN, Fast RCNN, Faster RCNN)
 3. CNN based One-stage Detectors:  **YOLO series,  FCOS, SSD,  RetainNet, EfficientDet, DETR, MobileNet-SSD**
 
 New: 

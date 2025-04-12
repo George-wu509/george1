@@ -1,4 +1,6 @@
 
+![[Pasted image 20250411224045.png]]
+
 Reference:
 
 [1] CNN基础知识——卷积（Convolution）、填充（Padding）、步长(Stride)

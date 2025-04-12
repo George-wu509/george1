@@ -4,8 +4,8 @@
 | **Traditional Computer Vision**                                                                              |                                     |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
 | Filtering <br>- Smoothing<br>平滑                                                                              | Denoising                           | 1. [[Gaussian Filter]], 2. Mean filtering, 3. Median filtering, 4 [[Bilateral Filter]], 5. Box filtering, 6. Lowpass filter, 7. Wavelet                                                                                                                                                                                                                                                                                                                                                                           |
 | Filtering <br>- Sharpening<br>銳化                                                                             |                                     | [[1. Laplacian Filtering, 2. Sobel Filtering, 3. Canny filtering]], 4. Unsharp Masking, 5. Highpass filter                                                                                                                                                                                                                                                                                                                                                                                                        |
-| Filtering <br>- Deblurring<br>去模糊                                                                            |                                     | 1. Wiener Filtering, 2. [[Blind deconvolution\|Blind deconvolution]], 3. Lucy-Richardson Deconvolution                                                                                                                                                                                                                                                                                                                                                                            |
-| Filtering <br>-  Morphological                                                                               |                                     | Morphological(erosion, dilation, opening, closing, ==top-hat==)                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| Filtering <br>- Deblurring<br>去模糊                                                                            |                                     | 1. Wiener Filtering, 2. [[Blind deconvolution\|Blind deconvolution]], 3. Lucy-Richardson Deconvolution                                                                                                                                                                                                                                                                                                                                                                                                            |
+| Filtering <br>-  Morphological                                                                               |                                     | [[Morphological]](erosion, dilation, opening, closing, ==top-hat==)                                                                                                                                                                                                                                                                                                                                                                                                                                               |
 | Feature detection and matching <br>特徵偵測匹配                                                                    | image stitching<br><br>Image fusing | ==[[SIFT]],  SURF==,  ORB,  ==[[HOG]]==<br><br>Corner: ==Harris, [FAST](https://zhuanlan.zhihu.com/p/76501359)==, Texure: [Gabor](https://zhuanlan.zhihu.com/p/33311267), Face: ==Haar cascade== classifiers                                                                                                                                                                                                                                                                                                      |
 | Image registration<br>影像對齊                                                                                   |                                     | **<mark style="background: #BBFABBA6;">Feature-based</mark>** registration(SIFT, SURF, ORB), **<mark style="background: #BBFABBA6;">Area-based</mark>** Registration(==[[Cross-correlation]]==, <mark style="background: #FFF3A3A6;">phase-correlation</mark>, mutual information), <mark style="background: #BBFABBA6;">Transformation-based</mark>(Fourier, Wavelet)  <mark style="background: #BBFABBA6;">Model-based Registration</mark> ([[Geometric transformation]], Homography, Non-rigid Transformation) |
 | Edge detection<br>邊緣偵測                                                                                       |                                     | 1nd level: ==Sobel, Canny==, Robert, Prewitt operator<br><br>2st level: Marr-Hildreth operator, ==Log(Laplacian operator)==,                                                                                                                                                                                                                                                                                                                                                                                      |
@@ -27,35 +27,14 @@
 | Image Retrieval <br>图像检索        |                           | Color Histogram, <br>Texture Features, <br>Shape Features, <br>Local Features, <br>Deep Learning Methods                                                                                                                         |     |
 | [[image enhancement]] <br>圖像增強  |                           | 1. <mark style="background: #FFF3A3A6;">Histogram Equalization</mark>, 2. <mark style="background: #FFF3A3A6;">Contrast Stretching, 3. Noise Removal, 4. Edge Enhancement, 5. Frequency Domain Enhancement</mark>                |     |
 
-|                                                   |     |                                                                                                                                                       |
-| ------------------------------------------------- | --- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Traditional Computer Vision**                   |     |                                                                                                                                                       |
-|                                                   |     |                                                                                                                                                       |
-| [[Image format]] 影像壓縮(無損)<br>Lossless compression |     | **Huffman编码**, Lempel-Ziv-Welch（LZW）编码, 无损预测编码<br><br>PNG, TIFF, OME-TIFF, GeoTIFF, DICOM, NIfTI, Analyze, MHD, ND2, CZI, HDF, NetCDF, YUV, GIF, WebP |
-| [[Image format]] 影像壓縮(有損)<br>Lossy compression    |     | JPEG, JPEG2000, HEIC/HEIF                                                                                                                             |
-| [[Image quality index]] 圖像衡量指標                    |     | PSNR, SSIM                                                                                                                                            |
-|                                                   |     |                                                                                                                                                       |
-
-
-|                                                     |     |                                 |     |
-| --------------------------------------------------- | --- | ------------------------------- | --- |
-| **Traditional Computer Vision- Color**              |     |                                 |     |
-| High Dynamic Range (HDR)<br><br>高動態範圍成像             |     | Debevec, Robertson, Mertens<br> |     |
-| [Gamma](https://zhuanlan.zhihu.com/p/142377883)矫正技术 |     |                                 |     |
-| [[Color Model]] 彩色模式                                |     | RGB, HSV, YUY, Lab              |     |
-|                                                     |     |                                 |     |
-|                                                     |     |                                 |     |
-
-
-|                                                                                                                           |                                                                                                                                                                                          |
-| ------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Traditional Computer Vision– 3D**                                                                                       |                                                                                                                                                                                          |
-| [[3D Reconstruction]] 三维场景重建                                                                                              | Structure from Motion, ==SfM==(結構從運動)<br>Multi-View Stereo, ==MVS==(多視角立體)<br>==Single View== 3D Reconstruction(單視圖三維重建)<br>Deep Learning-Based(深度學習)<br>Volumetric Reconstruction(體積重建) |
-| Depth Estimation 深度估计                                                                                                     | 基于双目立体视觉（Stereo Vision）, 基于单目视觉（Monocular Vision）, 基于结构光（Structured Light）, 基于ToF（Time-of-Flight）相机                                                                                      |
-| [Camera Calibration and 3D Reconstruction](https://docs.opencv.org/4.x/d9/db7/tutorial_py_table_of_contents_calib3d.html) | Camera Calibration, Pose Estimation, Epipolar Geometry and Depth Map                                                                                                                     |
-| [[Geometric transformation]]圖像幾何變換                                                                                        | 剛體變換 (Rigid Transformation), <br>仿射變換(Affine Transformation), <br>投影變換(Projective Transformation), <br>非線性變換(Nonlinear Transformation)                                                   |
-|                                                                                                                           |                                                                                                                                                                                          |
-
+|                                     |                                                                                                                                                                                          |
+| ----------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Traditional Computer Vision– 3D** |                                                                                                                                                                                          |
+| [[3D Reconstruction]] 三维场景重建        | Structure from Motion, ==SfM==(結構從運動)<br>Multi-View Stereo, ==MVS==(多視角立體)<br>[[single view 3D reconstruction]](單視圖三維重建)<br>Deep Learning-Based(深度學習)<br>Volumetric Reconstruction(體積重建) |
+| [[Depth Estimation]] 深度估计           | 基于双目立体视觉（Stereo Vision）, 基于单目视觉（Monocular Vision）, 基于结构光（Structured Light）, 基于ToF（Time-of-Flight）相机                                                                                      |
+| [[Image Calibration]]               | Lighting(flat-field, optical aberration) correction, color correction, distortion correction, geometric correction, noise reduction                                                      |
+| [[Geometric transformation]]圖像幾何變換  | 剛體變換 (Rigid Transformation), <br>仿射變換(Affine Transformation), <br>投影變換(Projective Transformation), <br>非線性變換(Nonlinear Transformation)                                                   |
+|                                     |                                                                                                                                                                                          |
 
 | CAMERA                                                                                                                       |                                                                           |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
 | ---------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -69,6 +48,24 @@
 | [[Machine Vision algorithms]]                                                                                                |                                                                           | Autonomous Vehicles 自動駕駛車輛<br><br>Robotic Navigation and Localization 機器人導航與定位<br><br>Industrial Inspection and Quality Control 工業檢測與質量控制<br><br>Augmented Reality, AR 增強現實<br><br>Drone Vision Processing 無人機影像處理                                                                                                                                                                                                                                                                                                                                                                      |
 |                                                                                                                              |                                                                           |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
 
+|                                                   |     |                                                                                                                                                       |
+| ------------------------------------------------- | --- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Traditional Computer Vision**                   |     |                                                                                                                                                       |
+|                                                   |     |                                                                                                                                                       |
+| [[Image format]] 影像壓縮(無損)<br>Lossless compression |     | **Huffman编码**, Lempel-Ziv-Welch（LZW）编码, 无损预测编码<br><br>PNG, TIFF, OME-TIFF, GeoTIFF, DICOM, NIfTI, Analyze, MHD, ND2, CZI, HDF, NetCDF, YUV, GIF, WebP |
+| [[Image format]] 影像壓縮(有損)<br>Lossy compression    |     | JPEG, JPEG2000, HEIC/HEIF                                                                                                                             |
+| [[Image quality index]] 圖像衡量指標                    |     | PSNR, SSIM                                                                                                                                            |
+|                                                   |     |                                                                                                                                                       |
+
+|                                                     |     |                                 |     |
+| --------------------------------------------------- | --- | ------------------------------- | --- |
+| **Traditional Computer Vision- Color**              |     |                                 |     |
+| High Dynamic Range (HDR)<br><br>高動態範圍成像             |     | Debevec, Robertson, Mertens<br> |     |
+| [Gamma](https://zhuanlan.zhihu.com/p/142377883)矫正技术 |     |                                 |     |
+| [[Color Model]] 彩色模式                                |     | RGB, HSV, YUY, Lab              |     |
+|                                                     |     |                                 |     |
+|                                                     |     |                                 |     |
+
 |                                                                   |                                                                                                         |
 | ----------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
 | Others                                                            |                                                                                                         |
@@ -76,11 +73,31 @@
 | [[SLAM]] <br>(Simultaneous Localization and Mapping)<br>同步定位与地图构建 | EKF-SLAM(擴展卡爾曼濾波器)<br>FastSLAM(特徵估計解耦)<br>ORBSLAM(基於ORB特徵點)<br>LSD-SLAM(直接法單目SLAM)<br>DSO(稀疏的直接法SLAM算法) |
 |                                                                   |                                                                                                         |
 |                                                                   |                                                                                                         |
-|                                                                   |                                                                                                         |
-|                                                                   |                                                                                                         |
-|                                                                   |                                                                                                         |
-|                                                                   |                                                                                                         |
-|                                                                   |                                                                                                         |
+
+1.Smoothing:
+2.Sharpening:
+3.Deblurring:
+4.Morphological:
+5.Features detection:
+6.Feature(Corner, Texture, Face):
+7.Image registration:
+8.Edge detection:
+9.line and corner detection:
+10.image tracking:
+11.image denoising:
+12.image inpainting:
+13.image fusion: 
+14.image segmentation:
+15.template matching:
+16.image enhancement:
+17.3D reconstruction:
+18.Depth estimation:
+19.camera calibration:
+20.geometric transformation:
+21.ISP pipeline:
+22.Classification:
+23.Cluster:
+24.Boost:
 
 #### 一、特征识别（Feature Recognition）算法
 

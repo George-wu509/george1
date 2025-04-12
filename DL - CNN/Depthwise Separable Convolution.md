@@ -33,13 +33,13 @@ Depthwise Separable Convolution 將標準卷積分解為兩個步驟：
 
 **具體範例說明**
 
-假設我們有一個 7x7x3 的輸入影像，我們想要使用 3x3 的卷積核來提取特徵，並且輸出 16 個通道的特徵圖。
+假設我們有一個 7x7x3 的輸入影像，我們想要使用 3x3 的卷積核來提取特徵，並且輸出 16 個通道的特徵圖。inchannel=3, outchannel=16
 
 - **標準卷積：**
-    - 需要 432 個參數。
+    - 需要 432 個參數。 = 3x3x3x16
     - 運算量較高。
 - **Depthwise Separable Convolution：**
-    - 需要 75 個參數。
+    - 需要 75 個參數。 = 3x3x3 + 3x16
     - 運算量顯著降低。
 
 **Depthwise Separable Convolution 的優勢**
