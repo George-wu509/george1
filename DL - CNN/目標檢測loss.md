@@ -91,5 +91,8 @@
 - FPS 用於評估模型的實時性。
 - 對於目標偵測來說，mAP是最常被使用的評估標準。
 
+Reference:
+AP and mAP  https://medium.com/lifes-a-struggle/mean-average-precision-map-%E8%A9%95%E4%BC%B0%E7%89%A9%E9%AB%94%E5%81%B5%E6%B8%AC%E6%A8%A1%E5%9E%8B%E5%A5%BD%E5%A3%9E%E7%9A%84%E6%8C%87%E6%A8%99-70a2d2872eb0
+
 
 

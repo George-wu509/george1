@@ -50,3 +50,7 @@ Lintcode 101
         return p
 ```
 pass
+解釋:
+step1: Create B=[]是最終的output, countb目前同個數字累積的次數
+step2: 在for loop迴圈遍歷 number, 如果有次書超過2則直接跳過, 不是則append到B
+step3: 最後計算B的長度

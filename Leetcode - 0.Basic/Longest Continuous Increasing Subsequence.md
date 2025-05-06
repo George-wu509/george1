@@ -38,6 +38,10 @@ Lintcode 397
         return longest
 ```
 pass
+nums = [1,5,2,3,4]
+解釋: 
+step1: 從頭到尾遍歷nums, 並新增incr跟desc. 
+step2: 如果有連續增加的譬如2->3->4, 則incr連續加1. 如果變成減少則incr變成1
 
 
 ## **LintCode 367：最长上升连续子序列**

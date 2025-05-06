@@ -3,7 +3,6 @@ Lintcode 1075
 输出连续的子数组个数，每个子数组中元素的乘积小于`k`。
 
 ```python
-"""
 样例 1:
 	输入:  nums = [10, 5, 2, 6], k = 100
 	输出:  8
@@ -23,7 +22,6 @@ Lintcode 1075
 
 
 ```python
-
     def num_subarray_product_less_than_k(self, nums: List[int], k: int) -> int:
         ans, prod, i = 0, 1, 0
         for j, num in enumerate(nums):
@@ -35,6 +33,12 @@ Lintcode 1075
         return ans
 ```
 pass
+解釋:
+step1: ans是計數器(output), prod是乘積. i是左指針
+step2: for loop遍歷數組nums, j是右指針, 並將當前num乘到當前窗口prod. 固定右指針(右邊界)
+step3: while loop用i左指針往右移, 並把出去的數字從prod除掉
+step4: 記數在for loop跟while loop的左右指針間, 符合條件的所有子數組
+
 
 # **LintCode 1075 - Subarray Product Less Than K（子数组乘积小于 K）**
 

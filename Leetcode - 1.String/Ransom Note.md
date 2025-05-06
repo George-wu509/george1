@@ -27,6 +27,10 @@ class Solution:
         return not collections.Counter(ransom_note) - collections.Counter(magazine)
 ```
 pass
+解釋:
+step1: 將ransomNote跟magazine都各自用dict紀錄各自的字元頻率 
+s = "anagram" ->  {'a': 3, 'n': 1, 'g': 1, 'r': 1, 'm': 1}
+step2: 比較字元頻率, 如果magazine的每個字元頻率都大於ransomNote的每個字元頻率, True
 
 
 本題 **`can_construct(self, ransom_note: str, magazine: str) -> bool`** 的目標是判斷 `ransom_note` 是否可以由 `magazine` 中的字母組成，每個字母只能被使用一次。

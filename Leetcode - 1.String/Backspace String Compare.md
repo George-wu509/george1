@@ -66,6 +66,8 @@ def backspace_compare(self, s: str, t: str) -> bool:
 	return True
 ```
 pass
+解釋:
+step1: 兩個string從後往前開始檢查, 如果遇到'#'則跳過兩個字元, 譬如 "ab#c" -> "ac"
 
 本題 **`backspace_compare(self, s: str, t: str) -> bool`** 目標是：
 

@@ -48,6 +48,9 @@ prefix_sum = [(-4,3),(-3,0),(-2,1),(-1,2),(0,-1),(1,4)]
 step3. 從id=0遍歷到尾計算排序過的prefix_sum, 比相鄰的prefix_sum. 譬如:  
  prefix_sum[3]- prefix_sum[0] 等同於從id1,2,3的和  1+1+-3=-1   
 
+解釋2:
+是否可直接從排序過的prefix_sum去搜尋相鄰兩個prefix_sum差距最小
+
 
 # **LintCode 139: Subarray Sum Closest（最接近零的子数组和）**
 

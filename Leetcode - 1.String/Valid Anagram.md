@@ -41,3 +41,13 @@ Lintcode 773
         return False
 ```
 pass
+解釋:
+step1: 用s,t 各生成對應的dict, 代表字母的頻率.
+step2: 比較兩個dict 如果頻率都相同代表是字母异位词Anagram
+
+```python
+    def is_anagram(self, s: str, t: str) -> bool:
+        from collections import Counter
+        return Counter(s) == Counter(t)
+```
+pass

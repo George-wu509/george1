@@ -3,7 +3,7 @@
 | --------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Create 3D cloud points**                    |                                                                                                                                                                                                                                     |
 | [[Depth Estimation]]                          | 基于双目立体视觉（Stereo Vision）, 基于单目视觉（Monocular Vision）, 基于结构光（Structured Light）, 基于ToF（Time-of-Flight）相机                                                                                                                                 |
-| [[World to camera to pixel coordinate]]       | 相機外參(extrinsic matrix), 相機內參(intrinsic matrix)<br>本质矩阵（Essential Matrix）: 两个相机坐标系<br>基础矩阵（Fundamental Matrix）: 两个相机像素坐标系                                                                                                            |
+| [[World to camera to pixel coordinate]]       | 相機外參(extrinsic matrix), 相機內參(intrinsic matrix), [[###camera pose]]<br>本质矩阵（Essential Matrix）: 两个相机坐标系<br>基础矩阵（Fundamental Matrix）: 两个相机像素坐标系                                                                                        |
 | [[Multi-camera 3d reconstruction - Projects]] | Structure from Motion (SfM)<br>Multi-View Stereo (MVS)                                                                                                                                                                              |
 |                                               |                                                                                                                                                                                                                                     |
 | **Geometric Feature Extraction**              |                                                                                                                                                                                                                                     |
@@ -15,6 +15,7 @@
 | **CAD Registration**                          |                                                                                                                                                                                                                                     |
 | [[CAD Registration]]                          | Initial Alignment (Feature-Based Alignment)<br>	step1. keypoint detection:   Harris3D, ISS<br>	step2. Feature description:   FPFH, SHOT<br>	step3. Descriptor matching:   FLANN<br>	step4. Robust transformation estimation: RANSAC |
 |                                               | Fine Alignment <br>	Iterative Closest Point - ICP                                                                                                                                                                                   |
+|                                               | [[###CPD registration]] (Coherent Point Drift Registration)                                                                                                                                                                         |
 
 
 
@@ -504,3 +505,168 @@ RANSAC 的核心思想是迭代地執行以下步驟：
 - **表面質量檢查：** 異常的曲率值或曲率的劇烈變化可能指示表面存在缺陷，如凹痕、凸起、劃痕等。例如，一個平坦表面上突然出現非零的曲率峰值可能意味著一個凹痕。
 
 通過計算和分析點雲中每個點的高斯曲率和平均曲率，我們可以獲得對物體三維形狀更深層次的理解，為後續的各種點雲處理任務提供重要的幾何依據。
+
+
+
+==============================================
+
+### camera pose
+
+
+這是一個非常常見但也很容易混淆的問題！我們來好好釐清一下「camera pose」、「intrinsic matrix」和「extrinsic matrix」這些概念之間的關係，並且用繁體中文說明：
+
+---
+
+### 📌 一、Camera Pose（相機姿態）是什麼？
+
+**Camera Pose 指的是相機在世界座標中的位置與朝向**。簡單來說，就是「相機在哪裡」以及「它朝哪個方向看」。
+
+在數學上，我們常用一個 **4x4 的變換矩陣（Transformation Matrix）** 來表示 camera pose，它通常由兩個部分組成：
+
+- **Rotation（旋轉）R**：描述相機的朝向
+    
+- **Translation（平移）t**：描述相機的位置
+    
+
+這個組合起來就是：
+
+Camera Pose=[Rt01]\text{Camera Pose} = \begin{bmatrix} R & t \\ 0 & 1 \end{bmatrix}Camera Pose=[R0​t1​]
+
+---
+
+### 📌 二、Extrinsic Matrix（外參矩陣）是什麼？
+
+**Extrinsic matrix** 是從世界座標轉換到相機座標系的矩陣，其實就是 camera pose 的反方向！
+
+- 如果你有 camera pose（從世界座標轉到相機座標）：
+    
+    Extrinsic Matrix=[R∣t]\text{Extrinsic Matrix} = [R|t]Extrinsic Matrix=[R∣t]
+    
+    這裡的 [R∣t][R|t][R∣t] 是一個 3x43x43x4 矩陣，前 3x3 是旋轉，後面一欄是平移。
+    
+
+📌 注意：有些資料會把 camera pose 當成「從世界到相機」的轉換，也有些會當成「從相機到世界」的轉換，這會影響 R 和 t 的排列方式，**要看你是在哪個座標系下解釋**。
+
+---
+
+### 📌 三、Intrinsic Matrix（內參矩陣）是什麼？
+
+這個描述的是相機本身的光學性質，也就是像是：
+
+- 焦距（focal length）
+    
+- 主點位置（principal point）
+    
+- 畫素的比例（pixel aspect ratio）
+    
+
+內參矩陣通常是這樣的一個 3x33x33x3 矩陣：
+
+K=[fx0cx0fycy001]K = \begin{bmatrix} f_x & 0 & c_x \\ 0 & f_y & c_y \\ 0 & 0 & 1 \end{bmatrix}K=​fx​00​0fy​0​cx​cy​1​​
+
+---
+
+### ✅ 那 camera pose = intrinsic + extrinsic 嗎？
+
+**不是！**  
+它們的角色不同：
+
+|名稱|說明|形式|負責的轉換|
+|---|---|---|---|
+|Camera Pose|相機在世界的位置與朝向|4x4 轉換矩陣|世界座標 → 相機座標|
+|Extrinsic Matrix|從世界轉到相機的變換|3x4 矩陣（[R|t]）|
+|Intrinsic Matrix|相機本身的內部參數|3x3 矩陣|相機座標 → 影像座標（像素）|
+
+---
+
+### 📌 整個投影流程是怎麼運作的？
+
+從 3D 世界點投影到 2D 圖像點，大致流程是這樣：
+
+2D point=K⋅[R∣t]⋅3D world point\text{2D point} = K \cdot [R|t] \cdot \text{3D world point}2D point=K⋅[R∣t]⋅3D world point
+
+這裡：
+
+- [R∣t][R|t][R∣t] 是 **extrinsic matrix**
+    
+- KKK 是 **intrinsic matrix**
+    
+- 這整個乘積就是你可以理解成「Camera Projection Matrix」
+    
+
+---
+
+如果你想進一步了解相機校正、Pose Estimation、SLAM 等等，我也可以再延伸解釋！需要的話跟我說
+
+
+
+### CPD registration
+
+**什麼是 CPD 配準 (Coherent Point Drift Registration)?**
+
+CPD 是一種用於對齊兩個點雲的強大且常用的演算法。它的核心思想是將一個點雲（稱為**源點雲**或 **moving point cloud**）視為由高<mark style="background: #BBFABBA6;">斯混合模型 (Gaussian Mixture Model, GMM) </mark>的質心表示。演算法的目標是找到一個變換（包括旋轉、平移和可能的縮放、仿射變換），使得這個 GMM 的質心能夠與另一個點雲（稱為**目標點雲**或 **fixed point cloud**）最佳地對齊。
+
+CPD 的 "Coherent" 指的是它試圖保持源點雲的拓撲結構在變形過程中保持連貫性，避免過度扭曲。這使得 CPD 在處理非剛性變形和具有不同點密度的點雲時表現良好。
+
+**CPD 配準的過程 (簡化解釋):**
+
+1. **將源點雲表示為 GMM 的質心:** 對源點雲中的每個點，都視為一個高斯分佈的中心。
+2. **計算對應關係 (Expectation Step):** 對於源點雲中的每個高斯分佈（即每個源點），計算它與目標點雲中每個點的對應概率。這個概率基於高斯分佈的形狀和源點與目標點之間的距離。距離越近，對應的概率越高。
+3. **估計變換 (Maximization Step):** 基於計算出的對應概率，估計使源點雲（GMM 的質心）與目標點雲最佳對齊的變換參數。這個變換可以是剛性變換（旋轉和平移），也可以包含縮放和仿射變換。
+4. **更新源點雲:** 將估計出的變換應用於源點雲。
+5. **重複步驟 2-4:** 迭代執行期望步和最大化步，直到收斂（即變換不再顯著變化或達到最大迭代次數）。
+
+**如何衡量 CPD 配準的結果:**
+
+衡量 CPD 配準結果的質量至關重要，可以幫助我們判斷配準是否成功以及配準的精度如何。以下是一些常用的衡量指標：
+
+**1. 定性評估 (Qualitative Evaluation):**
+
+- **視覺檢查 (Visual Inspection):**
+    - **疊合程度 (Overlap):** 將配準後的源點雲和目標點雲在 3D 檢視器中疊加顯示，直觀地觀察它們之間的對齊程度。一個好的配準結果應該具有高度的重疊，尤其是在對應的表面區域。
+    - **結構一致性 (Structural Alignment):** 檢查配準後的源點雲的結構是否與目標點雲的結構對齊。例如，平面是否與平面對齊，曲線是否與曲線對齊。
+    - **顏色/紋理一致性 (Color/Texture Alignment - 如果有):** 如果點雲帶有顏色或紋理信息，檢查配準後對應區域的顏色或紋理是否一致。
+
+**2. 定量評估 (Quantitative Evaluation):**
+
+定量評估提供數值化的指標來衡量配準的精度。這通常需要計算源點雲和目標點雲之間的距離。
+
+- **均方根誤差 (Root Mean Squared Error, RMSE):**
+    
+    - **計算方法:** 對於配準後的源點雲中的每個點，找到目標點雲中最近的點，計算它們之間的歐氏距離。然後計算所有這些距離的平方的平均值的平方根。 RMSE=N1​i=1∑N​∥piregistered_source​−qiclosest_target​∥2![](data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="400em" height="3.3738em" viewBox="0 0 400000 3373" preserveAspectRatio="xMinYMin slice"><path d="M702 80H40000040
+        H742v3239l-4 4-4 4c-.667.7 -2 1.5-4 2.5s-4.167 1.833-6.5 2.5-5.5 1-9.5 1
+        h-12l-28-84c-16.667-52-96.667 -294.333-240-727l-212 -643 -85 170
+        c-4-3.333-8.333-7.667-13 -13l-13-13l77-155 77-156c66 199.333 139 419.667
+        219 661 l218 661zM702 80H400000v40H742z"></path></svg>)​ 其中，piregistered_source​ 是配準後的源點雲中的第 i 個點，qiclosest_target​ 是目標點雲中距離 piregistered_source​ 最近的點，N 是源點雲的點數。
+    - **意義:** RMSE 越小，表示配準的精度越高。它對較大的誤差更敏感。
+- **平均絕對誤差 (Mean Absolute Error, MAE):**
+    
+    - **計算方法:** 與 RMSE 類似，但計算的是配準後的源點雲中的每個點到目標點雲中最近點的距離的絕對值的平均值。 MAE=N1​i=1∑N​∥piregistered_source​−qiclosest_target​∥
+    - **意義:** MAE 越小，表示配準的精度越高。它對所有誤差的權重相同。
+- **點到面距離 (Point-to-Surface Distance):**
+    
+    - **計算方法:** 如果目標點雲可以表示為一個表面網格 (mesh)，則計算配準後的源點雲中的每個點到目標網格上最近三角形面的距離。
+    - **意義:** 這個指標更適合評估一個點雲到一個連續表面的配準程度。
+- **重疊率 (Overlap Ratio):**
+    
+    - **計算方法:** 定義一個距離閾值。計算配準後的源點雲中有多少比例的點在目標點雲的閾值距離內，以及目標點雲中有多少比例的點在配準後的源點雲的閾值距離內。可以取這兩個比例的平均值或最小值作為重疊率。
+    - **意義:** 重疊率越高，表示兩個點雲的對齊程度越好。
+- **法向量一致性 (Normal Consistency - 如果有法向量):**
+    
+    - **計算方法:** 如果兩個點雲都包含法向量信息，計算配準後對應點（或最近鄰點）之間法向量的夾角。夾角越小，表示表面方向的一致性越高。
+    - **意義:** 這個指標對於評估表面形狀的對齊非常重要。
+- **目標函數值 (Objective Function Value):**
+    
+    - **計算方法:** CPD 演算法在迭代過程中會最小化一個目標函數，該函數衡量了源點雲（GMM 質心）與目標點雲之間的距離以及變形的規則性。最終的目標函數值可以作為配準質量的一個指標。較小的最終目標函數值通常表示更好的配準結果。
+    - **意義:** 這個指標是 CPD 演算法內部的度量，可以反映演算法的收斂程度和配準的優化程度。
+
+**使用這些指標的注意事項:**
+
+- **Ground Truth 的重要性:** 最可靠的定量評估需要與真實的對齊結果（Ground Truth）進行比較。如果沒有 Ground Truth，則只能使用點雲之間的距離或內部一致性來衡量。
+- **點雲密度差異:** 如果兩個點雲的密度差異很大，簡單的點到點距離可能會產生誤導。在這種情況下，點到面距離或考慮點雲的局部密度可能更合適。
+- **配準目標:** 不同的應用可能對配準的某些方面更敏感。例如，在表面重建中，法向量的一致性可能比簡單的點到點距離更重要。
+- **閾值的選擇:** 在計算重疊率等指標時，閾值的選擇會影響結果。需要根據具體的應用場景和點雲的尺度來合理設定閾值。
+
+**總結:**
+
+評估 CPD 配準的結果需要結合定性和定量的方法。視覺檢查可以提供直觀的判斷，而定量指標則可以提供客觀的度量。常用的定量指標包括 RMSE、MAE、點到面距離、重疊率和法向量一致性。選擇合適的評估方法和指標取決於具體的應用場景和可用的數據。理解這些評估方法可以幫助我們判斷 CPD 配準的質量，並在需要時調整配準參數以獲得更好的結果。

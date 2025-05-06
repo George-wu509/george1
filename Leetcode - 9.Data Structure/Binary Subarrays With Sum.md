@@ -3,13 +3,13 @@ Lintcode 1712
 
 **样例 1:**
 ```python
-"""
+
 输入：A = [1,0,1,0,1], S = 2
 输出：4
 解释：
 如下面黑体所示，有 4 个满足题目要求的子数组：
-[1,0,1]
-[1,0,1]
+[1,0,1]  (id=0,1,2)
+[1,0,1]  (id=2,3,4)
 [1,0,1,0]
 [0,1,0,1]
 ```
@@ -25,107 +25,60 @@ Lintcode 1712
 
 
 ```python
-    def num_subarrays_with_sum(self, a: List[int], s: int) -> int:
-        n = len(a)
-        left1, left2, right = 0, 0, 0
-        sum1, sum2 = 0, 0
-        ret = 0
-        while right < n:
-            sum1 += a[right]
-            while left1 <= right and sum1 > s:
-                sum1 -= a[left1]
-                left1 += 1
-            sum2 += a[right]
-            while left2 <= right and sum2 >= s:
-                sum2 -= a[left2]
-                left2 += 1
-            ret += left2 - left1
-            right += 1
-        return ret
+def numSubarraysWithSum(self, nums, S):
+	count = 0
+	prefix_sum = 0
+	prefix_sum_counts = {0: 1}  # 初始化哈希表，前綴和為 0 的出現次數為 1 
+
+	for num in nums:
+		prefix_sum += num
+
+		# 檢查是否存在前綴和等於 (prefix_sum - S) 的情況
+		if (prefix_sum - S) in prefix_sum_counts:
+			count += prefix_sum_counts[prefix_sum - S]
+
+		# 更新當前前綴和的出現次數
+		if prefix_sum in prefix_sum_counts:
+			prefix_sum_counts[prefix_sum] += 1
+		else:
+			prefix_sum_counts[prefix_sum] = 1
+
+	return count
 ```
 pass
 
 
 # **LintCode 1712 - Binary Subarrays With Sum（和为 S 的二进制子数组）**
 
-## **题目解析**
+**程式碼解釋：**
 
-给定一个只包含 `0` 和 `1` 的数组 `a`，求 **子数组的和等于 `s` 的个数**。
-
-### **关键点**
-
-1. **数组 `a` 仅包含 `0` 和 `1`**：
+1. **初始化：**
     
-    - `sum(l, r) = a[l] + a[l+1] + ... + a[r]`
-    - 子数组的和 **等于子数组中 `1` 的个数**。
-2. **问题转换**：
+    - `count = 0`: 初始化計數器，用於記錄和為 `S` 的子數組數量。
+    - `prefix_sum = 0`: 初始化前綴和為 0。
+    - `prefix_sum_counts = {0: 1}`: 初始化一個哈希表（字典），用於儲存每個前綴和出現的次數。我們將前綴和 0 的出現次數初始化為 1，這是因為一個空的前綴（在遍歷任何元素之前）的總和為 0，這對於處理以數組開頭的子數組很有用。
+2. **遍歷數組：**
     
-    - **找到所有子数组 `[i, j]`，满足 `sum(i, j) == s`**。
-    - 可以用 **滑动窗口优化计算子数组和**。
-
----
-
-## **解法解析**
-
-### **思路**
-
-使用 **滑动窗口（双指针）**，利用两个窗口 `left1` 和 `left2`：
-
-- `left1` 维护 **当前窗口内最小可能的 `i`**，满足 `sum1 > s` 时左移。
-- `left2` 维护 **当前窗口内最大的 `i`**，满足 `sum2 >= s` 时左移。
-- `ret += left2 - left1` 计算符合 `sum == s` 的子数组个数。
-
----
-
-## **解法步骤**
-
-1. **定义双指针 `left1` 和 `left2`，右指针 `right` 遍历 `a`**
+    - 對於數組中的每個元素 `num`：
+        - `prefix_sum += num`: 更新當前的前綴和。
+        - **檢查目標前綴和：**
+            - `if (prefix_sum - S) in prefix_sum_counts:`: 我們檢查哈希表中是否存在一個前綴和等於 `prefix_sum - S`。
+            - **原理：** 如果存在一個前綴和 `prev_prefix_sum` 等於 `prefix_sum - S`，那麼從索引 `prev_prefix_sum` 的下一個位置到當前位置的子數組的總和就是 `prefix_sum - prev_prefix_sum = prefix_sum - (prefix_sum - S) = S`。
+            - `count += prefix_sum_counts[prefix_sum - S]`: 如果找到了這樣的前綴和，我們將其出現的次數加到 `count` 上，因為每個這樣的先前出現都對應一個新的和為 `S` 的子數組。
+        - **更新前綴和計數：**
+            - `if prefix_sum in prefix_sum_counts:`: 檢查當前的前綴和是否已經在哈希表中。
+            - `prefix_sum_counts[prefix_sum] += 1`: 如果存在，則增加其計數。
+            - `else: prefix_sum_counts[prefix_sum] = 1`: 如果不存在，則將其添加到哈希表中並將計數設置為 1。
+3. **返回結果：**
     
-    - `sum1` 计算窗口 `[left1, right]` 的和
-    - `sum2` 计算窗口 `[left2, right]` 的和
-    - `left1` 负责 **缩小窗口直到 `sum1 ≤ s`**
-    - `left2` 负责 **缩小窗口直到 `sum2 < s`**
-    - `ret += left2 - left1` 贡献符合条件的子数组个数。
-2. **右指针 `right` 遍历 `a`**
-    
-    - 更新 `sum1` 和 `sum2`
-    - 计算有效子数组个数。
+    - `return count`: 返回最終的計數，即和為 `S` 的子數組數量。
 
----
+**時間複雜度和空間複雜度：**
 
-## **具体举例**
+- **時間複雜度：** O(n)，其中 n 是數組的長度。我們只需要遍歷數組一次。哈希表的查找和插入操作的平均時間複雜度是 O(1)。
+- **空間複雜度：** O(n)，在最壞的情況下，哈希表可能會儲存所有可能的前綴和，其數量與數組的長度成正比。
 
-假设 `a = [1, 0, 1, 0, 1]`，`s = 2`。
-
-|`right`|`a[right]`|`sum1`|`sum2`|`left1`|`left2`|`ret`（累计有效子数组数）|
-|---|---|---|---|---|---|---|
-|0|1|1|1|0|0|0|
-|1|0|1|1|0|0|0|
-|2|1|2|2|0|1|1|
-|3|0|2|2|0|2|2|
-|4|1|3|3|1|3|5|
-
-最终答案 `ret = 5`，符合条件的子数组：
-
-css
-
-複製編輯
-
-`[1,0,1], [1,0,1,0], [0,1,0,1], [1,0,1], [0,1]`
-
----
-
-## **时间与空间复杂度分析**
-
-### **时间复杂度**
-
-- **右指针 `right` 遍历 `n`**：O(n)
-- **每个 `left1` 和 `left2` 只向前移动 `n` 次**：O(n)
-- **总复杂度 O(n)**。
-
-### **空间复杂度**
-
-- **只使用了几个变量 `sum1, sum2, left1, left2`**，**O(1)**。
+希望這個程式碼和解釋能夠幫助您理解如何使用前綴和數組和哈希表來解決這個問題！
 
 ---
 

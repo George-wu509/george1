@@ -3,14 +3,12 @@ Lintcode 1169
 
 **样例1:**
 ```python
-"""
 输入: s1 = "ab" s2 = "eidbaooo"
 输出: true
 解释: s2包含s1的一个排列("ba").
 ```
 **样例2:**
 ```python
-"""
 输入: s1= "ab" s2 = "eidboaoo"
 输出: false
 ```
@@ -34,6 +32,10 @@ Lintcode 1169
         return False
 ```
 pass
+解釋:
+step1: s1的長度為n, 先求得s1的字元頻率(可用collections.Counter).
+step2: 在s2上遍例長度為n的子字串, 計算字元頻率, 並和s1的字元頻率比較
+
 
 #### 滑动窗口
 

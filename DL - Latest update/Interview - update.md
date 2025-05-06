@@ -35,3 +35,6 @@ https://www.zhihu.com/question/641666666/answer/130485418659
 秋招算法岗手撕代码题合集（非leetcode，含答案） - 无名氏的文章 - 知乎
 https://zhuanlan.zhihu.com/p/666849216
 
+大模型面试基础知识 - lym的文章 - 知乎
+https://zhuanlan.zhihu.com/p/690474151
+

@@ -38,6 +38,9 @@ step3: 每一個step計算新的prefix_sum, 並check是否在hash table裡有跟
 因為這代表新的id的prefix_sum(new)到以前存的prefix_sum(old)  
 prefix_sum(new)-prefix_sum(old)=0  
 
+解釋(II):
+隨著for loop, 將新的num加上prefix_sum成新的prefix_sum, 並和之前的prefix_hash比較. 如果有相同的代表prefix_sum[i] - prefix[j] = 0 代表在nums[j+1:i]的和為0
+
 # **LintCode 138: Subarray Sum（子数组和）**
 
 ---

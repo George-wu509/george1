@@ -495,8 +495,8 @@ print(f"Max allocated memory: {max_memory / 1024**2:.2f} MB")
     - IoU 衡量預測框與 ground truth 框的重疊程度： IoU=預測框與真實框的交集面積預測框與真實框的並集面積\text{IoU} = \frac{\text{預測框與真實框的交集面積}}{\text{預測框與真實框的並集面積}}IoU=預測框與真實框的並集面積預測框與真實框的交集面積​
     - IoU 閾值決定一個預測框是否被視為“正樣本”（True Positive, TP）。
 2. **Precision 和 Recall**：
-    - Precision = TPTP + FP\frac{\text{TP}}{\text{TP + FP}}TP + FPTP​（真陽性 / 所有預測陽性）
-    - Recall = TPTP + FN\frac{\text{TP}}{\text{TP + FN}}TP + FNTP​（真陽性 / 所有真實陽性）
+    - Precision = $\large \frac{\text{TP}}{\text{TP + FP}}$​（真陽性 / 所有預測陽性）
+    - Recall = $\large \frac{\text{TP}}{\text{TP + FN}}$​（真陽性 / 所有真實陽性）
     - TP（True Positive）：預測正確的檢測框。
     - FP（False Positive）：預測錯誤的檢測框。
     - FN（False Negative）：未被檢測到的 ground truth。

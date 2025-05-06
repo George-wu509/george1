@@ -43,15 +43,18 @@ class Solution:
             new_intervals.append(new_interval)
         for i in range(len(intervals)):
             # 如果新区间的结束值小于区间开始值，插在这里，后面续上
+            # 解釋: new整個在interval左邊(完全沒overlap)
             if new_interval.end < intervals[i].start:
                 new_intervals.append(new_interval)
                 for j in range(i,len(intervals)):
                     new_intervals.append(intervals[j])
                 break
             # 如果新区间的开始值大于区间结束值，把当前区间加进去
+            # 解釋: new整個在interval右邊(完全沒overlap)
             elif new_interval.start > intervals[i].end:
                 new_intervals.append(intervals[i]);
             # 出现交叉，需要合并
+            # # 解釋: (有overlap)
             else :
                 new_interval.start = min(new_interval.start, intervals[i].start);
                 new_interval.end = max(new_interval.end, intervals[i].end);
@@ -61,11 +64,11 @@ class Solution:
         return new_intervals
 ```
 pass
-
-
 输入: intervals = [(1,2),(3,5),(6,7),(8,10),(12,16)], newInterval = (4,9) 
 输出: [(1,2),(3,10),(12,16)]
 解釋:
-step1. 從intervals的每個小區間開始譬如(1,2), 每個居間的頭尾跟newInterval的頭尾比較, 在判斷如何插入
+step1. 從intervals的每個小區間開始譬如(1,2), 每個居間i的頭尾跟newInterval的頭尾比較, 再判斷如何插入
+step2. 會有三種情況: 新插入的完全在居間i的左邊(no overlap), 新插入的完全在居間i的右邊(no overlap), 新插入的跟居間i有overlap則可以合併
+step3. 合併的時候更新新的區間用兩個區間(new interval跟interval i)的一起最小值跟一起的最大值
 
 Time complexity should be O(n)

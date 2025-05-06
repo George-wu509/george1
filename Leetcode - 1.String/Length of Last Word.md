@@ -21,3 +21,7 @@ Lintcode 422
         return len(s.strip().split(' ')[-1])
 ```
 pass
+解釋: 
+strip() 將string的頭尾空格消掉, 譬如  "  Hello  " -> "Hello"
+split(' ')將string依照輸入的' '譬如空格, 將string切割成數個子string的列表
+ 譬如:  "hello world" -> ["hello" , "world"]

@@ -5,7 +5,6 @@ Lintcode 607
 
 Example:
 ```python
-"""
 add(1);add(3);add(5);
 find(4)//返回true
 find(7)//返回false
@@ -39,6 +38,10 @@ class TwoSum(object):
         return False
 ```
 pass
+解釋: 
+step1: create 一個dict() counter儲存add()加入的值, 譬如{1:2, 2:1, 4:1}
+step2: 遍歷這個counter (1->2->4), 然後根據要查找的target找(查找key = target-目前key). 如果有則代表可以找到兩個數和為target
+
 
 # **LintCode 607: Two Sum III（数据结构设计）**
 

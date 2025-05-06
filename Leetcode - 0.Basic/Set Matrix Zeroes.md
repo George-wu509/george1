@@ -37,7 +37,10 @@ Lintcode 162
                     matrix[i][j] = 0
 ```
 pass
-
+解釋:
+step1: create兩個list. row長度等於 [1, row number ],  col長度等於 [1, col number ]
+step2: 遍歷矩陣, 如果遇到value=0, 則這個value的row跟col 更新為True
+step3: 再次遍歷矩陣, 依照row跟col紀錄的True把對應的row跟col的元素都更新為0
 
 # **LintCode 162 - Set Matrix Zeroes（矩陣置零）**
 

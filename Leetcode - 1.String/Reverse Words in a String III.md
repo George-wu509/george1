@@ -25,3 +25,14 @@ Lintcode 1173
         return answer
 ```
 pass
+
+```python
+    def reverse_words(self, s):
+        s_list = s.strip().split()
+		for i in range(len(s_list)):
+		    s_list[i] = s_list[i][::-1]
+		
+		answer = " ".join(s_list)
+        return answer
+```
+pass

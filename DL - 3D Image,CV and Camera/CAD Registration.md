@@ -5,6 +5,7 @@
 | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --- |
 | **Initial Alignment** (Feature-Based Alignment)<br>	step1. keypoint detection:   Harris3D, ISS<br>	step2. Feature description:   FPFH, SHOT<br>	step3. Descriptor matching:   FLANN<br>	step4. Robust transformation estimation: RANSAC |     |
 | Fine Alignment <br>	Iterative Closest Point - ICP                                                                                                                                                                                       |     |
+| [[###CPD registration]]                                                                                                                                                                                                                 |     |
 
 
 **什麼是 CAD 配準？**
@@ -239,3 +240,105 @@ CAD 配準是一個結合了幾何處理、數值優化和演算法選擇的綜�
 匯出到試算表
 
 在實際應用中，有時會將這兩種方法結合使用：先使用 Feature-Based Alignment 進行粗略的配準，得到一個較好的初始位姿，然後再使用 ICP 進行精細的配準，以獲得更高的精度和魯棒性。
+
+
+
+### CPD registration
+
+3D 點雲的 **CPD (Coherent Point Drift) rigid registration**。
+
+**什麼是 CPD (Coherent Point Drift)？**
+
+CPD 是一種用於點雲配準的強大算法。與傳統的迭代最近點 (ICP) 算法不同，CPD **不直接尋找點與點之間的對應關係**，而是將一個點雲（稱為源點雲）視為由<mark style="background: #BBFABBA6;">高斯混合模型 (Gaussian Mixture Model, GMM) </mark>的質心表示，然後尋找一個**連貫的運動**，使得這個 GMM 的質心能夠最好地擬合另一個點雲（稱為目標點雲）。
+
+**CPD Rigid Registration 的 "Rigid" 部分**
+
+"Rigid" 指的是在配準過程中，源點雲只允許進行**剛體變換 (rigid transformation)**，也就是說，它只能進行**旋轉 (rotation)** 和**平移 (translation)**，而不能發生形狀的改變（例如縮放、剪切等）。這意味著點雲中任意兩點之間的距離在變換前後保持不變。
+
+**CPD Rigid Registration 的核心思想**
+
+CPD 的核心思想可以概括為以下幾點：
+
+1. **將源點雲表示為 GMM 的質心：** 假設源點雲中的每個點都是一個高斯分量的質心。每個高斯分量都有其中心位置（即源點雲中的一個點）和一定的協方差矩陣（通常設置為各向同性，即球形）。
+    
+2. **概率密度擬合：** 算法的目標是找到一個剛體變換（旋轉和平移），使得由源點雲表示的 GMM 的概率密度函數能夠最好地擬合目標點雲的分布。
+    
+3. **期望最大化 (Expectation-Maximization, EM) 算法：** CPD 使用 EM 算法來迭代地求解最佳的剛體變換參數。
+    
+    - **E 步驟 (Expectation Step)：** 計算目標點雲中的每個點屬於源點雲中每個高斯分量的概率（或稱為對應關係的“軟分配”）。也就是說，對於目標點雲中的每個點，計算它是由源點雲中的哪個（或哪些）高斯分量生成的可能性有多大。
+        
+    - **M 步驟 (Maximization Step)：** 在給定的概率分配下，計算能夠最大化目標點雲和變換後的 GMM 之間相似度的最佳剛體變換參數（旋轉和平移）。這個步驟的關鍵在於找到一個連貫的運動，使得 GMM 的質心（即源點雲）能夠“漂移”到與目標點雲對齊的位置。
+        
+4. **連貫性約束 (Coherence Constraint)：** CPD 的一個重要特點是它引入了連貫性約束。這個約束鼓勵源點雲中的所有點（GMM 的質心）以一種平滑和協調的方式移動。這使得 CPD 對於噪聲、離群點和非剛性變形具有更強的魯棒性。
+    
+
+**CPD Rigid Registration 的優點**
+
+- **對噪聲和離群點更魯棒：** 由於使用了概率模型和軟分配，CPD 不像 ICP 那樣對初始對齊非常敏感，並且更能容忍數據中的噪聲和錯誤點。
+- **不需要一一對應：** CPD 不需要預先建立源點雲和目標點雲之間的一一對應關係，而是通過概率方式進行匹配。
+- **能夠處理不同密度的點雲：** 由於其基於概率密度的擬合方法，CPD 在比較密度不同的點雲時通常比直接尋找最近鄰的 ICP 更有效。
+- **避免陷入局部最小值：** 相較於 ICP，CPD 的能量函數通常更平滑，因此更不容易陷入局部最小值。
+
+**CPD Rigid Registration 的缺點**
+
+- **計算成本較高：** 相較於 ICP，CPD 的計算複雜度通常更高，尤其是在點雲規模較大時。
+- **參數調整：** CPD 的性能可能受到一些參數的影響，例如高斯分量的協方差矩陣的設置，可能需要一定的調整。
+- **僅限剛體變換：** Rigid CPD 只能處理旋轉和平移，對於存在非剛性變形的點雲配準無效。
+
+**如何實作 CPD Rigid Registration**
+
+實作 CPD Rigid Registration 通常需要使用專門的點雲處理庫。以下是一些常用的庫，它們提供了 CPD 算法的實現：
+
+- **Python:**
+    
+    - **pycpd:** 一個流行的 Python 庫，專門實現了 CPD 算法及其變體，包括剛性 CPD。
+    - **Open3D:** Open3D 也包含了一些配準算法，可能包括 CPD 或相關的變形配準方法。
+    - **NiPy (Neuroimaging in Python):** 雖然主要用於神經影像分析，但其配準模塊可能包含 CPD 的實現。
+- **MATLAB:**
+    
+    - 有一些公開的 MATLAB CPD 實現。
+
+**實作步驟（以 Python 和 `pycpd` 為例）：**
+
+1. **導入庫:**
+    
+    Python
+    
+    ```
+    import numpy as np
+    from pycpd import RigidRegistration
+    ```
+    
+2. **準備點雲數據:** 將您的源點雲和目標點雲數據加載為 NumPy 數組，每個數組的形狀應為 `(N, D)`，其中 `N` 是點的數量，`D` 是點的維度（對於 3D 點雲，`D=3`）。
+    
+3. **創建 RigidRegistration 對象並設置參數:**
+    
+    Python
+    
+    ```
+    reg = RigidRegistration(X=target_cloud, Y=source_cloud) # 注意目標和源的順序
+    ```
+    
+    您可以設置一些可選參數，例如最大迭代次數 (`max_iterations`)、收斂容忍度 (`tolerance`) 等。
+    
+4. **執行配準:**
+    
+    Python
+    
+    ```
+    transformed_cloud, (R, t) = reg.register()
+    ```
+    
+    - `transformed_cloud` 是配準後的源點雲。
+    - `R` 是估計的旋轉矩陣。
+    - `t` 是估計的平移向量。
+5. **可視化和分析結果:** 您可以使用其他庫（如 Matplotlib 或 Open3D）來可視化原始點雲和配準後的點雲，並計算它們之間的差異。
+    
+
+**是否可用 OpenMVS？**
+
+**OpenMVS 本身並不直接提供 CPD 配準算法。** 它主要關注於三維重建的流程。如果您想對 OpenMVS 輸出的點雲進行 CPD 配準，您需要將這些點雲導出為標準格式（例如 `.ply`），然後使用其他專門的點雲處理庫（如 `pycpd` 或 Open3D）來執行 CPD 配準。
+
+**總結**
+
+CPD Rigid Registration 是一種強大的點雲配準算法，它基於將源點雲視為 GMM 的質心，並使用 EM 算法尋找一個連貫的剛體變換，使其能最好地擬合目標點雲。它在處理噪聲、離群點和不同密度點雲方面具有優勢。雖然 OpenMVS 本身不包含 CPD，但您可以將其輸出的點雲與專門的點雲處理庫結合使用來執行 CPD 配準。

@@ -29,11 +29,16 @@ def pivot_index(self, nums: List[int]) -> int:
 	total = sum(nums)
 	_sum = 0
 	for i, n in enumerate(nums):
-		if _sum * 2 + n == total: return i
+		if _sum * 2 + n == total: 
+		    return i
 		_sum += n
 	return -1
 ```
 pass
+解釋:
+step1: 用sum(nums)求數組總合
+step2: for loop累加n 並存入_sum. 
+step3: 直到遇到這個n+ __ sum  等於一半的數組總和, 停下來並return i
 
 ## **LintCode 1068: 寻找数组的中心索引（Pivot Index）**
 

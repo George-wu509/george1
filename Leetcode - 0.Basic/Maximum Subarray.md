@@ -5,7 +5,6 @@ Lintcode 41
 **样例 1：**
 输入：
 ```python
-"""
 nums = [−2,2,−3,4,−1,2,1,−5,3]
 ```
 输：
@@ -18,7 +17,6 @@ nums = [−2,2,−3,4,−1,2,1,−5,3]
 **样例 2：**
 输入：
 ```python
-"""
 nums = [1,2,3,4]
 ```
 输出：
@@ -49,6 +47,13 @@ class Solution:
         return max_sum
 ```
 pass
+解釋:
+step1: 新變數: prefix_sum(目前前綴和值), min_sum(前綴值和紀錄中的最小值), 
+max_sum(前綴和值紀錄中的(前綴和值-min_sum)的最大值)
+step2: for loop遍歷nums中的每個值, 並更新prefix_sum, min_sum, max_sum
+step3: output max_sum
+
+idea: nums中最大和的子数组應該就是前綴和值list中最大值-最小值
 
 ### 解析 `Maximum Subarray` 問題：
 

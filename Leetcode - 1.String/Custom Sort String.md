@@ -9,8 +9,8 @@ S 已经根据某种规则进行了排序。我们要根据 S 中的字符顺序
 """
 示例:
 输入:
-S = "cba"
-T = "abcd"
+s = "cba"
+t = "abcd"
 输出: "cbad"
 解释: 
 S 中出现了字符 "a", "b", "c", 所以 "a", "b", "c" 的顺序应该是 "c", "b", "a"
@@ -35,3 +35,6 @@ S 中出现了字符 "a", "b", "c", 所以 "a", "b", "c" 的顺序应该是 "c",
         return ''.join(result)
 ```
 pass
+解釋:
+step1: 先將t 用collections.Counter() 統計字元出現頻率. create空result
+step2: 再依s順序 (c->b->a)依次按照頻率把字元加到result. 如果不在s裡面則放result後面 

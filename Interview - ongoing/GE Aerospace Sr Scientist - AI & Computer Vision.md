@@ -4,21 +4,17 @@ https://www.linkedin.com/jobs/view/4133836104/?refId=eb35c9ae-8a43-4636-8ddf-e5c
 
 Keywords:
 
-|                                                       |     |
-| ----------------------------------------------------- | --- |
-| [[###該職位可能涉及以下項目和技術]]                                 |     |
-| [[###匹配與增強的技能經驗]]                                     |     |
-| [[###面試流程分析報告]]                                       |     |
-|                                                       |     |
-| [[GE Aerospace Sr Scientist - AI & Computer Vision2]] |     |
-| [[GE Aerospace AI research]]                          |     |
-New peojects:
-(1)
-
-(2)
-
-(3)
-
+|                                                                 |     |
+| --------------------------------------------------------------- | --- |
+| [[###該職位可能涉及以下項目和技術]]                                           |     |
+| [[###匹配與增強的技能經驗]]                                               |     |
+| [[###面試流程分析報告]]                                                 |     |
+|                                                                 |     |
+| [[GE Aerospace Sr Scientist - AI & Computer Vision2]]           |     |
+| [[GE Aerospace AI research]]                                    |     |
+| [[航空引擎零件瑕疵檢測：3D點雲 vs. 2D影像方法深度評估報告]]                            |     |
+| [[應用數位孿生技術優化三維共軛焦顯微鏡系統性能之綜合研究報告]]                               |     |
+| [[利用 Structure from Motion 與 Multi-View Stereo 技術進行 3D 零件瑕疵偵測]] |     |
 
 As a Senior Scientist with a Machine Learning focus, you will<mark style="background: #FFF3A3A6;"> design, experiment, analyze, improve, and apply new AI / CV technology</mark>, while helping to shape the strategic plan for further research investments in the domain. Along the way, you will investigate concepts from their fundamentals (theoretical and empirical) to their prototype and creation as new solutions that change the world. 作為專注於機器學習的高級科學家，您將設計、試驗、分析、改進和應用新的 AI/CV 技術，同時幫助制定該領域進一步研究投資的戰略計劃。在此過程中，您將研究概念從其基礎（理論和經驗）到其原型和創造，作為改變世界的新解決方案。
 

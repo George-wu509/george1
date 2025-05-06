@@ -30,6 +30,10 @@ def anagrams(self, strs):
 	return res
 ```
 pass
+解釋: 
+step1: create一個新的dict
+step2: for loop 遍歷list每個字串. 每個字串用sorted()排序. 如果排序後的字串一樣則歸在dict的同個key下. 譬如  dict = {'aet':['eat','tea','ate'], 'ant':['tan','nat'], 'abt':['bat']}
+
 
 本題 **`anagrams(self, strs) -> List[str]`** 的目標是：
 

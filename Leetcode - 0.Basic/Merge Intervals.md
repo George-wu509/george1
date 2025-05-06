@@ -28,6 +28,10 @@ Lintcode 156
 ```
 pass
 
+解釋:
+step1: 先對intervals排序, 並create 空的result = []
+step2: 從頭開始for loop檢查intervals, 如果result是空的直接加入
+step3: 比對for loop裡的interval跟result的最後一個. 如果沒有overlap則append加入result, 如果有overlap則跟result最後一個合併.
 
 ### **Lintcode 156 Merge Intervals 解法分析**
 

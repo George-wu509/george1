@@ -191,7 +191,7 @@ https://zhuanlan.zhihu.com/p/713483915
 ![[Pasted image 20250325165007.png]]
 YOLOv8网络主要包含3个部分【Backbone，Neck, Head】,主要作用如下：
 
-- Backbone主干网络是模型的基础，负责从输入图像中提取特征。这些特征是后续网络层进行目标检测的基础。 在YOLOv8中，主干网络采用了类似于CSPDarknet的结构。
+- Backbone主干网络是模型的基础，负责从输入图像中提取特征。这些特征是后续网络层进行目标检测的基础。<mark style="background: #FFB86CA6;"> 在YOLOv8中，主干网络采用了类似于CSPDarknet的结构</mark>。
 - Neck颈部网络位于主干网络和头部网络之间，它的作用是进行特征融合和增强。
 - Head头部网络是目标检测模型的决策部分，负责产生最终的检测结果。
 

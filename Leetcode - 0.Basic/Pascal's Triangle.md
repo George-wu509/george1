@@ -3,7 +3,6 @@ Lintcode 1355
 
 **样例 1:**
 ```python
-"""
 输入: 5
 输出:
 [
@@ -16,7 +15,6 @@ Lintcode 1355
 ```
 **样例 2:**
 ```python
-"""
 输入: 3
 输出:
 [
@@ -28,11 +26,10 @@ Lintcode 1355
 
 
 ```python
-"""
 def generate(self, num_rows: int) -> List[List[int]]:
-	ret = list()
+	ret = list()       # ret: 整個triangle
 	for i in range(num_rows):
-		row = list()
+		row = list()   # row: triangle的第i列
 		for j in range(0, i + 1):
 			if j == 0 or j == i:
 				row.append(1)
@@ -43,7 +40,10 @@ def generate(self, num_rows: int) -> List[List[int]]:
 ```
 pass
 解釋:
-step1  
+```
+row[i][j] = ret[i-1][j] + ret[i-1][j-1] （當 `1 ≤ j ≤ i-1`）
+```
+
 
 
 

@@ -32,7 +32,7 @@
 | **Traditional Computer Vision– 3D** |                                                                                                                                                                                          |
 | [[3D Reconstruction]] 三维场景重建        | Structure from Motion, ==SfM==(結構從運動)<br>Multi-View Stereo, ==MVS==(多視角立體)<br>[[single view 3D reconstruction]](單視圖三維重建)<br>Deep Learning-Based(深度學習)<br>Volumetric Reconstruction(體積重建) |
 | [[Depth Estimation]] 深度估计           | 基于双目立体视觉（Stereo Vision）, 基于单目视觉（Monocular Vision）, 基于结构光（Structured Light）, 基于ToF（Time-of-Flight）相机                                                                                      |
-| [[Image Calibration]]               | Lighting(flat-field, optical aberration) correction, color correction, distortion correction, geometric correction, noise reduction                                                      |
+| [[Image Calibration]]               | 1. Lighting(flat-field, optical aberration) correction, 2. color correction, 3. distortion correction, 4. geometric correction, 5. noise reduction                                       |
 | [[Geometric transformation]]圖像幾何變換  | 剛體變換 (Rigid Transformation), <br>仿射變換(Affine Transformation), <br>投影變換(Projective Transformation), <br>非線性變換(Nonlinear Transformation)                                                   |
 |                                     |                                                                                                                                                                                          |
 

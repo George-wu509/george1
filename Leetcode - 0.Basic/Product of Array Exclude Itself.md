@@ -47,7 +47,7 @@ pass
 [1, 2, 3, 4]
 解釋:
 step1 計算後綴積 suffix = [0,24,12,4,1]
-step2 計算前綴積prefix = [1,1,2,6,24]
+step2 計算前綴積 prefix = [1,1,2,6,24]
 result= [24,12,8,6]
 
 ### **LintCode 50 - Product of Array Exclude Itself**

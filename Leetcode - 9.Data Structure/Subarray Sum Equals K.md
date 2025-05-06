@@ -36,7 +36,9 @@ def subarray_sum_equals_k(self, nums: List[int], k: int) -> int:
 pass
 
 解釋:
-step1
+step1: create一個dict() mp當成hash table 儲存prefix_sum及index.
+step2: 遍歷nums, 並計算更新當前prefix_sum. 並在mp裡面尋找有沒有差距為k的已儲存prefix_sum, 如果有則count+1
+step3: 遍歷完nums, 統計count
 
 
 # **LintCode 838: Subarray Sum Equals K（子数组和等于 K）**

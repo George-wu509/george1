@@ -3,7 +3,6 @@ Lintcode 943
 
 **样例1**
 ```python
-"""
 输入: nums = [-2, 0, 3, -5, 2, -1]
 sumRange(0, 2)
 sumRange(2, 5)
@@ -19,7 +18,6 @@ sumRange(0, 5) -> (-2) + 0 + 3 + (-5) + 2 + (-1) = -3
 ```
 **样例2**
 ```python
-"""
 输入: 
 nums = [-4, -5]
 sumRange(0, 0)

@@ -7,13 +7,11 @@ Lintcode 213
 
 **样例 1：**
 ```python
-"""
 输入：str = "aabcccccaaa"
 输出："a2b1c5a3"
 ```
 **样例 2：**
 ```python
-"""
 输入：str = "aabbcc"
 输出："aabbcc"
 ```

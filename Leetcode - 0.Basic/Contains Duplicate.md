@@ -24,3 +24,6 @@ Lintcode 1320
         return False
 ```
 pass
+解釋:
+step1: create一個s = set() 儲存有過的數字
+step2: 遍歷nums, 如果發現有x in s, 則return True

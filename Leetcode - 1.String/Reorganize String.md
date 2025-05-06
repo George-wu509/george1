@@ -46,6 +46,9 @@ class Solution:
         return "".join(reorganizeArray)
 ```
 pass
+解釋:
+step1: 用collections.counter()統計字元頻率, 如果char多於一半則不可能, return ""
+step2: 優先將最多的字母填入偶數索引, 若偶數索引填滿，則填入奇數索引
 
 ## **解法思路**
 

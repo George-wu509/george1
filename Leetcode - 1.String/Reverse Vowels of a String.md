@@ -37,6 +37,11 @@ Lintcode 1282
         return "".join(s)
 ```
 pass
+解釋:
+step1: 將string轉變成list, 因為string是不可變
+step2: 用一個function判斷是否是母音 ch in "aeiouAEIOU"
+step3: 用雙指針從頭尾相向找母音, 如過找到則調換
+step4: 最後將list轉回string
 
 
 ## **解法思路**

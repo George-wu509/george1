@@ -2,7 +2,6 @@ Lintcode 648
 一个单词的缩写根据以下的形式`<第一个字母><数字><最后一个字母>`，数字表示被缩写部分的长度。下面是一些缩写的例子
 
 ```python
-"""
 a) it                      --> it    (没有缩写)
 
      1
@@ -21,7 +20,6 @@ d) l|ocalizatio|n          --> l10n
 
 **样例1**
 ```python
-"""
 输入：
 [ "deer", "door", "cake", "card" ]
 isUnique("dear")
@@ -36,7 +34,6 @@ true
 ```
 **样例2**
 ```python
-"""
 输出：
 isUnique("cane")
 isUnique("make")
@@ -79,3 +76,7 @@ class ValidWordAbbr:
         return True
 ```
 pass
+解釋:
+step1: word_to_abbr function可以把string壓縮成縮寫. 譬如dear->d2r
+step2: 把每個list裡面的string用word_to_abbr轉成縮寫, 然後用dict計算每個縮寫的頻率
+step3: 查詢那個縮寫是否頻率>1

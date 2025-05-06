@@ -1,16 +1,16 @@
 Lintcode 13
 对于一个给定的 `source` 字符串和一个 `target` 字符串，你应该在 source 字符串中找出 target 字符串出现的第一个位置(从`0`开始)。如果不存在，则返回 `-1`。
 
+解釋: 也可以直接執行 source.find(target) 就會輸入第一個位置
+
 **样例 1：**
 输入：
 ```python
-"""
 source = "source"
 target = "target"
 ```
 输出：
 ```python
-"""
 -1        
 ```
 解释：
@@ -62,3 +62,4 @@ def str_str(self, source: str, target: str) -> int:
 	return -1
 ```
 pass
+解釋: 暴力匹配（Brute Force）演算法

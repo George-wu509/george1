@@ -9,6 +9,7 @@
 New: 
 [RF-DETR](https://github.com/roboflow/rf-detr)：60.5 mAP + 6ms延迟，实时检测领域的新王者如何碾压YOLO？ [link](https://zhuanlan.zhihu.com/p/32205292924)
 
+
 ==================================================
 
 | **模型**        | **Backbone 類型**            | **是否保留 FC 層** | **說明**                                        |

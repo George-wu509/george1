@@ -22,7 +22,6 @@ Lintcode 209
 
 
 ```python
-"""
 from collections import Counter
 
 def first_uniq_char(self, str):

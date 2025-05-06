@@ -40,3 +40,6 @@ Lintcode 1178
         return True
 ```
 pass
+解釋:
+如果s的A頻率>1 or 有連續的L長度>2 -> False(沒獎賞)
+step1: create absents跟lates=0, for loop遍歷

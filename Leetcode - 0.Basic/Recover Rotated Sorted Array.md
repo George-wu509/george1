@@ -4,12 +4,10 @@ Lintcode 39
 **样例 1：**
 输入：
 ```python
-"""```python
 数组 = [4,5,1,2,3]
 ```
 输出：
 ```python
-"""
 [1,2,3,4,5]
 ```
 解释：
@@ -18,12 +16,10 @@ Lintcode 39
 **样例 2：**
 输入：
 ```python
-"""
 数组 = [6,8,9,1,2]
 ```
 输出：
 ```python
-"""
 [1,2,6,8,9]
 ```
 解释：
@@ -31,45 +27,54 @@ Lintcode 39
 
 
 ```python
-class Solution:
+def recoverRotatedSortedArray(nums: List[int]):
     """
-    @param nums: An integer array
-    @return: nothing
+    Lintcode 39: 在原地恢復旋轉排序陣列 (升序)。
+    先透過相鄰檢查找到旋轉點，然後使用反轉法將其恢復。
+    修改輸入列表 nums，不返回任何內容。
     """
-    def recover_rotated_sorted_array(self, nums):
-        split_position = self.find_split(nums)
-        if split_position == len(nums)-1:
-            return 
-        
-        self.swap(nums, 0, split_position)
-        self.swap(nums, split_position, len(nums))
-        
-        nums.reverse()
-        return 
-        
-    def find_split(self, nums):
-        # DO NOT use binary search!
-        # Binary Search does not work on this prob
-        if nums is None or len(nums) < 2:
-            return 0
-        
-        for i in range(1,len(nums)):
-            if nums[i] < nums[i-1]:
-                return i 
-        # return i = len()-1 if it's already a sorted array 
-        return i 
-            
-    def swap(self, nums, start, end):
-        if start == end:
-            return nums 
-        
-        left, right = start, end -1  
-        while left < right:
-            nums[left], nums[right] = nums[right], nums[left]
-            left += 1 
-            right -= 1
+    n = len(nums)
+    if n <= 1:
+        return  # 長度為 0 或 1 的陣列無需操作
+
+    # --- 輔助函式：原地反轉列表的一部分 ---
+    def reverse(start: int, end: int):
+        while start < end:
+            nums[start], nums[end] = nums[end], nums[start]
+            start += 1
+            end -= 1
+    # --- 輔助函式結束 ---
+
+    # --- 步驟 1: 找到旋轉點 ---
+    # 旋轉點 k 是第一個滿足 nums[k] > nums[k+1] 的索引
+    # 如果找不到，表示陣列已經是排序好的
+    split_point = -1
+    for i in range(n - 1):
+        if nums[i] > nums[i + 1]:
+            split_point = i
+            break
+
+    # 如果 split_point 仍為 -1，表示陣列未經旋轉，直接返回
+    if split_point == -1:
+        return
+
+    # --- 步驟 2: 使用反轉法恢復排序 ---
+    # 陣列當前形式為 A B，其中 A = nums[0...split_point], B = nums[split_point+1...n-1]
+    # 目標形式為 B A
+    # 1. 反轉 A 部分 (nums[0] 到 nums[split_point])
+    reverse(0, split_point)
+    # 2. 反轉 B 部分 (nums[split_point + 1] 到 nums[n - 1])
+    reverse(split_point + 1, n - 1)
+    # 3. 反轉整個陣列
+    reverse(0, n - 1)
+
+# 注意：此函式直接修改傳入的 nums 列表，沒有返回值 (void function)。
 ```
 pass
+解釋:
+step1: 尋找旋轉點, 可簡單用旋轉點 k 是第一個滿足 nums[k] > nums[k+1] 的索引判斷
+
+
 
 # **LintCode 39 - Recover Rotated Sorted Array（恢复旋转排序数组）**
 
