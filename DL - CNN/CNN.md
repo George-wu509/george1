@@ -9,7 +9,7 @@ Reference:
 
 
 以下是 PyTorch 中 `nn.Conv2d` 函數的基本用法示例代碼，以及詳細解釋:
-```
+```python
 import torch
 import torch.nn as nn
 

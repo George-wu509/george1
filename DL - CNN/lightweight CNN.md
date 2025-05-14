@@ -29,8 +29,8 @@
     - **逐點卷積 (Pointwise Convolution / 1x1 Convolution):** 使用 1x1 的卷積核對深度卷積的輸出進行線性組合，以跨通道建立相關性並改變通道數。如果深度卷積的輸出有 M 個通道，並且我們希望輸出 N 個通道，那麼我們會使用 N 個 1×1×M 的卷積核。
 - **計算成本降低:** 深度可分離卷積顯著降低了計算成本和模型參數數量。假設輸入特徵圖的大小為 DF​×DF​×M，輸出通道數為 N，卷積核大小為 Dk​×Dk​。
     
-    - **標準卷積的計算複雜度:** Dk​×Dk​×M×N×DF​×DF​
-    - **深度可分離卷積的計算複雜度:** (Dk​×Dk​×M×1×DF​×DF​)+(1×1×M×N×DF​×DF​)
+    - **標準卷積的計算複雜度:** (3x3) x 3 (輸入通道) x 16 (輸出通道) = 432 個參數
+    - **深度可分離卷積的計算複雜度:** (3x3) x 3 = 27, + 1x1x3x16=48,  27+48 = 75
     - 計算複雜度的比率約為：N1​+Dk2​1​。在實際應用中，N 和 Dk2​ 通常都遠大於 1，因此深度可分離卷積可以大幅減少計算量。
 
 **2. 輕量級網路架構:**
@@ -85,7 +85,7 @@
 ### **2. EfficientNet**
 
 - **核心特點：**
-    - **複合縮放（Compound Scaling）：** EfficientNet 提出了一種統一的縮放方法，同時調整模型的深度（depth）、寬度（width）和解析度（resolution），以達到最佳的效能。
+    - **複合縮放（Compound Scaling）：** EfficientNet 提出了一種統一的縮放方法，同時調整模型的<mark style="background: #BBFABBA6;">深度（depth）=層數 (layer number)</mark>、<mark style="background: #BBFABBA6;">寬度（width）=通道數量 (channel number)</mark>和<mark style="background: #BBFABBA6;">解析度（resolution）=輸入圖像的高度和寬度</mark>，以達到最佳的效能。
     - 使用 AutoML 自動搜尋最佳模型結構。
     - 使用 MobileNetV2 所使用的反向殘差結構(Inverted residuals)與壓縮激活(Squeeze-and-Excitation Networks)。
 - **與傳統 CNN 的差異：**

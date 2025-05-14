@@ -12,23 +12,23 @@
 
 #### 什麼是 FCN？
 
-FCN（Fully Convolutional Network，全卷積網絡）是一種專為圖像分割（Image Segmentation）任務設計的深度學習模型。與傳統的卷積神經網絡（CNN）不同，FCN 完全由卷積層組成，沒有全連接層（Fully Connected Layers），並且能夠處理任意大小的輸入圖像，輸出與輸入圖像空間尺寸相關的預測（如像素級分類）。FCN 是語義分割的開創性架構，它將 CNN 的全連接層FC（Fully Connected layers）替換成卷積層，實現端到端的 pixel-wise 預測。
+FCN（Fully Convolutional Network，全卷積網絡）是一種專為圖像分割（Image Segmentation）任務設計的深度學習模型。與傳統的卷積神經網絡（CNN）不同，<mark style="background: #BBFABBA6;">FCN 完全由卷積層組成，沒有全連接層（Fully Connected Layers）</mark>，並且能夠處理任意大小的輸入圖像，輸出與輸入圖像空間尺寸相關的預測（如像素級分類）。FCN 是語義分割的開創性架構，它將 CNN 的全連接層FC（Fully Connected layers）替換成卷積層，實現端到端的 pixel-wise 預測。
 
 FCN 的核心思想是：
 
 - 通過卷積和池化操作提取特徵。
-- 使用上採樣（Upsampling，例如轉置卷積）將特徵圖恢復到原始輸入圖像的大小。
+- 使用<mark style="background: #BBFABBA6;">上採樣（Upsampling，例如轉置卷積）</mark>將特徵圖恢復到原始輸入圖像的大小。
 - 最終每個像素都會有一個類別預測，實現端到端的像素級分割。
 
 #### FCN 與 CNN 的差別
 
-|特性|CNN（卷積神經網絡）|FCN（全卷積網絡）|
-|---|---|---|
-|**輸出**|通常是單一向量（如類別概率）|空間映射（如像素級分類）|
-|**結構**|包含卷積層 + 全連接層|僅包含卷積層（無全連接層）|
-|**輸入大小**|通常固定（如 224×224）|可變（因無全連接層限制）|
-|**應用**|圖像分類、目標檢測|圖像分割|
-|**上採樣**|不需要|需要（如轉置卷積或插值）|
+| 特性       | CNN（卷積神經網絡）     | FCN（全卷積網絡）    |
+| -------- | --------------- | ------------- |
+| **輸出**   | 通常是單一向量（如類別概率）  | 空間映射（如像素級分類）  |
+| **結構**   | 包含卷積層 + 全連接層    | 僅包含卷積層（無全連接層） |
+| **輸入大小** | 通常固定（如 224×224） | 可變（因無全連接層限制）  |
+| **應用**   | 圖像分類、目標檢測       | 圖像分割          |
+| **上採樣**  | 不需要             | 需要（如轉置卷積或插值）  |
 
 簡單來說，CNN 適合全局分類任務（如這張圖是貓還是狗），而 FCN 適合空間細粒度的任務（如分割出圖像中的貓的每個像素）。
 
@@ -55,18 +55,18 @@ class SimpleCNN(nn.Module):
     def __init__(self, num_classes=10):
         super(SimpleCNN, self).__init__()
         self.features = nn.Sequential(
-            nn.Conv2d(3, 16, kernel_size=3, padding=1),  # 輸入 3 通道 (RGB)
-            nn.ReLU(),
-            nn.MaxPool2d(2, 2),  # 下採樣
+            nn.Conv2d(3, 16, kernel_size=3, padding=1),  # 輸入 3 通道 (RGB) 
+            nn.ReLU(),   # [batch, 16, 224, 224]
+            nn.MaxPool2d(2, 2),  # 下採樣  [batch, 16, 112, 112]
             nn.Conv2d(16, 32, kernel_size=3, padding=1),
-            nn.ReLU(),
-            nn.MaxPool2d(2, 2),  # 下採樣
+            nn.ReLU(),  # [batch, 32, 112, 112]
+            nn.MaxPool2d(2, 2),  # 下採樣   [batch, 32, 56, 56]
         )
         self.classifier = nn.Sequential(
-            nn.Flatten(),
-            nn.Linear(32 * 56 * 56, 128),  # 假設輸入圖像大小為 224×224
+            nn.Flatten(),   # [batch, 32x56x56]
+            nn.Linear(32 * 56 * 56, 128),  # [batch, 128]
             nn.ReLU(),
-            nn.Linear(128, num_classes),   # 輸出類別數
+            nn.Linear(128, num_classes),   # 輸出類別數  [batch, 10]
         )
 
     def forward(self, x):
@@ -75,7 +75,7 @@ class SimpleCNN(nn.Module):
         return x
 
 # 初始化模型
-cnn_model = SimpleCNN(num_classes=10)
+cnn_model = SimpleCNN(num_classes=10)  #  假設輸入圖像大小為 224×224
 print(cnn_model)
 
 # 測試

@@ -28,7 +28,7 @@ ref: [Understanding ResNet-50 in Depth](https://wisdomml.in/understanding-resnet
 
 ![[resnet50.webp]]
 
-ResNet-50 深度殘差網絡是一種在影像辨識領域廣泛使用的深度學習模型，它由微軟亞洲研究院的何愷明等人於 2015 年提出。其核心創新在於引入了「殘差連接」（Residual Connection），有效地解決了深度神經網絡訓練時的梯度消失問題，使得構建更深的網絡成為可能。
+ResNet-50 深度殘差網絡是一種在影像辨識領域廣泛使用的深度學習模型，它由微軟亞洲研究院的何愷明等人於 2015 年提出。其核心創新在於引入了<mark style="background: #BBFABBA6;">「殘差連接」（Residual Connection）</mark>，有效地解決了深度神經網絡訓練時的梯度消失問題，使得構建更深的網絡成為可能。
 
 以下是對 ResNet-50 架構的詳細解釋：
 

@@ -1,5 +1,8 @@
 
-詳細介紹一下 ResNet (Residual Network) 的特點。ResNet 是一種在深度學習領域具有里程碑意義的卷積神經網路 (CNN) 架構，它有效地解決了在訓練非常深的網路時出現的梯度消失 (vanishing gradient) 和網路退化 (degradation problem) 問題，從而使得訓練數百甚至數千層的深度網路成為可能。
+詳細介紹一下 ResNet (Residual Network) 的特點。ResNet 是一種在深度學習領域具有里程碑意義的卷積神經網路 (CNN) 架構，它有效地解決了在訓練非常深的網路時出現的<mark style="background: #ABF7F7A6;">梯度消失 (vanishing gradient) 和網路退化 (degradation problem)</mark> 問題，從而使得訓練數百甚至數千層的深度網路成為可能。
+殘差塊 (Residual Block)可分成兩種: 
+1. <mark style="background: #BBFABBA6;">基本殘差塊</mark> (Basic Block)用於較淺的ResNet (例如 ResNet-18 和 ResNet-34)。它通常由兩個 3x3 的卷積層組成，每個卷積層後跟批量歸一化 (Batch Normalization) 和 ReLU 激活函數.
+2. <mark style="background: #BBFABBA6;">瓶頸殘差塊</mark> (Bottleneck Block):** 用於更深的 ResNet (例如 ResNet-50 及以上)。它包含三個卷積層：一個 1x1 的卷積層用於降維 (減少通道數)，一個 3x3 的卷積層用於提取空間特徵，以及另一個 1x1 的卷積層用於升維 (恢復通道數)
 
 以下是 ResNet 的主要特點：
 
@@ -20,6 +23,8 @@
 
 - 基於殘差塊的設計，ResNet 可以構建非常深的網路，例如 ResNet-18、ResNet-34、ResNet-50、ResNet-101、ResNet-152，甚至更深的網路 (例如 ResNet-1202)。這些數字表示網路的總層數 (通常只計算卷積層和全連接層)。
 - 更深的網路通常具有更強的特徵提取能力，可以捕捉到更複雜的數據模式，從而在許多視覺任務上取得了顯著的性能提升。
+
+![[Resnet_block.jpg]]
 
 **3. 不同的殘差塊變體:**
 

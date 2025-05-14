@@ -58,6 +58,42 @@ Depthwise Separable Convolution 將標準卷積分解為兩個步驟：
 Depthwise Separable Convolution 是一種高效的卷積運算，可以顯著減少模型的大小和運算量，同時保持甚至提高模型的精度。它在移動裝置和嵌入式裝置上的應用非常廣泛。
 
 
+```python
+import torch
+import torch.nn as nn
+
+class DepthwiseSeparableConv(nn.Module):
+    def __init__(self, in_channels, out_channels):
+        super(DepthwiseSeparableConv, self).__init__()
+
+        # 1️. Depthwise Convolution：每個輸入通道自己卷積自己
+        self.depthwise = nn.Conv2d(
+            in_channels, in_channels, kernel_size=3, padding=1,
+            groups=in_channels,  # groups 等於輸入通道，代表每個通道分開處理
+            bias=False
+        )
+
+        # 2️. Pointwise Convolution（1x1卷積）：混合通道資訊
+        self.pointwise = nn.Conv2d(
+            in_channels, out_channels, kernel_size=1,
+            bias=False
+        )
+
+    def forward(self, x):    # x = [batch, 3, 224, 224]
+        x = self.depthwise(x)   # 每個通道自己做卷積（空間特徵）
+        x = self.pointwise(x)   # 混合所有通道（通道特徵）
+        return x
+
+```
+
+
+
+
+
+
+
+
+
 
 
 Reference:

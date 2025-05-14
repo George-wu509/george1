@@ -3,8 +3,8 @@
 | ------------------- | ----------------------------------------------------------------------- |
 | VGG                 | 3x3 kernel size replace 5x5,7x7                                         |
 | [[ResNet]]深度殘差網絡    | Residual block, skip connection, vanishing gradient, exploding gradient |
-| [[FCN]] 全卷積網絡       | Fully Convolutional Network                                             |
-| [[DarkNet]]         |                                                                         |
+| [[FCN]] 全卷積網絡       | Fully Convolutional Network, Transpose layer(upsampling)                |
+| [[DarkNet]]         | YOLO backbone                                                           |
 | [[lightweight CNN]] | MobileNet(Depthwise Separable Convolution), EfficientNet                |
 |                     |                                                                         |
 |                     |                                                                         |

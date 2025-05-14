@@ -37,7 +37,7 @@ sigmoid函数的输出范围是0到1。由于输出值在0和1之间，它相当
 **Softmax**
 Softmax 函数通常被描述为多个 sigmoid 的组合。 我们知道 sigmoid 返回 0到1之间的值，可以将其视为属于特定类的数据点的概率。 因此 sigmoid 被广泛用于二分类问题。softmax 函数可用于多类分类问题。此函数返回属于每个单独类的数据点的概率
 
-Summary:
+#### Summary:
 sigmoid 容易产生梯度消失问题，ReLU 的导数就不存在这样的问题
 
 sigmoid将一个real value映射到（0,1）的区间，用来做二分类，而 softmax 主要进行进行多分类的任务。二分类问题时 sigmoid 和 softmax 是一样的，求的都是 cross entropy loss，而 softmax 可以用于多分类问题。

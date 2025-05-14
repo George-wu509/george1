@@ -4,45 +4,76 @@
     "type": "split",
     "children": [
       {
-        "id": "93fb7868059f96fd",
+        "id": "ecf160e69985903b",
         "type": "tabs",
+        "dimension": 49.50980392156863,
         "children": [
           {
-            "id": "ab51753a0306f094",
+            "id": "e74fd712f60d179a",
             "type": "leaf",
             "state": {
               "type": "markdown",
               "state": {
-                "file": "@@ Data Structure QA.md",
+                "file": "@@ Interview prepare.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "@@ Data Structure QA"
-            }
-          }
-        ]
-      },
-      {
-        "id": "82a91ec5b5410c5e",
-        "type": "tabs",
-        "children": [
-          {
-            "id": "ece415a670ef524d",
-            "type": "leaf",
-            "state": {
-              "type": "markdown",
-              "state": {
-                "file": "@@ Data Structure QA.md",
-                "mode": "source",
-                "source": false
-              },
-              "icon": "lucide-file",
-              "title": "@@ Data Structure QA"
+              "title": "@@ Interview prepare"
             }
           },
           {
-            "id": "83b96fbbf99ced35",
+            "id": "862b251b5faedfd4",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "DL - YOLO and object detection/Object detection - summary.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "Object detection - summary"
+            }
+          }
+        ],
+        "currentTab": 1
+      },
+      {
+        "id": "e15afe3e657ad502",
+        "type": "tabs",
+        "dimension": 50.49019607843137,
+        "children": [
+          {
+            "id": "daf0c7f6568571e5",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "@@ Interview prepare.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "@@ Interview prepare"
+            }
+          },
+          {
+            "id": "0b8bd0de6bd7d66d",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "DL - CNN/AI model Summary.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "AI model Summary"
+            }
+          },
+          {
+            "id": "7205ff9537504aa3",
             "type": "leaf",
             "state": {
               "type": "markdown",
@@ -54,37 +85,9 @@
               "icon": "lucide-file",
               "title": "Github"
             }
-          },
-          {
-            "id": "edf30809bf8b78d9",
-            "type": "leaf",
-            "state": {
-              "type": "markdown",
-              "state": {
-                "file": "Leetcode - 2.Sorting/排序.md",
-                "mode": "source",
-                "source": false
-              },
-              "icon": "lucide-file",
-              "title": "排序"
-            }
-          },
-          {
-            "id": "3a6ccf959c945156",
-            "type": "leaf",
-            "state": {
-              "type": "markdown",
-              "state": {
-                "file": "Leetcode - 4.Binary Search/二分法.md",
-                "mode": "source",
-                "source": false
-              },
-              "icon": "lucide-file",
-              "title": "二分法"
-            }
           }
         ],
-        "currentTab": 1
+        "currentTab": 2
       }
     ],
     "direction": "vertical"
@@ -232,34 +235,36 @@
       "table-editor-obsidian:Advanced Tables Toolbar": false
     }
   },
-  "active": "83b96fbbf99ced35",
+  "active": "7205ff9537504aa3",
   "lastOpenFiles": [
-    "@@ Data Structure QA.md",
+    "DL - CNN/AI model Summary.md",
+    "@@ Interview prepare.md",
+    "DL - YOLO and object detection/Object detection - summary.md",
+    "DL - CNN/AI model的量化指標.md",
+    "DL - YOLO and object detection/Object detection on edge.md",
+    "DL - CNN/AI model Summary architecture.md",
+    "DL - CNN/CNN - Basic.md",
+    "Interview - ongoing/TP-Link Senior AI ML Computer Vision Engineer.md",
+    "DL - YOLO and object detection/YOLO.md",
+    "CVML - ML/Machine learning matlab.md",
+    "DL - Transformer and ViT/Transformer and ViT - Summary.md",
+    "DL - YOLO and object detection/Object detection and NMS.md",
+    "DL - CNN/CNN - Setting.md",
+    "DL - Segmentation/Image segmentation summary.md",
+    "DL - Tracking/Tracking and ReID.md",
+    "DL - Tracking/Tracking - Summary.md",
+    "CVML - Image CV/Traditional Computer Vision summary.md",
+    "DL - SAM/SAM - SAM.md",
+    "DL - MultiModal/MultiModal - Introduction.md",
+    "DL - CNN/CNN architecture.md",
+    "DL - CNN/CNN.md",
+    "Smooth L1 Loss.md",
+    "Dice Loss.md",
+    "DL - CNN/Focal Loss.md",
+    "DL - CNN/目標檢測loss.md",
+    "DL - CNN/Regularization.md",
+    "materials/Resnet_block.jpg",
     "materials/summary.jpg",
-    "Leetcode - 3.Two Pointers/雙指針.md",
-    "Leetcode - 3.Two Pointers/Two Sum - Greater than target.md",
-    "Leetcode - 2.Sorting/排序.md",
-    "Leetcode - 4.Binary Search/二分法.md",
-    "Leetcode - 2.Sorting/Classical Sort Integers.md",
-    "Leetcode - 2.Sorting/Moving Stones.md",
-    "Leetcode - 4.Binary Search/Classical Binary Search.md",
-    "Leetcode - 3.Two Pointers/Two Sum - Less than or equal to target.md",
-    "Leetcode - 3.Two Pointers/Two Sum.md",
-    "Leetcode - 3.Two Pointers/Two Sum III.md",
-    "Leetcode - 4.Binary Search/Last Position of Target.md",
-    "Leetcode - 4.Binary Search/Fibonacciseries.md",
-    "Leetcode - 4.Binary Search/Search Insert Position.md",
-    "Leetcode - 4.Binary Search/Search for a Range.md",
-    "Leetcode - 3.Two Pointers/Guess Number Higher or Lower.md",
-    "Leetcode - 4.Binary Search/Smallest Rectangle Enclosing Black Pixels.md",
-    "Leetcode - 4.Binary Search/Copy Books.md",
-    "Leetcode - 4.Binary Search/Search a 2D Matrix.md",
-    "Leetcode - 4.Binary Search/Search a 2D Matrix II.md",
-    "Leetcode - 4.Binary Search/Wood Cut.md",
-    "Leetcode - 4.Binary Search/Find Peak Element.md",
-    "Leetcode - 4.Binary Search/Search in Rotated Sorted Array.md",
-    "Leetcode - 4.Binary Search/Find Minimum in Rotated Sorted Array.md",
-    "Leetcode - 4.Binary Search/Maximum Number in Mountain Sequence.md",
     "materials/Pasted image 20250501160939.png",
     "materials/Pasted image 20250501152954.png",
     "DL - embedded and edge"
