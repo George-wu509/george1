@@ -6,7 +6,7 @@
       {
         "id": "ecf160e69985903b",
         "type": "tabs",
-        "dimension": 49.50980392156863,
+        "dimension": 49.50980392156864,
         "children": [
           {
             "id": "e74fd712f60d179a",
@@ -42,7 +42,7 @@
       {
         "id": "e15afe3e657ad502",
         "type": "tabs",
-        "dimension": 50.49019607843137,
+        "dimension": 50.49019607843136,
         "children": [
           {
             "id": "daf0c7f6568571e5",
@@ -85,9 +85,23 @@
               "icon": "lucide-file",
               "title": "Github"
             }
+          },
+          {
+            "id": "f1b3353f5aed2f95",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "test.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "test"
+            }
           }
         ],
-        "currentTab": 2
+        "currentTab": 3
       }
     ],
     "direction": "vertical"
@@ -110,7 +124,7 @@
                 "autoReveal": false
               },
               "icon": "lucide-folder-closed",
-              "title": "檔案瀏覽器"
+              "title": "Files"
             }
           },
           {
@@ -226,17 +240,19 @@
   },
   "left-ribbon": {
     "hiddenItems": {
-      "switcher:開啟快速切換": false,
-      "graph:查看關聯圖": false,
-      "canvas:建立新畫布": false,
-      "daily-notes:開啟今天的每日筆記": false,
-      "templates:插入模板": false,
-      "command-palette:開啟命令面板": false,
+      "switcher:Open quick switcher": false,
+      "graph:Open graph view": false,
+      "canvas:Create new canvas": false,
+      "daily-notes:Open today's daily note": false,
+      "templates:Insert template": false,
+      "command-palette:Open command palette": false,
       "table-editor-obsidian:Advanced Tables Toolbar": false
     }
   },
-  "active": "7205ff9537504aa3",
+  "active": "f1b3353f5aed2f95",
   "lastOpenFiles": [
+    "Tool - others/Github.md",
+    "test.md",
     "DL - CNN/AI model Summary.md",
     "@@ Interview prepare.md",
     "DL - YOLO and object detection/Object detection - summary.md",
@@ -261,8 +277,6 @@
     "Smooth L1 Loss.md",
     "Dice Loss.md",
     "DL - CNN/Focal Loss.md",
-    "DL - CNN/目標檢測loss.md",
-    "DL - CNN/Regularization.md",
     "materials/Resnet_block.jpg",
     "materials/summary.jpg",
     "materials/Pasted image 20250501160939.png",
