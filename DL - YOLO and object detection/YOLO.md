@@ -1,10 +1,55 @@
 
+Backbone: DarkNet, CSPDarkNet, C2f
+Neck:  PAN
+head: Conv, Decoupled Head
+
 YOLOv1 速度最快，但精度較低。
 YOLOv3 在小目標檢測方面有顯著提升。
 YOLOv4 和 YOLOv5 在精度和速度之間取得了較好的平衡。
 YOLOX，YOLOv6，YOLOv7，YOLOv8在精度和速度上都持續的進步。
 YOLO-NAS針對硬體有額外的優化。
 [[YOLOv8]] 新增了圖像分割和圖像分類功能
+
+Paper: A Comprehensive Review of YOLO Architectures in Computer Vision: From YOLOv1 to YOLOv8 and YOLO-NAS
+https://www.mdpi.com/2504-4990/5/4/83
+
+**DarkNet:** 
+為高效Object detection YOLO系列, YOLOv2(DarkNet-19)跟YOLOv3(DarkNet-53)設計的backbone.
+主要由一系列1x1跟3x3conv組成, 加上Residual Block(DarkNet-53), 使用leaky RELU. 沒有Pooling
+
+**CSPDarkNet:**
+比DarkNet計算量更小, 更可以在深層網路傳播Gradient. 用在YOLOv4及以後
+
+   CSPNet (Cross Stage Partial Network)是將輸入從通道維度分成兩部分。一部分經過該階段的密集塊 (dense block) 或殘差塊 (residual block) 處理，另一部分則幾乎不經過處理（或只經過少量處理），然後在階段結束時將這兩部分拼接 (concatenate) 起來。
+
+   CSPDarknet 是對 Darknet 的一種優化。它通過在網路的每個主要階段引入跨階段局部連接，將基礎層的特徵圖分成兩部分，一部分進行主要的卷積運算，另一部分直接（或少量處理後）與處理後的特徵圖進行拼接。這樣做的好處是**減少了計算量、增強了梯度的反向傳播、並提升了學習的準確性**，因為它避免了在不同層之間學習重複的梯度信息。
+
+   YOLOv8 的骨幹網路可以看作是 CSPDarknet 思想的進一步演進和優化，其核心是大量使用 **C2f (CSPNet with 2 features) 模組**。
+
+**簡而言之：**
+- **Darknet** 是基礎，引入了殘差連接。
+- **CSPDarknet** 在 Darknet 基礎上引入了跨階段部分網路（CSP），將特徵流分成兩部分處理再融合，以減少計算量和改善梯度流。
+- **YOLOv8 Backbone** 是 CSP 思想的延續和優化，主要使用 **C2f** 模組。
+- **C3** 模組是 YOLOv5/v7 中的 CSP 實現，將一組串行 Bottleneck 的最終輸出與旁路融合。
+- **C2f** 模組是 YOLOv8 中的 CSP 實現，它將一組串行 Bottleneck 的**每個中間輸出**都收集起來與旁路進行更充分的融合，以獲得更豐富的梯度信息和特徵表示。
+
+**PAN**（Path Aggregation Network）
+旨在通過自底向上和自頂向下的特徵融合，解決物件檢測中多尺度問題
+- **多尺度特徵融合**：將骨幹網路輸出的深層語義特徵（高層）和淺層空間特徵（低層）整合。
+- **提升檢測性能**：特別是在檢測小物件和大物件時，提供更強的特徵表達能力。
+
+|                                         |     |
+| --------------------------------------- | --- |
+| [[###YOLO 模型架構概述]]                      |     |
+| [[###YOLO跟RCNN的backbone, neck, head比較]] |     |
+| [[###YOLO 系列模型版本演進]]                    |     |
+| [[### YOLO compare to MobileNet]]       |     |
+| [[### CSPDarknet and PAN]]              |     |
+| [[### YOLO分割成SxS網格]]                    |     |
+|                                         |     |
+|                                         |     |
+|                                         |     |
+
 
 ```python
 import cv2
@@ -43,17 +88,7 @@ cv2.destroyAllWindows()
 
 不同版本的 YOLO **輸入（input）** 大多都是一張圖像，但 **輸出（output）** 格式可能略有不同，特別是 bounding box 的回歸方式、類別表示方式、是否加入 mask（如 YOLOv8-Seg）等。
 
-|                                         |     |
-| --------------------------------------- | --- |
-| [[###YOLO 模型架構概述]]                      |     |
-| [[###YOLO跟RCNN的backbone, neck, head比較]] |     |
-| [[###YOLO 系列模型版本演進]]                    |     |
-| [[### YOLO compare to MobileNet]]       |     |
-| [[### CSPDarknet and PAN]]              |     |
-|                                         |     |
-|                                         |     |
-|                                         |     |
-|                                         |     |
+
 
 **YOLO 系列演進表**
 YOLOv8
@@ -62,7 +97,7 @@ YOLOv8
 | :------- | :----------- | :----------- | :----------------------- | :--------------------------- | :------------- | :---------------------- |
 | YOLOv1   | GoogLeNet    | 無            | 全連接層                     | 單階段檢測、快速                     | 物件偵測           | 開創性，速度快但精度較低            |
 | YOLOv2   | Darknet-19   | 無            | 卷積層                      | Anchor boxes、多尺度訓練           | 物件偵測           | 精度與速度提升                 |
-| YOLOv3   | Darknet-53   | FPN          | 卷積層                      | 多尺度檢測、更好的小目標檢測               | 物件偵測           | 小目標檢測能力提升               |
+| YOLOv3   | Darknet-53   | FPN          | 卷積層                      | 多尺度檢測、更好的小目標檢測               | 物件偵測           | **小目標**檢測能力提升           |
 | YOLOv4   | CSPDarknet53 | SPP、PAN      | 卷積層                      | CSP 結構、Mosaic 資料增強           | 物件偵測           | 精度大幅提升                  |
 | YOLOv5   | CSPDarknet53 | SPP、PAN      | 卷積層                      | PyTorch 實現、自動化 Anchor boxes  | 物件偵測           | 易於使用，速度與精度平衡            |
 | YOLOX    | Darknet53    | FPN          | Decoupled Head           | Anchor-free、SimOTA 標籤分配      | 物件偵測           | 精度與速度的進一步提升             |
@@ -522,14 +557,16 @@ MobileNet 是一個專注於**計算效率**的骨幹網路，使得基於它的
 
 CSPDarknet 是一種基於 Darknet 結構進行改進的骨幹網路，由 YOLOv4 論文提出。它的核心思想是**跨階段局部連接 (Cross Stage Partial Connections, CSP)**。CSP 的目標是**在不顯著增加計算量的同時，增強網路的學習能力，並減少冗餘計算。**
 
-**核心思想 - CSP:**
+**核心思想 - CSP (Cross Stage Partial connections) : **
 
 CSP 的主要思想是將輸入特徵圖分成兩個部分：
 
 1. **主路徑 (Main Path):** 這一部分會通過一系列的卷積層和其他處理單元進行正常的處理。
 2. **旁路 (Cross Stage Partial Path):** 這一部分直接將原始輸入的一部分或經過少量處理的版本連接到主路徑的後續階段。
 
-![[Pasted image 20250501152954.png]]
+![[Pasted image 20250515130459.png]]
+
+![[Pasted image 20250515125454.png]]
 
 然後，主路徑的輸出和旁路的輸出會在最後進行融合 (通常是通道維度的拼接)。
 
@@ -607,3 +644,41 @@ PAN 是一種有效的頸部網路結構，它通過引入自下而上的路徑�
 **總結:**
 
 YOLOv8 的骨幹網路是一個進化後的結構，其核心是高效且能提取豐富上下文信息的 C2f 模塊。它在設計上受到了 CSPDarknet 等先前工作的影響，但並非完全等同於 CSPDarknet。YOLOv8 的靈活性允許在未來探索和集成更多先進的骨幹網路。
+
+
+
+### YOLO分割成SxS網格
+
+**YOLO 物件偵測模型中的網格劃分與預測流程**
+
+1. **網格劃分的概念起源 (YOLOv1)** 在最初的YOLOv1版本中，「將影像劃分為 S x S 網格」的概念是最直接的。輸入圖像被邏輯上分割成 S x S 個網格單元（例如7x7）。如果一個物件的中心點落入某個網格單元，則該網格單元就負責偵測這個物件。最終的卷積層輸出的特徵圖的空間維度（例如7x7xC）直接對應了這個S x S網格，每個網格單元（feature map上的一個空間位置的向量）會預測B個邊界框以及C個類別的機率。
+    
+2. **現代 YOLO (如 YOLOv3 及之後版本) 的演進 - 多尺度特徵圖即網格**
+    
+    - **Backbone (骨幹網路) 的作用**： Backbone（例如 Darknet-53, CSPDarknet, ResNet 等）負責從輸入圖像中提取特徵。隨著網路層的加深，卷積層和下採樣層（如步長為2的卷積或池化層）會逐步減小特徵圖的空間尺寸（寬和高），同時增加其通道數（深度）。**這個逐步減小空間尺寸的過程，正是「網格化」的體現。**
+        
+    - **Neck (頸部網路) 的作用**： Neck 部分（例如 FPN - Feature Pyramid Network, PANet - Path Aggregation Network）的作用是融合來自 Backbone 不同層次的特徵圖，以產生具有豐富語義信息且包含多尺度信息的特徵圖。這些最終從 Neck 輸出的特徵圖，通常會有幾種不同的空間解析度。例如，對於一個416x416的輸入圖像，Neck 可能會輸出空間尺寸為 13x13、26x26、52x52 等的特徵圖。
+        
+    - **特徵圖本身即為網格 (Feature Map IS the Grid)**： 這是一個關鍵點。**YOLO 的 Head 模型並不是在接收到不同尺寸的特徵圖後，再把它們「都先劃分成」某一個統一的 S x S 網格。** 實際上，從 Backbone 和 Neck 輸出的**每一個不同尺寸的特徵圖，其本身的空間維度就定義了一個網格。**
+        
+        - 例如，一個 13×13×Channels 的特徵圖，就可以被視為一個 13×13 的網格。這個網格中的每一個「單元格」(cell) 就是特徵圖上的一個 1×1×Channels 的向量。
+        - 同理，一個 26×26×Channels 的特徵圖，就是一個 26×26 的網格。
+        - 這些不同尺寸的網格分別對應原圖上不同大小的感受野，因此能夠偵測不同尺寸的物件。13×13 的網格（來自較深層的特徵圖）通常負責偵測較大的物件，而 52×52 的網格（來自較淺層的特徵圖）則負責偵測較小的物件。
+    - **Head (頭部網路) 的作用**： Head 模型接收來自 Neck 的這些不同空間尺寸的特徵圖（即不同尺寸的網格）。對於**每一個特徵圖的每一個網格單元 (cell)**，Head 會執行以下操作：
+        
+        1. **預測邊界框 (Bounding Boxes)**：通常每個網格單元會預測固定數量（例如3個或5個，與預設的錨框 Anchors 相關）的邊界框。這些邊界框的坐標通常是相對於該網格單元的位置以及錨框的尺寸來預測的 (x, y, width, height)。
+        2. **預測物件性得分 (Objectness Score)**：對於每個預測的邊界框，模型會給出一個物件性得分，表示該框內包含一個物件的置信度。
+        3. **預測類別機率 (Class Probabilities)**：對於每個預測的邊界框（或者有時是每個網格單元），模型會預測其屬於各個預定義類別的機率。
+
+**總結與修正您的敘述：**
+
+- **「YOLO object detection model 是在哪一步驟將影像劃分為 S x S 網格」**： 這個「劃分」不是一個單獨的預處理步驟，而是**卷積神經網路在 Backbone 和 Neck 中通過逐層卷積和下採樣，使特徵圖空間尺寸逐漸縮小的自然結果。** 最終輸入到 Head 的多個不同空間解析度的特徵圖，其空間維度本身就構成了不同大小的「網格」。
+    
+- **「是否前面backbone跟neck model都沒有這一步」**： 可以說 Backbone 和 Neck 的核心功能之一就是**逐步形成這些不同尺度的網格化特徵表示**。它們通過特徵提取和融合，產生了這些準備好被 Head 解讀為網格的特徵圖。
+    
+- **「而是在最後面head model將輸入到head model的不同尺寸特徵圖都先劃分成S x S 網格」**： 這部分敘述**不完全準確**。Head 模型**接收的是已經具有網格結構的特徵圖**（例如，S1​×S1​, S2​×S2​, S3​×S3​ 等不同尺寸）。它**不會**將這些不同尺寸的特徵圖再「統一劃分」成某個固定的 S x S 網格。相反，它直接在這些不同尺寸的網格上進行操作。一個 13×13 的特徵圖就是一個 13×13 的網格，一個 26×26 的特徵圖就是一個 26×26 的網格，Head 分別在這些網格上進行預測。
+    
+- **「然後在每個網格推斷出邊界框（bounding boxes）與類別機率（class probabilities）」**： 這部分**是正確的**。對於輸入到 Head 的每一個特徵圖（即每一個不同尺寸的網格），Head 會在其每一個單元格 (cell) 上獨立地進行邊界框、物件性得分和類別機率的推斷。
+    
+
+因此，更準確的說法是：YOLO 的 Backbone 和 Neck 結構將輸入圖像轉換為多個不同空間解析度的特徵圖，這些特徵圖的空間維度本身就代表了不同尺度的網格。Head 模型則在這些不同網格的每一個單元格上並行地預測物件的邊界框、物件性及類別。

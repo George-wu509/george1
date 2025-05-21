@@ -19,9 +19,12 @@ RCNN, SSD FCOS  vs  FCN, UNet (語義分割)
 [[CNNs backbone vs FCN UNet backbone]]
 1. FCN移除FC layers (就等於轉為全卷積結構)
 2. UNet是FCN的特例, 用對稱設計, 淺層結構和跳躍連接確保低層特徵不丟失
-3. UNet 不追求多尺度檢測能力
+3. UNet 設計目標和核心優勢在於精確的像素級分割
 4. VGG和ResNet為分類設計, 靠 FC 層整合資訊. 當用於檢測與分割：移除 FC 層，保留特徵圖，添加 neck/head（如 FPN、上採樣），使其適應新任務。
 
+|                   |     |
+| ----------------- | --- |
+| [[##### QA-list]] |     |
 
 |     |                                            |
 | --- | ------------------------------------------ |
@@ -4646,3 +4649,50 @@ output = model(x, control, timesteps)
     
     - 高生成質量。
     - 可控性強，支持多種外部條件。
+
+##### QA-list
+
+| Q                         | Ans            |
+| ------------------------- | -------------- |
+| 介绍U-Net細節跟变体              |                |
+| Anchor-free算法进展           | [[##### Ans2]] |
+| 介绍常用的即插即用模块               | [[##### Ans3]] |
+| 简述InceptionV1到V4的网络、区别、改进 | [[##### Ans4]] |
+|                           |                |
+|                           |                |
+
+
+##### Ans2
+
+我们常将目标检测算法划分为两类，一类是基于锚点(Anchor-based)的方法，一类是没有锚点(Anchor-free)的方法。基于深度学习的目标检测算法层出不穷、大放异彩，近几年来Anchor free的方法逐渐成为一种主流，基于关键点的目标检测算法更是一大亮点。
+![[Pasted image 20250518221233.png]]
+
+之前主流的目标检测算法，包括两阶段的各种RCNN和单阶段的SSD、YOLO系列等、RetinaNet上都是基于Anchor来做的，如下图a。Anchor的本质是候选框，在设计了不同尺度和比例的候选框后，DNN学习如何将这些候选框进行分类：是否包含object和包含什么类别的object，对于postive的anchor会学习如何将其回归到正确的位置。它扮演的角色和传统检测算法中的[滑动窗口](https://zhida.zhihu.com/search?content_id=167339693&content_type=Article&match_order=1&q=%E6%BB%91%E5%8A%A8%E7%AA%97%E5%8F%A3&zhida_source=entity)等机制比较类似。但是，这种设计思路有很多问题：
+
+1. 大部分object是不规则的，所以Bounding Box涵盖了大量非object的区域，从而引入比较多的干扰
+2. Anchor的设置需要手动去设计，对不同数据集也需要不同的设计，相当麻烦，也不符合DNN的设计思想
+3. Anchor的[匹配机制](https://zhida.zhihu.com/search?content_id=167339693&content_type=Article&match_order=1&q=%E5%8C%B9%E9%85%8D%E6%9C%BA%E5%88%B6&zhida_source=entity)使得极端尺度(特别大和特别小的object)被匹配到的频率相对于大小适中的object被匹配到的频率更低，DNN在学习的时候不太容易学习好这些极端样本
+4. Anchor的庞大数量使得存在严重的不平衡问题，这里就涉及到一个采样的过程，实际上，类似于[Focal loss](https://zhida.zhihu.com/search?content_id=167339693&content_type=Article&match_order=1&q=Focal+loss&zhida_source=entity)的策略并不稳定，而且采样中有很多坑，今年的Libra R-CNN有个改进点就是采样时候的IOU是不平衡的，实际上这种平衡广泛存在，例如不同的类别、尺度等等，有着很多隐藏问题
+
+基于上述原因，很多人做出了改进，提出了Anchor Free的方法：
+
+基于Anchor-based的方法在特征图的每个位置设置尺寸大小不一的锚点框，预测每个锚点盒中具有目标对象的概率，并调整锚盒的大小以匹配该对象。基于Anchor-free的方法，不需要精心设计锚盒的大小形状以适应目标对象，节省了大量的计算时间。Anchor-free的目标检测算法发展时间线如下图b:
+
+
+##### Ans3
+一些CNN网络中设计比较精巧而又实用的“插件”。所谓“插件”，就是不改变网络主体结构， 可以很容易嵌入到主流网络当中，提高网络提取特征的能力，能够做到"即插即用"。常用的有：ASPP、Non-local、SE、CBAM、DCNv1&v2、CoordConv、Ghost、RFB、ASFF
+
+
+##### Ans4
+
+**简述InceptionV1到V4的网络、区别、改进**
+
+Inceptionv1的核心就是把googlenet的某一些大的卷积层换成1_1, 3_3, 5*5的小卷积，这样能够大大的减小权值参数数量。
+
+inception V2在输入的时候增加了batch_normal，所以他的论文名字也是叫batch_normal，加了这个以后训练起来收敛更快，学习起来自然更高效，可以减少dropout的使用。
+
+inception V3把googlenet里一些7_7的卷积变成了1_7和7_1的两层串联，3_3的也一样，变成了1_3和3_1，这样加速了计算，还增加了网络的非线性，减小过拟合的概率。另外，网络的输入从224改成了299.
+
+inception v4实际上是把原来的inception加上了resnet的方法，从一个节点能够跳过一些节点直接连入之后的一些节点，并且残差也跟着过去一个。另外就是V4把一个先1_1再3_3那步换成了先3_3再1_1.
+
+论文说引入resnet不是用来提高深度，进而提高准确度的，只是用来提高速度的。

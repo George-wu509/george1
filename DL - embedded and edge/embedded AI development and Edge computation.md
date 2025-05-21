@@ -1,5 +1,5 @@
 
-詳細解釋「嵌入式 AI 開發 (Embedded AI Development)」與「邊緣運算 (Edge Computation)」的理論、技術細節以及相關的重要 AI 模型與技術。
+詳細解釋「<mark style="background: #BBFABBA6;">嵌入式 AI 開發 (Embedded AI Development)</mark>」與「<mark style="background: #FFF3A3A6;">邊緣運算 (Edge Computation)</mark>」的理論、技術細節以及相關的重要 AI 模型與技術。
 
 ---
 

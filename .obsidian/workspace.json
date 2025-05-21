@@ -6,10 +6,10 @@
       {
         "id": "ecf160e69985903b",
         "type": "tabs",
-        "dimension": 49.50980392156864,
+        "dimension": 49.13394919168591,
         "children": [
           {
-            "id": "e74fd712f60d179a",
+            "id": "61477e118db04a3f",
             "type": "leaf",
             "state": {
               "type": "markdown",
@@ -23,29 +23,43 @@
             }
           },
           {
-            "id": "862b251b5faedfd4",
+            "id": "bd16064419f9f115",
             "type": "leaf",
             "state": {
               "type": "markdown",
               "state": {
-                "file": "DL - YOLO and object detection/Object detection - summary.md",
+                "file": "DL - CNN/CNN - Setting.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "Object detection - summary"
+              "title": "CNN - Setting"
+            }
+          },
+          {
+            "id": "37fe3c6756c99246",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "DL - CNN/Focal Loss.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "Focal Loss"
             }
           }
         ],
-        "currentTab": 1
+        "currentTab": 2
       },
       {
         "id": "e15afe3e657ad502",
         "type": "tabs",
-        "dimension": 50.49019607843136,
+        "dimension": 50.86605080831409,
         "children": [
           {
-            "id": "daf0c7f6568571e5",
+            "id": "8939382339331fd6",
             "type": "leaf",
             "state": {
               "type": "markdown",
@@ -59,49 +73,21 @@
             }
           },
           {
-            "id": "0b8bd0de6bd7d66d",
+            "id": "b6bf86c690f07f1d",
             "type": "leaf",
             "state": {
               "type": "markdown",
               "state": {
-                "file": "DL - CNN/AI model Summary.md",
+                "file": "DL - CNN/CNN - Setting.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "AI model Summary"
-            }
-          },
-          {
-            "id": "7205ff9537504aa3",
-            "type": "leaf",
-            "state": {
-              "type": "markdown",
-              "state": {
-                "file": "Tool - others/Github.md",
-                "mode": "source",
-                "source": false
-              },
-              "icon": "lucide-file",
-              "title": "Github"
-            }
-          },
-          {
-            "id": "f1b3353f5aed2f95",
-            "type": "leaf",
-            "state": {
-              "type": "markdown",
-              "state": {
-                "file": "test.md",
-                "mode": "source",
-                "source": false
-              },
-              "icon": "lucide-file",
-              "title": "test"
+              "title": "CNN - Setting"
             }
           }
         ],
-        "currentTab": 3
+        "currentTab": 1
       }
     ],
     "direction": "vertical"
@@ -124,7 +110,7 @@
                 "autoReveal": false
               },
               "icon": "lucide-folder-closed",
-              "title": "Files"
+              "title": "檔案瀏覽器"
             }
           },
           {
@@ -240,47 +226,53 @@
   },
   "left-ribbon": {
     "hiddenItems": {
-      "switcher:Open quick switcher": false,
-      "graph:Open graph view": false,
-      "canvas:Create new canvas": false,
-      "daily-notes:Open today's daily note": false,
-      "templates:Insert template": false,
-      "command-palette:Open command palette": false,
+      "switcher:開啟快速切換": false,
+      "graph:查看關聯圖": false,
+      "canvas:建立新畫布": false,
+      "daily-notes:開啟今天的每日筆記": false,
+      "templates:插入模板": false,
+      "command-palette:開啟命令面板": false,
       "table-editor-obsidian:Advanced Tables Toolbar": false
     }
   },
-  "active": "f1b3353f5aed2f95",
+  "active": "37fe3c6756c99246",
   "lastOpenFiles": [
-    "Tool - others/Github.md",
-    "test.md",
-    "DL - CNN/AI model Summary.md",
-    "@@ Interview prepare.md",
-    "DL - YOLO and object detection/Object detection - summary.md",
-    "DL - CNN/AI model的量化指標.md",
-    "DL - YOLO and object detection/Object detection on edge.md",
-    "DL - CNN/AI model Summary architecture.md",
-    "DL - CNN/CNN - Basic.md",
-    "Interview - ongoing/TP-Link Senior AI ML Computer Vision Engineer.md",
-    "DL - YOLO and object detection/YOLO.md",
-    "CVML - ML/Machine learning matlab.md",
-    "DL - Transformer and ViT/Transformer and ViT - Summary.md",
-    "DL - YOLO and object detection/Object detection and NMS.md",
+    "materials/Pasted image 20250521111435.png",
     "DL - CNN/CNN - Setting.md",
-    "DL - Segmentation/Image segmentation summary.md",
-    "DL - Tracking/Tracking and ReID.md",
-    "DL - Tracking/Tracking - Summary.md",
+    "DL - CNN/Regularization.md",
+    "DL - CNN/optimizer.md",
+    "DL - CNN/Dropout.md",
+    "DL - CNN/Activation funs.md",
+    "DL - CNN/Normalization and dropout.md",
+    "@@ Interview prepare.md",
+    "Code - AI/PyTorch - interview.md",
+    "CVML - ML/Machine learning matlab.md",
     "CVML - Image CV/Traditional Computer Vision summary.md",
-    "DL - SAM/SAM - SAM.md",
-    "DL - MultiModal/MultiModal - Introduction.md",
+    "DL - CNN/vanishing gradient, exploding gradient, overfit.md",
+    "DL - CNN/CNN - Basic.md",
+    "DL - CNN/手撕项目代码.md",
     "DL - CNN/CNN architecture.md",
+    "DL - CNN/Hard Negative Mining.md",
     "DL - CNN/CNN.md",
-    "Smooth L1 Loss.md",
-    "Dice Loss.md",
-    "DL - CNN/Focal Loss.md",
-    "materials/Resnet_block.jpg",
-    "materials/summary.jpg",
-    "materials/Pasted image 20250501160939.png",
-    "materials/Pasted image 20250501152954.png",
+    "DL - CNN/Depthwise Separable Convolution.md",
+    "DL - CNN/1x1 conv.md",
+    "DL - CNN/AI model Summary architecture.md",
+    "DL - CNN/DarkNet.md",
+    "DL - CNN/lightweight CNN.md",
+    "DL - CNN/ResNet.md",
+    "DL - CNN/FCN.md",
+    "DL - CNN/AI model的量化指標.md",
+    "DL - Tracking/Tracking and ReID.md",
+    "materials/Pasted image 20250520200351.png",
+    "materials/Pasted image 20250520022836.png",
+    "materials/Pasted image 20250520022248.png",
+    "materials/Pasted image 20250520000641.png",
+    "materials/Pasted image 20250518221233.png",
+    "materials/Pasted image 20250517151036.png",
+    "materials/Pasted image 20250517151016.png",
+    "materials/Pasted image 20250517004307.png",
+    "materials/Pasted image 20250517004124.png",
+    "materials/Pasted image 20250515125454.png",
     "DL - embedded and edge"
   ]
 }

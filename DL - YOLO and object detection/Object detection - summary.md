@@ -10,6 +10,10 @@ New:
 [RF-DETR](https://github.com/roboflow/rf-detr)：60.5 mAP + 6ms延迟，实时检测领域的新王者如何碾压YOLO？ [link](https://zhuanlan.zhihu.com/p/32205292924)
 
 
+|                 |     |
+| --------------- | --- |
+| [[### QA-list]] |     |
+
 ==================================================
 
 | **模型**        | **Backbone 類型**            | **是否保留 FC 層** | **說明**                                        |
@@ -23,8 +27,14 @@ New:
 | MobileNet-SSD | 自定義（MobileNet 衍生）          | 否             | 基於 MobileNet，移除 FC 層，輕量化設計，適配移動設備檢測。          |
 | DETR          | Transformer-based（無傳統 CNN） | 否             | 使用 Transformer 架構，無 FC 層，直接基於注意力機制進行檢測。       |
 
-[[R-CNN]]: VGG/ResNet 加上 RoI Pooling(或RPN + RoI Align) 
+[[R-CNN]]:    [[Mask R-CNN]]
+VGG/ResNet 加上 RoI Pooling(或RPN + RoI Align)   
 加上分類分支：FC+ Softmax,  回歸分支：FC + 邊框回歸
+
+**MaskRCNN**: 
+Backbone Model:   ResNet/VGG
+Neck Model:           FPN (Feature Pyramid network)
+Head Model:           RPN (Region proposal network) + ROI Align
 
 [[YOLO]]: Backbone: ResNet, Neck: FPN, Head: feature image切成網格單元, 在每個單元上進行回歸預測
 [[YOLOv8]] 支持instance seg, Obb, pose等. Backbone 用C2f模組 + conv(改成用3x3).   neck用PAT取代FPN, head model: Anchor-free Decoupled Head
@@ -39,7 +49,7 @@ New:
 
 **MobileNet-SSD**:  MobileNet (具有Depthwise Separable Convolution) 作為backbone network, SSD 的多尺度預測層被添加到 MobileNet 的不同層次的特徵圖
 
-[[DETR]]: DETR 是第一個應用Transformer到object detection的Model. 流程是1. 用CNN(ResNet)生成feature images, 再經過經典Encoder, Decoder, 然後接上head model輸出bounding box跟類別. 主要結構依賴於一個編碼器-解碼器變形金剛架構，直接預測一組目標邊界框。特點是不需要NMS（非極大值抑制），但訓練速度較慢。
+[[DETR]]: DETR 是第一個應用Transformer到object detection的Model. 流程是1. 用CNN(ResNet)生成feature images, 再經過經典Encoder, Decoder, 然後接上head model輸出bounding box跟類別. 主要結構依賴於一個Encoder-Decoder Transformer架構，直接預測一組目標邊界框。特點是不需要NMS（非極大值抑制），但訓練速度較慢。
 
 [[RT-DETR]]: (Real-Time DETR) : 對實時目標檢測進行優化。結構上融入了YOLO系列的設計理念，在編碼器部分大量使用了類似YOLO的backbone和neck，在解碼端做了針對性的優化，使其擁有更快的處理速度，同時保持了較高的檢測精度。著重於提高推理速度，適用於需要快速響應的應用場景。
 
@@ -254,3 +264,69 @@ https://www.zhihu.com/column/c_1178388040400302080
 
 《目标检测大杂烩》-第14章-浅析RT-DETR - Kissrabbit的文章 - 知乎
 https://zhuanlan.zhihu.com/p/626659049
+
+
+### QA-list
+
+| Q                                                                 | Ans |
+| ----------------------------------------------------------------- | --- |
+| DETR是怎么做的                                                         |     |
+| 能不能讲下二分图匹配（Sinkhorn原理）                                            |     |
+| 做NMS-free还有什么策略                                                   |     |
+| Coding>>> **NMS過程**                                               |     |
+| NMS的細節, SoftNMS跟NMS的差別                                            |     |
+| YOLOv4用到哪些优化方法？                                                   |     |
+| 谈谈YOLO系列的改进, 并且解释一下YOLO为什么可以这么快？                                  |     |
+| 介绍下NMS，并写出NMS的伪代码，和计算IOU的函数                                       |     |
+| 谈谈SSD中是如何确定正负样本的？                                                 |     |
+| 相比于Anchor-based方法，Anchor-free的优势在哪？                               |     |
+| faster RCNN原理介绍                                                   |     |
+| RPN（Region Proposal Network）网络的作用、实现细节                            |     |
+| 说一下RoI Pooling是怎么做的？有什么缺陷？有什么作用                                   |     |
+| Faster R-CNN是如何解决正负样本不平衡的问题？                                      |     |
+| faster-rcnn中bbox回归用的是什么公式，说一下该网络是怎么回归bbox的？                       |     |
+| 简述faster rcnn的前向计算过程 简述faster rcnn训练步骤                            |     |
+| Faster rcnn有什么不足的地方吗？如何改进？                                        |     |
+| 简要阐述一下One-Stage、Two-Stage模型                                       |     |
+| YOLOV1、YOLOV2、YOLOV3复述一遍 YOLOv1到v3的发展历程以及解决的问题                    |     |
+| 简要阐述一下FPN网络具体是怎么操作的 FPN网络的结构。                                     |     |
+| 简要阐述一下SSD网络, 阐述一下ssd和retinanet的区别                                 |     |
+| 简要阐述一下RetinaNet                                                   |     |
+| faster rcnn和yolo，ssd之间的区别和联系                                      |     |
+| 分析一下SSD,YOLO,Faster rcnn等常用检测网络对小目标检测效果不好的原因                      |     |
+| Coding>>> **IoU算法**                                               |     |
+| 讲一下目标检测优化的方向                                                      |     |
+| anchor设置的意义                                                       |     |
+| 如果只能修改RPN网络的话，怎么修改可以提升网络小目标检出率                                    |     |
+| 如何理解concat和add这两种常见的feature map特征融合方式                             |     |
+| 阐述一下如何检测小物体                                                       |     |
+| 阐述一下目标检测任务中的多尺度                                                   |     |
+| 如果有很长，很小，或者很宽的目标，应该如何处理目标检测中如何解决目标尺度大小不一的情况 小目标不好检测               |     |
+| 检测的框角度偏移了45度，这种情况怎么处理                                             |     |
+| YOLO、SSD和Faster-RCNN的区别，他们各自的优势和不足分别是什么？                          |     |
+| 介绍一下CenterNet的原理，它与传统的目标检测有什么不同点？                                 |     |
+| CenterNet中heatmap（热力图）如何生成？                                       |     |
+| 你最常用的几种目标检测算法是什么？为什么选择这些算法，你选择它们的场景分别是什么？                         |     |
+| yolov4和v5均引入了CSP结构，介绍一下它的原理和作用                                    |     |
+| EfficientDet为什么可以做到速度兼精度并存                                        |     |
+| 介绍Faster R-CNN和Cascade R-CNN                                      |     |
+| SSD相比于YOLO做了哪些改进？                                                 |     |
+| 了解哪些开源的移动端轻量型目标检测？                                                |     |
+| 目标检测单阶段和双阶段优缺点，双阶段的为什么比单阶段的效果要好？                                  |     |
+| 目标检测中如何处理正负样本不平衡的问题？                                              |     |
+| 和SSD比网络更加深了，虽然anchors比SSD少了许多，但是加深的网络深度明显会增加更多的计算量，那么为什么会比SSD快3倍？ |     |
+| 你认为当前目标检测算法发展的趋势是什么？现阶段存在什么难点？                                    |     |
+| DETR用二分图匹配实现label assignment，简述其过程                                |     |
+| 如何修改Yolov5目标检测，从而实现旋转目标检测？                                        |     |
+| 在目标Crowded的场景下，经常在两个真正目标中间会出现误检的原因?                               |     |
+| 如果在分类任务中几个类别有重叠（类间差异小）怎么办，如何设计网络结构                                |     |
+| Anchor-free的target assign怎么解决多个目标中心点位置比较靠近的问题                     |     |
+| 目标检测设置很多不同的anchor，能否改善小目标及非正常尺寸目标的性能，除计算速度外还存在什么问题                |     |
+| Focal loss的参数如何调，以及存在什么问题                                         |     |
+| Yolov5中的objectness的作用                                             |     |
+| 目标检测中旋转框IOU的计算方式                                                  |     |
+| DETR的检测算法的创新点                                                     |     |
+| FCOS如何解决重叠样本，以及centerness的作用                                      |     |
+
+一位算法工程师从30+场秋招面试中总结出的超强面经——目标检测篇（含答案）
+https://zhuanlan.zhihu.com/p/374017926

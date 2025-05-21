@@ -407,7 +407,7 @@ LBalanced=−∑iwiyilog⁡(y^i)\mathcal{L}_{Balanced} = - \sum_{i} w_i y_i \log
 
 ### **🔹 公式**
 
-LFocal=−∑i(1−y^i)γyilog⁡(y^i)\mathcal{L}_{Focal} = -\sum_{i} (1 - \hat{y}_i)^\gamma y_i \log(\hat{y}_i)LFocal​=−i∑​(1−y^​i​)γyi​log(y^​i​)
+$\Huge \mathcal{L}_{Focal} = -\sum_{i} (1 - \hat{y}_i)^\gamma y_i \log(\hat{y}_i)$
 
 - **γ\gammaγ 是焦點調整參數（通常 γ=2\gamma = 2γ=2）**
 - **困難樣本（預測錯誤）權重較大**，容易樣本權重較小。

@@ -16,13 +16,16 @@
 | 0.1(car) | 0.5(car) |     | 0      | 1(car) |
 | 0.8(car) | 0.7(car) |     | 1(car) | 1(car) |
 
-|                                   |                                                                                                       |
-| --------------------------------- | ----------------------------------------------------------------------------------------------------- |
-| IoU Loss                          | IoU Loss = 1 - IoU = 1 - (2/3)<br><br>>>>  **Total IoU Loss = Sum(IoU Loss) all pixel**               |
-| Dice Loss                         | Dice Loss = 1 - (2 x 2)/(2+3+e)<br><br>>>>  **Total Dice Loss = Sum(Dice Loss) all pixel**            |
-| Pixel-wise <br>Cross-Entropy Loss | CE Loss = -log(0.8)<br><br>>>>  **Total CE Loss = Sum(CE Loss) all pixel**                            |
-| Focal Loss                        | Focal Loss = -alpha (1-0.8)^r x log(0.8)<br><br>>>>  **Total Focal Loss = Sum(Focal Loss) all pixel** |
+|                                   |                                                                                                                                                                 |
+| --------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| IoU Loss                          | IoU Loss = <mark style="background: #FFF3A3A6;">1 - IoU</mark> = 1 - (2/3)<br><br>>>>  **Total IoU Loss = Sum(IoU Loss) all pixel**                             |
+| Dice Loss                         | Dice Loss = 1 - (2 x 2)/(2+3+e)<br><br>>>>  **Total Dice Loss = Sum(Dice Loss) all pixel**                                                                      |
+| Pixel-wise <br>Cross-Entropy Loss | CE Loss = <mark style="background: #FFF3A3A6;">-1 x log(0.8) </mark>    <- one pixel<br><br>>>>  **Total CE Loss = Sum(CE Loss) all pixel**                     |
+| Focal Loss                        | Focal Loss = <mark style="background: #FFF3A3A6;">-alpha (1-0.8)^r x log(0.8)</mark>  <- one pixel<br><br>>>>  **Total Focal Loss = Sum(Focal Loss) all pixel** |
 
+![[Pasted image 20250520000641.png]]
+
+![[Pasted image 20250520200351.png]]
 
 **二、由 Instance 或 Semantic Segmentation Model 的輸出計算損失**
 

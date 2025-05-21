@@ -8,7 +8,8 @@
 | 模型層面最佳化           | 1.1 更輕量的模型架構                                                                                                                                                                                                                                                                                                                                                 |
 |                   | 1.2 [[Depthwise Separable Convolution]]                                                                                                                                                                                                                                                                                                                      |
 |                   | [[### **1.3 剪枝 (Pruning)**]]                                                                                                                                                                                                                                                                                                                                 |
-|                   | [[### **1.4 知識蒸餾 (Knowledge Distillation)**]]                                                                                                                                                                                                                                                                                                                |
+|                   | 1.4  [[Knowledge Distillation]]                                                                                                                                                                                                                                                                                                                              |
+|                   | 1.5  [[Mixed Precision vs PTQ and QAT]]                                                                                                                                                                                                                                                                                                                      |
 |                   |                                                                                                                                                                                                                                                                                                                                                              |
 | 記憶體使用最佳化          | [[### **2.1 Mixed Precision (FP16) 計算**]]                                                                                                                                                                                                                                                                                                                    |
 |                   | [[### **2.2 Gradient Checkpointing**]]                                                                                                                                                                                                                                                                                                                       |
@@ -32,7 +33,7 @@
 |                   | [[### Nsight Systems 用在檢查訓練跟推理]]                                                                                                                                                                                                                                                                                                                             |
 |                   | [[### Nvidia Nsight Systems有哪些重要的information需要監控]]                                                                                                                                                                                                                                                                                                           |
 |                   |                                                                                                                                                                                                                                                                                                                                                              |
-|                   |                                                                                                                                                                                                                                                                                                                                                              |
+| [[### QA-list]]   |                                                                                                                                                                                                                                                                                                                                                              |
 
 |            | 最佳流程                                                                          |
 | ---------- | ----------------------------------------------------------------------------- |
@@ -280,6 +281,8 @@ loss = F.kl_div(F.log_softmax(student_output, dim=1),
                 F.softmax(teacher_output, dim=1), reduction='batchmean')
 
 ```
+
+
 
 ---
 
@@ -670,6 +673,15 @@ with trt.Builder(TRT_LOGGER) as builder:
 
 ```
 
+|                                                            |                                                                                                            |
+| ---------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| TRT_LOGGER = trt.Logger()                                  | 創建了一個 TensorRT 的日誌記錄器 (Logger) 的實例                                                                         |
+| 1. with trt.builder as **builder**                         | `Builder` 對象, 用於構建優化後的執行引擎 (engine)                                                                        |
+| 2. with builder.create_network() as **network**            | `Network` 用於定義你要在 TensorRT 中執行的計算圖。你可以手動向這個網路添加層 (layers) 和張量 (tensors)，或者像這個例子中一樣，從其他格式 (例如 ONNX) 導入模型定義。 |
+| 3. with trt.OnnxParser(network, TRT_LOGGER) as **parser**: | `OnnxParser` 用於解析符合 ONNX 格式的模型定義，並將其轉換為 TensorRT `Network` 對象中的對應層和張量                                      |
+| 4. with open("model.onnx", "rb") as **model_file**:        | 打開名為 `"model.onnx"` 的檔案                                                                                    |
+| 5. parser.parse(model_file.read())                         | 使用 OnnxParser 解析 ONNX 檔案的內容，並將其添加到 TensorRT Network 中                                                      |
+
 詳細解釋為什麼將 PyTorch 模型轉換為 TensorRT 格式，通常可以顯著加速深度學習模型的推理 (Inference) 過程。這個過程通常會涉及到 ONNX (Open Neural Network Exchange) 這個中間格式。
 
 **流程概覽：PyTorch -> ONNX -> TensorRT**
@@ -808,6 +820,181 @@ with trt.Builder(TRT_LOGGER) as builder:
 7. **使用 OnnxParser 解析 ONNX 檔案的內容，並將其添加到 TensorRT Network 中。**
 
 在執行完這段程式碼後，`network` 對象將會包含從 ONNX 模型解析出的計算圖。下一步通常是配置 `builder` 以指定優化級別、目標精度等，然後使用 `builder.build_engine(network, config)` 來構建 TensorRT 的執行引擎。這個引擎就可以被用於高效地執行模型的推理。
+
+Model inference
+
+這兩段程式碼分別展示了如何在 Python 和 C++ 環境下使用 TensorRT 引擎文件 (`.trt`) 進行模型推斷。它們的核心流程相似，但具體的 API 和語法有所不同。
+
+總而言之，這兩段程式碼都遵循了 TensorRT 推斷的標準流程：載入引擎 -> 創建執行上下文 -> 分配 GPU/CPU 緩衝區 -> 準備輸入數據並拷貝到 GPU -> 執行推斷 -> 將結果從 GPU 拷貝回 CPU -> 處理結果 -> 釋放資源。Python 版本藉助 `pycuda` 簡化了部分 CUDA 操作，而 C++ 版本則直接使用 TensorRT 和 CUDA Runtime C++ API。
+```python
+import tensorrt as trt
+import numpy as np
+import pycuda.driver as cuda
+import pycuda.autoinit # Important for initializing CUDA context
+
+# 1. Define a logger (TensorRT requires one)
+TRT_LOGGER = trt.Logger(trt.Logger.WARNING) # Or trt.Logger.INFO for more verbosity
+
+# 2. Function to load the engine
+def load_engine(engine_file_path):
+    with open(engine_file_path, "rb") as f, trt.Runtime(TRT_LOGGER) as runtime:
+        return runtime.deserialize_cuda_engine(f.read())
+
+# 3. Function to allocate buffers for input and output
+def allocate_buffers(engine):
+    inputs = []
+    outputs = []
+    bindings = []
+    stream = cuda.Stream() # Create a CUDA stream for asynchronous execution
+    for binding in engine:
+        binding_idx = engine.get_binding_index(binding)
+        size = trt.volume(engine.get_binding_shape(binding_idx)) * engine.max_batch_size
+        dtype = trt.nptype(engine.get_binding_dtype(binding))
+        # Allocate host and device buffers
+        host_mem = cuda.pagelocked_empty(size, dtype)
+        device_mem = cuda.mem_alloc(host_mem.nbytes)
+        # Append the device buffer to device bindings.
+        bindings.append(int(device_mem))
+        # Append to the appropriate list.
+        if engine.binding_is_input(binding):
+            inputs.append({'host': host_mem, 'device': device_mem, 'name': binding, 'shape': engine.get_binding_shape(binding_idx)})
+        else:
+            outputs.append({'host': host_mem, 'device': device_mem, 'name': binding, 'shape': engine.get_binding_shape(binding_idx)})
+    return inputs, outputs, bindings, stream
+
+# 4. Inference function
+def do_inference(context, bindings, inputs, outputs, stream, batch_size=1):
+    # Transfer input data to the GPU.
+    [cuda.memcpy_htod_async(inp['device'], inp['host'], stream) for inp in inputs]
+    # Run inference.
+    context.execute_async_v2(bindings=bindings, stream_handle=stream.handle) # Use execute_async_v2 for TensorRT 7+
+    # Transfer predictions back from the GPU.
+    [cuda.memcpy_dtoh_async(out['host'], out['device'], stream) for out in outputs]
+    # Synchronize the stream
+    stream.synchronize()
+    # Return host outputs
+    return [out['host'] for out in outputs]
+
+def main():
+    engine_file_path = "your_model.trt" # Path to your .trt file
+    
+    # --- Assume you have some input data ---
+    # Example: for a model expecting a 1x3x224x224 input
+    # This needs to match your model's input shape and data type
+    # input_shape_from_engine = (3, 224, 224) # Get this from engine.get_binding_shape()
+    # dummy_input_data = np.random.rand(1, *input_shape_from_engine).astype(np.float32).ravel() 
+    # Make sure the dtype matches what your model expects (e.g., np.float32)
+
+    with load_engine(engine_file_path) as engine:
+        print("Engine loaded.")
+        with engine.create_execution_context() as context:
+            print("Execution context created.")
+            inputs, outputs, bindings, stream = allocate_buffers(engine)
+            
+            # --- Prepare your input data ---
+            # Let's assume the first input binding is your image data
+            # And it's a batch of 1.
+            # The shape and dtype should match your model's input specification.
+            # For example, if your model input name is "input_tensor" and shape is (1, 3, 224, 224)
+            
+            # Find the input details (replace "actual_input_name_in_model" with your model's input layer name)
+            # You can get binding names using: [engine.get_binding_name(i) for i in range(engine.num_bindings)]
+            input_binding_name = None
+            for i in range(engine.num_bindings):
+                if engine.binding_is_input(i):
+                    input_binding_name = engine.get_binding_name(i)
+                    break
+            
+            if input_binding_name is None:
+                print("Could not find an input binding.")
+                return
+
+            print(f"Found input binding: {input_binding_name}")
+
+            input_idx = engine.get_binding_index(input_binding_name)
+            input_shape = context.get_binding_shape(input_idx) # Get shape for current profile if using dynamic shapes
+            
+            # If using dynamic shapes and multiple optimization profiles, select one:
+            # context.active_optimization_profile = 0 # Assuming profile 0
+            # input_shape = context.get_binding_shape(input_idx) 
+            # If you know your model has a fixed batch size, max_batch_size is used by allocate_buffers.
+            # If dynamic, ensure your context is set up for the specific input shape.
+
+            print(f"Expecting input shape (including batch dimension if fixed): {input_shape}")
+            
+            # Create dummy input data matching the expected shape and type
+            # Note: np.ravel() is used because pagelocked_empty creates a 1D array.
+            # Ensure your dummy_input_data has the correct total number of elements.
+            # Example: if input_shape is (1, 3, 224, 224)
+            dummy_input_batch_size = 1 # Or engine.max_batch_size if appropriate
+                                    # If using dynamic shapes, context.get_binding_shape includes batch size
+            
+            # Correct way to get the shape from the 'inputs' list after allocation
+            model_input = None
+            for inp in inputs:
+                if inp['name'] == input_binding_name: # Or check by index if you prefer
+                    model_input = inp
+                    break
+            
+            if model_input is None:
+                print(f"Could not find allocated buffer for input: {input_binding_name}")
+                return
+
+            # The shape in model_input['shape'] is what was used for allocation
+            # If max_batch_size was used, it might be (max_batch, C, H, W)
+            # If a specific profile was used for dynamic shapes, it's that profile's shape
+            print(f"Allocated input buffer shape for '{model_input['name']}': {model_input['shape']}")
+
+            # Prepare your actual input data (e.g., load and preprocess an image)
+            # The data must be flattened (ravel) to copy into the pagelocked host buffer.
+            # Example with random data:
+            # Adjust this to your actual data loading and preprocessing
+            actual_batch_size = 1 # For this example
+            # Assuming the shape from engine.get_binding_shape(input_idx) doesn't include batch for dynamic if context not set
+            # or refers to a single item if max_batch_size > 1
+            individual_input_shape = tuple(model_input['shape'][1:]) # e.g., (3, 224, 224)
+            
+            # Ensure the dummy data matches the expected input format and is flattened
+            # The `host_mem` buffer was allocated for `max_batch_size` or a specific profile size.
+            # You'll typically fill only the portion corresponding to `actual_batch_size`.
+            
+            # Create some dummy input data
+            # This should be your preprocessed image data
+            input_data_for_model = np.random.rand(actual_batch_size, *individual_input_shape).astype(trt.nptype(engine.get_binding_dtype(input_idx))).ravel()
+            
+            # Copy to the allocated host buffer
+            np.copyto(model_input['host'][:input_data_for_model.size], input_data_for_model)
+
+
+            print("Running inference...")
+            trt_outputs = do_inference(context, bindings=bindings, inputs=inputs, outputs=outputs, stream=stream)
+            
+            print("Inference complete.")
+            
+            # Process your outputs
+            # trt_outputs is a list of numpy arrays.
+            # The shape of each output array will correspond to your model's output layers.
+            for i, output_data in enumerate(trt_outputs):
+                output_shape_from_engine = outputs[i]['shape']
+                # Reshape the flat output array back to its original multidimensional shape if needed
+                # This depends on how allocate_buffers calculated 'size' and how you want to interpret it.
+                # Typically, for a batch_size of 1, you'd reshape to the output binding's shape.
+                # For max_batch_size > 1, you might need to slice or reshape carefully.
+                # Assuming batch size 1 for simplicity here:
+                num_elements_output = trt.volume(output_shape_from_engine)
+                output_data_reshaped = output_data[:num_elements_output].reshape(actual_batch_size, *output_shape_from_engine[1:]) # Or just output_shape_from_engine if it includes batch
+
+                print(f"Output {i} (Name: {outputs[i]['name']}):")
+                print(f"  Shape from engine: {output_shape_from_engine}")
+                print(f"  Reshaped output data shape: {output_data_reshaped.shape}")
+                # print(f"  Data (first few elements): {output_data_reshaped.flatten()[:10]}")
+
+
+if __name__ == '__main__':
+    main()
+    # PyCUDA cleanup is usually handled by pycuda.autoinit or can be done explicitly
+    # if not using autoinit (e.g., cuda.Context.pop())
+```
 
 
 ---
@@ -1429,9 +1616,7 @@ TensorRT 極大地簡化了深度學習模型在 NVIDIA GPU 上的高性能推�
 
 1. **包含 TensorRT 頭文件：** 在你的 C++ 代碼中包含必要的 TensorRT 頭文件。
     
-    C++
-    
-    ```
+    ```c++
     #include <iostream>
     #include <fstream>
     #include <vector>
@@ -1446,10 +1631,8 @@ TensorRT 極大地簡化了深度學習模型在 NVIDIA GPU 上的高性能推�
     請注意，`<NvUffParser.h>` 在較新的 TensorRT 版本中可能不再推薦使用，建議使用 `<NvOnnxParser.h>` 解析 ONNX 模型。
     
 2. **創建 TensorRT Logger：** TensorRT 需要一個 logger 來報告信息、警告和錯誤。你需要實現一個繼承自 `nvinfer1::ILogger` 的類。
-    
-    C++
-    
-    ```
+
+    ```c++
     class Logger : public nvinfer1::ILogger
     {
     public:
@@ -1474,10 +1657,8 @@ TensorRT 極大地簡化了深度學習模型在 NVIDIA GPU 上的高性能推�
     ```
     
 3. **反序列化 TensorRT Engine：** 從 `.trt` 文件中加載 TensorRT 引擎。
-    
-    C++
-    
-    ```
+
+    ```c++
     nvinfer1::IRuntime* runtime = nvinfer1::createInferRuntime(gLogger);
     if (!runtime) {
         std::cerr << "Failed to create TensorRT runtime." << std::endl;
@@ -1501,10 +1682,8 @@ TensorRT 極大地簡化了深度學習模型在 NVIDIA GPU 上的高性能推�
     ```
     
 4. **創建 Execution Context：** 為每個推理請求創建一個執行上下文。
-    
-    C++
-    
-    ```
+
+    ```c++
     nvinfer1::IExecutionContext* context = engine->createExecutionContext();
     if (!context) {
         std::cerr << "Failed to create TensorRT execution context." << std::endl;
@@ -1515,10 +1694,8 @@ TensorRT 極大地簡化了深度學習模型在 NVIDIA GPU 上的高性能推�
     ```
     
 5. **分配 Buffers：** 為模型的輸入和輸出分配 GPU 內存緩衝區。你需要知道模型的輸入和輸出形狀和數據類型，這些信息可以在構建 TensorRT 引擎時獲取。
-    
-    C++
-    
-    ```
+
+    ```c++
     const int inputIndex = engine->getBindingIndex(input_blob_name);
     const int outputIndex = engine->getBindingIndex(output_blob_name);
     
@@ -1566,10 +1743,8 @@ TensorRT 極大地簡化了深度學習模型在 NVIDIA GPU 上的高性能推�
     你需要實現 `getElementSize()` 函數來根據 `nvinfer1::DataType` 返回元素的大小（例如，FP32 為 4 字節）。
     
 6. **數據傳輸：** 將輸入數據從 CPU 傳輸到 GPU 輸入緩衝區。
-    
-    C++
-    
-    ```
+
+    ```c++
     cudaStatus = cudaMemcpy(inputBuffer, input_data.data(), inputSize, cudaMemcpyHostToDevice);
     if (cudaStatus != cudaSuccess) {
         std::cerr << "Failed to copy input data to device." << std::endl;
@@ -1583,18 +1758,14 @@ TensorRT 極大地簡化了深度學習模型在 NVIDIA GPU 上的高性能推�
     ```
     
 7. **執行推理：** 運行 TensorRT 引擎。
-    
-    C++
-    
-    ```
+
+    ```c++
     context->executeV2(bindings); // 或使用 execute() 如果你的模型沒有動態形狀
     ```
     
 8. **數據傳輸：** 將輸出數據從 GPU 輸出緩衝區傳輸回 CPU。
-    
-    C++
-    
-    ```
+
+    ```c++
     std::vector<float> output_data(outputSize / sizeof(float)); // 假設輸出是 float
     cudaStatus = cudaMemcpy(output_data.data(), outputBuffer, outputSize, cudaMemcpyDeviceToHost);
     if (cudaStatus != cudaSuccess) {
@@ -1611,10 +1782,8 @@ TensorRT 極大地簡化了深度學習模型在 NVIDIA GPU 上的高性能推�
 9. **後處理：** 對 `output_data` 進行後處理以獲取分割結果。
     
 10. **清理資源：** 釋放分配的 GPU 內存和 TensorRT 對象。
-    
-    C++
-    
-    ```
+
+    ```c++
     cudaFree(inputBuffer);
     cudaFree(outputBuffer);
     context->destroy();
@@ -1665,10 +1834,8 @@ TensorRT 極大地簡化了深度學習模型在 NVIDIA GPU 上的高性能推�
         - **使用 CUDA Kernels：** 編寫自定義的 CUDA kernels 來實現這些預處理操作。例如，您可以編寫一個 kernel 並行地對每個像素進行歸一化。
         - **使用 NPP (NVIDIA Performance Primitives)：** NPP 庫提供了許多優化的影像處理函數，可以直接在 GPU 上調用，例如 `nppiResize`、`nppiCrop`、`nppiConvert`、`nppiColorConvert` 等。使用 NPP 可以簡化開發並獲得較好的性能。
         - **範例 (使用 NPP 進行圖像歸一化)：**
-            
-            C++
-            
-            ```
+
+            ```c++
             #include <nppi_arithmetic_functions.h>
             // 假設 d_input 是 GPU 上的輸入圖像數據 (float)，d_output 是輸出
             NppiSize roiSize = {width, height};
@@ -1691,10 +1858,8 @@ TensorRT 極大地簡化了深度學習模型在 NVIDIA GPU 上的高性能推�
         - **使用 CUDA Kernels：** 編寫自定義的 CUDA kernels 來處理分割掩膜。例如，一個二值化的 kernel 可以並行地比較每個像素的值和閾值。
         - **使用 NPP：** NPP 也提供了針對二值圖像和形態學操作的函數，例如 `nppiThreshold`、`nppiErode`、`nppiDilate` 等。
         - **範例 (使用 CUDA Kernel 進行二值化)：**
-            
-            C++
-            
-            ```
+
+            ```c++
             __global__ void threshold_kernel(float* input, unsigned char* output, int width, int height, float threshold) {
                 int idxX = blockIdx.x * blockDim.x + threadIdx.x;
                 int idxY = blockIdx.y * blockDim.y + threadIdx.y;
@@ -2204,3 +2369,20 @@ Nsight Systems 提供了更全面、時間相關且具有上下文的性能分�
     - **優化方向：** 尋找更高效的函式庫或實現方式（例如使用 GPU 加速的函式庫）。
 
 總之，Nvidia Nsight Systems 提供了一個強大的平台，可以從系統級別到模型層級深入分析 AI 分割模型的推理性能，幫助您超越 `nvidia-smi` 和簡單斷點測量的局限，更精確地定位性能瓶頸並指導優化工作。
+
+
+### QA-list
+
+| Q                   | Ans |
+| ------------------- | --- |
+| fp16量化訓練的策略         |     |
+| 了解那些位置編碼及原理         |     |
+| 混合精度訓練是甚麼           |     |
+| SVD decomposition原理 |     |
+| TensorRT为什么能让模型跑更快  |     |
+|                     |     |
+|                     |     |
+|                     |     |
+|                     |     |
+|                     |     |
+|                     |     |

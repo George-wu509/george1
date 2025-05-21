@@ -1,6 +1,16 @@
 
 [https://github.com/George-wu509/WaveletSEG.git](https://github.com/George-wu509/WaveletSEG.git)
 
+接收github repo最新的update
+$ git pull
+
+將local端repo做的改變更新的github repo
+$ git add .
+$ git commit -m "update xxxxxxxx"
+$ git push
+
+-------------------------------------
+
 gh repo clone George-wu509/WaveletSEG
 
 CREATE A NEW REPOSITORY ON THE COMMAND LINE

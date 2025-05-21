@@ -4,6 +4,10 @@
 1. <mark style="background: #BBFABBA6;">基本殘差塊</mark> (Basic Block)用於較淺的ResNet (例如 ResNet-18 和 ResNet-34)。它通常由兩個 3x3 的卷積層組成，每個卷積層後跟批量歸一化 (Batch Normalization) 和 ReLU 激活函數.
 2. <mark style="background: #BBFABBA6;">瓶頸殘差塊</mark> (Bottleneck Block):** 用於更深的 ResNet (例如 ResNet-50 及以上)。它包含三個卷積層：一個 1x1 的卷積層用於降維 (減少通道數)，一個 3x3 的卷積層用於提取空間特徵，以及另一個 1x1 的卷積層用於升維 (恢復通道數)
 
+|                   |     |
+| ----------------- | --- |
+| [[##### QA-list]] |     |
+
 以下是 ResNet 的主要特點：
 
 **1. 殘差塊 (Residual Block): 核心創新**
@@ -25,6 +29,10 @@
 - 更深的網路通常具有更強的特徵提取能力，可以捕捉到更複雜的數據模式，從而在許多視覺任務上取得了顯著的性能提升。
 
 ![[Resnet_block.jpg]]
+
+Residual block:    3x3 - relu - 3x3
+Bottlenet block:   1x1 - relu - 3x3 - relu - 1x1
+
 
 **3. 不同的殘差塊變體:**
 
@@ -265,3 +273,13 @@ y=F(x)+xy = F(x) + xy=F(x)+x
 ---
 
 總結來說，**ResNet在訓練和推理階段都會使用殘差結構**。在訓練階段，殘差函數的學習涉及梯度計算和反向傳播；在推理階段，則使用已學習的參數進行推理，使得殘差結構能夠更高效地提取特徵，減少梯度消失的問題，特別適合訓練深層網絡。
+
+##### QA-list
+
+| Q                                                 | Ans |
+| ------------------------------------------------- | --- |
+| shortcut-connect(使用残差网络Residual network)          |     |
+| resnet相比于之前的卷积神经网络模型中，最大的改进点是什么？，解决了什么问题          |     |
+| Resnet为啥能解决梯度消失，怎么做的，能推导吗？                        |     |
+| resnet第二个版本做了哪些改进，Resnet性能最好的变体是哪个，结构是怎么样的，原理是什么？ |     |
+| DenseNet为什么比ResNet有更强的表达能力？                       |     |

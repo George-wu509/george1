@@ -1,6 +1,13 @@
 
+
+|                 |     |
+| --------------- | --- |
+| [[### QA-list]] |     |
+
+
 GeneralizedRCNN      Base-RCNN-FPN
 ![[Pasted image 20240912132028.png]]ResNet50
+
 ![[Pasted image 20240912132832.png]]
 
 Reference:
@@ -22,3 +29,12 @@ Reference:
 [https://medium.com/@hirotoschwert/digging-into-detectron-2-part-3-1ecc27efc0b2](https://medium.com/@hirotoschwert/digging-into-detectron-2-part-3-1ecc27efc0b2)
 
 [https://dinghye.gitee.io/2020/11/01/Detectron2DataLoader/](https://dinghye.gitee.io/2020/11/01/Detectron2DataLoader/)
+
+
+
+### QA-list
+
+| Q                | Ans |
+| ---------------- | --- |
+| Rol pooling 實現細節 |     |
+| Rol align 實現細節   |     |

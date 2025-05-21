@@ -11,6 +11,11 @@
 | others                                                                                                                                                           | [[### Bias-Variance Tradeoff]]                                                                                                                                                                                                                                                |
 |                                                                                                                                                                  |                                                                                                                                                                                                                                                                               |
 
+|                   |     |
+| ----------------- | --- |
+| [[##### QA-list]] |     |
+
+
 Ref: [機器學習: Ensemble learning之Bagging、Boosting和AdaBoost](https://chih-sheng-huang821.medium.com/%E6%A9%9F%E5%99%A8%E5%AD%B8%E7%BF%92-ensemble-learning%E4%B9%8Bbagging-boosting%E5%92%8Cadaboost-af031229ebc3)
 
 
@@ -347,3 +352,98 @@ E[(y−f^​(x))2]=Bias(f^​(x))2+Variance(f^​(x))+σϵ2​
 偏差-方差權衡告訴我們，在選擇模型時，需要考慮模型的複雜度，以在偏差和方差之間找到一個平衡點。過於簡單的模型 (高偏差、低方差) 會欠擬合，而過於複雜的模型 (低偏差、高方差) 則容易過擬合。我們的目標是選擇一個複雜度適中的模型，使其既能捕捉到數據的真實模式 (低偏差)，又不會過度學習訓練數據中的噪聲 (低方差)，從而獲得良好的泛化能力。
 
 在實踐中，我們通常會使用交叉驗證等技術來評估不同模型複雜度的性能，並選擇在驗證集上表現最好的模型，以期在偏差和方差之間取得一個好的平衡。
+
+
+##### QA-list
+
+| Q                          | Ans            |
+| -------------------------- | -------------- |
+| 實現k-means                  |                |
+| Bagging和Boosting的区别？       | [[##### Ans2]] |
+| LR(逻辑回归)和SVM的联系和区别？        | [[##### Ans3]] |
+| 逻辑回归和线性回归的联系和区别            |                |
+| LR的损失函数                    |                |
+| K-means聚类的原理以及过程？怎么衡量相似度的？ |                |
+| XGBoost的正则项是什么？            |                |
+| K-means和EM算法的关系            |                |
+| 长尾问题怎么处理？                  | [[##### Ans9]] |
+| SVM的损失函数是什么？具体形式？          |                |
+| SVM的核函数了解哪些？为什么要用核函数？      |                |
+| SVM如何解决线性不可分问题？            |                |
+| LR和SVM介绍+区别，什么场景用SVM比较好    |                |
+|                            |                |
+
+
+##### Ans2
+
+_**【3】Bagging和Boosting的区别？**_
+### [随机森林](https://zhida.zhihu.com/search?content_id=167439930&content_type=Article&match_order=1&q=%E9%9A%8F%E6%9C%BA%E6%A3%AE%E6%9E%97&zhida_source=entity)属于集成学习(ensemble learning)中的bagging算法，在集成算法中主要分为bagging算法与boosting算法，
+
+### Bagging算法(套袋法)
+
+- bagging的算法过程如下：
+
+1. 从原始样本集中使用Bootstraping 方法随机抽取n个训练样本，共进行k轮抽取，得到k个训练集（k个训练集之间相互独立，元素可以有重复）。
+2. 对于n个训练集，我们训练k个模型，（这个模型可根据具体的情况而定，可以是[决策树](https://zhida.zhihu.com/search?content_id=167439930&content_type=Article&match_order=1&q=%E5%86%B3%E7%AD%96%E6%A0%91&zhida_source=entity)，KNN等）
+3. 对于分类问题：由投票表决产生的分类结果；对于回归问题，由k个模型预测结果的均值作为最后预测的结果（所有模型的重要性相同）。
+
+### Boosting（提升法）
+
+- boosting的算法过程如下：
+
+1. 对于训练集中的每个样本建立权值wi，表示对每个样本的权重， 其关键在于对于被错误分类的样本权重会在下一轮的分类中获得更大的权重（错误分类的样本的权重增加）。
+2. 同时加大分类 误差概率小的弱分类器的权值，使其在表决中起到更大的作用，减小分类误差率较大弱分类器的权值，使其在表决中起到较小的作用。每一次迭代都得到一个弱分类器，需要使用某种策略将其组合，最为最终模型，(adaboost给每个迭代之后的弱分类器一个权值，将其线性组合作为最终的分类器,误差小的分类器权值越大。)
+
+  
+
+### Bagging和Boosting 的主要区别
+
+- **样本选择上:** Bagging采取Bootstraping的是随机有放回的取样，Boosting的每一轮训练的样本是固定的，改变的是每个样本的权重。
+- **样本权重上：**Bagging采取的是均匀取样，且每个样本的权重相同，Boosting根据错误率调整样本权重，错误率越大的样本权重会变大
+- **预测函数上：**Bagging所有的预测函数权值相同，Boosting中误差越小的预测函数其权值越大。
+- **[并行计算](https://zhida.zhihu.com/search?content_id=167439930&content_type=Article&match_order=1&q=%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97&zhida_source=entity):** Bagging 的各个预测函数可以并行生成;Boosting的各个预测函数必须按照顺序迭代生成.
+
+### 将决策树与以上框架组合成新的算法
+
+- Bagging + 决策树 = 随机森林
+- AdaBoost + 决策树 = 提升树
+- gradient + 决策树 = GDBT
+
+
+##### Ans3
+_**【5】LR(逻辑回归)和SVM的联系和区别？**_
+
+- **联系：**
+
+- LR和SVM都可以处理分类问题，且一般都用于处理线性二分类问题
+- 两个方法都可以增加不同的正则化项，如L1、L2[正则化项](https://zhida.zhihu.com/search?content_id=167439930&content_type=Article&match_order=2&q=%E6%AD%A3%E5%88%99%E5%8C%96%E9%A1%B9&zhida_source=entity)
+
+- **区别：**
+
+- LR是参数模型，SVM是非参数模型
+- 从损失函数来看，LR使用的是**[交叉熵](https://zhida.zhihu.com/search?content_id=167439930&content_type=Article&match_order=1&q=%E4%BA%A4%E5%8F%89%E7%86%B5&zhida_source=entity)损失函数**，SVM使用的**hinge损失函数**，这两个损失函数的目的都是**增加对分类影响较大的样本点的权重，减小与分类关系比较小的数据点的权重。**
+- SVM的处理方法只考虑**支持向量**，也就是只考虑和分类最相关的少数样本点来学习分类器。而逻辑回归通过**非线性映射**，大大减小了离分离超平面远的样本点权重，相对提升了与分类最相关的样本点的权重。
+- LR模型相对来说简单好理解，一般用于大规模的线性分类。SVM的理解和优化比较复杂，在处理复制非线性分类时，使用核技巧来计算优势明显。
+- LR能做的SVM也能做，但可能准确率是上有问题，但SVM能做的LR做不了。
+
+
+##### Ans9
+
+**什么是长尾问题？**
+
+[长尾效应](https://zhida.zhihu.com/search?content_id=167439930&content_type=Article&match_order=1&q=%E9%95%BF%E5%B0%BE%E6%95%88%E5%BA%94&zhida_source=entity)本质上就是**数据类别不均衡**导致**少部分类别占大多数样本**，而**大多数类别只有小部分样本**，在数量分布图上呈现出长长的尾巴的现象。一般的解决办法是人工平衡类别。标签集中，部分标签与很多文本样本相关联，但是还有一些标签与之相关联性非常少，甚至说没有和文本样本相关联，可以理解为长尾问题。
+
+**如何处理？**
+
+其实本质上是信息不足，那么可以从补充信息的角度去思考，比如对于[文本分类](https://zhida.zhihu.com/search?content_id=167439930&content_type=Article&match_order=1&q=%E6%96%87%E6%9C%AC%E5%88%86%E7%B1%BB&zhida_source=entity)问题，可以尝试着将标签集的更多信息，比如层级信息等等，放入模型中，让模型有更多的信息可以去学习，从而弥补信息不足的问题。那么与这种思考方式类似的，还有过采样，欠采样的方式来平衡数据集分布。
+
+如果从集成学习的角度来说，比如boosting中的投票里的各个基分类器的权值来考虑，我们也可以给这些标签设置不一样的权值；并且集成学习本身也可以在一定程度上解决长尾问题。
+
+还有很多处理思路，我觉得有效的其实就是，更偏向于学术界的创新思路了，比如重构文本与标签的对应关系，比如原来是文本预测其多个标签，其实可以重构为文本与多个标签的匹配问题，有不少论文也是这样处理的，同时也会解决全连接层性价比低的问题，这些方法是真正有效能够从根本上解决的，之前所说的过采样、[欠采样](https://zhida.zhihu.com/search?content_id=167439930&content_type=Article&match_order=2&q=%E6%AC%A0%E9%87%87%E6%A0%B7&zhida_source=entity)等等方法都是缓兵之计，从根本上解决问题，才是解决问题。
+
+可以总的分为以下几种方法：
+
+- **Re-sampling：**主要是**在训练集上实现样本平衡**，如对tail中的类别样本进行过采样，或者对head类别样本进行欠采样。基于重采样的解决方案适用于检测框架，但可能会导致训练时间增加以及对tail类别的过度拟合风险。
+- **Re-weighting：**主要在训练loss中，给不同的类别的loss**设置不同的权重**，对tail类别loss设置更大的权重。但是这种方法对超参数选择非常敏感，并且由于难以处理特殊背景类（非常多的类别）而不适用于检测框架。
+- **Learning strategy：**有专门为解决少样本问题涉及的学习方法可以借鉴，如：meta-learning、[metric learning](https://zhida.zhihu.com/search?content_id=167439930&content_type=Article&match_order=1&q=metric+learning&zhida_source=entity)、transfer learing。另外，还可以**调整训练策略**，将训练过程分为两步：第一步不区分head样本和tail样本，对模型正常训练；第二步，设置小的学习率，对第一步的模型使用各种样本平衡的策略进行finetune。
+- 综合使用以上策略
