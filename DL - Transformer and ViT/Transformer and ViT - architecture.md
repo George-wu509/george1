@@ -57,25 +57,106 @@ Encoder的主要作用是將輸入序列轉換為一個連續的表示(也稱為
 
 這是一個簡單的全連接前饋網絡,用於進一步處理自注意力層的輸出。它通常包含兩個線性變換,中間有一個非線性激活函數(如ReLU)。每個子層後都有一個殘差連接和層歸一化操作,以幫助訓練更深的網絡。
 
+
 ## Decoder的結構和原理
 
-Decoder的作用是根據encoder的輸出生成目標序列。它的結構與encoder類似,但有一些關鍵的區別:
+### Transformer 的 Decoder Block
 
-1. 掩蔽的多頭自注意力機制
-2. 編碼器-解碼器注意力機制
-3. 前饋神經網絡
+Transformer 的 Decoder Block 比 Encoder Block 稍微複雜一些，因為它需要處理**兩個**注意力機制，並且在自注意力層中加入了一個「Mask」機制。
 
-## 掩蔽的多頭自注意力機制
 
-這個機制與encoder中的類似,但增加了一個掩蔽操作,防止當前位置注意到未來的位置。這確保了模型在生成每個輸出時只能依賴於已經生成的輸出。
+### Decoder Block 的組成順序
 
-## 編碼器-解碼器注意力機制
+一個標準的 Transformer Decoder Block 包含以下部分，順序如下：
 
-這個機制允許decoder關注encoder的輸出。它使用decoder的輸出作為查詢,encoder的輸出作為鍵和值。
+1. **Normalization Layer (LayerNorm)**
+    
+    - 首先對來自上一個Decoder層的輸入（或第一個Decoder層的目標序列嵌入+位置編碼）進行歸一化。
+2. <mark style="background: #BBFABBA6;">**Masked Multi-Head Self-Attention (Masked MSA)**</mark>
+    
+    - 經過歸一化後的數據進入「帶遮罩的多頭自注意力層」。這是Decoder特有的部分。
+    - 它對**目標序列**進行自注意力計算。
+3. **Skip Connection 1**
+    
+    - 將Masked MSA層的輸出與Masked MSA層的**輸入**（即第1步Normalization之前的輸入）相加。
+4. **Normalization Layer (LayerNorm)**
+    
+    - 對第一個Skip Connection的結果進行第二次歸一化。
+5. <mark style="background: #FF5582A6;">**Multi-Head Cross-Attention (Encoder-Decoder Attention)**</mark>
+    
+    - 歸一化後的數據作為**查詢 (Query, Q)** 輸入到這個層。
+    - **鍵 (Key, K)** 和 **值 (Value, V)** 來自**Encoder Block 的最終輸出**。
+    - 這一層讓Decoder能夠「關注」Encoder處理過的**輸入序列**的相關部分。
+6. **Skip Connection 2**
+    
+    - 將Cross-Attention層的輸出與Cross-Attention層的**輸入**（即第4步Normalization之前的輸入）相加。
+7. **Normalization Layer (LayerNorm)**
+    
+    - 對第二個Skip Connection的結果進行第三次歸一化。
+8. <mark style="background: #FFF3A3A6;">**Feed-Forward Network (FFN)**</mark>
+    
+    - 歸一化後的數據進入前饋網路。
+9. **Skip Connection 3**
+    
+    - 將FFN層的輸出與FFN層的**輸入**（即第7步Normalization之前的輸入）相加。
 
-## 前饋神經網絡
+```
+Decoder Input
+    |
+    V
+LayerNorm
+    |
+    V
+Masked Multi-Head Self-Attention ----> Add (Skip Connection 1)
+    ^                               |
+    |_______________________________|
 
-與encoder中的相同。
+    |
+    V
+LayerNorm
+    |
+    V
+Multi-Head Cross-Attention <---- Encoder Output (K, V) ----> Add (Skip Connection 2)
+    ^                               |
+    |_______________________________|
+
+    |
+    V
+LayerNorm
+    |
+    V
+Feed-Forward Network ----> Add (Skip Connection 3)
+    ^                            |
+    |____________________________|
+
+    |
+    V
+Decoder Output
+
+```
+
+### Decoder Block 額外需要的部分及其原因
+
+Decoder Block 相較於 Encoder Block，有兩個顯著的差異：
+
+1. **Masked Multi-Head Self-Attention (帶遮罩的自注意力)**
+    
+    - **為什麼需要 Masked？**
+        - Decoder 的主要任務是**生成序列（例如，翻譯目標語言的句子）**。在生成一個詞時，它**不能看到未來**的詞彙。例如，在翻譯句子「我愛你」時，當模型生成「愛」這個詞時，它只能看到「我」，而不能看到「你」。
+        - **遮罩（Masking）**機制就是為了強制這種「單向性」。它會在計算自注意力時，將當前詞之後的所有詞的注意力權重設為無限小（或負無限大），這樣在Softmax後，這些未來詞的權重就會變成0，從而確保模型在預測當前位置的輸出時，只能依賴於當前位置及之前的信息。這模擬了真實世界中逐詞生成序列的過程。
+2. **Multi-Head Cross-Attention (Encoder-Decoder Attention，或稱交叉注意力)**
+    
+    - **為什麼需要 Cross-Attention？**
+        - Decoder 的任務是生成輸出序列，這個生成過程需要參考**輸入序列**的上下文信息。Cross-Attention 層正是實現這一點的橋樑。
+        - 在這個層中：
+            - **Query (Q)** 來自Decoder自己的上一個子層的輸出（代表當前Decoder正在處理的信息）。
+            - **Key (K)** 和 **Value (V)** 來自 **Encoder 的最終輸出**（代表整個輸入序列的編碼信息）。
+        - 通過這種機制，Decoder 可以在生成每個輸出詞時，動態地學習應該「關注」輸入序列的哪些部分，從而使得翻譯或生成結果更準確、更符合語境。例如，在機器翻譯中，當翻譯到目標語言的一個詞時，它會關注源語言句子中與該詞語義相關的部分。
+
+總之，Transformer 的 Decoder Block 之所以更複雜，是因為它不僅要理解自身已生成的序列（通過 Masked Self-Attention），還要同時理解和利用 Encoder 提供的原始輸入序列信息（通過 Cross-Attention），以實現上下文感知且逐次生成的任務。
+
+
+
 
 ## Encoder和Decoder的作用
 

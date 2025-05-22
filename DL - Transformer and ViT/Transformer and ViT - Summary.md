@@ -13,6 +13,44 @@
 | [[### QA list]]                            |                                                                                                             |
 
 ![[transformer.webp]]
+![[Pasted image 20250521144001.png]]
+(現在常用)在ViT的Encoder block裡面的內部順序是 (1) Layer normalization, (2) Multi-head self attention, (3) Layer normalization, (4) Feed-Forward Network(FFN) .
+Skip connection連接Layer normalization之前的輸入和Multi-head self attention的輸出.
+
+總結來說，ViT Encoder Block 的結構是：**LayerNorm -> Multi-Head Self-Attention + Skip Connection -> LayerNorm -> Feed-Forward Network + Skip Connection**。並且所有的Normalization都使用的是Layer Normalization。
+
+在Transformer的架構中，Normalization 層的位置確實有兩種常見的配置，分別稱為 **Post-LN (Post-Normalization)** 和 **Pre-LN (Pre-Normalization)**。
+
+### 兩種 Normalization 配置
+
+1. **Post-LN (Post-Normalization)**:
+    
+    - 這是在原始的 **"Attention Is All You Need"** 論文中採用的配置。
+    - **順序**:
+        
+        ```
+        Input ----> Multi-Head Self-Attention ----> Add (Skip Connection) ----> LayerNorm ----> Feed-Forward Network ----> Add (Skip Connection) ----> LayerNorm ----> Output
+          ^                                       ^
+          |_______________________________________|
+                                                  ^
+                                                  |_______________________________________|
+        ```
+        
+    - **在每個子層（MSA 和 FFN）之後**進行歸一化。
+2. **Pre-LN (Pre-Normalization)**:
+    
+    - 這是一種更現代、更常用的配置，特別是在較深的 Transformer 模型中。您在之前的問題中描述的順序就是這種 Pre-LN。
+    - **順序**:
+        
+        ```
+        Input ----> LayerNorm ----> Multi-Head Self-Attention ----> Add (Skip Connection) ----> LayerNorm ----> Feed-Forward Network ----> Add (Skip Connection) ----> Output
+          ^                               ^                                                    ^
+          |_______________________________|                                                    |_______________________________|
+        ```
+        
+    - **在每個子層（MSA 和 FFN）之前**進行歸一化。
+
+
 
 
 

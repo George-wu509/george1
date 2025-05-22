@@ -1,6 +1,15 @@
 
 ![[Pasted image 20250411224045.png]]
 
+|                            | Parms                      | FLOPs                                |
+| -------------------------- | -------------------------- | ------------------------------------ |
+| 卷积层 (Conv2D)               | (Kh​×Kw​×Cin​)×Cout​+Cout​ | 2×(Kh​×Kw​×Cin​)×Cout​×Hout​×Wout    |
+| Fully connection <br>layer | Nin​×Nout​+Nout​           | 2×Nin​×Nout​                         |
+| Batch <br>normalization    | 2×Cin​                     | 4×N×C×H×W    (dataset: N,C,H,W)      |
+| 池化层Pooling                 | 0                          | Hout​×Wout​×Cin     (height,width,c) |
+
+
+
 Reference:
 
 [1] CNN基础知识——卷积（Convolution）、填充（Padding）、步长(Stride)

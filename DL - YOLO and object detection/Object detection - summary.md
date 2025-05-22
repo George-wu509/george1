@@ -3,7 +3,7 @@
 从2014年为分割，之前的工作都是traditional detector，之后的都是DL-based detector。从以下三个方面介绍了相应的milestone detectors。
 
 1. Traditional detectors:  Viola Jones,  HOG,  DPM
-2. _CNN based Two-stage Detectors:  **RCNN series(RCNN, Fast RCNN, Faster RCNN)
+2. _CNN based Two-stage Detectors:  **RCNN series(RCNN, Fast RCNN, Faster RCNN)** (Anchor)
 3. CNN based One-stage Detectors:  **YOLO series,  FCOS, SSD,  RetainNet, EfficientDet, DETR, MobileNet-SSD**
 
 New: 
@@ -16,16 +16,16 @@ New:
 
 ==================================================
 
-| **模型**        | **Backbone 類型**            | **是否保留 FC 層** | **說明**                                        |
-| ------------- | -------------------------- | ------------- | --------------------------------------------- |
-| RCNN          | 類似 VGG/ResNet（預訓練分類模型）     | 是（需移除）        | 使用 VGG/ResNet，原始含 FC 層，檢測時移除 FC，保留特徵圖。        |
-| YOLO          | 自定義（如 Darknet/CSPDarknet）  | 否             | 全卷積設計，無 FC 層，專為檢測優化，直接輸出多尺度特徵圖。               |
-| FCOS          | 類似 VGG/ResNet（預訓練分類模型）     | 否             | 使用 ResNet/ResNeXt，移除 FC 層，搭配 FPN，直接適配無錨框檢測。   |
-| SSD           | 類似 VGG/ResNet（VGG 為主）      | 否             | 使用 VGG，移除 FC 層，附加多尺度特徵層，適配單階段檢測。              |
-| RetinaNet     | 類似 VGG/ResNet（ResNet 為主）   | 否             | 使用 ResNet，移除 FC 層，搭配 FPN 和 Focal Loss，提升檢測精度。 |
-| EfficientDet  | 自定義（EfficientNet 衍生）       | 否             | 基於 EfficientNet，移除 FC 層，加入 BiFPN，高效檢測設計。      |
-| MobileNet-SSD | 自定義（MobileNet 衍生）          | 否             | 基於 MobileNet，移除 FC 層，輕量化設計，適配移動設備檢測。          |
-| DETR          | Transformer-based（無傳統 CNN） | 否             | 使用 Transformer 架構，無 FC 層，直接基於注意力機制進行檢測。       |
+| **模型**        | **Backbone 類型**       | Stage | Anchor                 | **說明**                                        |
+| ------------- | --------------------- | ----- | ---------------------- | --------------------------------------------- |
+| RCNN          | VGG<br>ResNet<br>     | 2     | Yes                    | 使用 VGG/ResNet，原始含 FC 層，檢測時移除 FC，保留特徵圖。        |
+| YOLO          | Darknet<br>CSPDarknet | 1     | Yes <br><br>v8以上<br>NO | 全卷積設計，無 FC 層，專為檢測優化，直接輸出多尺度特徵圖。               |
+| FCOS          | VGG<br>ResNet         | 1     | NO                     | 使用 ResNet/ResNeXt，移除 FC 層，搭配 FPN，直接適配無錨框檢測。   |
+| SSD           | VGG<br>ResNet         | 1     | Yes                    | 使用 VGG，移除 FC 層，附加多尺度特徵層，適配單階段檢測。              |
+| RetinaNet     | ResNet                | 1     | Yes                    | 使用 ResNet，移除 FC 層，搭配 FPN 和 Focal Loss，提升檢測精度。 |
+| EfficientDet  | EfficientNet          | 1     | Yes                    | 基於 EfficientNet，移除 FC 層，加入 BiFPN，高效檢測設計。      |
+| MobileNet-SSD | MobileNet             | 1     | Yes                    | 基於 MobileNet，移除 FC 層，輕量化設計，適配移動設備檢測。          |
+| DETR          | Transformer           | 1     | NO                     | 使用 Transformer 架構，無 FC 層，直接基於注意力機制進行檢測。       |
 
 [[R-CNN]]:    [[Mask R-CNN]]
 VGG/ResNet 加上 RoI Pooling(或RPN + RoI Align)   
@@ -36,8 +36,8 @@ Backbone Model:   ResNet/VGG
 Neck Model:           FPN (Feature Pyramid network)
 Head Model:           RPN (Region proposal network) + ROI Align
 
-[[YOLO]]: Backbone: ResNet, Neck: FPN, Head: feature image切成網格單元, 在每個單元上進行回歸預測
-[[YOLOv8]] 支持instance seg, Obb, pose等. Backbone 用C2f模組 + conv(改成用3x3).   neck用PAT取代FPN, head model: Anchor-free Decoupled Head
+[[YOLO]]: Backbone: DarkNet(CSPDarkNet), Neck: PAN, Head: feature image切成網格單元, 在每個單元上進行回歸預測
+[[YOLOv8]] 支持instance seg, Obb, pose等. Backbone 用C2f模組 + conv(改成用3x3).   neck用PAN取代FPN, head model: Anchor-free Decoupled Head
 
 [[FCOS]]:  保留Faster RCNN的ResNet backbone + FPN但移除FC層, head model則改為anchor-free, 而且是在每個pixel做classification跟regression. (就是保留RCNN(但移除FC)但把head model改成anchor-free)
 

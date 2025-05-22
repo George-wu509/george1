@@ -6,7 +6,6 @@
       {
         "id": "ecf160e69985903b",
         "type": "tabs",
-        "dimension": 49.13394919168591,
         "children": [
           {
             "id": "61477e118db04a3f",
@@ -14,80 +13,15 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "@@ Interview prepare.md",
+                "file": "Tool - others/Github.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "@@ Interview prepare"
-            }
-          },
-          {
-            "id": "bd16064419f9f115",
-            "type": "leaf",
-            "state": {
-              "type": "markdown",
-              "state": {
-                "file": "DL - CNN/CNN - Setting.md",
-                "mode": "source",
-                "source": false
-              },
-              "icon": "lucide-file",
-              "title": "CNN - Setting"
-            }
-          },
-          {
-            "id": "37fe3c6756c99246",
-            "type": "leaf",
-            "state": {
-              "type": "markdown",
-              "state": {
-                "file": "DL - CNN/Focal Loss.md",
-                "mode": "source",
-                "source": false
-              },
-              "icon": "lucide-file",
-              "title": "Focal Loss"
+              "title": "Github"
             }
           }
-        ],
-        "currentTab": 2
-      },
-      {
-        "id": "e15afe3e657ad502",
-        "type": "tabs",
-        "dimension": 50.86605080831409,
-        "children": [
-          {
-            "id": "8939382339331fd6",
-            "type": "leaf",
-            "state": {
-              "type": "markdown",
-              "state": {
-                "file": "@@ Interview prepare.md",
-                "mode": "source",
-                "source": false
-              },
-              "icon": "lucide-file",
-              "title": "@@ Interview prepare"
-            }
-          },
-          {
-            "id": "b6bf86c690f07f1d",
-            "type": "leaf",
-            "state": {
-              "type": "markdown",
-              "state": {
-                "file": "DL - CNN/CNN - Setting.md",
-                "mode": "source",
-                "source": false
-              },
-              "icon": "lucide-file",
-              "title": "CNN - Setting"
-            }
-          }
-        ],
-        "currentTab": 1
+        ]
       }
     ],
     "direction": "vertical"
@@ -235,44 +169,44 @@
       "table-editor-obsidian:Advanced Tables Toolbar": false
     }
   },
-  "active": "37fe3c6756c99246",
+  "active": "61477e118db04a3f",
   "lastOpenFiles": [
-    "materials/Pasted image 20250521111435.png",
-    "DL - CNN/CNN - Setting.md",
-    "DL - CNN/Regularization.md",
-    "DL - CNN/optimizer.md",
-    "DL - CNN/Dropout.md",
-    "DL - CNN/Activation funs.md",
-    "DL - CNN/Normalization and dropout.md",
+    "DL - Performance optimization(CUDA)/Performance optimization summary.md",
     "@@ Interview prepare.md",
-    "Code - AI/PyTorch - interview.md",
-    "CVML - ML/Machine learning matlab.md",
-    "CVML - Image CV/Traditional Computer Vision summary.md",
-    "DL - CNN/vanishing gradient, exploding gradient, overfit.md",
-    "DL - CNN/CNN - Basic.md",
-    "DL - CNN/手撕项目代码.md",
-    "DL - CNN/CNN architecture.md",
-    "DL - CNN/Hard Negative Mining.md",
-    "DL - CNN/CNN.md",
-    "DL - CNN/Depthwise Separable Convolution.md",
-    "DL - CNN/1x1 conv.md",
+    "DL - Performance optimization(CUDA)/PTQ and QAT quantification.md",
+    "DL - Performance optimization(CUDA)/CUDA programming - Basic.md",
+    "DL - MLOPs/MLOPs - Introduction.md",
+    "DL - CV Generative Models/CV Generative Models - Introduction.md",
+    "DL - Transformer and ViT/Transformer and ViT - Summary.md",
     "DL - CNN/AI model Summary architecture.md",
-    "DL - CNN/DarkNet.md",
-    "DL - CNN/lightweight CNN.md",
-    "DL - CNN/ResNet.md",
-    "DL - CNN/FCN.md",
+    "DL - YOLO and object detection/Object detection - summary.md",
+    "DL - CNN/CNN - Basic.md",
+    "Code - AI/PyTorch - interview.md",
+    "CVML - Image CV/Traditional Computer Vision summary.md",
     "DL - CNN/AI model的量化指標.md",
+    "DL - CNN/AI model Summary.md",
+    "DL - Segmentation/Image segmentation summary.md",
+    "DL - YOLO and object detection/Object detection on edge.md",
     "DL - Tracking/Tracking and ReID.md",
+    "DL - Tracking/Tracking - Summary.md",
+    "DL - SAM/SAM - SAM.md",
+    "DL - UNet/U-Net.md",
+    "DL - CNN/CNN - Setting.md",
+    "DL - CNN/SSIM ,PSNR.md",
+    "DL - CNN/圖像質量增強loss.md",
+    "DL - CNN/實例分割loss.md",
+    "DL - CNN/目標檢測loss.md",
+    "DL - CNN/Smooth L1 Loss.md",
+    "materials/Pasted image 20250521155837.png",
+    "materials/Pasted image 20250521154904.png",
+    "materials/Pasted image 20250521144001.png",
+    "materials/Pasted image 20250521111435.png",
     "materials/Pasted image 20250520200351.png",
     "materials/Pasted image 20250520022836.png",
     "materials/Pasted image 20250520022248.png",
     "materials/Pasted image 20250520000641.png",
     "materials/Pasted image 20250518221233.png",
     "materials/Pasted image 20250517151036.png",
-    "materials/Pasted image 20250517151016.png",
-    "materials/Pasted image 20250517004307.png",
-    "materials/Pasted image 20250517004124.png",
-    "materials/Pasted image 20250515125454.png",
     "DL - embedded and edge"
   ]
 }

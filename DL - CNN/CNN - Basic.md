@@ -6,6 +6,7 @@
 | [[FCN]] 全卷積網絡       | (~ UNet) Fully Convolutional Network, Transpose layer(upsampling)                            |
 | [[DarkNet]]         | YOLO backbone, CSPDarkNet(Cross stage partial network)                                       |
 | [[lightweight CNN]] | MobileNet(Depthwise Separable Convolution), EfficientNet                                     |
+| VoVNet              | One-shot Aggregation(OSA) for Light-weight Object Detection                                  |
 |                     |                                                                                              |
 | others              | [[vanishing gradient, exploding gradient, overfit]]                                          |
 | [[### QA list]]     |                                                                                              |
@@ -26,7 +27,7 @@
 | Residual Block (ResNet)   | Skip connections |
 | Bottleneck Block (ResNet) |                  |
 | Attention Block           |                  |
-|                           |                  |
+| OSA Block(VoVNet)         |                  |
 
 | Others                          |                                                                                                                                       |
 | ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |

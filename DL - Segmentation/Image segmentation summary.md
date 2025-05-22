@@ -1,12 +1,13 @@
 
 [[###R-CNN系列模型性能列表]]
 
-| 模型             | 網路架構設計                                                  | Backbone           | Neck                | Head                                                 |
-| :------------- | :------------------------------------------------------ | :----------------- | :------------------ | :--------------------------------------------------- |
-| [[R-CNN]]      | Selective Search生成<br>候選區域<br>對每個區域提取CNN特徵<br>SVM分類和回歸。 | AlexNet<br>VGG16   |                     | 分類分支：FC+ Softmax<br>回歸分支：FC + 邊框回歸                   |
-| Fast R-CNN     | 整張影像CNN特徵提取<br>RoI Pooling層提取<br>候選區域特徵<br>全連接層和分類      | VGG16 or<br>ResNet | RoI Pooling         | 分類分支：FC+ Softmax<br>回歸分支：FC + 邊框回歸                   |
-| Faster R-CNN   | 引入RPN生成候選區域 <br>RoI Pooling層提取特徵<br>全連接層和分類器。           | ResNet             | RPN + <br>RoI Align | 分類分支：FC+ Softmax<br>回歸分支：FC + 邊框回歸                   |
-| [[Mask R-CNN]] | Faster R-CNN基礎上增加<br>分割掩碼分支 <br>FCN生成分割掩碼               | ResNet + <br>FPN   | RPN + <br>RoI Align | 分類分支: FCN + Softmax<br>回歸分支: FCN + 邊框回歸<br>分割分支: FCN |
+| 模型                                     | 網路架構設計                                                                                     | Backbone           | Neck                | Head                                                         |
+| :------------------------------------- | :----------------------------------------------------------------------------------------- | :----------------- | :------------------ | :----------------------------------------------------------- |
+| [[R-CNN]]                              | Selective Search生成<br>候選區域<br>對每個區域提取CNN特徵<br>SVM分類和回歸。                                    | AlexNet<br>VGG16   |                     | 分類分支：FC+ Softmax<br>回歸分支：FC + 邊框回歸                           |
+| Fast R-CNN                             | 整張影像CNN特徵提取<br>RoI Pooling層提取<br>候選區域特徵<br>全連接層和分類                                         | VGG16 or<br>ResNet | RoI Pooling         | 分類分支：FC+ Softmax<br>回歸分支：FC + 邊框回歸                           |
+| Faster R-CNN                           | 引入RPN生成候選區域 <br>RoI Pooling層提取特徵<br>全連接層和分類器。                                              | ResNet             | RPN + <br>RoI Align | 分類分支：FC+ Softmax<br>回歸分支：FC + 邊框回歸                           |
+| [[Mask R-CNN]]                         | Faster R-CNN基礎上增加<br>分割掩碼分支 <br>FCN生成分割掩碼                                                  | ResNet + <br>FPN   | RPN + <br>RoI Align | 分類分支: FCN + Softmax<br>回歸分支: FCN + 邊框回歸<br>分割分支: FCN         |
+| [[DL - RCNN/Centermask2\|Centermask2]] | Backbone model: VoVNet<br>Neck model: FPN<br><br>Head model: <br>FCOS box head<br>SAG-Mask | VoVNet + <br>FPN   |                     | 分類分支: FCOS box head<br>回歸分支: FCOS box head<br>分割分支: SAG-Mask |
 <1> [[FCN]](Fully convolutional Networks)是語義分割model(FCN等於經典CNN但將最後FN layer改成FCN layer). 而[[FCOS]]（Fully Convolutional One-Stage Object Detection）是object detection model
 
 <2>FCN 是語義分割的開創性架構，它將 CNN 的全連接層FC（Fully Connected layers）替換成卷積層，實現端到端的 pixel-wise 預測。
