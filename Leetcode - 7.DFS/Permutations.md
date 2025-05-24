@@ -67,33 +67,7 @@ Example:
 ]
 ```
 
-#### **具體實現代碼**
-
-```python
-def permute(nums):
-    result = []        # 存儲最終的排列結果
-    visited = [False] * len(nums)  # 用於記錄是否訪問過
-
-    def dfs(path):
-        if len(path) == len(nums):   # 遞歸結束條件
-            result.append(path[:])   # 保存當前排列
-            return
-        
-        for i in range(len(nums)):
-            if not visited[i]:       # 若當前數字未被訪問
-                visited[i] = True    # 標記為訪問
-                path.append(nums[i]) # 加入當前排列
-                dfs(path)            # 繼續遞歸
-                path.pop()           # 回溯，移除當前數字
-                visited[i] = False   # 重置訪問標記
-
-    dfs([])  # 初始化遞歸
-    return result
-
-```
-pass
-
-
+For compare
 ```python
 class Solution:
     def permute(self, nums):
@@ -120,7 +94,37 @@ nums = [1,2,3]
 result = sol.permute(nums)
 print(result)
 ```
-完整 
+
+
+
+
+
+#### **具體實現代碼**
+
+```python
+def permute(nums):
+    result = []        # 存儲最終的排列結果
+    visited = [False] * len(nums)  # 用於記錄是否訪問過
+
+    def dfs(path):
+        if len(path) == len(nums):   # 遞歸結束條件
+            result.append(path[:])   # 保存當前排列
+            return
+        
+        for i in range(len(nums)):
+            if not visited[i]:       # 若當前數字未被訪問
+                visited[i] = True    # 標記為訪問
+                path.append(nums[i]) # 加入當前排列
+                dfs(path)            # 繼續遞歸
+                path.pop()           # 回溯，移除當前數字
+                visited[i] = False   # 重置訪問標記
+
+    dfs([])  # 初始化遞歸
+    return result
+
+```
+pass
+
 
 
 

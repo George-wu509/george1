@@ -15,6 +15,7 @@ Lintcode 152
 输出: [[1],[2],[3],[4]]
 ```
 
+
 For compare
 ```python
 class Solution:
