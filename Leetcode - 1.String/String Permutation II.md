@@ -36,35 +36,23 @@ s = "aabb"
         self.dfs(chars, visited, [], permutations) 
         return permutations
 
-    # 递归的定义: 找到所有 permutation 开头的排列
     def dfs(self, chars, visited, permutation, permutations):
-        # 递归的出口：当我找到一个完整的排列
         if len(chars) == len(permutation):
             permutations.append(''.join(permutation))
             return    
         
-        # 递归的拆解：基于当前的前缀，下一个字符放啥
         for i in range(len(chars)):
-            # 同一个位置上的字符用过不能在用
             if visited[i]:
                 continue
-            # 去重：不同位置的同样的字符，必须按照顺序用。
-            # a' a" b
-            # => a' a" b => √
-            # => a" a' b => x
-            # 不能跳过一个a选下一个a
+
             if i > 0 and chars[i] == chars[i - 1] and not visited[i - 1]:
                 continue
 
-            # make changes
             visited[i] = True
             permutation.append(chars[i])
 
-            # 找到所有 permutation 开头的排列
-            # 找到所有 "a" 开头的
             self.dfs(chars, visited, permutation, permutations)
 
-            # backtracking
             permutation.pop()
             visited[i] = False
 ```
@@ -214,3 +202,46 @@ python
     - **字典樹 (`O(n!)`)**：適合更大規模的數據。
 
 **回溯法 (Backtracking) 是本題的最佳解法，透過 `visited` 陣列和去重條件，高效生成所有不重複的排列。** 🚀
+
+
+
+```python
+    def string_permutation2(self, str):
+        chars = sorted(list(str))
+        visited = [False] * len(chars)
+        permutations = []
+        self.dfs(chars, visited, [], permutations) 
+        return permutations
+
+    # 递归的定义: 找到所有 permutation 开头的排列
+    def dfs(self, chars, visited, permutation, permutations):
+        # 递归的出口：当我找到一个完整的排列
+        if len(chars) == len(permutation):
+            permutations.append(''.join(permutation))
+            return    
+        
+        # 递归的拆解：基于当前的前缀，下一个字符放啥
+        for i in range(len(chars)):
+            # 同一个位置上的字符用过不能在用
+            if visited[i]:
+                continue
+            # 去重：不同位置的同样的字符，必须按照顺序用。
+            # a' a" b
+            # => a' a" b => √
+            # => a" a' b => x
+            # 不能跳过一个a选下一个a
+            if i > 0 and chars[i] == chars[i - 1] and not visited[i - 1]:
+                continue
+
+            # make changes
+            visited[i] = True
+            permutation.append(chars[i])
+
+            # 找到所有 permutation 开头的排列
+            # 找到所有 "a" 开头的
+            self.dfs(chars, visited, permutation, permutations)
+
+            # backtracking
+            permutation.pop()
+            visited[i] = False
+```

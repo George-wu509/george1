@@ -70,8 +70,28 @@ nums = [1,2,3]
 ```
 [1,2,3]的子集有[],[1],[2],[3],[1,2],[1,3],[2,3],[1,2,3]。
 
-#### **代碼解析**
 
+For compare
+```python
+class Solution:
+    def run(self, nums):
+        results = []
+        nums.sort()
+        self.dfs(nums, 0, [], results)
+        return results
+     
+    def dfs(self, nums, k, num, results): 
+        results.append(num[:])
+        
+        for i in range(k, len(nums)):
+            num.append(nums[i])
+            self.dfs(nums, i+1, num, results)
+            del num[-1]
+```
+
+
+
+#### **代碼解析**
 ```python
 class Solution1:
     def subsets(self, nums):

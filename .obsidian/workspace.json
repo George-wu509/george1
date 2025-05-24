@@ -4,24 +4,90 @@
     "type": "split",
     "children": [
       {
-        "id": "ecf160e69985903b",
+        "id": "5a90fb280ca32b5a",
         "type": "tabs",
+        "dimension": 48.81093935790725,
         "children": [
           {
-            "id": "61477e118db04a3f",
+            "id": "04da055fe3a99625",
             "type": "leaf",
             "state": {
               "type": "markdown",
               "state": {
-                "file": "Tool - others/Github.md",
+                "file": "@@ Data Structure QA - simple.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "Github"
+              "title": "@@ Data Structure QA - simple"
+            }
+          },
+          {
+            "id": "0633de9eb9d545d0",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "Leetcode - 7.DFS/Permutations.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "Permutations"
+            }
+          },
+          {
+            "id": "aa571a93b0c51b99",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "Leetcode - 7.DFS/Subsets.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "Subsets"
             }
           }
-        ]
+        ],
+        "currentTab": 2
+      },
+      {
+        "id": "b776d76f03da7901",
+        "type": "tabs",
+        "dimension": 51.18906064209274,
+        "children": [
+          {
+            "id": "f11631b8347e9d48",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "@@ Data Structure QA.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "@@ Data Structure QA"
+            }
+          },
+          {
+            "id": "2e29fb33e5e7de43",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "@@ Data Structure QA - simple.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "@@ Data Structure QA - simple"
+            }
+          }
+        ],
+        "currentTab": 1
       }
     ],
     "direction": "vertical"
@@ -169,34 +235,34 @@
       "table-editor-obsidian:Advanced Tables Toolbar": false
     }
   },
-  "active": "61477e118db04a3f",
+  "active": "d2d9a1473b2b477e",
   "lastOpenFiles": [
-    "DL - Performance optimization(CUDA)/Performance optimization summary.md",
-    "@@ Interview prepare.md",
-    "DL - Performance optimization(CUDA)/PTQ and QAT quantification.md",
-    "DL - Performance optimization(CUDA)/CUDA programming - Basic.md",
-    "DL - MLOPs/MLOPs - Introduction.md",
-    "DL - CV Generative Models/CV Generative Models - Introduction.md",
-    "DL - Transformer and ViT/Transformer and ViT - Summary.md",
-    "DL - CNN/AI model Summary architecture.md",
-    "DL - YOLO and object detection/Object detection - summary.md",
-    "DL - CNN/CNN - Basic.md",
-    "Code - AI/PyTorch - interview.md",
-    "CVML - Image CV/Traditional Computer Vision summary.md",
-    "DL - CNN/AI model的量化指標.md",
-    "DL - CNN/AI model Summary.md",
-    "DL - Segmentation/Image segmentation summary.md",
-    "DL - YOLO and object detection/Object detection on edge.md",
-    "DL - Tracking/Tracking and ReID.md",
-    "DL - Tracking/Tracking - Summary.md",
-    "DL - SAM/SAM - SAM.md",
-    "DL - UNet/U-Net.md",
-    "DL - CNN/CNN - Setting.md",
-    "DL - CNN/SSIM ,PSNR.md",
-    "DL - CNN/圖像質量增強loss.md",
-    "DL - CNN/實例分割loss.md",
-    "DL - CNN/目標檢測loss.md",
-    "DL - CNN/Smooth L1 Loss.md",
+    "Others/test1.py",
+    "Leetcode - 9.Data Structure/Combinations.md",
+    "@@ Data Structure QA - simple.md",
+    "Leetcode - 7.DFS/Permutations.md",
+    "Leetcode - 7.DFS/Subsets.md",
+    "Leetcode - 7.DFS/Word BreakII.md",
+    "Leetcode - 7.DFS/Word Search II.md",
+    "Leetcode - 1.String/Find All Anagrams in a String.md",
+    "Leetcode - 1.String/Implement strStr.md",
+    "@@ Data Structure QA.md",
+    "Leetcode - 3.Two Pointers/Two Sum - Less than or equal to target.md",
+    "Leetcode - 7.DFS/Traveling Salesman Problem.md",
+    "Leetcode - 7.DFS/SubsetsII.md",
+    "Leetcode - 9.Data Structure/Combination Sum II.md",
+    "Leetcode - 7.DFS/Generate Parentheses.md",
+    "Leetcode - 6.BFS/Build Post Office II.md",
+    "Leetcode - 7.DFS/Word Search III.md",
+    "Leetcode - 6.BFS/Topological Sorting.md",
+    "Leetcode - 1.String/String Permutation II.md",
+    "Leetcode - 1.String/Anagrams.md",
+    "Leetcode - 1.String/Valid Palindrome.md",
+    "Leetcode - 0.Basic/Merge Intervals.md",
+    "DL - @@ Latest update/AI Latest update.md",
+    "DL - @@ Latest update/Daily Update.md",
+    "DL - @@ Latest update/Interview - update.md",
+    "DL - @@ Latest update/AI Jobs salary.md",
     "materials/Pasted image 20250521155837.png",
     "materials/Pasted image 20250521154904.png",
     "materials/Pasted image 20250521144001.png",

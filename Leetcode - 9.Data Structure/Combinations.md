@@ -15,6 +15,34 @@ Lintcode 152
 输出: [[1],[2],[3],[4]]
 ```
 
+For compare
+```python
+class Solution:
+    def run(self, n, k):
+        results = []
+        self.dfs(1, [], n, k, results)
+        return results
+    
+    def dfs(self, pos, num, n, k, results):
+        if len(num) == k:
+            results.append(num[:])
+            return
+        
+        if pos == n + 1:
+            return       
+        if len(num) + n - pos + 1 < k:
+            return
+        
+        num.append(pos)
+        self.dfs(pos + 1, num, n, k, results)
+        num.pop()       
+        self.dfs(pos + 1, num, n, k, results) 
+```
+pass
+
+
+
+
 
 ```python
 class Solution:
