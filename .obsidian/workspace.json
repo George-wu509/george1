@@ -4,11 +4,12 @@
     "type": "split",
     "children": [
       {
-        "id": "56c65f1096eb2bcb",
+        "id": "5a90fb280ca32b5a",
         "type": "tabs",
+        "dimension": 47.80487804878049,
         "children": [
           {
-            "id": "000d116e065a6176",
+            "id": "2302590de8c65760",
             "type": "leaf",
             "state": {
               "type": "markdown",
@@ -20,9 +21,16 @@
               "icon": "lucide-file",
               "title": "@@ Data Structure QA"
             }
-          },
+          }
+        ]
+      },
+      {
+        "id": "b776d76f03da7901",
+        "type": "tabs",
+        "dimension": 52.19512195121951,
+        "children": [
           {
-            "id": "6af42ac265774a11",
+            "id": "04da055fe3a99625",
             "type": "leaf",
             "state": {
               "type": "markdown",
@@ -36,49 +44,35 @@
             }
           },
           {
-            "id": "0152ad8857ccd068",
+            "id": "d0df4d6e4f4210ab",
             "type": "leaf",
             "state": {
               "type": "markdown",
               "state": {
-                "file": "Leetcode - 7.DFS/Permutations.md",
+                "file": "Leetcode - 7.DFS/DFS.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "Permutations"
+              "title": "DFS"
             }
           },
           {
-            "id": "22c75c7bb5514025",
+            "id": "990a23bd634a6da7",
             "type": "leaf",
             "state": {
               "type": "markdown",
               "state": {
-                "file": "Leetcode - 7.DFS/Subsets.md",
+                "file": "Leetcode - 6.BFS/BFS.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "Subsets"
-            }
-          },
-          {
-            "id": "1eb073035cca241e",
-            "type": "leaf",
-            "state": {
-              "type": "markdown",
-              "state": {
-                "file": "Leetcode - 9.Data Structure/Combinations.md",
-                "mode": "source",
-                "source": false
-              },
-              "icon": "lucide-file",
-              "title": "Combinations"
+              "title": "BFS"
             }
           }
         ],
-        "currentTab": 3
+        "currentTab": 2
       }
     ],
     "direction": "vertical"
@@ -101,7 +95,7 @@
                 "autoReveal": false
               },
               "icon": "lucide-folder-closed",
-              "title": "Files"
+              "title": "檔案瀏覽器"
             }
           },
           {
@@ -218,49 +212,48 @@
   },
   "left-ribbon": {
     "hiddenItems": {
-      "switcher:Open quick switcher": false,
-      "graph:Open graph view": false,
-      "canvas:Create new canvas": false,
-      "daily-notes:Open today's daily note": false,
-      "templates:Insert template": false,
-      "command-palette:Open command palette": false,
+      "switcher:開啟快速切換": false,
+      "graph:查看關聯圖": false,
+      "canvas:建立新畫布": false,
+      "daily-notes:開啟今天的每日筆記": false,
+      "templates:插入模板": false,
+      "command-palette:開啟命令面板": false,
       "table-editor-obsidian:Advanced Tables Toolbar": false
     }
   },
-  "active": "22c75c7bb5514025",
+  "active": "2302590de8c65760",
   "lastOpenFiles": [
-    "Leetcode - 9.Data Structure/Combinations.md",
-    "Leetcode - 7.DFS/Subsets.md",
-    "Leetcode - 7.DFS/Permutations.md",
-    "@@ Data Structure QA - simple.md",
-    "Leetcode - 6.BFS/Clone Graph.md",
+    "Leetcode - 6.BFS/BFS.md",
     "@@ Data Structure QA.md",
-    "Leetcode - 6.BFS/Topological Sorting.md",
     "Leetcode - 7.DFS/DFS.md",
+    "@@ Data Structure QA - simple.md",
+    "Leetcode - 7.DFS/Permutations.md",
+    "Leetcode - 9.Data Structure/Best Time to Buy and Sell Stock III.md",
+    "Leetcode - 12.Summary/@@ Data Structure Summary.md",
+    "Leetcode - 2.Sorting/排序.md",
+    "Leetcode - 9.Data Structure/Combinations.md",
+    "Leetcode - 6.BFS/Clone Graph.md",
+    "Leetcode - 7.DFS/Subsets.md",
+    "Leetcode - 9.Data Structure/Shortest Subarray with Sum at Least K.md",
+    "Leetcode - 9.Data Structure/Super Pow.md",
+    "Leetcode - 7.DFS/Word BreakII.md",
+    "Leetcode - 3.Two Pointers/雙指針.md",
+    "Leetcode - 10.Advanced/掃描線.md",
+    "Leetcode - 9.Data Structure/Sum of Two Integers.md",
+    "Leetcode - 7.DFS/Word Search II.md",
+    "Leetcode - 1.String/Implement strStr.md",
+    "Others/GPT-4o image generation prompt.md",
+    "Others/test1.py",
+    "Leetcode - 1.String/Find All Anagrams in a String.md",
+    "Leetcode - 3.Two Pointers/Two Sum - Less than or equal to target.md",
+    "Leetcode - 7.DFS/Traveling Salesman Problem.md",
+    "Leetcode - 7.DFS/SubsetsII.md",
+    "Leetcode - 9.Data Structure/Combination Sum II.md",
+    "Leetcode - 7.DFS/Generate Parentheses.md",
     "materials/Pasted image 20250521155837.png",
     "materials/Pasted image 20250521154904.png",
     "materials/Pasted image 20250521144001.png",
-    "Others/test1.py",
-    "DL - @@ Latest update/TOP10 ML algorithm.md",
-    "DL - @@ Latest update/Interview - update.md",
-    "DL - @@ Latest update/Daily Update.md",
-    "DL - @@ Latest update/AI Latest update - projects.md",
-    "DL - @@ Latest update/AI Latest update.md",
-    "DL - @@ Latest update/AI Jobs salary.md",
-    "DL - @@ Latest update",
-    "@@ Interview prepare.md",
-    "DL - CNN/CNN.md",
-    "DL - CNN/CNN - Basic.md",
-    "DL - CNN/lightweight CNN.md",
-    "DL - CNN/CNN - Setting.md",
-    "Code - AI/PyTorch - interview.md",
-    "DL - CNN/手撕项目代码.md",
-    "DL - CNN/AI model的量化指標.md",
-    "DL - CNN/AI model Summary.md",
-    "CVML - ML/Machine learning matlab.md",
-    "DL - CNN/Focal Loss.md",
     "materials/Pasted image 20250521111435.png",
-    "DL - CNN/Regularization.md",
     "materials/Pasted image 20250520200351.png",
     "materials/Pasted image 20250520022836.png",
     "materials/Pasted image 20250520022248.png",

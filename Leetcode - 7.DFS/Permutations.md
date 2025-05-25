@@ -94,10 +94,11 @@ nums = [1,2,3]
 result = sol.permute(nums)
 print(result)
 ```
+在dfs裡面的results.append(num) 是會出現錯誤, 因為使用 `results.append(num)` 時，你添加到 `results` 列表中的並不是 `num` 列表的內容副本，而是 `num` 列表本身的**引用 (reference)**。這意味著 `results` 列表中所有元素都指向同一個 `num` 列表對象。由於 `num` 列表在遞歸過程中會不斷地被修改（通過 `num.append()` 和 `del num[-1]`），所有在 `results` 中引用的子集都會隨著 `num` 的變化而變化。最終，當所有遞歸結束時，`num` 列表將會被清空（因為所有的 `del num[-1]` 操作），導致 `results` 列表中所有的子集都變成了空列表 `[]`。
 
+所以只要使用results.append(num[:]) 或 results.append(list(num)), 它會創建 `num` 列表的一個淺拷貝 (shallow copy). 就不會出現錯誤
 
-
-
+如果沒有這行 `del num[-1]` 會怎麼樣？無限增長的 `num` 列表：** `num` 列表會持續增長，從不移除元素。
 
 #### **具體實現代碼**
 
