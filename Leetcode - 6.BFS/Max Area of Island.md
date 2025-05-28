@@ -1,3 +1,4 @@
+LintCode 1080: 最大岛屿面积
 
 
 **样例 1:**
@@ -22,24 +23,50 @@
 
 
 ```python
+from collections import deque
+DIRECTIONS = [(1, 0), (0, -1), (-1, 0), (0, 1)]
+
 class Solution:
     def max_area_of_island(self, grid: List[List[int]]) -> int:
-        ans = 0
-        for i, l in enumerate(grid):
-            for j, n in enumerate(l):
-                cur = 0
-                q = collections.deque([(i, j)])
-                while q:
-                    cur_i, cur_j = q.popleft()
-                    if cur_i < 0 or cur_j < 0 or cur_i == len(grid) or cur_j == len(grid[0]) or grid[cur_i][cur_j] != 1:
-                        continue
-                    cur += 1
-                    grid[cur_i][cur_j] = 0
-                    for di, dj in [[0, 1], [0, -1], [1, 0], [-1, 0]]:
-                        next_i, next_j = cur_i + di, cur_j + dj
-                        q.append((next_i, next_j))
-                ans = max(ans, cur)
-        return ans
+        if not grid or not grid[0]:
+            return 0
+            
+        max_area = 0
+        visited = set()
+        
+        for i in range(len(grid)):
+            for j in range(len(grid[0])):
+                if grid[i][j] and (i, j) not in visited:
+                    area = self.bfs(grid, i, j, visited)
+                    max_area = max(max_area, area)
+                    
+        return max_area                   
+
+    def bfs(self, grid, x, y, visited):
+        queue = deque([(x, y)])
+        visited.add((x, y))
+        area = 1
+        
+        while queue:
+            x, y = queue.popleft()
+            for delta_x, delta_y in DIRECTIONS:
+                next_x = x + delta_x
+                next_y = y + delta_y
+                if not self.is_valid(grid, next_x, next_y, visited):
+                    continue
+                queue.append((next_x, next_y))
+                visited.add((next_x, next_y))
+                area += 1
+        return area
+
+    def is_valid(self, grid, x, y, visited):
+        n, m = len(grid), len(grid[0])
+        if not (0 <= x < n and 0 <= y < m):
+            return False
+        if (x, y) in visited:
+            return False
+        return grid[x][y]
+
 ```
 pass
 

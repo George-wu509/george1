@@ -80,6 +80,11 @@ class Solution:
         return dfs(0)
 ```
 pass
+解釋:
+step1: 先將word_dict用set()轉成wordSet, create 一個memo
+step2: start=0代表左指針,  dfs(start=0). 在dfs() function裡面, 先check start沒有在memo裡面, 以及start不是最右端.
+step3: 在dfs(start) function裡面, 固定start(左指針), 然後從右邊一格end(右指針)一步步往右移. start到end之間是word. 如果word在wordSet裡面, 則就剩下的部分再用dfs
+
 
 
 
