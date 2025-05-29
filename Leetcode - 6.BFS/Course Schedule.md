@@ -13,6 +13,44 @@ lintcode 615
 
 请判断是否可以完成所有课程。
 
+Example: 
+prerequisites = [ [1,0],[2,0],[3,1],[3,2] ] 
+in_degree = [0,1,1,2]
+graph = {0:[1,2], 1:[3], 2:[3]}
+queue = deque([0])
+
+
+```python
+from collections import deque, defaultdict
+class Solution:
+    def can_finish(self, num_courses, prerequisites):
+        graph = defaultdict(list)
+        in_degree = [0] * num_courses
+        for course, pre in prerequisites:
+            graph[pre].append(course)
+            in_degree[course] += 1
+
+        queue = deque([i for i in range(num_courses) if in_degree[i] == 0])
+
+        completed_courses = 0
+
+        while queue:
+            course = queue.popleft()
+            completed_courses += 1
+
+            for next_course in graph[course]:
+                in_degree[next_course] -= 1
+                if in_degree[next_course] == 0:
+                    queue.append(next_course)
+
+        return completed_courses == num_courses
+```
+pass
+
+解釋:
+step1: 
+
+
 ---
 
 #### **输入输出示例**
@@ -103,8 +141,17 @@ Example:
 输出: false
 ```
 
+例3:
+```python
+输入: n = 4, prerequisites = 
+[ [1,0],[2,0],
+[3,1],[3,2] ] 
 
+输出: True
+```
 
+0 -> 1  -> 3
+   -> 2 ->
 ### **方法 1：Kahn 算法实现**
 
 #### **代码实现**
@@ -112,35 +159,26 @@ Example:
 ```python
 from collections import deque, defaultdict
 class Solution:
-    """
-    @param num_courses: a total of n courses
-    @param prerequisites: a list of prerequisite pairs
-    @return: true if can finish all courses or false
-    """
-    def can_finish(self, num_courses: int, prerequisites: List[List[int]]) -> bool:
+    def can_finish(self, num_courses, prerequisites):
         graph = defaultdict(list)
         in_degree = [0] * num_courses
         for course, pre in prerequisites:
             graph[pre].append(course)
             in_degree[course] += 1
 
-        # 初始化队列
         queue = deque([i for i in range(num_courses) if in_degree[i] == 0])
 
-        # 记录已完成的课程数量
         completed_courses = 0
 
         while queue:
             course = queue.popleft()
             completed_courses += 1
 
-            # 减少依赖课程的入度
             for next_course in graph[course]:
                 in_degree[next_course] -= 1
                 if in_degree[next_course] == 0:
                     queue.append(next_course)
 
-        # 如果已完成课程数等于总课程数，返回 True
         return completed_courses == num_courses
 ```
 pass

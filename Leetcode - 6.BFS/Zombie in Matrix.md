@@ -62,6 +62,9 @@ Example:
 ### 代码实现
 
 ```python
+from collections import deque
+DIR = [(1, 0), (-1, 0), (0, 1), (0, -1)]
+
 class Solution:
     def zombie(self, grid):
 7        # write your code here
