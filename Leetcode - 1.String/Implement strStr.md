@@ -63,3 +63,6 @@ def str_str(self, source: str, target: str) -> int:
 ```
 pass
 解釋: 暴力匹配（Brute Force）演算法
+
+不能使用if not source or not target: 在source="", target=""會出錯
+所以要使用if source is None or target is None:

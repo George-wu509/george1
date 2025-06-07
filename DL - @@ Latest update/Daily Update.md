@@ -89,4 +89,42 @@ https://zhuanlan.zhihu.com/p/32205292924
 PyTorch量化感知训练技术：模型压缩与高精度边缘部署实践 - CV技术指南的文章 - 知乎
 https://zhuanlan.zhihu.com/p/1908084762456860184
 
+20250602
+终于有人把大模型11种微调方法说清楚了！ - 智泊AI的文章 - 知乎
+https://zhuanlan.zhihu.com/p/1898685647486691303
 
+20250602
+从Gemini Diffusion想开去：对比分析Transformer和Diffusion模型——特点、前景及最新研究进展 - 北方的郎的文章 - 知乎
+https://zhuanlan.zhihu.com/p/1912239554091540892
+
+20250602
+像素的"精进之道"：超分辨率算法如何突破分辨率极限 - LJoson的文章 - 知乎
+https://zhuanlan.zhihu.com/p/1910703118838117558
+
+20250602
+斯坦福意外用AI生成超强CUDA内核，性能比人类专家优化得还要好！翻倍碾压原生PyTorch，华人主创 - 量子位的文章 - 知乎
+https://zhuanlan.zhihu.com/p/1912111400987391867
+
+20250602
+Transformer架构解析-(1)Self-Attention机制 - shikamaru的文章 - 知乎
+https://zhuanlan.zhihu.com/p/1912453646072915673
+
+20250602
+多模态--Grounding DINO - 平凡的兵的文章 - 知乎
+https://zhuanlan.zhihu.com/p/1912615130782503059
+
+20250603
+[源码解析] Pytorch 如何实现反向传播 (2)---- 引擎静态结构 - 罗西的思考的文章 - 知乎
+https://zhuanlan.zhihu.com/p/1902478159024193745
+
+20250604
+三维重建领域有哪些state of art的工作？ - 平凡的兵的回答 - 知乎
+https://www.zhihu.com/question/411497562/answer/1913712568473741247
+
+20250604
+CVPR 2025 | Meta提出FovealSeg：毫秒级IOI分割 - CV技术指南的文章 - 知乎
+https://zhuanlan.zhihu.com/p/1913621442194572257
+
+20250605
+CUDA重大更新：原生Python可直接编写高性能GPU程序 - deephub的文章 - 知乎
+https://zhuanlan.zhihu.com/p/1910630624974320803

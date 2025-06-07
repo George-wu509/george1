@@ -41,6 +41,16 @@ prefix_sum(new)-prefix_sum(old)=0
 解釋(II):
 隨著for loop, 將新的num加上prefix_sum成新的prefix_sum, 並和之前的prefix_hash比較. 如果有相同的代表prefix_sum[i] - prefix[j] = 0 代表在nums[j+1:i]的和為0
 
+nums = [1, 2, 3, 4]
+id =   [0, 1, 2, 3]
+
+prefix_sum = [0, 1, 3, 6, 10]
+id         = [0, 1, 2, 3, 4 ]
+
+
+nums[1]+nums[2] = 2+3 = 5
+prefix[3] - prefix[1] = 5
+
 # **LintCode 138: Subarray Sum（子数组和）**
 
 ---

@@ -99,18 +99,19 @@ class TreeNode:
 class Solution:
     def inorder_traversal(self, root: TreeNode) -> List[int]:
         result = []
-
-        def dfs(node):
-            if not node:
-                return
-            dfs(node.left)           # 遍历左子树
-            result.append(node.val)  # 访问当前节点
-            dfs(node.right)          # 遍历右子树
-
-        dfs(root)
+        self.dfs(root, result)
         return result
+               
+    def dfs(self, node, result):
+        if not node:
+            return
+        self.dfs(node.left, result)
+        result.append(node.val)
+        self.dfs(node.right, result)
 ```
 pass
+解釋: 
+
 
 ---
 

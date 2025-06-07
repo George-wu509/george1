@@ -45,7 +45,17 @@ Lintcode 35
 ```
 pass
 
+    1   ->   2   ->   3   ->   null
+    head
+          temp
+curt
 
+解釋: 
+step0: 先create一個目前node curt=None當作起點. 未來當成被反轉鏈表的最末端
+step1: 在while迴圈裏面. 先將head.next(預設的下一個node)設成temp, 然後head.next轉向新的node = None. 
+step2: 將目前node curt往下移
+step3: 將head換到新的temp.
+記法:  在while迴圈裏面, 一行(temp=head.next)的等號右邊等於下一行(head.next = curt)的等號左邊
 ### **解法分析（Iterative Approach）**
 
 這是一個 **反轉單向鏈表（Reverse Linked List）** 的經典問題。我們的目標是將鏈表的指針反轉，使原本指向下一個節點的指針，改為指向前一個節點，從而達成鏈表反轉的效果。

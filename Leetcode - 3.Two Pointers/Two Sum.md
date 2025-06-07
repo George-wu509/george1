@@ -24,6 +24,7 @@ target = 9
 numbers[1] + numbers[2] = 9
 ```
 
+
 ```python
 def twoSum(self, numbers, target):
 	if not numbers:
@@ -32,8 +33,7 @@ def twoSum(self, numbers, target):
 	# transform numbers to a sorted array with index
 	nums = [
 		(number, index)
-		for index, number in enumerate(numbers)
-	]
+		for index, number in enumerate(numbers)]
 	nums = sorted(nums)
 	
 	left, right = 0, len(nums) - 1
@@ -52,6 +52,9 @@ pass
 排序的兩種方法
 nums = **sorted**(nums)
 nums.**sort**()
+這裡不能用return [ nums[left][1], nums[right][1] ].sort() 只能用return sorted([nums[left][1], nums[right][1]]) 因為sort()只會更新nums, 但return None
+在code裡面nums = sorted(nums) 可以改成nums.sort() 沒問題
+
 
 ## **问题描述**
 

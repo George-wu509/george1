@@ -15,7 +15,6 @@ Lintcode 457
 ```
 
 ```python
-"""
     def binarySearch(self, nums, target):
         if not nums:
             return -1
@@ -39,7 +38,6 @@ Lintcode 457
             return end
 
         return -1
-
 ```
 pass
 

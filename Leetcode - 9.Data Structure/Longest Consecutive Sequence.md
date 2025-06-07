@@ -5,12 +5,10 @@ Lintcode 124
 **样例 1：**
 输入：
 ```python
-"""
 num = [100, 4, 200, 1, 3, 2]
 ```
 输出：
 ```python
-"""
 4
 ```
 解释：
@@ -36,6 +34,10 @@ def longest_consecutive(self, num: List[int]) -> int:
 	return longest_streak
 ```
 pass
+
+解釋:
+step1: 由num 轉成set() = {1,2,3,100,4,200}
+step2:
 
 
 ### 解法分析

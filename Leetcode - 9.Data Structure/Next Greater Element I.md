@@ -31,17 +31,29 @@ nums2中的4 在nums2=[1,3,4,2]後沒有更大的數字(後面只有2),  nums2�
 
 ```python
     def next_greater_element(self, nums1: List[int], nums2: List[int]) -> List[int]:
-        res = {}
+        result = {}
         stack = []
         for num in reversed(nums2):
             while stack and num >= stack[-1]:
                 stack.pop()
-            res[num] = stack[-1] if stack else -1
+            result[num] = stack[-1] if stack else -1
             stack.append(num)
-        return [res[num] for num in nums1]
+        return [result[num] for num in nums1]
 ```
 pass
 
+nums = [ 1,3,4,5,2 ]
+解釋: 
+step1. create stack跟res(紀錄往後最大的值)
+step2. 反向的for loop從後面開始, 比較每個num跟棧頭. while loop如果num大於棧頭, 則pop()
+step3. res紀錄stack最大的(應該是棧頭 stack[-1]), 以dict格式存入 res[num]: 棧頭, 代表num右邊有更大的(=棧頭)
+step4. 將num壓入stack
+
+2-> stack=[2], res = {2:-1}
+4-> stack=[4], res = {2:-1, 4:-1}
+3-> stack=[4,3], res = {2:-1, 4:-1, 3:4}
+5-> stack=[5], res = {2:-1, 4:-1, 3:4, 5:-1}
+1-> stack=[5,1], res = {2:-1, 4:-1, 3:4, 5:-1, 1:5}
 
 ### **LintCode 1206 - Next Greater Element I**
 
@@ -58,7 +70,7 @@ pass
 1. **反向遍歷 `nums2`，利用單調棧求 Next Greater Element**
     
     - 從 `nums2` 的最後一個元素開始向前遍歷。
-    - 使用單調棧 `stack`，確保棧內元素是 **單調遞減** 的（棧底到棧頂遞減）。
+    - 使用單調棧 `stack`，確保棧內元素是 **單調遞減** 的（棧底到棧頂遞減)。
     - 當當前元素 `num` **大於等於** `stack` 的棧頂元素時，則棧頂元素不可能是 `num` 的 Next Greater Element，因此將其彈出。
     - 這樣，當 `stack` 不為空時，棧頂元素即為 `num` 的 Next Greater Element，否則為 `-1`。
     - 記錄 `num` 對應的 Next Greater Element 到 `res` 字典中，然後將 `num` 入棧。
