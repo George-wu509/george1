@@ -4,11 +4,11 @@
     "type": "split",
     "children": [
       {
-        "id": "377e6f4fc39d65f5",
+        "id": "9c993193b94cd04c",
         "type": "tabs",
         "children": [
           {
-            "id": "941b4f833d36485d",
+            "id": "1f54ef29b95006cb",
             "type": "leaf",
             "state": {
               "type": "markdown",
@@ -20,58 +20,15 @@
               "icon": "lucide-file",
               "title": "@@ Daily practice"
             }
-          },
-          {
-            "id": "bdf3c7c3ed645b35",
-            "type": "leaf",
-            "state": {
-              "type": "markdown",
-              "state": {
-                "file": "Leetcode - 0.Basic/Rotate String.md",
-                "mode": "source",
-                "source": false
-              },
-              "icon": "lucide-file",
-              "title": "Rotate String"
-            }
           }
-        ],
-        "currentTab": 1
+        ]
       },
       {
-        "id": "56f4325c117f1009",
+        "id": "795e6c90ff83a67b",
         "type": "tabs",
         "children": [
           {
-            "id": "8126384f12341e08",
-            "type": "leaf",
-            "state": {
-              "type": "markdown",
-              "state": {
-                "file": "DL - @@ Latest update/Daily Update.md",
-                "mode": "source",
-                "source": false
-              },
-              "icon": "lucide-file",
-              "title": "Daily Update"
-            }
-          },
-          {
-            "id": "542397b4f65aa0ba",
-            "type": "leaf",
-            "state": {
-              "type": "markdown",
-              "state": {
-                "file": "@@ Data Structure QA.md",
-                "mode": "source",
-                "source": false
-              },
-              "icon": "lucide-file",
-              "title": "@@ Data Structure QA"
-            }
-          },
-          {
-            "id": "45269b4512d0eaa3",
+            "id": "2bd9014a50ff6f64",
             "type": "leaf",
             "state": {
               "type": "markdown",
@@ -84,8 +41,7 @@
               "title": "@@ Daily practice"
             }
           }
-        ],
-        "currentTab": 2
+        ]
       }
     ],
     "direction": "vertical"
@@ -234,34 +190,34 @@
       "table-editor-obsidian:Advanced Tables Toolbar": false
     }
   },
-  "active": "45269b4512d0eaa3",
+  "active": "2bd9014a50ff6f64",
   "lastOpenFiles": [
-    "Leetcode - 4.Binary Search/Find K Closest Elements.md",
-    "@@ Daily practice.md",
-    "Leetcode - 4.Binary Search/Classical Binary Search.md",
-    "Leetcode - 0.Basic/Rotate String.md",
-    "Leetcode - 9.Data Structure/Subarray Sum Equals to K II.md",
-    "Leetcode - 1.String/Find All Anagrams in a String.md",
-    "Leetcode - 5.Binary Search Tree/Binary Tree Inorder Traversal.md",
-    "Leetcode - 9.Data Structure/Longest Consecutive Sequence.md",
-    "Leetcode - 9.Data Structure/Next Greater Element I.md",
-    "Leetcode - 9.Data Structure/Implement Stack using Queues.md",
-    "Leetcode - 9.Data Structure/Reverse Linked List.md",
-    "Leetcode - 9.Data Structure/Subarray Sum.md",
-    "Leetcode - 1.String/Implement strStr.md",
-    "Leetcode - 0.Basic/Merge Intervals.md",
-    "Leetcode - 3.Two Pointers/Two Sum.md",
-    "Leetcode - 7.DFS/Permutations.md",
-    "Leetcode - 6.BFS/Number of Islands.md",
-    "Leetcode - 9.Data Structure/Maximum Number Expectation.md",
-    "Leetcode - 9.Data Structure/First Unique Number in Data Stream.md",
     "@@ Data Structure QA.md",
-    "Leetcode - 9.Data Structure/Daily Temperatures.md",
-    "Leetcode - 9.Data Structure/Next Greater Element II.md",
-    "Leetcode - 9.Data Structure/Largest Rectangle in Histogram.md",
-    "Leetcode - 9.Data Structure/Trapping Rain Water.md",
-    "Leetcode - 9.Data Structure/Count of Smaller Numbers After Self.md",
-    "DL - @@ Latest update/Daily Update.md",
+    "Leetcode - 4.Binary Search/Classical Binary Search.md",
+    "@@ Daily practice.md",
+    "@@ Data Structure QA - simple.md",
+    "Leetcode - 9.Data Structure/Best Time to Buy and Sell Stock III.md",
+    "Leetcode - 8.Dynamic programming/Best Time to Buy and Sell Stock II.md",
+    "Leetcode - 8.Dynamic programming/Longest Increasing Subsequence.md",
+    "Leetcode - 8.Dynamic programming/Longest Common Subsequence.md",
+    "Leetcode - 10.Advanced/Connected Component in Undirected Graph.md",
+    "Leetcode - 10.Advanced/Route Between Two Nodes in Graph.md",
+    "Leetcode - 10.Advanced/Minimum Subsequence in Non-Increasing Order.md",
+    "Leetcode - 10.Advanced/Range Sum Query - Mutable.md",
+    "Leetcode - 10.Advanced/Count of Smaller Numbers Before Self.md",
+    "Leetcode - 10.Advanced/Segment Tree Query II.md",
+    "Leetcode - 10.Advanced/Segment Tree Query.md",
+    "Leetcode - 10.Advanced/Segment Tree Modify.md",
+    "Leetcode - 10.Advanced/Segment Tree Build.md",
+    "Leetcode - 10.Advanced/Word Squares.md",
+    "Leetcode - 9.Data Structure/K Closest Points.md",
+    "Leetcode - 10.Advanced/Kth Largest Element II.md",
+    "Leetcode - 5.Binary Search Tree/Diameter of Binary Tree.md",
+    "Leetcode - 5.Binary Search Tree/Search in a Binary Search Tree.md",
+    "Leetcode - 5.Binary Search Tree/Minimum Subtree.md",
+    "Leetcode - 5.Binary Search Tree/Subtree with Maximum Average.md",
+    "Leetcode - 5.Binary Search Tree/Inorder Successor in BST.md",
+    "Leetcode - 5.Binary Search Tree/Closest Binary Search Tree Value II.md",
     "Others/test1.py",
     "materials/Pasted image 20250521155837.png",
     "materials/Pasted image 20250521154904.png",

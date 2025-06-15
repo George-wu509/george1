@@ -55,20 +55,25 @@ def dailyTemperatures(temperatures):
 pass
 
 temperatures = [73, 74, 75, 71, 69, 72, 76, 73]
+    index      = [ 0,    1,   2,   3,   4,   5,   6,   7]
 解釋:
 step1. create stack跟result(紀錄)
 step2. for loop從前面開始, 比較每個temp跟棧頭. while loop如果temp大於棧頭, 則pop()
 step3. 
 step4. 將temp壓入stack
 
-73-> stack=[0], result = [0,0,0,0,0,0,0,0]
-74-> stack=[1], result = [1,0,0,0,0,0,0,0]
-75-> stack=[2], result = [1,1,0,0,0,0,0,0]
-71-> stack=[2,3], result = [1,1,0,0,0,0,0,0]
-69-> stack=[2,3,4], result = [1,1,0,0,0,0,0,0]
-72-> stack=[2,5], result = [1,1,0,2,1,0,0,0]
-76-> stack=[6], result = [1,1,4,2,1,1,0,0]
-73-> stack=[6,7], result = [1,1,4,2,1,1,0,0]
+[0]73-> stack=[0], result = [0,0,0,0,0,0,0,0]
+[1]74-> stack=[1], result = [1,0,0,0,0,0,0,0]
+[2]75-> stack=[2], result = [1,1,0,0,0,0,0,0]
+[3]71-> stack=[2,3], result = [1,1,0,0,0,0,0,0]
+[4]69-> stack=[2,3,4], result = [1,1,0,0,0,0,0,0]
+[5]72-> stack=[2,5], result = [1,1,0,2,1,0,0,0]
+[6]76-> stack=[6], result = [1,1,4,2,1,1,0,0]
+[7]73-> stack=[6,7], result = [1,1,4,2,1,1,0,0]
+
+result的意義. 
+result = [1,1,0,2,1,0,0,0]  2代表id=5的位置時pop id=3的位置. 在result[3] = 2. 就是id=5往左看看到id=3的距離
+
 
 ---
 

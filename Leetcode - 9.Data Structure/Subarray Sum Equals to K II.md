@@ -19,6 +19,28 @@ nums = [2,1,-1,4,2,-3] and k = 3
 ```
 
 
+
+```python
+def subarray_sum_equals_k_i_i(self, nums, k):
+	sums = [0]
+	hash_map = {0: 0}
+	res = -1
+	for i in range(len(nums)):
+		n = nums[i]
+		prefix_sum = sums[len(sums) - 1] + n
+		sums.append(prefix_sum)
+		idx = hash_map.get(prefix_sum - k)
+		if idx is not None:
+			length = i - idx + 1
+			if res < 0 or length < res:
+				res = length
+		hash_map[prefix_sum] = i + 1
+	return res
+```
+
+
+
+
 ```python
 def subarray_sum_equals_k_i_i(self, nums: List[int], k: int) -> int:
 	# 前缀和列表。

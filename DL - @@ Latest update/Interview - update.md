@@ -82,3 +82,6 @@ https://zhuanlan.zhihu.com/p/1904283463437255274
 【2025秋招面经】目标检测基础知识 - TNotes的文章 - 知乎
 https://zhuanlan.zhihu.com/p/1907101658682470565
 
+大模型算法工程师经典百问 - 海鸣的文章 - 知乎
+https://zhuanlan.zhihu.com/p/1908292624651106052
+

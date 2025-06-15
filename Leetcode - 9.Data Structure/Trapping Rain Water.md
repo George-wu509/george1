@@ -25,7 +25,7 @@ leetcode 363
 
 ![[Pasted image 20250217145851.png]]
 單調棧:
-step1: 先create stack=[]. 
+step1: 先create stack=[]
 step2: 從id=0開始往右, 如果stack是空的, 則將id=0加入stack, 變成stack = [0]
 step3: id往右, 如果id的數值比stack棧頂數值小, 直接加入stack. 譬如id=2, stack=[1] - > stack=[1,2] 或者id=3到5, stack=[3] -> stack=[3,4,5]
 step4: id往右, 如果id的數值比stack棧頂數值大, 譬如id=3(value=2), stack=[1,2] (value=1,0). 將棧頂彈出(id=2, value=0). 再每一步彈出棧頂試著計算width(id到新的棧頂的位置-1 = 3-1-1=1), height( min(id=3的數值, 新的棧頂的位置數值)-被彈出的舊棧頂數值=min(2,1)-0=1).
@@ -110,6 +110,45 @@ print(trap(heights))  # 输出: 6
 
 ```
 pass
+解釋
+
+
+解釋
+heights = [0, 1, 0, 2, 1, 0, 1, 3, 2, 1, 2, 1]
+當有遇到pop(), 則計算width跟height
+width = 目前id - pop()之後的棧頂 -1. 
+height = min (目前id的height, pop()之後的棧頂) - pop()的top
+
+**Example1**
+譬如在id=3時pop兩個出去id=1 (top=1)跟id=2 (top=2)
+pop() top=2時
+width=1   =(3:目前id)-(1:pop()之後的棧頂)-1
+height=1  =min(2:目前id的height, 1:pop()之後的棧頂的height) - 0:pop()的top的height
+pop() top=1時
+break
+
+**Example2**
+譬如在id=6時pop兩個出去id=5 (top=5)
+pop() top=5時
+width=1   =(6:目前id)-(4:pop()之後的棧頂)-1
+height=1  =min(1:目前id的height, 1:pop()之後的棧頂的height) - 0:pop()的top的height
+
+
+[h=0]id=0, stack = [0] 
+[h=1]id=1, stack = [1]
+[h=0]id=2, stack = [1,2], 
+[h=2]id=3, stack = [3], width=1, height=1  --> pop() 1跟2
+[h=1]id=4, stack = [3,4]
+[h=0]id=5, stack = [3,4,5]
+[h=1]id=6, stack = [3,4,6], width=1, height=1  --> pop() 5
+[h=3]id=7, stack = [7], width=3, height=1  --> pop() 3跟4,跟6
+[h=2]id=8, stack = [7,8]
+[h=1]id=9, stack = [7,8,9]
+[h=2]id=10, stack = [7,8,10], width=1, height=1  --> pop() 9
+[h=1]id=11, stack = [7,8,10,11]
+
+
+
 
 ### **逐步解析**
 

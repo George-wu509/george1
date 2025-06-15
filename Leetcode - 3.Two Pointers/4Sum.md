@@ -36,19 +36,19 @@ target = 0
 ```python
 def four_sum(self, nums, target):
 	nums.sort()
-	res = []
-	length = len(nums)
-	for i in range(0, length - 3):
+	result = []
+	n = len(nums)
+	for i in range(n - 3):
 		if i and nums[i] == nums[i - 1]:
 			continue
-		for j in range(i + 1, length - 2):
+		for j in range(i + 1, n - 2):
 			if j != i + 1 and nums[j] == nums[j - 1]:
 				continue
 			sum = target - nums[i] - nums[j]
-			left, right = j + 1, length - 1
+			left, right = j + 1, n - 1
 			while left < right:
 				if nums[left] + nums[right] == sum:
-					res.append([nums[i], nums[j], nums[left], nums[right]])
+					result.append([nums[i], nums[j], nums[left], nums[right]])
 					right -= 1
 					left += 1
 					while left < right and nums[left] == nums[left - 1]:
@@ -59,9 +59,41 @@ def four_sum(self, nums, target):
 					right -= 1
 				else:
 					left += 1
-	return res
+	return result
 ```
 pass
+
+
+
+```python
+def four_sum(self, nums, target):
+	nums.sort()
+	result = []
+	n = len(nums)
+	for i in range(n - 3):
+		if i and nums[i] == nums[i - 1]:  #避免重複的四元組
+			continue
+		for j in range(i + 1, n - 2):
+			if j != i + 1 and nums[j] == nums[j - 1]:   #避免重複的四元組
+				continue
+			sum = target - nums[i] - nums[j]
+			left, right = j + 1, n - 1
+			while left < right:
+				if nums[left] + nums[right] == sum:
+					result.append([nums[i], nums[j], nums[left], nums[right]])
+					right -= 1
+					left += 1
+					while left < right and nums[left] == nums[left - 1]:
+						left += 1
+					while left < right and nums[right] == nums[right + 1]:
+						right -= 1
+				elif nums[left] + nums[right] > sum:
+					right -= 1
+				else:
+					left += 1
+	return result
+```
+
 
 
 # **LintCode 58: 4Sum（四数之和）**

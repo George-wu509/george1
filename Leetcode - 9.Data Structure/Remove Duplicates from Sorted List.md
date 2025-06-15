@@ -46,11 +46,9 @@ linked list = 1->1->2->3->3->null
 
 ```python
 def delete_duplicates(self, head):
-	flag = 1
 	p = head
 	while(p != None and p.next != None):
 		if p.val != p.next.val:
-			flag = 1
 			p = p.next
 		else:
 			p.next = p.next.next
