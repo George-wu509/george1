@@ -8,56 +8,7 @@
         "type": "tabs",
         "children": [
           {
-            "id": "1f54ef29b95006cb",
-            "type": "leaf",
-            "state": {
-              "type": "markdown",
-              "state": {
-                "file": "@@ Daily practice.md",
-                "mode": "source",
-                "source": false
-              },
-              "icon": "lucide-file",
-              "title": "@@ Daily practice"
-            }
-          },
-          {
-            "id": "df9def7fd041234d",
-            "type": "leaf",
-            "state": {
-              "type": "markdown",
-              "state": {
-                "file": "Leetcode - 9.Data Structure/Shortest Subarray with Sum at Least K.md",
-                "mode": "source",
-                "source": false
-              },
-              "icon": "lucide-file",
-              "title": "Shortest Subarray with Sum at Least K"
-            }
-          },
-          {
-            "id": "b59302ce8e065a39",
-            "type": "leaf",
-            "state": {
-              "type": "markdown",
-              "state": {
-                "file": "單調隊列跟單調棧.md",
-                "mode": "source",
-                "source": false
-              },
-              "icon": "lucide-file",
-              "title": "單調隊列跟單調棧"
-            }
-          }
-        ],
-        "currentTab": 2
-      },
-      {
-        "id": "795e6c90ff83a67b",
-        "type": "tabs",
-        "children": [
-          {
-            "id": "c2045fa687365340",
+            "id": "0c1831c55c936d62",
             "type": "leaf",
             "state": {
               "type": "markdown",
@@ -71,35 +22,49 @@
             }
           },
           {
-            "id": "2bd9014a50ff6f64",
+            "id": "ed02111038c36d50",
             "type": "leaf",
             "state": {
               "type": "markdown",
               "state": {
-                "file": "@@ Daily practice.md",
+                "file": "@@ Data Structure QA.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "@@ Daily practice"
+              "title": "@@ Data Structure QA"
             }
           },
           {
-            "id": "32d872ffbd744020",
+            "id": "3239ee659cbf332a",
             "type": "leaf",
             "state": {
               "type": "markdown",
               "state": {
-                "file": "Leetcode - 9.Data Structure/Trapping Rain Water.md",
+                "file": "@@ Data Structure QA.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "Trapping Rain Water"
+              "title": "@@ Data Structure QA"
+            }
+          },
+          {
+            "id": "b59302ce8e065a39",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "Leetcode - 12.Summary/單調隊列跟單調棧.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "單調隊列跟單調棧"
             }
           }
         ],
-        "currentTab": 2
+        "currentTab": 3
       }
     ],
     "direction": "vertical"
@@ -122,7 +87,7 @@
                 "autoReveal": false
               },
               "icon": "lucide-folder-closed",
-              "title": "檔案瀏覽器"
+              "title": "Files"
             }
           },
           {
@@ -239,43 +204,45 @@
   },
   "left-ribbon": {
     "hiddenItems": {
-      "switcher:開啟快速切換": false,
-      "graph:查看關聯圖": false,
-      "canvas:建立新畫布": false,
-      "daily-notes:開啟今天的每日筆記": false,
-      "templates:插入模板": false,
-      "command-palette:開啟命令面板": false,
+      "switcher:Open quick switcher": false,
+      "graph:Open graph view": false,
+      "canvas:Create new canvas": false,
+      "daily-notes:Open today's daily note": false,
+      "templates:Insert template": false,
+      "command-palette:Open command palette": false,
       "table-editor-obsidian:Advanced Tables Toolbar": false
     }
   },
   "active": "b59302ce8e065a39",
   "lastOpenFiles": [
-    "Pasted image 20250624123616.png",
-    "Leetcode - 9.Data Structure/Trapping Rain Water.md",
-    "@@ Daily practice.md",
-    "單調隊列跟單調棧.md",
     "@@ Data Structure QA.md",
+    "Leetcode - 9.Data Structure/Expression Add Operators.md",
+    "Leetcode - 9.Data Structure/Largest Divisible Subset.md",
+    "Leetcode - 9.Data Structure/Range Addition.md",
+    "Leetcode - 9.Data Structure/Count of Smaller Numbers After Self.md",
+    "Leetcode - 9.Data Structure/Next Greater Element II.md",
+    "Leetcode - 12.Summary/單調隊列跟單調棧.md",
+    "Leetcode - 9.Data Structure/Trapping Rain Water.md",
+    "Leetcode - 9.Data Structure/Next Greater Element I.md",
+    "Leetcode - 9.Data Structure/Shortest Subarray with Sum at Least K.md",
+    "Leetcode - 9.Data Structure/Super Pow.md",
+    "Leetcode - 9.Data Structure/Sum of Two Integers.md",
+    "@@ Data Structure QA - simple.md",
+    "@@ Daily practice.md",
+    "materials/Screenshot 2025-06-24 141458.png",
+    "materials/Pasted image 20250624123616.png",
     "Leetcode - 3.Two Pointers/Minimum Size Subarray Sum.md",
     "Leetcode - 12.Summary/hash table.md",
     "Leetcode - 12.Summary/位元運算.md",
     "Leetcode - 6.BFS/Knight Shortest Path.md",
     "Leetcode - 0.Basic/Remove Duplicates.md",
-    "Leetcode - 9.Data Structure/Shortest Subarray with Sum at Least K.md",
-    "if not nums.md",
+    "Leetcode - 12.Summary/if not nums.md",
     "Leetcode - 1.String/Anagrams.md",
     "Leetcode - 2.Sorting/Classical Sort Integers.md",
     "Leetcode - 0.Basic/Climbing Stairs.md",
     "Leetcode - 6.BFS/Number of Islands.md",
     "Leetcode - 4.Binary Search/Fibonacciseries.md",
     "Leetcode - 9.Data Structure/Sliding Window Maximum.md",
-    "Leetcode - 6.BFS/Course Schedule II.md",
-    "Leetcode - 9.Data Structure/Expression Evaluation.md",
-    "@@ Data Structure QA - simple.md",
-    "Leetcode - 4.Binary Search/Classical Binary Search.md",
-    "Leetcode - 3.Two Pointers/Two Sum.md",
-    "Leetcode - 9.Data Structure/Subarray Sum.md",
-    "Leetcode - 3.Two Pointers/Window Sum.md",
-    "Code - Python/@Interview - Python Basic.md",
     "Others/test1.py",
     "materials/Pasted image 20250521155837.png",
     "materials/Pasted image 20250521154904.png",
@@ -285,8 +252,6 @@
     "materials/Pasted image 20250520022836.png",
     "materials/Pasted image 20250520022248.png",
     "materials/Pasted image 20250520000641.png",
-    "materials/Pasted image 20250518221233.png",
-    "materials/Pasted image 20250517151036.png",
     "DL - embedded and edge"
   ]
 }
