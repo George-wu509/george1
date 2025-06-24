@@ -134,6 +134,8 @@ width=1   =(6:目前id)-(4:pop()之後的棧頂)-1
 height=1  =min(1:目前id的height, 1:pop()之後的棧頂的height) - 0:pop()的top的height
 
 
+heights = [0, 1, 0, 2, 1, 0, 1, 3, 2, 1, 2, 1]
+
 [h=0]id=0, stack = [0] 
 [h=1]id=1, stack = [1]
 [h=0]id=2, stack = [1,2], 

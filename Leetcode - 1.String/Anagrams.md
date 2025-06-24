@@ -34,6 +34,15 @@ pass
 step1: create一個新的dict
 step2: for loop 遍歷list每個字串. 每個字串用sorted()排序. 如果排序後的字串一樣則歸在dict的同個key下. 譬如  dict = {'aet':['eat','tea','ate'], 'ant':['tan','nat'], 'abt':['bat']}
 
+解釋1:
+word = "eat",   
+sorted("eat") 得到 ["a","e"."t"]
+sortedword = ''.join(sorted(word)) 得到 "aet"
+
+解釋2:
+dict[sortedword] = [word] if sortedword not in dict else dict[sortedword] + [word]
+例如，如果 `dict` 中已经有 `{'aet': ['eat']}`，现在遇到了 `word` 是 "tea"，那么 `dict[sortedword]` (`['eat']`) 会与 `['tea']` 相加，结果是 `['eat', 'tea']`，然后这个新列表会重新赋值给 `dict[sortedword]`，使 `dict` 变为 `{'aet': ['eat', 'tea']}`。
+
 
 本題 **`anagrams(self, strs) -> List[str]`** 的目標是：
 

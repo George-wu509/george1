@@ -44,6 +44,8 @@ def climb_stairs(self, n: int) -> int:
 ```
 pass
 
+
+
 ```python
 def climb_stairs(self, n: int) -> int:
 	if n == 0:
@@ -181,3 +183,32 @@ Dp[n] = Dp[n-1] + Dp[n-2].
 |**LintCode 152**|Best Time to Buy and Sell Stock II|**1D 数组，每天买卖股票（可以多次交易），求最大收益**|**贪心（局部最优）、动态规划**|
 |**LintCode 515**|Paint House（涂房子）|**2D 动态规划，选择不同颜色最小化成本**|**动态规划 DP[i][c] = min(DP[i-1][其他颜色]) + cost[i][c]**|
 |**LintCode 514**|Paint House II（涂房子 II）|**2D 动态规划，多个颜色最小化成本**|**动态规划 + 滚动数组优化**|
+
+假设你正在爬楼梯，需要`n`步你才能到达顶部。但每次你只能爬一步,兩步或者三步，爬到顶部的方法有多少种？
+```python
+class Solution:
+    def climb_stairs(self, n: int) -> int:
+        if n == 0:
+            return 1 # 基本情况：0级台阶，1种方式（不爬）
+        if n == 1:
+            return 1 # 基本情况：1级台阶，1种方式（走1步）
+        if n == 2:
+            return 2 # 基本情况：2级台阶，2种方式（1+1, 2）
+
+        # 初始化三个变量，分别代表 dp[i-3], dp[i-2], dp[i-1]
+        # 对于 i=3，我们需要 dp[0], dp[1], dp[2]
+        prev_three = 1 # 对应 dp[0] 的值
+        prev_two = 1   # 对应 dp[1] 的值
+        prev_one = 2   # 对应 dp[2] 的值
+
+        # 从 dp[3] 开始计算，一直到 dp[n]
+        for i in range(3, n + 1):
+            current_ways = prev_one + prev_two + prev_three # 计算当前 dp[i] 的值
+            
+            # “移位”变量，为下一次迭代做准备
+            prev_three = prev_two    # 原来的 dp[i-2] 变成新的 dp[i-3]
+            prev_two = prev_one      # 原来的 dp[i-1] 变成新的 dp[i-2]
+            prev_one = current_ways  # 当前计算出的 dp[i] 变成新的 dp[i-1]
+            
+        return prev_one # 循环结束后，prev_one 就存储了 dp[n] 的值
+```
