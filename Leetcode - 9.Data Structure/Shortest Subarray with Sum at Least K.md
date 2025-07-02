@@ -4,17 +4,21 @@ Lintcode 1507
 
 比較:  Lintcode 406  Minimum Size Subarray Sum
 
+
 **样例 1:**
 ```python
 输入：[2,3,1,2,4,3], s = 7
 输出：1
 ```
+
 **样例 2:**
 ```python
 """
 输入：A = [1,2], K = 4
 输出：-1
 ```
+
+
 
 前綴和解法 + 單調隊列
 a= [2,3,1,2,4,3], k = 7

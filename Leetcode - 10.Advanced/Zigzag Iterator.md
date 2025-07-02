@@ -19,12 +19,10 @@ Lintcode 540
 
 
 ```python
-"""
 class ZigzagIterator:
 
     def __init__(self, v1, v2):
         self.queue = [v for v in (v1, v2) if v]
-
 
     def next(self):
         v = self.queue.pop(0)
@@ -33,10 +31,8 @@ class ZigzagIterator:
             self.queue.append(v)
         return value
 
-
     def hasNext(self):
         return len(self.queue) > 0
-
 
 v1 = [1, 2]
 v2 = [3, 4, 5, 6]

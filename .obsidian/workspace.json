@@ -6,65 +6,74 @@
       {
         "id": "9c993193b94cd04c",
         "type": "tabs",
+        "dimension": 51.28205128205129,
         "children": [
           {
-            "id": "0c1831c55c936d62",
+            "id": "736471583e2178aa",
             "type": "leaf",
             "state": {
               "type": "markdown",
               "state": {
-                "file": "@@ Data Structure QA.md",
+                "file": "@@ Daily practice.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "@@ Data Structure QA"
+              "title": "@@ Daily practice"
             }
           },
           {
-            "id": "ed02111038c36d50",
+            "id": "117243a7887b3893",
             "type": "leaf",
             "state": {
               "type": "markdown",
               "state": {
-                "file": "@@ Data Structure QA.md",
+                "file": "Leetcode - 5.Binary Search Tree/Lowest Common Ancestor (LCA).md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "@@ Data Structure QA"
-            }
-          },
-          {
-            "id": "3239ee659cbf332a",
-            "type": "leaf",
-            "state": {
-              "type": "markdown",
-              "state": {
-                "file": "@@ Data Structure QA.md",
-                "mode": "source",
-                "source": false
-              },
-              "icon": "lucide-file",
-              "title": "@@ Data Structure QA"
-            }
-          },
-          {
-            "id": "b59302ce8e065a39",
-            "type": "leaf",
-            "state": {
-              "type": "markdown",
-              "state": {
-                "file": "Leetcode - 12.Summary/單調隊列跟單調棧.md",
-                "mode": "source",
-                "source": false
-              },
-              "icon": "lucide-file",
-              "title": "單調隊列跟單調棧"
+              "title": "Lowest Common Ancestor (LCA)"
             }
           }
         ],
-        "currentTab": 3
+        "currentTab": 1
+      },
+      {
+        "id": "30e59573ddf41540",
+        "type": "tabs",
+        "dimension": 48.71794871794871,
+        "children": [
+          {
+            "id": "013df2d12fbf9a96",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "@@ Data Structure QA.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "@@ Data Structure QA"
+            }
+          },
+          {
+            "id": "74bc1f66482394f7",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "@@ Daily practice.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "@@ Daily practice"
+            }
+          }
+        ],
+        "currentTab": 1
       }
     ],
     "direction": "vertical"
@@ -87,7 +96,7 @@
                 "autoReveal": false
               },
               "icon": "lucide-folder-closed",
-              "title": "Files"
+              "title": "檔案瀏覽器"
             }
           },
           {
@@ -204,45 +213,45 @@
   },
   "left-ribbon": {
     "hiddenItems": {
-      "switcher:Open quick switcher": false,
-      "graph:Open graph view": false,
-      "canvas:Create new canvas": false,
-      "daily-notes:Open today's daily note": false,
-      "templates:Insert template": false,
-      "command-palette:Open command palette": false,
+      "switcher:開啟快速切換": false,
+      "graph:查看關聯圖": false,
+      "canvas:建立新畫布": false,
+      "daily-notes:開啟今天的每日筆記": false,
+      "templates:插入模板": false,
+      "command-palette:開啟命令面板": false,
       "table-editor-obsidian:Advanced Tables Toolbar": false
     }
   },
-  "active": "b59302ce8e065a39",
+  "active": "117243a7887b3893",
   "lastOpenFiles": [
-    "@@ Data Structure QA.md",
-    "Leetcode - 9.Data Structure/Expression Add Operators.md",
-    "Leetcode - 9.Data Structure/Largest Divisible Subset.md",
-    "Leetcode - 9.Data Structure/Range Addition.md",
-    "Leetcode - 9.Data Structure/Count of Smaller Numbers After Self.md",
-    "Leetcode - 9.Data Structure/Next Greater Element II.md",
-    "Leetcode - 12.Summary/單調隊列跟單調棧.md",
-    "Leetcode - 9.Data Structure/Trapping Rain Water.md",
-    "Leetcode - 9.Data Structure/Next Greater Element I.md",
-    "Leetcode - 9.Data Structure/Shortest Subarray with Sum at Least K.md",
-    "Leetcode - 9.Data Structure/Super Pow.md",
-    "Leetcode - 9.Data Structure/Sum of Two Integers.md",
-    "@@ Data Structure QA - simple.md",
+    "Leetcode - 10.Advanced/Zigzag Iterator.md",
+    "Leetcode - 5.Binary Search Tree/Lowest Common Ancestor (LCA).md",
+    "Leetcode - 7.DFS/Binary Tree Paths.md",
     "@@ Daily practice.md",
+    "Leetcode - 8.Dynamic programming/Best Time to Buy and Sell Stock.md",
+    "Leetcode - 9.Data Structure/K Closest Points.md",
+    "@@ Data Structure QA.md",
+    "@@ Data Structure QA - simple.md",
+    "Leetcode - 5.Binary Search Tree/Subtree with Maximum Average.md",
+    "Leetcode - 5.Binary Search Tree/Lowest Common AncestorII (LCA).md",
+    "Leetcode - 5.Binary Search Tree/Minimum Subtree.md",
+    "Leetcode - 5.Binary Search Tree/Binary Search Tree to Greater Sum Tree.md",
+    "Leetcode - 5.Binary Search Tree/Trim a Binary Search Tree.md",
+    "Leetcode - 5.Binary Search Tree/Closest Binary Search Tree Value II.md",
+    "Leetcode - 5.Binary Search Tree/Closest Binary Search Tree Value.md",
+    "Leetcode - 6.BFS/Word Ladder II.md",
+    "Leetcode - 6.BFS/Max Area of Island.md",
+    "Leetcode - 6.BFS/Number of Islands.md",
+    "Leetcode - 7.DFS/Permutations.md",
+    "Leetcode - 6.BFS/Knight Shortest Path.md",
+    "Leetcode - 7.DFS/Traveling Salesman Problem.md",
+    "Leetcode - 7.DFS/Word Search II.md",
+    "Leetcode - 9.Data Structure/Combination Sum II.md",
+    "Leetcode - 7.DFS/Generate Parentheses.md",
+    "Leetcode - 9.Data Structure/Binary Search Tree Iterator.md",
+    "Leetcode - 5.Binary Search Tree/Binary Tree Inorder Traversal.md",
     "materials/Screenshot 2025-06-24 141458.png",
     "materials/Pasted image 20250624123616.png",
-    "Leetcode - 3.Two Pointers/Minimum Size Subarray Sum.md",
-    "Leetcode - 12.Summary/hash table.md",
-    "Leetcode - 12.Summary/位元運算.md",
-    "Leetcode - 6.BFS/Knight Shortest Path.md",
-    "Leetcode - 0.Basic/Remove Duplicates.md",
-    "Leetcode - 12.Summary/if not nums.md",
-    "Leetcode - 1.String/Anagrams.md",
-    "Leetcode - 2.Sorting/Classical Sort Integers.md",
-    "Leetcode - 0.Basic/Climbing Stairs.md",
-    "Leetcode - 6.BFS/Number of Islands.md",
-    "Leetcode - 4.Binary Search/Fibonacciseries.md",
-    "Leetcode - 9.Data Structure/Sliding Window Maximum.md",
     "Others/test1.py",
     "materials/Pasted image 20250521155837.png",
     "materials/Pasted image 20250521154904.png",

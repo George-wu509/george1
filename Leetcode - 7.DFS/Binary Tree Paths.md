@@ -61,3 +61,33 @@ if __name__ == "__main__":
     print(paths)
 ```
 pass
+
+
+比較dfs的code 
+LintCode 15 全排列（Permutations） [[Permutations]]
+```python
+class Solution:
+    def permute(self, nums):
+        results = []
+        visited = [False]*len(nums)
+        self.dfs(nums, visited, [], results)
+        return results
+        
+    def dfs(self, nums, visited, num, results):
+        if len(num) == len(nums):
+            results.append(list(num))
+            return
+        
+        for i in range(len(nums)):
+            if not visited[i]:
+                visited[i] = True
+                num.append(nums[i])
+                self.dfs(nums, visited, num, results)
+                num.pop()
+                visited[i] = False
+                
+sol = Solution()
+nums = [1,2,3]
+result = sol.permute(nums)
+print(result)
+```
