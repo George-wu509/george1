@@ -33,10 +33,10 @@ class Solution2: # passed in leetcode
             return []
         
         paths = []
-        self.find_paths(root, [root], paths)
+        self.dfs(root, [root], paths)
         return paths
 
-    def find_paths(self, node, path, paths):
+    def dfs(self, node, path, paths):
         if not node:
             return
 
@@ -45,20 +45,13 @@ class Solution2: # passed in leetcode
             return
 
         path.append(node.left)
-        self.find_paths(node.left, path, paths)
+        self.dfs(node.left, path, paths)
         path.pop()
 
         path.append(node.right)
-        self.find_paths(node.right, path, paths)
+        self.dfs(node.right, path, paths)
         path.pop()
 
-if __name__ == "__main__":
-    sol = Solution2()
-    lst = ['1','2','3','4','5']
-    tree = create_tree(lst)
-
-    paths = sol.binary_tree_paths(tree)
-    print(paths)
 ```
 pass
 

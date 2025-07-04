@@ -43,7 +43,6 @@ LCA(3, 5) = 4
 ```
 
 
-
 ```python
 def lowestCommonAncestor(self, root, A, B):
 	if root is None:
