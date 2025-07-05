@@ -22,17 +22,31 @@
             }
           },
           {
-            "id": "23a9ed546f0d96e9",
+            "id": "1eaa26916da0c8cc",
             "type": "leaf",
             "state": {
               "type": "markdown",
               "state": {
-                "file": "Leetcode - 9.Data Structure/Trapping Rain Water.md",
+                "file": "計算棋盤走法.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "Trapping Rain Water"
+              "title": "計算棋盤走法"
+            }
+          },
+          {
+            "id": "c41f3008bd014adc",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "Leetcode - 6.BFS/Knight Shortest Path.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "Knight Shortest Path"
             }
           }
         ],
@@ -185,10 +199,20 @@
       "table-editor-obsidian:Advanced Tables Toolbar": false
     }
   },
-  "active": "23a9ed546f0d96e9",
+  "active": "1eaa26916da0c8cc",
   "lastOpenFiles": [
     "@@ Daily practice.md",
+    "計算棋盤走法.md",
     "Leetcode - 9.Data Structure/Trapping Rain Water.md",
+    "Leetcode - 9.Data Structure/Sliding Window Maximum.md",
+    "Leetcode - 6.BFS/Knight Shortest Path.md",
+    "Leetcode - 3.Two Pointers/Minimum Size Subarray Sum.md",
+    "Leetcode - 7.DFS/Subsets.md",
+    "Leetcode - 1.String/Implement strStr.md",
+    "Leetcode - 9.Data Structure/Shortest Subarray with Sum at Least K.md",
+    "Leetcode - 2.Sorting/Classical Sort Integers.md",
+    "Leetcode - 1.String/Anagrams.md",
+    "Leetcode - 0.Basic/Climbing Stairs.md",
     "Leetcode - 7.DFS/Binary Tree Paths.md",
     "Leetcode - 5.Binary Search Tree/Lowest Common Ancestor (LCA).md",
     "Leetcode - 3.Two Pointers/Two Sum.md",
@@ -207,16 +231,6 @@
     "materials/Pasted image 20250702180954.png",
     "@@ Data Structure QA.md",
     "Leetcode - 5.Binary Search Tree/Subtree with Maximum Average.md",
-    "Leetcode - 5.Binary Search Tree/Lowest Common AncestorII (LCA).md",
-    "Leetcode - 5.Binary Search Tree/Minimum Subtree.md",
-    "Leetcode - 5.Binary Search Tree/Binary Search Tree to Greater Sum Tree.md",
-    "Leetcode - 5.Binary Search Tree/Trim a Binary Search Tree.md",
-    "Leetcode - 5.Binary Search Tree/Closest Binary Search Tree Value II.md",
-    "Leetcode - 5.Binary Search Tree/Closest Binary Search Tree Value.md",
-    "Leetcode - 6.BFS/Word Ladder II.md",
-    "Leetcode - 6.BFS/Max Area of Island.md",
-    "Leetcode - 6.BFS/Number of Islands.md",
-    "Leetcode - 6.BFS/Knight Shortest Path.md",
     "materials/Screenshot 2025-06-24 141458.png",
     "materials/Pasted image 20250624123616.png",
     "Others/test1.py",
