@@ -18,6 +18,44 @@ Lintcode 1507
 输出：-1
 ```
 
+**Method1(雙指針): 是最優解，具有 O(N) 的時間複雜度和 O(1) 的空間複雜度**
+
+Method2(前綴和和哈希表):因為它通常用於查找固定和的子數組。如果要求是找到和等於 s 的子數組，哈希表才會發揮其最大優勢。
+
+Method3(單調隊列):通常用於解決滑動窗口中的最大值/最小值問題，例如「滑動窗口最大值」或者「找到一個區間，使得區間內的最小值滿足某個條件」。對於求「和」的問題，單調隊列的直接應用較少
+
+nums= [2,3,1,2,4,3], s = 7
+雙指針解法
+```python
+class Solution:
+
+    def minimum_size(self, nums: List[int], s: int) -> int:
+        if nums is None or len(nums) == 0:
+            return -1
+
+        n = len(nums)
+        minLength = n + 1
+        sum = 0
+        j = 0
+        for i in range(n):
+            while j < n and sum < s:
+                sum += nums[j]
+                j += 1
+            if sum >= s:
+                minLength = min(minLength, j - i)
+
+            sum -= nums[i]
+            
+        if minLength == n + 1:
+            return -1
+            
+        return minLength
+```
+pass
+解釋: 
+step1: i是左指針用for loop, j是右指針 
+
+
 
 
 前綴和解法 + 單調隊列
