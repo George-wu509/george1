@@ -4,49 +4,49 @@
     "type": "split",
     "children": [
       {
-        "id": "9c993193b94cd04c",
+        "id": "d78ab1045a1868fc",
         "type": "tabs",
         "children": [
           {
-            "id": "b7daf5a560a65733",
+            "id": "886a0007bfa1317f",
             "type": "leaf",
             "state": {
               "type": "markdown",
               "state": {
-                "file": "@@ Data Structure QA.md",
+                "file": "@@ Interview prepare.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "@@ Data Structure QA"
+              "title": "@@ Interview prepare"
             }
           },
           {
-            "id": "eeca1558fbe4bfe3",
+            "id": "abe512c79b76cdb1",
             "type": "leaf",
             "state": {
               "type": "markdown",
               "state": {
-                "file": "Leetcode - 12.Summary/Graph.md",
+                "file": "DL - CNN/CNN - Setting.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "Graph"
+              "title": "CNN - Setting"
             }
           },
           {
-            "id": "736471583e2178aa",
+            "id": "de848e886ebea4c3",
             "type": "leaf",
             "state": {
               "type": "markdown",
               "state": {
-                "file": "@@ Daily practice.md",
+                "file": "DL - CNN/Focal Loss.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "@@ Daily practice"
+              "title": "Focal Loss"
             }
           }
         ],
@@ -73,7 +73,7 @@
                 "autoReveal": false
               },
               "icon": "lucide-folder-closed",
-              "title": "Files"
+              "title": "檔案瀏覽器"
             }
           },
           {
@@ -190,43 +190,43 @@
   },
   "left-ribbon": {
     "hiddenItems": {
-      "switcher:Open quick switcher": false,
-      "graph:Open graph view": false,
-      "canvas:Create new canvas": false,
-      "daily-notes:Open today's daily note": false,
-      "templates:Insert template": false,
-      "command-palette:Open command palette": false,
+      "switcher:開啟快速切換": false,
+      "graph:查看關聯圖": false,
+      "canvas:建立新畫布": false,
+      "daily-notes:開啟今天的每日筆記": false,
+      "templates:插入模板": false,
+      "command-palette:開啟命令面板": false,
       "table-editor-obsidian:Advanced Tables Toolbar": false
     }
   },
-  "active": "736471583e2178aa",
+  "active": "de848e886ebea4c3",
   "lastOpenFiles": [
-    "@@ Data Structure QA.md",
-    "Leetcode - 12.Summary/Graph.md",
-    "@@ Daily practice.md",
-    "Leetcode - 6.BFS/Course Schedule II.md",
-    "Leetcode - 6.BFS/Topological Sorting.md",
-    "Leetcode - 12.Summary/hash table.md",
-    "Leetcode - 12.Summary/單調隊列跟單調棧.md",
-    "Leetcode - 9.Data Structure/Sliding Window Maximum.md",
-    "Leetcode - 12.Summary/if not nums.md",
-    "Leetcode - 12.Summary/位元運算.md",
-    "Leetcode - 12.Summary/計算棋盤走法.md",
-    "Leetcode - 9.Data Structure/Sum of Two Integers.md",
-    "Leetcode - 9.Data Structure/Super Pow.md",
-    "Leetcode - 6.BFS/Perfect Squares.md",
-    "Leetcode - 9.Data Structure/Combinations.md",
-    "Leetcode - 9.Data Structure/Longest Subarray.md",
-    "Leetcode - 9.Data Structure/Shortest Subarray with Sum at Least K.md",
-    "Leetcode - 9.Data Structure/Implement Stack using Queues.md",
-    "Leetcode - 3.Two Pointers/Window Sum.md",
-    "Leetcode - 3.Two Pointers/Minimum Size Subarray Sum.md",
-    "Leetcode - 2.Sorting/Classical Sort Integers.md",
-    "Leetcode - 1.String/Anagrams.md",
-    "Leetcode - 0.Basic/Climbing Stairs.md",
-    "Leetcode - 6.BFS/Knight Shortest Path.md",
-    "Leetcode - 9.Data Structure/Trapping Rain Water.md",
-    "Leetcode - 7.DFS/Subsets.md",
+    "DL - CNN/目標檢測loss.md",
+    "DL - CNN/Focal Loss.md",
+    "DL - CNN/Smooth L1 Loss.md",
+    "DL - CNN/語義分割loss.md",
+    "DL - CNN/CNN - Setting.md",
+    "DL - CNN/Criterion.md",
+    "DL - CNN/圖像分類loss.md",
+    "DL - CNN/實例分割loss.md",
+    "DL - CNN/Dice Loss.md",
+    "DL - CNN/Pixel Accuracy.md",
+    "DL - CNN/Normalization and dropout.md",
+    "DL - CNN/Activation funs.md",
+    "DL - CNN/Regularization.md",
+    "DL - CNN/Dropout.md",
+    "DL - CNN/optimizer.md",
+    "@@ Interview prepare.md",
+    "Code - AI/PyTorch - interview.md",
+    "DL - CNN/CNN - Basic.md",
+    "DL - CNN/手撕项目代码.md",
+    "DL - CNN/AI model Summary.md",
+    "CVML - Image CV/Traditional Computer Vision summary.md",
+    "CVML - ML/Machine learning matlab.md",
+    "DL - YOLO and object detection/Object detection - summary.md",
+    "DL - YOLO and object detection/YOLO.md",
+    "DL - YOLO and object detection/Object detection on edge.md",
+    "DL - Tracking/Tracking and ReID.md",
     "materials/Pasted image 20250702182519.png",
     "materials/Pasted image 20250702181053.png",
     "Pasted image 20250702165453.png",
