@@ -6,7 +6,6 @@
       {
         "id": "125974abe02e8775",
         "type": "tabs",
-        "dimension": 48.866348448687354,
         "children": [
           {
             "id": "8529285582b97a57",
@@ -23,57 +22,63 @@
             }
           },
           {
-            "id": "b407860164b29ab3",
+            "id": "7151edd7adbc6d1b",
             "type": "leaf",
             "state": {
               "type": "markdown",
               "state": {
-                "file": "DL - CNN/CNN - Basic.md",
+                "file": "DL - Video/Video object detection summary.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "CNN - Basic"
+              "title": "Video object detection summary"
             }
           },
           {
-            "id": "3ec8631a748b1d1f",
+            "id": "351da213113271a4",
             "type": "leaf",
             "state": {
               "type": "markdown",
               "state": {
-                "file": "DL - CNN/CNN.md",
+                "file": "GroundedSAM 與 GroundingDINO.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "CNN"
-            }
-          }
-        ],
-        "currentTab": 2
-      },
-      {
-        "id": "a204869ef77cce81",
-        "type": "tabs",
-        "dimension": 51.13365155131265,
-        "children": [
-          {
-            "id": "702e2920bc6a4658",
-            "type": "leaf",
-            "state": {
-              "type": "markdown",
-              "state": {
-                "file": "@@ Interview prepare.md",
-                "mode": "source",
-                "source": false
-              },
-              "icon": "lucide-file",
-              "title": "@@ Interview prepare"
+              "title": "GroundedSAM 與 GroundingDINO"
             }
           },
           {
-            "id": "f340a5fd64b784da",
+            "id": "c607004f0125bf39",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "GLIP summary.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "GLIP summary"
+            }
+          },
+          {
+            "id": "7582af56fbf6609a",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "DL - Video/Video segmentation summary.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "Video segmentation summary"
+            }
+          },
+          {
+            "id": "373ed91d1e94c1bf",
             "type": "leaf",
             "state": {
               "type": "markdown",
@@ -87,7 +92,7 @@
             }
           }
         ],
-        "currentTab": 1
+        "currentTab": 3
       }
     ],
     "direction": "vertical"
@@ -110,7 +115,7 @@
                 "autoReveal": false
               },
               "icon": "lucide-folder-closed",
-              "title": "檔案瀏覽器"
+              "title": "Files"
             }
           },
           {
@@ -227,54 +232,54 @@
   },
   "left-ribbon": {
     "hiddenItems": {
-      "switcher:開啟快速切換": false,
-      "graph:查看關聯圖": false,
-      "canvas:建立新畫布": false,
-      "daily-notes:開啟今天的每日筆記": false,
-      "templates:插入模板": false,
-      "command-palette:開啟命令面板": false,
+      "switcher:Open quick switcher": false,
+      "graph:Open graph view": false,
+      "canvas:Create new canvas": false,
+      "daily-notes:Open today's daily note": false,
+      "templates:Insert template": false,
+      "command-palette:Open command palette": false,
       "table-editor-obsidian:Advanced Tables Toolbar": false
     }
   },
-  "active": "3ec8631a748b1d1f",
+  "active": "c607004f0125bf39",
   "lastOpenFiles": [
-    "DL - CNN/optimizer.md",
-    "DL - CNN/CNN.md",
-    "DL - CNN/Dice Loss.md",
-    "DL - CNN/Smooth L1 Loss.md",
-    "DL - CNN/Normalization and dropout.md",
-    "DL - CNN/CNN - Basic.md",
-    "DL - CNN/Depthwise Separable Convolution.md",
-    "DL - CNN/lightweight CNN.md",
-    "DL - CNN/DarkNet.md",
-    "DL - CNN/FCN.md",
-    "DL - CNN/vanishing gradient, exploding gradient, overfit.md",
-    "DL - CNN/CNN - Setting.md",
-    "DL - CNN/ResNet.md",
+    "Pasted image 20250724145334.png",
+    "Pasted image 20250724145119.png",
+    "Pasted image 20250724144755.png",
+    "Pasted image 20250724144716.png",
+    "Pasted image 20250724144244.png",
     "@@ Interview prepare.md",
-    "Pasted image 20250724001607.png",
-    "materials/Pasted image 20241103111718.png",
-    "DL - CNN/手撕项目代码.md",
-    "CVML - ML/Machine learning matlab.md",
-    "Code - AI/PyTorch - interview.md",
-    "CVML - Image CV/Traditional Computer Vision summary.md",
-    "materials/237352561-6204d743-8705-43f5-817f-0bc4907b88d0.png",
-    "DL - CNN/Dropout.md",
-    "DL - CNN/AI model Summary architecture.md",
-    "DL - MultiModal/MultiModal - Introduction.md",
-    "DL - CLIP/CLIP base.md",
-    "DL - SAM/SAM - SAM.md",
-    "DL - Transformer and ViT/Transformer and ViT - Summary.md",
     "DL - Performance optimization(CUDA)/Performance optimization summary.md",
     "DL - Performance optimization(CUDA)/PTQ and QAT quantification.md",
+    "DL - Video/Video object detection summary.md",
+    "GroundedSAM 與 GroundingDINO.md",
+    "GLIP summary.md",
+    "DL - Video/Video segmentation summary.md",
+    "DL - CNN/CNN - Setting.md",
+    "DL - Segmentation/Image segmentation summary.md",
+    "DL - Autonomous-Driving/Autonomous-Driving - Summary.md",
+    "Interview - ongoing/GE Aerospace Sr Scientist - AI & Computer Vision/CT Imaging Analysis(Aerospace).md",
+    "DL - 3D Image,CV and Camera/Multi-Target Multi-Camera Tracking（MTMCT）.md",
+    "DL - embedded and edge/Edge device.md",
+    "DL - embedded and edge/Cloud service.md",
+    "DL - embedded and edge/Edge system design.md",
+    "DL - MultiModal/MultiModal - Introduction.md",
+    "DL - CNN/AI model Summary architecture.md",
+    "DL - Performance optimization(CUDA)/CUDA programming - Basic.md",
+    "DL - Performance optimization(CUDA)/weight clustering and weight sharing.md",
+    "DL - Transformer and ViT/Transformer and ViT - Summary.md",
+    "DL - SAM/SAM - SAM.md",
+    "DL - CLIP/CLIP base.md",
+    "DL - CV Generative Models/CV Generative Models - Introduction.md",
+    "DL - MLOPs/MLOPS - Introduction.md",
+    "DL - Cloud/AWS and AzureML.md",
+    "Pasted image 20250724001607.png",
+    "materials/Pasted image 20241103111718.png",
+    "materials/237352561-6204d743-8705-43f5-817f-0bc4907b88d0.png",
     "materials/Pasted image 20250723022819.png",
     "materials/Pasted image 20250723022759.png",
     "Pasted image 20250723002424.png",
-    "materials/Pasted image 20250723011247.png",
-    "materials/Pasted image 20250722220217.png",
-    "DL - VideoMAE",
-    "materials/downloadrtdfhwt.png",
-    "materials/downloadsdfvcdftr.png",
+    "DL - Video",
     "Others/test1.py",
     "DL - embedded and edge"
   ]
