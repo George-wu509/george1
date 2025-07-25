@@ -22,7 +22,84 @@
             }
           },
           {
-            "id": "7151edd7adbc6d1b",
+            "id": "a0c98d892dd1703d",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "Grounding Summary.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "Grounding Summary"
+            }
+          },
+          {
+            "id": "f6e220d1e2d11640",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "Video Object Detection segmentation compare.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "Video Object Detection segmentation compare"
+            }
+          },
+          {
+            "id": "351da213113271a4",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "DL - Ground/GLIP.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "GLIP"
+            }
+          },
+          {
+            "id": "ce2f1c7b957d91a7",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "DL - Ground/Grounded SAM.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "Grounded SAM"
+            }
+          }
+        ],
+        "currentTab": 1
+      },
+      {
+        "id": "ca3893ac12e85f07",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "52ec3449b3ae6d2b",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "@@ Interview prepare.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "@@ Interview prepare"
+            }
+          },
+          {
+            "id": "210d7dd0c13e95dd",
             "type": "leaf",
             "state": {
               "type": "markdown",
@@ -36,35 +113,21 @@
             }
           },
           {
-            "id": "351da213113271a4",
+            "id": "17063272b050e954",
             "type": "leaf",
             "state": {
               "type": "markdown",
               "state": {
-                "file": "GroundedSAM 與 GroundingDINO.md",
+                "file": "DL - Video/Video object detection summary.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "GroundedSAM 與 GroundingDINO"
+              "title": "Video object detection summary"
             }
           },
           {
-            "id": "c607004f0125bf39",
-            "type": "leaf",
-            "state": {
-              "type": "markdown",
-              "state": {
-                "file": "GLIP summary.md",
-                "mode": "source",
-                "source": false
-              },
-              "icon": "lucide-file",
-              "title": "GLIP summary"
-            }
-          },
-          {
-            "id": "7582af56fbf6609a",
+            "id": "f872e969615776d2",
             "type": "leaf",
             "state": {
               "type": "markdown",
@@ -75,20 +138,6 @@
               },
               "icon": "lucide-file",
               "title": "Video segmentation summary"
-            }
-          },
-          {
-            "id": "373ed91d1e94c1bf",
-            "type": "leaf",
-            "state": {
-              "type": "markdown",
-              "state": {
-                "file": "DL - CNN/CNN - Setting.md",
-                "mode": "source",
-                "source": false
-              },
-              "icon": "lucide-file",
-              "title": "CNN - Setting"
             }
           }
         ],
@@ -115,7 +164,7 @@
                 "autoReveal": false
               },
               "icon": "lucide-folder-closed",
-              "title": "Files"
+              "title": "檔案瀏覽器"
             }
           },
           {
@@ -232,53 +281,54 @@
   },
   "left-ribbon": {
     "hiddenItems": {
-      "switcher:Open quick switcher": false,
-      "graph:Open graph view": false,
-      "canvas:Create new canvas": false,
-      "daily-notes:Open today's daily note": false,
-      "templates:Insert template": false,
-      "command-palette:Open command palette": false,
+      "switcher:開啟快速切換": false,
+      "graph:查看關聯圖": false,
+      "canvas:建立新畫布": false,
+      "daily-notes:開啟今天的每日筆記": false,
+      "templates:插入模板": false,
+      "command-palette:開啟命令面板": false,
       "table-editor-obsidian:Advanced Tables Toolbar": false
     }
   },
-  "active": "c607004f0125bf39",
+  "active": "f872e969615776d2",
   "lastOpenFiles": [
-    "Pasted image 20250724145334.png",
-    "Pasted image 20250724145119.png",
-    "Pasted image 20250724144755.png",
-    "Pasted image 20250724144716.png",
-    "Pasted image 20250724144244.png",
     "@@ Interview prepare.md",
-    "DL - Performance optimization(CUDA)/Performance optimization summary.md",
-    "DL - Performance optimization(CUDA)/PTQ and QAT quantification.md",
-    "DL - Video/Video object detection summary.md",
-    "GroundedSAM 與 GroundingDINO.md",
-    "GLIP summary.md",
-    "DL - Video/Video segmentation summary.md",
-    "DL - CNN/CNN - Setting.md",
-    "DL - Segmentation/Image segmentation summary.md",
-    "DL - Autonomous-Driving/Autonomous-Driving - Summary.md",
-    "Interview - ongoing/GE Aerospace Sr Scientist - AI & Computer Vision/CT Imaging Analysis(Aerospace).md",
-    "DL - 3D Image,CV and Camera/Multi-Target Multi-Camera Tracking（MTMCT）.md",
-    "DL - embedded and edge/Edge device.md",
-    "DL - embedded and edge/Cloud service.md",
-    "DL - embedded and edge/Edge system design.md",
-    "DL - MultiModal/MultiModal - Introduction.md",
+    "CVML - ML/Machine learning matlab.md",
+    "Grounding Summary.md",
+    "DL - YOLO and object detection/Object detection - summary.md",
     "DL - CNN/AI model Summary architecture.md",
-    "DL - Performance optimization(CUDA)/CUDA programming - Basic.md",
-    "DL - Performance optimization(CUDA)/weight clustering and weight sharing.md",
-    "DL - Transformer and ViT/Transformer and ViT - Summary.md",
-    "DL - SAM/SAM - SAM.md",
-    "DL - CLIP/CLIP base.md",
-    "DL - CV Generative Models/CV Generative Models - Introduction.md",
-    "DL - MLOPs/MLOPS - Introduction.md",
+    "CVML - Image CV/Traditional Computer Vision summary.md",
+    "DL - CNN/CNN - Setting.md",
+    "DL - CNN/手撕项目代码.md",
+    "DL - CNN/AI model Summary.md",
+    "DL - CNN/AI model的量化指標.md",
     "DL - Cloud/AWS and AzureML.md",
-    "Pasted image 20250724001607.png",
+    "DL - MLOPs/MLOPs - Introduction.md",
+    "DL - Ground/Grounded SAM.md",
+    "DL - Ground/Grounding DINO.md",
+    "DL - Ground/GLIP.md",
+    "DL - Video/Video segmentation summary.md",
+    "DL - CV Generative Models/CV Generative Models - Introduction.md",
+    "DL - Performance optimization(CUDA)/Performance optimization summary.md",
+    "DL - CNN/CNN - Basic.md",
+    "DL - Transformer and ViT/Transformer and ViT - Summary.md",
+    "DL - GAN/GAN - Summary.md",
+    "DL - Segmentation/Image segmentation summary.md",
+    "DL - Tracking/Tracking - Summary.md",
+    "DL - YOLO and object detection/Object detection on edge.md",
+    "DL - CLIP/CLIP.md",
+    "DL - MultiModal/MultiModal - Introduction.md",
+    "materials/Pasted image 20250725013523.png",
+    "DL - Ground",
+    "materials/Pasted image 20250724001607.png",
+    "materials/Pasted image 20250724234912.png",
+    "materials/Pasted image 20250724145334.png",
+    "materials/Pasted image 20250724145119.png",
+    "materials/Pasted image 20250724144755.png",
+    "materials/Pasted image 20250724144716.png",
+    "materials/Pasted image 20250724144244.png",
     "materials/Pasted image 20241103111718.png",
     "materials/237352561-6204d743-8705-43f5-817f-0bc4907b88d0.png",
-    "materials/Pasted image 20250723022819.png",
-    "materials/Pasted image 20250723022759.png",
-    "Pasted image 20250723002424.png",
     "DL - Video",
     "Others/test1.py",
     "DL - embedded and edge"

@@ -6,7 +6,8 @@
 十分钟解读Grounding DINO-根据文字提示检测任意目标 - 李小羊学AI的文章 - 知乎
 https://zhuanlan.zhihu.com/p/627646794
 
-
+Grounded-SAM（最强Zero-Shot视觉应用）：本地部署及各个模块的全网最详细使用教程！ - 共由的文章 - 知乎
+https://zhuanlan.zhihu.com/p/690398665
 
 ---
 

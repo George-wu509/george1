@@ -25,3 +25,7 @@ GLIP 模型全貌
 
 Prompt tuning对于deep fusion是非常有用的，而对浅层融合则没那么有用。对于过去的模型，他们大多使用的是late fusion，也就是在计算alignment scores时才将图像编码和文本编码汇聚在一起，这就是浅层融合。所以，如果想要利用Prompt的力量，我们自然需要deep fusion，这样有利于模型学习到更深层次的语义信息，并在下游任务上具有更好的应用。其具体做法如下图所示
 ![[Pasted image 20250724145119.png]]
+
+
+
+![[Pasted image 20250724234912.png]]
