@@ -22,7 +22,7 @@
             }
           },
           {
-            "id": "a0c98d892dd1703d",
+            "id": "7ccd3bac372f37db",
             "type": "leaf",
             "state": {
               "type": "markdown",
@@ -33,48 +33,6 @@
               },
               "icon": "lucide-file",
               "title": "Grounding Summary"
-            }
-          },
-          {
-            "id": "f6e220d1e2d11640",
-            "type": "leaf",
-            "state": {
-              "type": "markdown",
-              "state": {
-                "file": "Video Object Detection segmentation compare.md",
-                "mode": "source",
-                "source": false
-              },
-              "icon": "lucide-file",
-              "title": "Video Object Detection segmentation compare"
-            }
-          },
-          {
-            "id": "351da213113271a4",
-            "type": "leaf",
-            "state": {
-              "type": "markdown",
-              "state": {
-                "file": "DL - Ground/GLIP.md",
-                "mode": "source",
-                "source": false
-              },
-              "icon": "lucide-file",
-              "title": "GLIP"
-            }
-          },
-          {
-            "id": "ce2f1c7b957d91a7",
-            "type": "leaf",
-            "state": {
-              "type": "markdown",
-              "state": {
-                "file": "DL - Ground/Grounded SAM.md",
-                "mode": "source",
-                "source": false
-              },
-              "icon": "lucide-file",
-              "title": "Grounded SAM"
             }
           }
         ],
@@ -97,51 +55,8 @@
               "icon": "lucide-file",
               "title": "@@ Interview prepare"
             }
-          },
-          {
-            "id": "210d7dd0c13e95dd",
-            "type": "leaf",
-            "state": {
-              "type": "markdown",
-              "state": {
-                "file": "DL - Video/Video object detection summary.md",
-                "mode": "source",
-                "source": false
-              },
-              "icon": "lucide-file",
-              "title": "Video object detection summary"
-            }
-          },
-          {
-            "id": "17063272b050e954",
-            "type": "leaf",
-            "state": {
-              "type": "markdown",
-              "state": {
-                "file": "DL - Video/Video object detection summary.md",
-                "mode": "source",
-                "source": false
-              },
-              "icon": "lucide-file",
-              "title": "Video object detection summary"
-            }
-          },
-          {
-            "id": "f872e969615776d2",
-            "type": "leaf",
-            "state": {
-              "type": "markdown",
-              "state": {
-                "file": "DL - Video/Video segmentation summary.md",
-                "mode": "source",
-                "source": false
-              },
-              "icon": "lucide-file",
-              "title": "Video segmentation summary"
-            }
           }
-        ],
-        "currentTab": 3
+        ]
       }
     ],
     "direction": "vertical"
@@ -290,12 +205,14 @@
       "table-editor-obsidian:Advanced Tables Toolbar": false
     }
   },
-  "active": "f872e969615776d2",
+  "active": "7ccd3bac372f37db",
   "lastOpenFiles": [
     "@@ Interview prepare.md",
-    "CVML - ML/Machine learning matlab.md",
-    "Grounding Summary.md",
     "DL - YOLO and object detection/Object detection - summary.md",
+    "Grounding Summary.md",
+    "Video Object Detection segmentation compare.md",
+    "DL - Video/Video segmentation summary.md",
+    "CVML - ML/Machine learning matlab.md",
     "DL - CNN/AI model Summary architecture.md",
     "CVML - Image CV/Traditional Computer Vision summary.md",
     "DL - CNN/CNN - Setting.md",
@@ -307,7 +224,6 @@
     "DL - Ground/Grounded SAM.md",
     "DL - Ground/Grounding DINO.md",
     "DL - Ground/GLIP.md",
-    "DL - Video/Video segmentation summary.md",
     "DL - CV Generative Models/CV Generative Models - Introduction.md",
     "DL - Performance optimization(CUDA)/Performance optimization summary.md",
     "DL - CNN/CNN - Basic.md",
@@ -317,7 +233,6 @@
     "DL - Tracking/Tracking - Summary.md",
     "DL - YOLO and object detection/Object detection on edge.md",
     "DL - CLIP/CLIP.md",
-    "DL - MultiModal/MultiModal - Introduction.md",
     "materials/Pasted image 20250725013523.png",
     "DL - Ground",
     "materials/Pasted image 20250724001607.png",
