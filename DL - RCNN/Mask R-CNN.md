@@ -1,4 +1,8 @@
 
+**Feature Pyramid network (FPN)**
+**Region proposal network (RPN)**
+**RoIAlign layer**
+
 ![[Pasted image 20240912133211.png]]
 ![[Pasted image 20240912133214.png]]
 Reference:

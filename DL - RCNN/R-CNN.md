@@ -6,7 +6,9 @@
 
 
 GeneralizedRCNN      Base-RCNN-FPN
-![[Pasted image 20240912132028.png]]ResNet50
+![[Pasted image 20240912132028.png]]
+
+ResNet50
 
 ![[Pasted image 20240912132832.png]]
 

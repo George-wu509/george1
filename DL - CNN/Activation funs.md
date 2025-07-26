@@ -2,7 +2,7 @@
 在深度學習中，**Activation Function（激活函數）** 是神經網絡中的關鍵組件，它決定了神經元的輸出，賦予神經網絡**非線性**的能力，從而能夠學習和表示更複雜的數據模式。以下是一些常見的激活函數及其特點與應用。梯度消失（vanishing gradient）和梯度爆炸（exploding gradient）
 
 Reference:
-激活函数sigmoid、tanh、softmax、relu、swish原理及区别 - 嘎嘣嘎嘣脆的文章 - 知乎
+激活函数sigmoid、tanh、softmax、relu、swish原理及区别 - 嘎嘣嘎嘣脆的文章
 https://zhuanlan.zhihu.com/p/494417245
 
 ---

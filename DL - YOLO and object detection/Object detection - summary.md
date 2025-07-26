@@ -33,13 +33,13 @@ VGG/ResNet 加上 RoI Pooling(或RPN + RoI Align)
 
 **MaskRCNN**: 
 Backbone Model:   ResNet/VGG
-Neck Model:           FPN (Feature Pyramid network)
-Head Model:           RPN (Region proposal network) + ROI Align
+Neck Model:           FPN (Feature Pyramid network)+RPN (Region proposal network) + ROI Align
+Head Model:           
 
 [[YOLO]]: Backbone: DarkNet(CSPDarkNet), Neck: PAN, Head: feature image切成網格單元, 在每個單元上進行回歸預測
 [[YOLOv8]] 支持instance seg, Obb, pose等. Backbone 用C2f模組 + conv(改成用3x3).   neck用PAN取代FPN, head model: Anchor-free Decoupled Head
 
-[[FCOS]]:  保留Faster RCNN的ResNet backbone + FPN但移除FC層, head model則改為anchor-free, 而且是在每個pixel做classification跟regression. (就是保留RCNN(但移除FC)但把head model改成anchor-free)
+[[FCOS]]:  保留Faster RCNN的ResNet backbone + FPN但移除FC層, head model則改為anchor-free, 而且是在每個pixel做classification跟regression. (<mark style="background: #FFF3A3A6;">就是保留RCNN(但移除FC)但把head model改成anchor-free</mark>)
 
 [[SSD]]: 使用 VGG(移除 FC 層)，neck不是用FPN而是添加額外卷積層成多尺度特徵層，不用region proposal而是適配單階段檢測(就是保留RCNN(但移除FC), Neck也不是用FPN而是多尺度特徵層. 也把head model改成anchor-free))。
 
