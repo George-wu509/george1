@@ -4,7 +4,6 @@
 | [[### MLOPs using AzureML ]] |     |
 | [[###### MLOPs using AWS]]   |     |
 
-
 ### MLOPs using AzureML 
 
 詳細說明如何使用 Azure Machine Learning (Azure ML) 實作一個物件偵測 (Object Detection) 模型的 MLOps 流程，並提供具體的中文說明和示例概念。
