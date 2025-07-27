@@ -1,9 +1,9 @@
 
-1. YOLO + DeepSORT
+1. YOLO + SORT, DeepSORT, ByteTrack (ReID)
 
-2. FGFA + optical flow
+2. Video-DETR or TrackFormer
 
-3. StreamYOLO / YOLOX-Track / Video-DETR
+3. GroundingDINO + Tracker
 
 
 
