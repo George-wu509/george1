@@ -2,12 +2,12 @@
 
 
 
-|                                              | AI Model<br>(No Transformer)                                                           | Transformer<br>(closeset)           | Grounding<br>(openset/zero-shot)                           |
-| -------------------------------------------- | -------------------------------------------------------------------------------------- | ----------------------------------- | ---------------------------------------------------------- |
-| *Image*<br>*object detection*                | RCNN series<br>YOLO(FCOS)<br>Lightweight<br>RetainNet<br>EfficientDet<br>MobileNet-SSD | DETR<br>DINO                        | GLIP<br>Grounding DINO                                     |
-| *Image*<br>*segmentation*                    | RCNN Series<br>UNet(FCN)                                                               | DETR<br>SAM                         | Grounded SAM                                               |
-| *Video*<br>*object detection*<br>*/Tracking* | YOLO<br>+<br>SORT<br>DeepSORT<br>ByteSORT<br>(ReID)                                    | TrackFormer                         | GroundingDINO + Tracker<br>                                |
-| *Video*<br>*segmentation*                    | FCN / UNet <br>+ <br>RNN / LSTM<br><br>XMem                                            | VideoMAE <br>+ <br>XMem<br><br>SAM2 | Track Anything Model (TAM)<br>Grounded SAM + Tracker(XMem) |
+|                                              | AI Model<br>(No Transformer)                                                           | Transformer<br>(closeset)              | Grounding<br>(openset/zero-shot)                           |
+| -------------------------------------------- | -------------------------------------------------------------------------------------- | -------------------------------------- | ---------------------------------------------------------- |
+| *Image*<br>*object detection*                | RCNN series<br>YOLO(FCOS)<br>Lightweight<br>RetainNet<br>EfficientDet<br>MobileNet-SSD | DETR<br>DINO                           | GLIP<br>Grounding DINO                                     |
+| *Image*<br>*segmentation*                    | RCNN Series<br>UNet(FCN)                                                               | DETR<br>SAM                            | Grounded SAM                                               |
+| *Video*<br>*object detection*<br>*/Tracking* | YOLO<br>+<br>SORT<br>DeepSORT<br>ByteSORT<br>(ReID)                                    | [[TrackFormer]]                        | GroundingDINO + Tracker<br>                                |
+| *Video*<br>*segmentation*                    | FCN / UNet <br>+ <br>RNN / LSTM<br><br>XMem                                            | [[VideoMAE]]<br>+ <br>XMem<br><br>SAM2 | Track Anything Model (TAM)<br>Grounded SAM + Tracker(XMem) |
 
 Object detection [[###### Image object detection model]]
 
