@@ -61,20 +61,22 @@ class TreeNode:
         self.left = None
         self.right = None
 
-def preorderTraversal(root):
-    result = []
+class Solution:
+	def preorderTraversal(self, root):
+	    result = []
+		self.dfs(root)
+	    return result
+	
+	def dfs(self, node):
+		if not node:
+			return
+		result.append(node.val)  # 访问根节点
+		self.dfs(node.left)           # 遍历左子树
+		self.dfs(node.right)          # 遍历右子树
+	
 
-    def dfs(node):
-        if not node:
-            return
-        result.append(node.val)  # 访问根节点
-        dfs(node.left)           # 遍历左子树
-        dfs(node.right)          # 遍历右子树
 
-    dfs(root)
-    return result
 
-```
 
 ---
 

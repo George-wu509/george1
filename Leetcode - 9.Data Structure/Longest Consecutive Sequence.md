@@ -36,8 +36,9 @@ def longest_consecutive(self, num: List[int]) -> int:
 pass
 
 解釋:
-step1: 由num 轉成set() = {1,2,3,100,4,200}
-step2:
+step1: 由num list用set()轉成set = {1,2,3,100,4,200}
+step2: 在for loop裡面遍歷num, 找num-1不在的num(序列開頭)
+
 
 
 ### 解法分析
