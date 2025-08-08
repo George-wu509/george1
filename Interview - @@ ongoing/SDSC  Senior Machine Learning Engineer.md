@@ -13,6 +13,9 @@ SDSC Surgical video platform
 a3111123@yahoo.com.tw / Ching1234@@
 https://svp.surgicalvideo.io/auth
 
+Reference: KAFR: Smarter Surgical Video Segmentation with AI
+https://www.linkedin.com/posts/sankaganesh_ai-surgicalai-computervision-activity-7351039713954144258-XmwV?utm_source=share&utm_medium=member_desktop&rcm=ACoAABMNj2MBAJSP3cWd4xpiz4wB7qdx43hvW18
+
 | **Keyword:**                                                                                                                                                                                                                                            |     |
 | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --- |
 | **surgical video analysis**<br>**video coding & compression**<br>image and video processing pipelines<br>pytorch, opencv<br>feature extraction, segmentation, and tracking<br>MLOps tools such as **ClearML and wandb**<br>**AWS Sagemaker and Lambda** |     |

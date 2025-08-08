@@ -2,26 +2,59 @@
 
 
 
-|                                              | AI Model<br>(No Transformer)                                                           | Transformer<br>(closeset)              | Grounding<br>(openset/zero-shot)                           |
-| -------------------------------------------- | -------------------------------------------------------------------------------------- | -------------------------------------- | ---------------------------------------------------------- |
-| *Image*<br>*object detection*                | RCNN series<br>YOLO(FCOS)<br>Lightweight<br>RetainNet<br>EfficientDet<br>MobileNet-SSD | DETR<br>DINO                           | GLIP<br>Grounding DINO                                     |
-| *Image*<br>*segmentation*                    | RCNN Series<br>UNet(FCN)                                                               | DETR<br>SAM                            | Grounded SAM                                               |
-| *Video*<br>*object detection*<br>*/Tracking* | YOLO<br>+<br>SORT<br>DeepSORT<br>ByteSORT<br>(ReID)                                    | [[TrackFormer]]                        | GroundingDINO + Tracker<br>                                |
-| *Video*<br>*segmentation*                    | FCN / UNet <br>+ <br>RNN / LSTM<br><br>XMem                                            | [[VideoMAE]]<br>+ <br>XMem<br><br>SAM2 | Track Anything Model (TAM)<br>Grounded SAM + Tracker(XMem) |
+|                                              | AI Model<br>(No Transformer)                                                           | Transformer<br>(closeset)              | VLM<br>(openset/zero-shot)<br>(grounding)                                                           |
+| -------------------------------------------- | -------------------------------------------------------------------------------------- | -------------------------------------- | --------------------------------------------------------------------------------------------------- |
+| *Image*<br>*object detection*                | RCNN series<br>YOLO(FCOS)<br>Lightweight<br>RetainNet<br>EfficientDet<br>MobileNet-SSD | DETR<br>DINO                           | GLIP<br>Grounding DINO                                                                              |
+| *Image*<br>*segmentation*                    | RCNN Series<br>UNet(FCN)                                                               | DETR<br>SAM                            | * 你不再需要兩種不同的模型去分別處理 Instance 和 Semantic 的任務. 分割的**結果是「實例」還是「語義」，取決於你的語言指令**<br><br>Grounded SAM<br> |
+| *Video*<br>*object detection*<br>*/Tracking* | YOLO<br>+<br>SORT<br>DeepSORT<br>ByteSORT<br>(ReID)                                    | [[TrackFormer]]                        | GroundingDINO + Tracker<br>                                                                         |
+| *Video*<br>*segmentation*                    | FCN / UNet <br>+ <br>RNN / LSTM<br><br>XMem                                            | [[VideoMAE]]<br>+ <br>XMem<br><br>SAM2 | Track Anything Model (TAM) 互動式驅動<br>Grounded SAM + Tracker(XMem) 語言驅動                               |
+**Phrase Grounding** (短語定位): 這是所有任務的根本機制。模型必須能夠將文字指令中的概念精準地「錨定」到影片的時空區域上
+**Open-Set / Zero-Shot** (開放集 / 零樣本): 你可以要求模型分割「所有正在滑滑板的人」，即使「滑板」這個類別不在它預先定義的訓練集中. 模型能夠組合「無人機」、「送貨」、「披薩」這些它已知的概念，去理解並完成一個從未見過的全新任務。
+
+
+
 
 Object detection [[###### Image object detection model]]
 
+| 使用VLM的image object detection                                    |                                                                                 |                                                                                                                                               |
+| --------------------------------------------------------------- | ------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1. 指代性表達理解 (Referring Expression Comprehension, REC)            | 根據一句自然語言描述，找出影像中**唯一被指代的那個特定物件**，並用邊界框將其框出<br><br>Model: Grounding DINO, GLIP   | 一張家庭聚餐的照片。「框出那個戴著紅色派對帽的小女孩。」<br><br>模型輸出：一個單獨的邊界框（Bounding Box），精準地框住那個符合所有條件（小女孩、戴帽子、帽子是紅色）的目標，而不會框到其他小孩或戴著不同顏色帽子的人                          |
+| 2. 多物件/類別偵測 (Multi-Object / Category Detection)                 | 根據一個較為通用的描述，找出影像中**所有**符合條件的物體<br><br>Model: Grounding DINO, GLIP               | 一張超市貨架的照片 「**找出所有的罐頭湯**。」<br><br>模型輸出：多個邊界框，分別框出貨架上每一罐被模型辨識為「罐頭湯」的商品                                                                          |
+| 3. 屬性與關係偵測 (Attribute and Relationship Detection)               | 此任務要求模型對物體的細節特徵或物體間的複雜關係有深刻的理解<br><br>Model: Grounding DINO                     | 一張辦公桌的照片「**框出打開的筆記型電腦**。」(偵測屬性/狀態)模型輸出：一個邊界框，框住處於「打開」狀態的筆記型電腦，而忽略旁邊可能闔上的另一台<br><br>「**框出鍵盤下方的文件**。」(偵測空間關係)<br>模型輸出：一個邊界框，框住被鍵盤部分遮擋、且位於其下方的文件 |
+| 4. 帶有定位的視覺問答 (Grounded Visual Question Answering, Grounded VQA) | 這是一個複合任務，要求模型不僅用文字回答問題，還要用邊界框標出答案的視覺證據<br><br>Model: LLM(Bert) + Grounding DINO | 一張藝術展覽的照片「**畫中最右邊的人穿著什麼顏色的鞋子？**」<br><br>模型輸出： 文字回答：「黑色。」<br>邊界框：一個邊界框，框住最右邊那個人的黑色鞋子，證明答案的來源                                                   |
+
 
 Image segmentation [[###### Image segmentation model]]
+
+| 使用VLM的image segmentation                                              |                                                                               |                                                                                                                       |
+| --------------------------------------------------------------------- | ----------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| 1. 指代性表達分割 (Referring Expression Segmentation, RES)                   | 分割出影像中**單一特定物件**的精確像素遮罩<br><br>Model: Grounded SAM                            | 一張多人合照, 「**分割出中間那個穿著條紋上衣的男人**。」<br><br>模型行為：一個只包含該男人像素的精確遮罩（Mask），其他所有人和背景都將被忽略                                       |
+| 2. 開放詞彙的多物件/類別分割 (Open-Vocabulary Multi-Object/Category Segmentation) | 根據一個通用描述，分割出影像中**所有**符合條件的物體實例。<br><br>Model:  Grounded SAM<br>               | 一張野生動物園的照片,「**分割出所有的斑馬**」<br><br>模型輸出：多個**互相獨立**的遮罩，每一匹斑馬都有一個自己的專屬遮罩。                                                 |
+| 3. 物件局部/部分分割 (Part Segmentation)                                      | 這是一個更細粒度的任務，目標是根據指令，分割出一個**物件的某個特定部分**<br><br>Model: Grounded SAM, LISA       | 一隻鳥的特寫照片,「**分割出這隻鳥的翅膀**。」<br><br>模型輸出：一個只覆蓋鳥翅膀區域的遮罩，而不是整隻鳥。另一個例子可以是「分割汽車的後照鏡」。                                        |
+| 4. 語言引導的影像編輯 (Language-Guided Image Editing)                          | 這是一個應用導向的任務，分割是實現編輯效果的關鍵第一步，就像一個由語言控制的「智慧魔術棒」<br><br>Model:  Grounded SAM<br> | 一張客廳的照片,「**選取沙發**。」<br><br>**模型行為**：模型首先生成沙發的精確遮罩。基於這個遮罩，使用者可以下達後續指令，如「**把它變成紅色**」或「**從圖片中移除**」，編輯軟體將只在被選取的遮罩區域內執行操作。 |
+|                                                                       |                                                                               |                                                                                                                       |
+
 
 
 Video object detection [[###### Video Object Detection model]]
 
 
+| 使用VLM的video object detection                        |                                                                                           |                                                                                                                                           |
+| --------------------------------------------------- | ----------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| 1. 指代性影片物件偵測 (Referring Video Object Detection)     | 根據一句自然語言描述，找出影像中**唯一被指代的那個特定物件**，並用邊界框將其框出<br><br>Model: GroundingDINO + XMem             | 一段籃球比賽影片。「**追蹤並框出那位投進三分球的球員**。」<br><br>模型輸出：一個移動的邊界框，從該球員出手投籃的瞬間開始，一直跟隨他直到進球後跑動的整個過程。                                                     |
+| 2. 時空多物件偵測 (Spatio-Temporal Multi-Object Detection) | 此任務旨在偵測影片中所有符合描述的物體，並在它們各自出現的時間段內進行追蹤。<br><br>Model: GroundingDINO + XMem                 | 一段十字路口的監控影片。「**偵測所有闖紅燈的機車**。」<br><br>模型輸出：多個在特定時間段出現的移動邊界框。每個邊界框只會在對應的機車「正在闖紅燈」的那幾秒鐘出現並跟隨它。                                               |
+| 3. 影片動作/事件偵測 (Video Action/Event Detection)         | 此任務的目標是偵測一個「動作」或「事件」發生的時空區域。它框出的可能是一個或多個互動中的物體。<br><br>Model: Video-LLaMA, UniVL          | 一段機場的影片。「**框出乘客與地勤人員發生爭執的片段**。」<br><br>模型輸出：一個或多個移動的邊界框，在影片中兩人發生爭執（例如，有激烈的肢體語言或大聲說話）的時段內，將他們框選出來。這個偵測結果是與「爭執」這個事件緊密綁定的                    |
+| 4. 帶有定位的影片問答 (Grounded Video Question Answering)    | 與影像中的 Grounded VQA 類似，但需要在時間維度上定位證據。<br><br>Model: Video-LLaMA + GroundingDINO + XMem<br> | 一段烹飪教學影片。「**廚師第一個放進鍋裡的是什麼食材？**」<br><br>模型輸出： 文字回答：「洋蔥。」<br>時空邊界框 (Spatio-Temporal Bounding Box)：一個移動的邊界框，在影片中廚師拿起洋蔥並將其放入鍋中的那一小段時間內，持續框住洋蔥 |
+
 Video segmentation  [[###### Video segmentation model]]
-1. 傳統方法: optical flow估計像素在連續幀之間的運動軌跡
-           或用graph Cut (image segmentation)到每一frame
-2. AI model:  Image segmentation到每一frame, 也可以與RNN or LSTM結合
+
+| 使用VLM的video segmentation                                     |                                                                                                                                                                                                                                |                                                                                                                                                 |
+| ------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1. Referring Video Segmentation (RVS)                        | 模型不僅要理解物體的類別（如「人」），更要理解它的屬性、動作、以及與其他物體的關係，從而鎖定影片中唯一符合描述的目標<br><br>Model: Grounding SAM + XMem                                                                                                                                  | 一段公園的影片, 「**分割出那隻成功接到飛盤的黑狗**。」<br><br>模型行為：模型必須先定位兩隻狗，然後根據「接到飛盤」這個發生在特定時間點的動作，以及「黑狗」這個屬性，最終只分割出那隻黑色的、且完成了「接飛盤」動作的狗。其他時間點的黑狗，以及那隻沒接到飛盤的黃狗，都不能被分割 |
+| 2. 多物件/類別分割 (Multiple Object / Category Segmentation)        | 找出並分割出影片中**所有**符合該描述的物體實例或屬於某個類別的物體. RVS 強調「唯一性」，而此任務強調「完整性」<br><br>Model: Grounding SAM + XMem<br>                                                                                                                            | 一段繁忙的十字路口影片,「分割出影片中所有的行人。」<br><br>模型行為：模型需要辨識出影片中的每一個行人，無論他們在做什麼（走路、等待、看手機），並在他們出現的每一幀中都給出分割遮罩。它不會只分割某一個「特定的」行人                                 |
+| 3. 影片事件分割 (Video Event Segmentation)                         | 目標是分割出構成一個「事件」或「活動」的**時空區域**。它分割的對象可能不是單一物體，而是多個物體及其互動所形成的場景<br><br>Model: Video-LMMs<br> 或其他專為影片設計的多模態模型是這個方向的代表。它們能夠將「一場生日派對的吹蠟燭時刻」這樣的語言描述，定位到影片中的特定時間段，並分割出與該事件相關的像素區域（可能包括人、蛋糕、蠟燭等構成的場景）。這類模型的輸出是一個動態變化的場景遮罩，而不僅僅是追蹤幾個固定物體 | 一場足球比賽的影片,「分割出進球慶祝的瞬間。」<br><br>模型行為：模型需要理解「進球慶祝」的語義，然後分割出相關的時空片段。這個分割遮罩可能同時包含了進球的球員、跑過來擁抱的隊友、甚至在場邊跳躍的教練。它分割的是一個「場景」，而非單一球員                      |
+| 4. 語言引導的影片編輯/風格化 (Language-guided Video Editing/Stylization) | 以應用為導向的任務，利用 VLM 的分割能力作為**中間步驟**，來實現複雜的影片編輯效果<br><br>Model:  Grounding SAM + XMem + Video Inpainting/Diffusion Model<br>                                                                                                       | 一段人物訪談的影片,「將背景更換為辦公室場景。」<br><br>模型行為：模型首先需要執行類似 RVS 的任務，即分割出「受訪者」這個主體，然後將除了主體之外的所有背景區域替換成指定的辦公室圖像或影片                                            |
+|                                                              |                                                                                                                                                                                                                                |                                                                                                                                                 |
 
 
 

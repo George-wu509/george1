@@ -134,6 +134,9 @@ Skip connection連接Layer normalization之前的輸入和Multi-head self attent
 
 總結來說，Vision Transformer 中的全局注意力機制通過計算 Patch 之間的動態相關性，使得模型能夠理解圖像的整體結構和上下文信息，這對於需要精確識別和分割物體的圖像分割任務至關重要。而 Q, K, V 的引入，則為這種相關性計算提供了一個靈活且強大的框架，多頭機制進一步增強了其從不同維度捕捉信息的能力。
 
+Reference:
+【动手学深度学习】一文详解Transformer架构及其代码实现 - 薯条算法的文章 - 知乎
+https://zhuanlan.zhihu.com/p/1936167984377890005
 
 ### QA list
 

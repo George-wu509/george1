@@ -85,3 +85,15 @@ https://zhuanlan.zhihu.com/p/1907101658682470565
 大模型算法工程师经典百问 - 海鸣的文章 - 知乎
 https://zhuanlan.zhihu.com/p/1908292624651106052
 
+新鲜大模型面经：适用于大语言模型LLM/多模态大模型MLLM面试 - 周大侠的文章 - 知乎
+https://zhuanlan.zhihu.com/p/1927118761422485109
+
+强化学习与大模型推理你需要知道的108个问题（4. Transformer细节之问） - 嗟嗟的文章 - 知乎
+https://zhuanlan.zhihu.com/p/1925276690592015942
+
+干货 | 关于 UNet 架构的 8 个热门面试问题 - 计算机视觉之家的文章 - 知乎
+https://zhuanlan.zhihu.com/p/1936605325873620496
+
+速通CUDA - 曦雨的文章 - 知乎
+https://zhuanlan.zhihu.com/p/1934441143711543490
+
