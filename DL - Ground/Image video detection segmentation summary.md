@@ -1,13 +1,14 @@
 
 
-|                                              | AI Model<br>(No Transformer)                                                           | Transformer<br>(closeset)              | VLM<br>(openset/zero-shot)<br>(grounding)                                                           |
-| -------------------------------------------- | -------------------------------------------------------------------------------------- | -------------------------------------- | --------------------------------------------------------------------------------------------------- |
-| *Image*<br>*object detection*                | RCNN series<br>YOLO(FCOS)<br>Lightweight<br>RetainNet<br>EfficientDet<br>MobileNet-SSD | DETR<br>DINO                           | GLIP<br>Grounding DINO                                                                              |
-| *Image*<br>*segmentation*                    | RCNN Series<br>UNet(FCN)                                                               | DETR<br>SAM                            | * 你不再需要兩種不同的模型去分別處理 Instance 和 Semantic 的任務. 分割的**結果是「實例」還是「語義」，取決於你的語言指令**<br><br>Grounded SAM<br> |
-| *Video*<br>*object detection*<br>*/Tracking* | YOLO<br>+<br>SORT<br>DeepSORT<br>ByteSORT<br>(ReID)                                    | [[TrackFormer]]                        | GroundingDINO + Tracker<br>                                                                         |
-| *Video*<br>*segmentation*                    | FCN / UNet <br>+ <br>RNN / LSTM<br><br>XMem                                            | [[VideoMAE]]<br>+ <br>XMem<br><br>SAM2 | Track Anything Model (TAM) 互動式驅動<br>Grounded SAM + Tracker(XMem) 語言驅動                               |
+|                                              | AI Model<br>(No Transformer)                                                           | Transformer<br>(closeset)                  | VLM<br>(openset/zero-shot)<br>(grounding)                                                               |
+| -------------------------------------------- | -------------------------------------------------------------------------------------- | ------------------------------------------ | ------------------------------------------------------------------------------------------------------- |
+| *Image*<br>*object detection*                | RCNN series<br>YOLO(FCOS)<br>Lightweight<br>RetainNet<br>EfficientDet<br>MobileNet-SSD | DETR<br>DINO                               | [[GLIP]]<br>[[Grounding DINO]]                                                                          |
+| *Image*<br>*segmentation*                    | RCNN Series<br>UNet(FCN)                                                               | DETR<br>SAM                                | [[Grounded SAM]]<br><br>* 你不再需要兩種不同的模型去分別處理 Instance 和 Semantic 的任務. 分割的**結果是「實例」還是「語義」，取決於你的語言指令**<br> |
+| *Video*<br>*object detection*<br>*/Tracking* | YOLO<br>+<br>SORT<br>DeepSORT<br>ByteSORT<br>(ReID)                                    | [[TrackFormer]]                            | GroundingDINO + Tracker(XMem)<br>                                                                       |
+| *Video*<br>*segmentation*                    | FCN / UNet <br><br>Tracer(XMem)                                                        | [[VideoMAE]]<br>+ <br>[[XMem]]<br><br>SAM2 | [[Track Anything Model (TAM)]] 互動式驅動<br>Grounded SAM + Tracker(XMem) 語言驅動                               |
 **Phrase Grounding** (短語定位): 這是所有任務的根本機制。模型必須能夠將文字指令中的概念精準地「錨定」到影片的時空區域上
 **Open-Set / Zero-Shot** (開放集 / 零樣本): 你可以要求模型分割「所有正在滑滑板的人」，即使「滑板」這個類別不在它預先定義的訓練集中. 模型能夠組合「無人機」、「送貨」、「披薩」這些它已知的概念，去理解並完成一個從未見過的全新任務。
+**Referring expressions**: 通过理解自由形式的指代表达, 实现了对任意物体的精确分割，该任务涵盖了从图像、视频到3D场景的多种视觉数据，并能处理文本、音频甚至图文混合的指令
 
 
 Object detection [[###### Image object detection model]]
