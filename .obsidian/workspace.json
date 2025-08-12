@@ -22,41 +22,49 @@
             }
           },
           {
-            "id": "52c2f007a7047f81",
+            "id": "4255ed99fb9305be",
             "type": "leaf",
             "state": {
               "type": "markdown",
               "state": {
-                "file": "DL - CNN/CNN - Setting.md",
+                "file": "DL - YOLO and object detection/Object detection - summary.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "CNN - Setting"
+              "title": "Object detection - summary"
+            }
+          },
+          {
+            "id": "0db2968f2ba452bc",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "DL - YOLO and object detection/DETR.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "DETR"
+            }
+          },
+          {
+            "id": "699066483d718f8b",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "DL - Ground/Image video detection segmentation summary.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "Image video detection segmentation summary"
             }
           }
         ],
-        "currentTab": 1
-      },
-      {
-        "id": "8bba3e0736f675ca",
-        "type": "tabs",
-        "children": [
-          {
-            "id": "8dc81f786289af32",
-            "type": "leaf",
-            "state": {
-              "type": "markdown",
-              "state": {
-                "file": "@@ Interview prepare.md",
-                "mode": "source",
-                "source": false
-              },
-              "icon": "lucide-file",
-              "title": "@@ Interview prepare"
-            }
-          }
-        ]
+        "currentTab": 2
       }
     ],
     "direction": "vertical"
@@ -79,7 +87,7 @@
                 "autoReveal": false
               },
               "icon": "lucide-folder-closed",
-              "title": "檔案瀏覽器"
+              "title": "Files"
             }
           },
           {
@@ -196,43 +204,43 @@
   },
   "left-ribbon": {
     "hiddenItems": {
-      "switcher:開啟快速切換": false,
-      "graph:查看關聯圖": false,
-      "canvas:建立新畫布": false,
-      "daily-notes:開啟今天的每日筆記": false,
-      "templates:插入模板": false,
-      "command-palette:開啟命令面板": false,
+      "switcher:Open quick switcher": false,
+      "graph:Open graph view": false,
+      "canvas:Create new canvas": false,
+      "daily-notes:Open today's daily note": false,
+      "templates:Insert template": false,
+      "command-palette:Open command palette": false,
       "table-editor-obsidian:Advanced Tables Toolbar": false
     }
   },
-  "active": "52c2f007a7047f81",
+  "active": "0db2968f2ba452bc",
   "lastOpenFiles": [
-    "DL - CNN/Criterion.md",
-    "DL - CNN/CNN - Setting.md",
-    "DL - CNN/Normalization and dropout.md",
-    "@@ Interview prepare.md",
-    "DL - CNN/CNN - Basic.md",
-    "DL - CNN/AI model Summary architecture.md",
-    "DL - CNN/Smooth L1 Loss.md",
-    "DL - CNN/Focal Loss.md",
-    "DL - CNN/SSIM ,PSNR.md",
-    "DL - CNN/圖像質量增強loss.md",
-    "DL - CNN/圖像分類loss.md",
-    "CVML - Image CV/Traditional Computer Vision summary.md",
-    "Code - AI/PyTorch - interview.md",
-    "DL - YOLO and object detection/Object detection on edge.md",
-    "DL - Ground/Image video detection segmentation summary.md",
-    "DL - @@ Latest update/AI summary paper.md",
-    "DL - Ground/Grounding DINO.md",
     "DL - YOLO and object detection/Object detection - summary.md",
+    "DL - YOLO and object detection/YOLO.md",
+    "DL - RCNN/Mask R-CNN.md",
+    "DL - RCNN/R-CNN.md",
+    "@@ Interview prepare.md",
+    "DL - Tracking/Tracking and ReID.md",
+    "DL - CNN/AI model Summary architecture.md",
+    "DL - Ground/Image video detection segmentation summary.md",
+    "DL - CNN/CNN - Setting.md",
+    "DL - CNN/CNN - Basic.md",
+    "DL - Ground/Grounding DINO.md",
+    "DL - Ground/GLIP.md",
+    "DL - Ground/Grounded SAM.md",
+    "DL - SAM/Track Anything Model (TAM).md",
+    "DL - Video/TrackFormer.md",
     "DL - CNN/AI model Summary.md",
     "DL - CNN/AI model的量化指標.md",
+    "Code - AI/PyTorch - interview.md",
     "CVML - ML/Machine learning matlab.md",
-    "DL - YOLO and object detection/Object detection and NMS.md",
-    "DL - CNN/Pixel Accuracy.md",
-    "DL - CNN/目標追蹤loss.md",
+    "DL - CNN/LSTM.md",
+    "CVML - Image CV/Traditional Computer Vision summary.md",
+    "DL - CNN/BCE loss.md",
     "DL - CNN/Dice Loss.md",
-    "DL - CNN/手撕项目代码.md",
+    "DL - CNN/Focal Loss.md",
+    "DL - CNN/Smooth L1 Loss.md",
+    "DL - CNN/目標檢測loss.md",
     "materials/Pasted image 20250810223006.png",
     "materials/Pasted image 20250811032027.png",
     "materials/Pasted image 20250808192253.png",

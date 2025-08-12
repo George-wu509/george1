@@ -41,7 +41,7 @@ Head Model:
 
 [[FCOS]]:  保留Faster RCNN的ResNet backbone + FPN但移除FC層, head model則改為anchor-free, 而且是在每個pixel做classification跟regression. (<mark style="background: #FFF3A3A6;">就是保留RCNN(但移除FC)但把head model改成anchor-free</mark>)
 
-[[SSD]]: 使用 VGG(移除 FC 層)，neck不是用FPN而是添加額外卷積層成多尺度特徵層，不用region proposal而是適配單階段檢測(就是保留RCNN(但移除FC), Neck也不是用FPN而是多尺度特徵層. 也把head model改成anchor-free))。
+[[SSD]]: 使用 VGG(移除 FC 層)，neck不是用FPN而是添加額外卷積層成多尺度特徵層，不用region proposal而是適配單階段檢測(==就是保留RCNN(但移除FC), Neck也不是用FPN而是多尺度特徵層. 也把head model改成anchor-free)==)。
 
 **RetainNet**: 该网络旨在解决一阶段（one-stage）目标检测器在精度上低于两阶段（two-stage）检测器的问题，尤其是当面对极度不平衡的正负样本比例时。
 

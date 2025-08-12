@@ -1,4 +1,5 @@
 
+
 圖像分類模型的核心目標是將圖像分配到預定義的類別中。因此，其損失函數主要集中於衡量模型預測的類別與實際類別之間的差異。雖然有時候會針對一些特殊情況，而混合使用loss function，但通常來說，image classification model主要還是以單一loss function為核心。以下我將針對image classification model會使用到的loss function進行說明。
 
 **常用的損失函數及其衡量的表現：**
