@@ -34,7 +34,7 @@
 | Receptive Field(感受野)            |                                                                                                                                       |
 |                                 |                                                                                                                                       |
 | object detection anchor正負樣本比例不均 | 1. object detection/tracking, instance segmentation<br>2. 有Anchor或proposal通常有正負樣本比例不均問題, 也需要NMS<br>3. Anchor free則沒有正負樣本問題也不需要NMS<br> |
-| [[Hard Negative Mining]]        | 選擇困難負(hard negative)樣本放入訓練                                                                                                            |
+| [[Hard Negative Mining]]        | 選擇困難負(hard negative)樣本放入訓練, 就是background但被誤認為是target的anchor = FN(False positive)                                                      |
 | [[Focal Loss]]                  | 通過調整損失函數的權重，使模型更關注於難分類樣本的學習. <mark style="background: #FF5582A6;">@要會公式跟手寫!</mark>                                                    |
 |                                 |                                                                                                                                       |
 

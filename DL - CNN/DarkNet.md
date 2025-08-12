@@ -6,6 +6,7 @@
 2. leaky ReLU, 
 3. Residual connections, 
 4. no fully connection layer
+5. no pooling layer
 
 |                               |     |
 | ----------------------------- | --- |
