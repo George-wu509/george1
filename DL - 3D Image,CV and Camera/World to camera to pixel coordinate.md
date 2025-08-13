@@ -3,10 +3,10 @@ ref: [从科技视觉角度感知维度2(2D->3D)](https://zhuanlan.zhihu.com/p/9
 ref: [计算摄影学专栏总目录](https://zhuanlan.zhihu.com/p/570452119)
 ref: [计算机视觉之--- 相机内参与外参](https://zhuanlan.zhihu.com/p/668317571)
 
-|                                                        |                                                      |
-| ------------------------------------------------------ | ---------------------------------------------------- |
-| [[Geometric transformation]]                           | 相機外參(extrinsic matrix), 相機內參(intrinsic matrix)       |
-| [[###本质矩阵（Essential Matrix）和基础矩阵（Fundamental Matrix）]] | 本质矩阵是描述两个相机坐标系之间几何关系的矩阵<br>基础矩阵是描述两个相机像素坐标系之间几何关系的矩阵 |
+|                                                        |                                                                                                                                 |
+| ------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------- |
+| [[Geometric transformation]]                           | 相機外參(extrinsic matrix), 相機內參(intrinsic matrix)                                                                                  |
+| [[###本质矩阵（Essential Matrix）和基础矩阵（Fundamental Matrix）]] | 本质矩阵(Essential Matrix)是描述两个相机(camera coordinate)坐标系之间几何关系的矩阵<br>基础矩阵(Fundamental Matrix)是描述两个相机像素(pixel coordinate)坐标系之间几何关系的矩阵 |
 
 
 ![[coordinates.png]]

@@ -4,6 +4,14 @@
 基于 V-JEPA2 和 YOLO 实现实时视频理解 - 计算机视觉之家的文章 - 知乎
 https://zhuanlan.zhihu.com/p/1937833958579602841
 
+2025 | 不服不行！Yann LeCun 团队 DINO-world 震撼发布！特征预测横扫视频建模 - CV实验室的文章 - 知乎
+https://zhuanlan.zhihu.com/p/1935763978992202350
+
+跳出 Sora 的"像素陷阱"！LeCun 团队 DINO-world 诠释世界模型的正确方向 - 大模型没那么大的文章 - 知乎
+https://zhuanlan.zhihu.com/p/1933815384491946466
+
+
+
 V-JEPA2 和 YOLO 的结合创建了一个强大的系统来解决复杂的现实世界问题。通过使用 YOLO 来识别和跟踪对象，我们可以为 V-JEPA2 提供理解它们之间相互作用所需的上下文。该项目的目标是展示首先识别对象，然后利用 V-JEPA2 预测它们相互作用的能力。
 
 
