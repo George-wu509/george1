@@ -12,6 +12,16 @@
 |                                            |                                                                                                             |
 | [[### QA list]]                            |                                                                                                             |
 
+
+|                                  |     |
+| -------------------------------- | --- |
+| [[### 兩種 Normalization 配置]]      |     |
+| [[### QA list]]                  |     |
+| [[#### 舉例說明Encoder-Decoder的QKV]] |     |
+
+
+
+
 ![[transformer.webp]]
 ![[Pasted image 20250521144001.png]]
 (現在常用)在ViT的Encoder block裡面的內部順序是 (1) Layer normalization, (2) Multi-head self attention, (3) Layer normalization, (4) Feed-Forward Network(FFN) .
@@ -173,3 +183,182 @@ https://zhuanlan.zhihu.com/p/1936167984377890005
 | Attention计算复杂度以及如何改进                                                    |                                                                                                                                                                                                                |
 | 为什么transformer中使用LayerNorm而不是BatchNorm                                  |                                                                                                                                                                                                                |
 | Transformer为何使用多头注意力机制                                                  |                                                                                                                                                                                                                |
+
+
+
+#### 舉例說明Encoder-Decoder的QKV
+
+```
+Question: 有一張照片裡面有一隻貓有清楚的臉跟身體. 如果我用Transformer-based object detection model譬如DETR進行object detection. 請詳細用中文並一步步具體舉例解釋encoder-decoder架構內的multi-head self-attention跟multi-head cross attention跟masked multi-head attention怎麼協作? multi-head self-attention的Query, key, value跟multi-head cross attention的Query, key, value怎麼協作?, 如何形成最後的object detection結果
+```
+
+好的，這是一個非常好的問題。讓我以您提供的「一隻有清楚臉跟身體的貓」的照片為例，一步步詳細解釋DETR（DEtection TRansformer）模型中，各種Attention機制是如何協同工作，最終完成物件偵測的。
+
+### 總覽：從照片到偵測結果
+
+整個流程可以想像成一個分工合作的團隊：
+
+1. **特徵提取員 (CNN Backbone)**：先對貓的照片進行初步分析，提取出關鍵的視覺特徵。
+    
+2. **情境理解專家 (Encoder)**：接收這些視覺特徵，並透過內部討論（**Multi-Head Self-Attention**）來理解圖片的整體情境，例如「貓的耳朵旁邊是貓的眼睛」，「貓的身體連接著尾巴」。
+    
+3. **偵探團隊 (Decoder)**：派出N個偵探（Object Queries），每個偵探都帶著一個任務：「去圖片裡找一個物體」。他們會：
+    
+    - 彼此開會溝通，避免重複工作 (Decoder的 **Masked Multi-Head Self-Attention**)。
+        
+    - 拿著線索去審問「情境理解專家」提供的圖片資訊 ( **Multi-Head Cross-Attention** )，找出自己負責的物體在哪裡。
+        
+4. **報告生成器 (FFN)**：每個偵探完成調查後，提交一份標準格式的報告，說明他找到了什麼物體（類別）以及在哪裡（邊界框）。
+    
+
+---
+
+### 第一步：特徵提取 (CNN Backbone)
+
+首先，這張貓的照片會被輸入一個卷積神經網絡（CNN），例如ResNet。
+
+- **輸入**：`[寬 x 高 x 3]` 的貓咪照片。
+    
+- **輸出**：一個較小的二維特徵圖（Feature Map），例如 `[W' x H' x C]`。這個特徵圖可以被看作是濃縮後的視覺資訊，其中 `C` 是特徵的維度。
+    
+
+為了讓Transformer能夠處理，我們需要將這個二維特Зв圖「拉平」，變成一個序列：
+
+1. **拉平 (Flatten)**：將 `[W' x H' x C]` 的特徵圖轉換成一個 `[W' * H', C]` 的序列。現在我們有 `W' * H'` 個特徵向量，每個向量維度為 `C`。
+    
+2. **加入位置資訊 (Positional Encoding)**：由於Transformer本身沒有順序概念，我們必須為序列中的每一個特徵向量加入「位置編碼」，告訴模型這個特徵來自於圖片的哪個位置。
+    
+
+現在，我們得到了一個帶有位置資訊的特徵序列，準備將它送入Encoder。
+
+---
+
+### 第二步：Encoder - 透過 Multi-Head Self-Attention 理解圖片
+
+Encoder的目標是讓圖片中的每個「局部特徵」都能夠理解它與圖片中所有其他「局部特徵」的關係，建立全域的上下文感知。
+
+#### Multi-Head Self-Attention 的協作機制
+
+這裡的「Self-Attention」意味著注意力機制的 **Query (Q), Key (K), Value (V)** 都來自於 **同一個來源**：上一步產生的「圖片特徵序列」。
+
+想像一下序列中的每個特徵向量（代表圖片的一個小區域，比如貓的左耳）都要問自己三個問題來生成Q, K, V：
+
+- **Query (Q)**：我（左耳）應該去關注圖片中的哪些資訊？
+    
+- **Key (K)**：我（左耳）攜帶了什麼樣的關鍵資訊，可以被別人查詢？
+    
+- **Value (V)**：如果有人關注我，我（左耳）應該提供什麼樣的具體內容？
+    
+
+**具體協作流程：**
+
+1. **生成Q, K, V**：對於序列中的每一個特徵向量，都透過三個獨立的線性轉換（乘以權重矩陣 WQ​,WK​,WV​）生成各自的Q, K, V向量。
+    
+2. **計算注意力分數**：以「貓的左耳」這個特徵向量生成的Query（我們稱之為 Q左耳​）為例，它會和 **圖片中所有特徵向量** 的Key（K眼睛​,K鼻子​,K尾巴​,...）進行點積運算。這個分數代表了「左耳」對其他部位的關注程度。如果 Q左耳​ 和 K眼睛​ 的匹配度很高，分數就會很高。
+    
+3. **權重分配**：將得到的所有分數進行Softmax歸一化，變成一組權重。這些權重加總為1，代表了「左耳」應該將它的注意力如何分配給圖片的所有部分。
+    
+4. **加權求和**：將這些權重分別乘以對應特徵的Value向量（V眼睛​,V鼻子​,V尾巴​,...），然後全部加總起來。
+    
+5. **形成新向量**：這個加權總和的結果，就成為了「貓的左耳」這個位置 **新的特徵向量**。這個新向量不僅包含了左耳本身的資訊，還融合了它最關注的（例如，貓眼睛、貓頭頂）其他部位的資訊。
+    
+
+**Multi-Head（多頭）的意義：**
+
+這個過程不會只做一次，而是會並行地做 `h` 次（例如 `h=8`），`h` 就是「頭」的數量。每個「頭」都有自己獨立的 WQ​,WK​,WV​ 權重矩陣。
+
+- **協作方式**：這就像讓8個專家同時分析。
+    
+    - **Head 1** 可能學會了關注「輪廓」關係。
+        
+    - **Head 2** 可能學會了關注「紋理」關係。
+        
+    - **Head 3** 可能學會了關注「顏色」關係。
+        
+- 最後，將8個頭的輸出結果拼接起來，再通過一次線性轉換，得到最終的輸出。
+    
+
+經過多層Encoder（每一層都重複上述過程）後，我們得到一組 **富含上下文資訊的記憶（Memory）**。此時，代表「貓左耳」的向量已經「知道」了它旁邊是眼睛，並且同屬於一張貓臉。
+
+---
+
+### 第三步：Decoder - 三種Attention機制如何協作找到貓
+
+Decoder的任務是從Encoder產生的「記憶」中，精準地定位出物體。它有兩個輸入：
+
+1. **Encoder的輸出**（我們稱之為 **Memory**）。
+    
+2. **N個Object Queries**：這是一組可學習的向量（例如N=100）。可以把它們想像成N個「空的物體槽」或「偵探」。在訓練開始時它們是隨機的，但會逐漸學會代表「一個潛在物體」的查詢。
+    
+
+Decoder的每一層都包含以下三種Attention機制，它們的協作至關重要：
+
+#### 1. Masked Multi-Head Self-Attention (在Decoder內部)
+
+- **目標**：讓N個Object Queries之間互相溝通，了解彼此。這主要是為了避免重複偵測。如果兩個Query都開始關注同一隻貓，透過這個機制，它們可以協商，讓其中一個去尋找其他物體，或者抑制其中一個的信心。
+    
+- **Q, K, V 來源**：全部來自於 **Object Queries** 本身。
+    
+- **協作方式**：與Encoder的Self-Attention類似，每個Object Query都會生成自己的Q, K, V，並與 **所有其他** Object Queries互動。Query A會關注到Query B也想找貓，從而調整自己的策略。
+    
+- **Masked的意義**：在原始的用於語言翻譯的Transformer中，Mask是為了防止在生成第 `i` 個詞時看到後面的詞。在DETR中，所有Queries是並行處理的，所以這裡的Self-Attention通常不是因果遮罩（causal mask），而是讓所有Queries互相交流。
+    
+
+#### 2. Multi-Head Cross-Attention (跨Encoder和Decoder)
+
+這是 **最關鍵的偵測步驟**。Object Query會在這裡查詢Encoder的Memory，找到它要找的物體。
+
+- **目標**：將物體查詢（Object Query）與圖片內容（Memory）進行匹配。
+    
+- **Q, K, V 來源**：
+    
+    - **Query (Q)**：來自於經過了上一步Self-Attention之後的 **Object Queries**。這代表了偵探提出的具體問題，例如：「圖片裡哪部分最像貓？」
+        
+    - **Key (K)**：來自於 **Encoder的輸出（Memory）**。這代表了圖片各部分內容的「索引」或「關鍵資訊」。
+        
+    - **Value (V)**：也來自於 **Encoder的輸出（Memory）**。這代表了圖片各部分內容的「具體資訊」。
+        
+- **協作方式**：
+    
+    1. 某一個Object Query（我們稱之為Query A）會生成它的 QA​。
+        
+    2. QA​ 會和 **Encoder Memory中所有特徵向量** 的Key（K貓臉特徵​,K貓身特徵​,K背景特徵​,...）進行比較，計算注意力分數。
+        
+    3. QA​ 自然會與代表「貓」的那些特徵向量的Key產生高分。
+        
+    4. 根據這些分數，Query A會對Memory中所有特徵的Value進行加權求和。
+        
+    5. 結果是，Query A的向量表示中，就融合了圖片中「貓」的精確視覺資訊。這個Query從一個模糊的「物體查詢」變成了「被貓的資訊填充」的查詢。
+        
+
+#### 3. 前饋神經網絡 (Feed-Forward Network, FFN)
+
+Cross-Attention的輸出會再經過一個FFN進行資訊的進一步處理和提煉。
+
+**Decoder層的協作總結：**
+
+一個Decoder層的完整流程是： `Object Queries` -> `Self-Attention` (Queries互相溝通) -> `Cross-Attention` (Queries去圖片記憶裡找物體) -> `FFN` (處理找到的資訊)。 這個過程會重複多次（例如6次），每一層都會讓Object Query對物體的定位和理解越來越精確。
+
+---
+
+### 第四步：生成最終結果 (FFN Heads)
+
+經過所有Decoder層後，我們得到了N個更新後的Object Query向量。每一個向量現在都可能包含了某個物體的資訊。
+
+最後，這N個向量會被分別送入兩個獨立的、共享權重的FFN（也稱為預測頭）：
+
+1. **分類頭 (Classification Head)**：一個線性層 + Softmax。它會預測這個Query對應的物體類別。例如，對於我們填充了貓咪資訊的那個Query，它會輸出最高的機率給「貓」這個類別。對於沒找到物體的Query，它會輸出「無物體 (no object)」。
+    
+2. **邊界框頭 (Bounding Box Head)**：一個多層感知機 (MLP)。它會預測4個數值，代表物體的邊界框：中心點座標 `(x, y)`、寬度 `w` 和高度 `h`。
+    
+
+**最終結果：**
+
+對於我們的貓咪照片，假設N=100，最終我們會有100組預測。
+
+- **Query #12** 可能輸出：`{class: "貓", probability: 0.98, box: [0.5, 0.5, 0.4, 0.6]}`
+    
+- **其他大多數Queries** 可能輸出：`{class: "無物體", probability: 0.99, box: [...]}`
+    
+
+通過設定一個信心度閾值（例如0.7），我們就可以篩選出所有被成功偵測到的物體。在這個例子中，模型成功地在照片中找到了貓，並給出了它的類別和精確的邊界框。這就是整個協作流程的最終成果。

@@ -1994,6 +1994,10 @@ if __name__ == "__main__":
 ### **Transformer**
 ![[transformer.webp]]
 
+Transformer 解码器的双核引擎：Self-Attention 与 Cross-Attention 如何协同工作？ - isfeng的文章 - 知乎
+https://zhuanlan.zhihu.com/p/1938997471360550702
+
+
 ###### Transformer
 
 #### **設計特點**
