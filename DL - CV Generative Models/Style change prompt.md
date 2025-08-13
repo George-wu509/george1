@@ -38,3 +38,9 @@ In this heartwarming digital painting, a blonde woman in a burgundy dress and a 
 ![[13.jpg]]
 A digital anime/manga-style illustration features a mother and daughter taking a selfie indoors. The mother wears glasses and a maroon top, and the daughter is in white pajamas with colorful numbers. They are smiling warmly and hugging affectionately. The background has soft lighting and a wooden floor, evoking a cozy, heartwarming atmosphere. The art style is delicate, pastel-toned, with expressive eyes and soft shadows, inspired by modern Japanese anime character design and sakura-themed visuals.
 這幅數位動漫風格的插圖描繪了一位母親和女兒在室內自拍的場景。母親戴著眼鏡，身穿栗色上衣，女兒則穿著帶有彩色數字的白色睡衣。他們熱情微笑，親切擁抱。背景有柔和的燈光和木地板，營造出舒適、溫馨的氛圍。藝術風格細膩，色調柔和，眼神富有表現力，陰影柔和，靈感來自現代日本動漫人物設計和櫻花主題的視覺效果。
+
+
+![[0b7ebd636696794194dbf7f8d892e0a5 1.jfif]]
+
+Prompt:  
+"A 2D anime-style digital illustration of a young girl with light skin and vibrant purple eyes, seated in a traditional Japanese café. She is gazing serenely out through tall wooden windows, holding a uchiwa fan with a giraffe illustration. Her dark hair is styled in a loose braid adorned with a delicate butterfly hair ornament, resembling the style of Shinobu Kocho from Demon Slayer. She wears a white haori with black and turquoise patterns over a black outfit, with a katana by her side. The background shows soft natural light, wooden interior, other customers blurred in the distance, and lush greenery outside."

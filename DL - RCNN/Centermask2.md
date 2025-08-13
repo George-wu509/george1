@@ -1,15 +1,15 @@
 
 ### CenterMask2 網路架構詳細介紹
 
-**CenterMask2** 是一個基於 **Anchor-Free** 的即時實例分割（Instance Segmentation）網絡，從 **RetinaNet** 的架構演進而來。它融合了 **FCOS（Fully Convolutional One-Stage Object Detection）** 的物體檢測能力，並在此基礎上添加了實例分割的功能。它針對實時性進行了優化，相比 **Mask R-CNN** 有更好的速度表現。
+**CenterMask2** 是一個基於 **Anchor-Free** 的即時實例分割（Instance Segmentation）網絡，從 **RetinaNet** 的架構演進而來。它融合了 **<mark style="background: #FFB86CA6;">FCOS</mark>（Fully Convolutional One-Stage Object Detection）** 的物體檢測能力，並在此基礎上添加了實例分割的功能。它針對實時性進行了優化，相比 **Mask R-CNN** 有更好的速度表現。
 
 ![[Pasted image 20250521155837.png]]
 
 CenterMask2 是一個基於 CenterMask 的實時無錨點（Anchor-Free）實例分割（Instance Segmentation）模型。它是 CenterMask 的升級實現，通常基於 Detectron2 框架。CenterMask 論文發表於 CVPR 2020，其核心目標是實現高效且精確的實例分割，尤其強調「實時性」。
 
-Backbone: VoVNet
+Backbone: <mark style="background: #FFB86CA6;">VoVNet</mark>  (<mark style="background: #FFB86CA6;">OSA module)</mark>
 Neck: FPN
-Head: FCOS head + SAG-Mask head
+Head: <mark style="background: #FFB86CA6;">FCOS head</mark> + <mark style="background: #FFB86CA6;">SAG-Mask head</mark>
 
 ### CenterMask2 的主要特點
 

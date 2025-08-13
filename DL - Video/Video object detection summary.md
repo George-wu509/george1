@@ -1,9 +1,10 @@
-
+tracking-by-detection
 1. YOLO + SORT, DeepSORT, ByteTrack (ReID)
 
-2. Video-DETR or TrackFormer
+tracking-by-attention
+1. TrackFormer
 
-3. GroundingDINO + Tracker
+2. GroundingDINO + Tracker
 
 
 

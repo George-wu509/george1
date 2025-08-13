@@ -2,6 +2,8 @@
 TrackFormer解读 - 周先森爱吃素的文章 - 知乎
 https://zhuanlan.zhihu.com/p/356966934
 
+**TrackFormer就是將DETR的Encoder-Decoder中的Decoder的object detection query改成track query**
+
 
 在人群密集的场景中跟踪多个目标其实是非常大的挑战，因为对人而言集中注意力关注一个目标已经不是很容易的事情，因此将Transformer这种强大的自注意力引入MOT任务中，是一种很好的选择。而随着图像级别的目标检测器的发展，大部分MOT方法都采用tracking-by-detection的思路，它主要分为两步：首先，在单帧上检测出目标，接着在帧间检测结果之间进行关联，从而形成沿着时间的轨迹。
 

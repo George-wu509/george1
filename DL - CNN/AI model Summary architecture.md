@@ -3873,6 +3873,8 @@ masks, iou_predictions = model(images, points, boxes)
 
 Segment Anything Model 2（SAM 2）是由 Meta 公司发布的先进图像和视频分割模型，是对原始 SAM 模型的升级版本。SAM 2 引入了统一的模型架构，能够在图像和视频中实现实时的提示对象分割，并达到最先进的性能。
 
+SAM2比SAM 多了 memory encoder, memory bank, memory attention
+
 
 ### 设计特性
 
