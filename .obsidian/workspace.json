@@ -22,49 +22,21 @@
             }
           },
           {
-            "id": "4dd9b6a19204b914",
+            "id": "7aa12f3fd23ea75e",
             "type": "leaf",
             "state": {
               "type": "markdown",
               "state": {
-                "file": "Interview - @@ ongoing/SDSC  Senior Machine Learning Engineer.md",
+                "file": "@@ Interview prepare.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "SDSC  Senior Machine Learning Engineer"
-            }
-          },
-          {
-            "id": "c9fb0e4e6ce27e8b",
-            "type": "leaf",
-            "state": {
-              "type": "markdown",
-              "state": {
-                "file": "DL - Video/Video upload and analysis platform.md",
-                "mode": "source",
-                "source": false
-              },
-              "icon": "lucide-file",
-              "title": "Video upload and analysis platform"
-            }
-          },
-          {
-            "id": "7f673cb626cf7803",
-            "type": "leaf",
-            "state": {
-              "type": "markdown",
-              "state": {
-                "file": "AWS - build Video upload and analysis platform.md",
-                "mode": "source",
-                "source": false
-              },
-              "icon": "lucide-file",
-              "title": "AWS - build Video upload and analysis platform"
+              "title": "@@ Interview prepare"
             }
           }
         ],
-        "currentTab": 2
+        "currentTab": 1
       },
       {
         "id": "e352b42efbd4b744",
@@ -262,34 +234,34 @@
       "table-editor-obsidian:Advanced Tables Toolbar": false
     }
   },
-  "active": "c9fb0e4e6ce27e8b",
+  "active": "e8724133f51498ae",
   "lastOpenFiles": [
+    "DL - Video/Video upload and analysis platform.md",
     "AWS - build Video upload and analysis platform.md",
     "DL - MLOPs/MLOPs - Introduction.md",
-    "@@ Interview prepare.md",
+    "DL - Transformer and ViT/Transformer and ViT - Summary.md",
     "DL - 3D Image,CV and Camera/Multi-Target Multi-Camera Tracking（MTMCT）.md",
-    "DL - 3D Image,CV and Camera/World to camera to pixel coordinate.md",
+    "DL - GAN/GAN - Summary.md",
+    "DL - Ground/Grounded SAM.md",
     "DL - CNN/AI model Summary architecture.md",
-    "DL - CNN/CNN - Basic.md",
-    "DL - Video/Video upload and analysis platform.md",
-    "CVML - ML/Machine learning matlab.md",
-    "CVML - Image CV/Traditional Computer Vision summary.md",
-    "DL - CNN/AI model的量化指標.md",
+    "DL - YOLO and object detection/Object detection and NMS.md",
+    "DL - CNN/AI model Summary.md",
     "Code - AI/PyTorch - interview.md",
+    "CVML - Image CV/Traditional Computer Vision summary.md",
+    "DL - CNN/手撕项目代码.md",
+    "DL - CNN/CNN - Basic.md",
+    "CVML - ML/Machine learning matlab.md",
+    "@@ Interview prepare.md",
+    "Interview - @@ ongoing/SDSC  Senior Machine Learning Engineer.md",
+    "DL - 3D Image,CV and Camera/World to camera to pixel coordinate.md",
+    "DL - CNN/AI model的量化指標.md",
     "DL - Ground/Grounding DINO.md",
     "DL - Ground/Image video detection segmentation summary.md",
     "DL - YOLO and object detection/Object detection - summary.md",
     "DL - YOLO and object detection/Object detection on edge.md",
     "DL - Tracking/Tracking - Summary.md",
     "DL - CNN/AutoEncoder.md",
-    "Interview - @@ ongoing/SDSC  Senior Machine Learning Engineer.md",
-    "DL - CNN/手撕项目代码.md",
     "DL - CNN/CNN - Setting.md",
-    "DL - Ground/Grounded SAM.md",
-    "DL - MultiModal/MultiModal - Introduction.md",
-    "CVML - Image CV/algorithms/Geometric transformation.md",
-    "DL - Performance optimization(CUDA)/CUDA programming - Basic.md",
-    "DL - Performance optimization(CUDA)/PTQ and QAT quantification.md",
     "0b7ebd636696794194dbf7f8d892e0a5 1.jfif",
     "0b7ebd636696794194dbf7f8d892e0a5.jfif",
     "materials/Pasted image 20250810223006.png",
