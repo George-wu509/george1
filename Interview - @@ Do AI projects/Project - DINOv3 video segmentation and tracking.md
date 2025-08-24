@@ -1,6 +1,10 @@
 
 2025.08.14   DINOv3
 
+Project Colab:
+[DINOv3_segmentation_tracking.ipynb](https://colab.research.google.com/drive/1IBQ4chTxowsBE_wYONRCmjcBnuSIOdkv#scrollTo=3S1MyIZucBoD)
+
+
 我們推出了[DINOv3](http://ai.meta.com/dinov3)，它可以擴展影像的自監督學習，以創建通用視覺主幹，在包括網路和衛星影像在內的不同領域實現絕對最先進的性能。DINOv3 主幹網路能夠產生強大的高解析度影像特徵，從而輕鬆訓練輕量級適配器。這使得其在一系列下游視覺任務（包括影像分類、語義分割和影片中的物件追蹤）上表現出色。透過提供較小的模型來增強 DINOv3 的多功能性，這些模型在廣泛的評估套件中表現優於基於 CLIP 的同類衍生產品，以及針對資源受限用例的替代 ConvNeXt 架構
 
 今天，我們發布了[DINOv3](http://ai.meta.com/dinov3)，這是一款通用的、先進的電腦視覺模型，採用 SSL 進行訓練，能夠產生卓越的高解析度視覺特徵。這是首次在多個長期存在的密集預測任務（包括物件偵測和語義分割）上，單一凍結視覺主幹網路的表現優於專用解決方案. 我們建立了 DINOv3，並在比其前身DINOv2大 12 倍的資料集上訓練了一個 7 倍大的模型。為了展示模型的多功能性，我們在 15 個不同的視覺任務和 60 多個基準測試中對其進行了評估。 DINOv3 主幹在所有密集預測任務中表現尤為出色，展現了對場景佈局和底層物理的卓越理解。
@@ -19,7 +23,17 @@ Reference:
 
 [3] DINOv3 [paper](https://ai.meta.com/research/publications/dinov3/)
 
-[4] My DINOv3 colab [DINOv3_segmentation_tracking.ipynb](https://colab.research.google.com/drive/1IBQ4chTxowsBE_wYONRCmjcBnuSIOdkv#scrollTo=3S1MyIZucBoD)
+[4] DINOv3 github colab - Segmentation tracking
+https://colab.research.google.com/github/facebookresearch/dinov3/blob/main/notebooks/segmentation_tracking.ipynb
+
+[5] DINOv3 github colab - PCA of patch features
+https://colab.research.google.com/github/facebookresearch/dinov3/blob/main/notebooks/pca.ipynb
+
+[6] DINOv3 github colab - Foreground segmentation
+https://colab.research.google.com/github/facebookresearch/dinov3/blob/main/notebooks/foreground_segmentation.ipynb
+
+[7] DINOv3 github colab - Dense and sparse matching
+https://colab.research.google.com/github/facebookresearch/dinov3/blob/main/notebooks/dense_sparse_matching.ipynb
 
 
 
