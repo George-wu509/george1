@@ -97,3 +97,5 @@ https://zhuanlan.zhihu.com/p/1936605325873620496
 速通CUDA - 曦雨的文章 - 知乎
 https://zhuanlan.zhihu.com/p/1934441143711543490
 
+算法工程师面试时，常见的问题有哪些？ - 难受啊马飞的回答 - 知乎
+https://www.zhihu.com/question/580093448/answer/1944085641504752543
