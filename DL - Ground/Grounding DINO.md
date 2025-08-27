@@ -3,6 +3,9 @@
 十分钟解读Grounding DINO-根据文字提示检测任意目标 - 李小羊学AI的文章 - 知乎
 https://zhuanlan.zhihu.com/p/627646794
 
+由文本提示检测图像任意目标(Grounding DINO)的使用以及全网最详细源码讲解 - 共由的文章 - 知乎
+https://zhuanlan.zhihu.com/p/680808735
+
 Reference:
 LLMDet and MM-Grounding-DINO on HuggingFace (2025.08.13)
 https://www.linkedin.com/posts/niels-rogge-a3b7a3127_some-new-impressive-open-vocabulary-detectors-activity-7361380179752939520-vMyg/?utm_source=share&utm_medium=member_android&rcm=ACoAABMNj2MBAJSP3cWd4xpiz4wB7qdx43hvW18

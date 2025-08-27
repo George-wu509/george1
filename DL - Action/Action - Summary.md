@@ -27,3 +27,9 @@ https://zhuanlan.zhihu.com/p/679116978
 https://zhuanlan.zhihu.com/p/32265681
 
 https://www.zhihu.com/search?type=content&q=Action%20Detection
+
+人体关键点检测（姿态估计）简介+分类汇总 - 凡心所向素履所往的文章 - 知乎
+https://zhuanlan.zhihu.com/p/102457223
+
+关键点检测---深度学习二十一 - 半夜打老虎的文章 - 知乎
+https://zhuanlan.zhihu.com/p/666124318

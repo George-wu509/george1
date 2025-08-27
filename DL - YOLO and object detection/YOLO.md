@@ -49,6 +49,12 @@ https://www.mdpi.com/2504-4990/5/4/83
 |                                         |     |
 |                                         |     |
 |                                         |     |
+Reference:
+YOLOv13 从训练到模型部署全流程实战：PyTorch → ONNX → TensorRT - 坚强的秋叶的文章 - 知乎
+https://zhuanlan.zhihu.com/p/1943100986043400619
+
+YOLOv13 - 秋水黑刀的文章 - 知乎
+https://zhuanlan.zhihu.com/p/1938356375219594598
 
 
 ```python
