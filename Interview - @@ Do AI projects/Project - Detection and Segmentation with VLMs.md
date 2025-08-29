@@ -20,3 +20,7 @@ TL;DR: VLMs are making real progress in detection and segmentation, and supervis
   
 ⮑ 🔗 supervision-0.26.0 release notes: [https://lnkd.in/dJg7YdyK](https://lnkd.in/dJg7YdyK)
 ```
+
+supervision-0.26.0
+
+Alibaba Cloud Qwen2.5-VL, Gemini 2.0 and 2.5
