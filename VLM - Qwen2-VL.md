@@ -94,4 +94,9 @@ https://zhuanlan.zhihu.com/p/28205969434
 多模态技术梳理：Qwen-VL系列 - 姜富春的文章 - 知乎
 https://zhuanlan.zhihu.com/p/25267823390
 
+Qwen2-VL：提升视觉语言模型对任意分辨率世界的感知能力 - AI专题精讲的文章 - 知乎
+https://zhuanlan.zhihu.com/p/1928028373483000545
+
+
+
 
