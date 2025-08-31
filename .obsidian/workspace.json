@@ -4,11 +4,11 @@
     "type": "split",
     "children": [
       {
-        "id": "9d6afe3fd29106a9",
+        "id": "cfa49c737d6b50cf",
         "type": "tabs",
         "children": [
           {
-            "id": "c135af6abf51206d",
+            "id": "65c2dc93d85dda00",
             "type": "leaf",
             "state": {
               "type": "markdown",
@@ -20,8 +20,51 @@
               "icon": "lucide-file",
               "title": "@@ Interview prepare"
             }
+          },
+          {
+            "id": "529ce751271bb156",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "VLM - summary.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "VLM - summary"
+            }
+          },
+          {
+            "id": "bc0a2d1352f7636d",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "Project - Qwen2-VL.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "Project - Qwen2-VL"
+            }
+          },
+          {
+            "id": "4c0c307378f95b4e",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "VLM - Qwen2-VL.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "VLM - Qwen2-VL"
+            }
           }
-        ]
+        ],
+        "currentTab": 2
       }
     ],
     "direction": "vertical"
@@ -44,7 +87,7 @@
                 "autoReveal": false
               },
               "icon": "lucide-folder-closed",
-              "title": "Files"
+              "title": "檔案瀏覽器"
             }
           },
           {
@@ -161,44 +204,45 @@
   },
   "left-ribbon": {
     "hiddenItems": {
-      "switcher:Open quick switcher": false,
-      "graph:Open graph view": false,
-      "canvas:Create new canvas": false,
-      "daily-notes:Open today's daily note": false,
-      "templates:Insert template": false,
-      "command-palette:Open command palette": false,
-      "bases:Create new base": false,
+      "switcher:開啟快速切換": false,
+      "graph:查看關聯圖": false,
+      "canvas:建立新畫布": false,
+      "daily-notes:開啟今天的每日筆記": false,
+      "templates:插入模板": false,
+      "command-palette:開啟命令面板": false,
+      "bases:建立新的 base": false,
       "table-editor-obsidian:Advanced Tables Toolbar": false
     }
   },
-  "active": "c135af6abf51206d",
+  "active": "bc0a2d1352f7636d",
   "lastOpenFiles": [
-    "CVML - Image CV/Traditional Computer Vision summary.md",
-    "@@ Interview prepare.md",
-    "DL - Ground/Image video detection segmentation summary.md",
-    "DL - Ground/Grounded SAM.md",
-    "DL - CNN/AI model Summary architecture.md",
-    "DL - Segmentation/Image segmentation summary.md",
-    "DL - Transformer and ViT/Transformer and ViT - Summary.md",
-    "DL - World model/World model and V-JEPA 2.md",
-    "DL - Video/Video segmentation summary.md",
-    "Interview - @@ AI projects/Project - 3D VLMs for Unified Scene Understanding.md",
-    "DL - YOLO and object detection/Scene - Object vs Scene.md",
-    "VLM - Qwen2-VL.md",
-    "DL - 3D Image,CV and Camera/3D Reconstruction.md",
-    "DL - 3D Image,CV and Camera/World to camera to pixel coordinate.md",
     "VLM - summary.md",
-    "DL - CV Generative Models/CV Generative Models - Introduction.md",
+    "@@ Interview prepare.md",
+    "Project - Qwen2-VL.md",
+    "VLM - Qwen2-VL.md",
     "DL - MultiModal/MultiModal - Introduction.md",
+    "DL - World model/World model and V-JEPA 2.md",
     "DL - Self Supervised Learning/DINOv3 - Summary.md",
-    "DL - 3D Image,CV and Camera/Multi-Target Multi-Camera Tracking（MTMCT）.md",
+    "DL - Ground/Image video detection segmentation summary.md",
+    "DL - Performance optimization(CUDA)/Performance optimization summary.md",
+    "DL - Tracking/Tracking - Summary.md",
+    "DL - YOLO and object detection/YOLO.md",
+    "DL - Video/Video object detection summary.md",
+    "DL - YOLO and object detection/Object detection - summary.md",
+    "DL - YOLO and object detection/Object detection on edge.md",
     "DL - Action/Action - Summary.md",
-    "DL - SAM/SAM - SAM.md",
-    "DL - @@ Latest update/AI Latest update - projects.md",
-    "DL - embedded and edge/Edge system design.md",
-    "DL - embedded and edge/Cloud service.md",
-    "DL - Performance optimization(CUDA)/weight clustering and weight sharing.md",
-    "DL - CNN/AI model的量化指標.md",
+    "DL - 3D Image,CV and Camera/Multi-Target Multi-Camera Tracking（MTMCT）.md",
+    "DL - 3D Image,CV and Camera/World to camera to pixel coordinate.md",
+    "DL - Ground/Grounding DINO.md",
+    "DL - CNN/CNN - Setting.md",
+    "DL - CNN/AI model Summary architecture.md",
+    "CVML - Image CV/Traditional Computer Vision summary.md",
+    "DL - CNN/AI model Summary.md",
+    "DL - YOLO and object detection/Scene - Object vs Scene.md",
+    "DL - Cloud/AWS and AzureML.md",
+    "DL - Performance optimization(CUDA)/CUDA programming - Basic.md",
+    "DL - Performance optimization(CUDA)/Mixed Precision vs PTQ and QAT.md",
+    "materials/Pasted image 20250830003020.png",
     "Interview - @@ AI projects",
     "materials/Pasted image 20250828093929.png",
     "materials/Pasted image 20250828102105.png",
@@ -211,7 +255,6 @@
     "materials/Pasted image 20250827102521.png",
     "materials/Pasted image 20250827023206.png",
     "materials/Pasted image 20250827023357.png",
-    "materials/Pasted image 20250827023344.png",
     "DL - Self Supervised Learning",
     "DL - Distributed training",
     "DL - Robotic",

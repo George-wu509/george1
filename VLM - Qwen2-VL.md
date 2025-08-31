@@ -1,12 +1,23 @@
 
-Qwen2-VL: Expert Vision Language Model for Video Analysis and Q&A
-My Qwen2-VL [Colab](https://colab.research.google.com/drive/1Zahrn91uzsndMvaLefk8xQot4qsAQgIS?usp=sharing#scrollTo=N-kIKVdhxczd)
+|                        |     |
+| ---------------------- | --- |
+| [[#### Qwen2-VL的功能輸出]] |     |
+| [[#### Qwen2-VL整体架构]]  |     |
+|                        |     |
+|                        |     |
 
-Original Qwen2-VL [Colab](https://colab.research.google.com/drive/1Zahrn91uzsndMvaLefk8xQot4qsAQgIS?usp=sharing)
+
+
+
+
+
+
 
 
 ![[Pasted image 20250828102001.png]]
 
+
+#### Qwen2-VL的功能輸出
 
 | Cookbook                                                                                                                        | Description                                                                                                                                                                              | Open                                                                                                                                                                                                                                                                                                                                         |
 | ------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -27,7 +38,7 @@ Original Qwen2-VL [Colab](https://colab.research.google.com/drive/1Zahrn91uzsndM
 
 
 
-### Qwen2-VL整体架构
+#### Qwen2-VL整体架构
 
 [视觉语言模型](https://zhida.zhihu.com/search?content_id=250493249&content_type=Article&match_order=1&q=%E8%A7%86%E8%A7%89%E8%AF%AD%E8%A8%80%E6%A8%A1%E5%9E%8B&zhida_source=entity)（VLM）是人工智能领域的重要突破，它能够同时理解和处理图像与文本信息，实现类似人类的多模态认知能力。这类模型通过将强大的[视觉编码器](https://zhida.zhihu.com/search?content_id=250493249&content_type=Article&match_order=1&q=%E8%A7%86%E8%A7%89%E7%BC%96%E7%A0%81%E5%99%A8&zhida_source=entity)（如[CLIP](https://zhida.zhihu.com/search?content_id=250493249&content_type=Article&match_order=1&q=CLIP&zhida_source=entity)、[ViT](https://zhida.zhihu.com/search?content_id=250493249&content_type=Article&match_order=1&q=ViT&zhida_source=entity)）与大型语言模型（如[GPT](https://zhida.zhihu.com/search?content_id=250493249&content_type=Article&match_order=1&q=GPT&zhida_source=entity)、[LLaMA](https://zhida.zhihu.com/search?content_id=250493249&content_type=Article&match_order=1&q=LLaMA&zhida_source=entity)）相结合，创造出能够进行视觉理解和自然语言交互的智能系统。
 
@@ -97,6 +108,10 @@ https://zhuanlan.zhihu.com/p/25267823390
 Qwen2-VL：提升视觉语言模型对任意分辨率世界的感知能力 - AI专题精讲的文章 - 知乎
 https://zhuanlan.zhihu.com/p/1928028373483000545
 
+【多模态模型学习】qwen2-vl模型代码技术学习 - 威化饼的一隅的文章 - 知乎
+https://zhuanlan.zhihu.com/p/19107424324
 
+Qwen2-VL技术解析（一）-原生支持任意分辨率图像 - mingming的文章 - 知乎
+https://zhuanlan.zhihu.com/p/718515978
 
 
