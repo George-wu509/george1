@@ -27,3 +27,10 @@ https://zhuanlan.zhihu.com/p/658947627
 
 深入浅出GPU优化系列：GEMM优化（一） - 有了琦琦的棍子的文章 - 知乎
 https://zhuanlan.zhihu.com/p/435908830
+
+一文读懂cudagraph - 游凯超的文章 - 知乎
+https://zhuanlan.zhihu.com/p/700224642
+
+PyTorch的CUDA扩展 - 周睿宇的文章 - 知乎
+https://zhuanlan.zhihu.com/p/1944509358760240868
+

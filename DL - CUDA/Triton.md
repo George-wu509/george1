@@ -12,3 +12,6 @@ https://zhuanlan.zhihu.com/p/12789107689
 
 Triton 使每个人都更容易的使用GPU - Michael的文章 - 知乎
 https://zhuanlan.zhihu.com/p/719703418
+
+Triton内核技术实践: 弯道超车CUDA的关键 - 张禾丰的文章 - 知乎
+https://zhuanlan.zhihu.com/p/720579729

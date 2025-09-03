@@ -129,3 +129,7 @@ https://zhuanlan.zhihu.com/p/1913621442194572257
 CUDA重大更新：原生Python可直接编写高性能GPU程序 - deephub的文章 - 知乎
 https://zhuanlan.zhihu.com/p/1910630624974320803
 
+20250902
+视频中的目标检测与分割，是怎么利用多帧之间的连续性信息的？ - CV计算机视觉的回答 - 知乎
+https://www.zhihu.com/question/284728961/answer/1946150374558925158
+
