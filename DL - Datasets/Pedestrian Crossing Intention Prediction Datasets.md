@@ -1,4 +1,17 @@
 
+
+|                                        |     |
+| -------------------------------------- | --- |
+| [[#### 行人過街意圖預測Open Datasets  ]]       |     |
+| [[#### NuScenes和 Waymo Open Datasets]] |     |
+| [[#### 適合 PCIP 的資料集 和 多視角Datasets整理]]  |     |
+
+
+
+
+
+#### 行人過街意圖預測Open Datasets  
+
 「行人過街意圖預測（Pedestrian Crossing Intention Prediction, PCIP）」project 在學界和自駕車研究社群裡非常熱門，我幫你整理：
 
 ---
@@ -10,7 +23,6 @@
 - **內容**：由行車記錄器拍攝，場景在加州。包含行人 bounding boxes、關鍵點、意圖標註 (是否要過馬路)、車速等資訊。
     
 - **特色**：有 **bounding box、pose、速度**、意圖標籤，非常對口。
-    
 - **下載**：PIE Dataset
     
 
@@ -142,7 +154,7 @@
 
 
 
-
+#### NuScenes和 Waymo Open Datasets
 ```
 請詳細中文解釋NuScenes / Waymo Open Dataset, 各有那些video或image, 那些角度, 是如何標註. 並具體舉例說明data. 以及適合做Pedestrian Crossing Intention Prediction, PCIP）嗎
 ```
@@ -335,7 +347,7 @@
 3. 預測輸出（過街 vs. 不過街 + 未來 3 秒軌跡）
 
 
-
+#### 適合 PCIP 的資料集 和 多視角Datasets整理
 ```
 請幫我從上面提供的公開資料集推薦可以做行人過街意圖預測（Pedestrian Crossing Intention Prediction, PCIP), 以及多視角 / Sensor Fusion相關model
 ```
@@ -346,14 +358,14 @@
 
 # 🟢 一、推薦的公開資料集 (適合 PCIP)
 
-|資料集|特點|適合 PCIP 的理由|是否有多視角/多感測器|
-|---|---|---|---|
-|**PIE (Pedestrian Intention Estimation)**|車前行車紀錄器影片 (ego-view)，有 bounding box、pose、意圖標註|✅ 有明確的「過街意圖」標籤，是 PCIP 的黃金標準|單視角 (前方攝影)|
-|**JAAD (Joint Attention in Autonomous Driving)**|行車紀錄器影片，標註行人動作 (看左右、走/停)|✅ 有「head orientation、動作」標籤，可做意圖推斷|單視角|
-|**STIP (Sussex Traffic Intention Prediction)**|英國交通場景，標註意圖|✅ 為 Intention Prediction 設計，適合 PCIP|單視角|
-|**TITAN**|行人與車輛交互，含 3D bbox|✅ 有交互意圖，可延伸到 PCIP|多視角部分支援|
-|**NuScenes**|6 攝影機 (360°)、LiDAR、Radar，標註行人 bbox、屬性 (moving/standing)，含 HD map (斑馬線/車道線)|✅ 可利用「地圖+行人屬性」做過街意圖|多視角 (6 cam + LiDAR + Radar)|
-|**Waymo Open Dataset**|5 攝影機、5 LiDAR，標註 3D bbox + velocity|✅ 有速度向量，可推斷是否加速跨入車道|多視角 (5 cam + 5 LiDAR)|
+| 資料集                                              | 特點                                                                         | 適合 PCIP 的理由                         | 是否有多視角/多感測器                 |
+| ------------------------------------------------ | -------------------------------------------------------------------------- | ----------------------------------- | --------------------------- |
+| **PIE (Pedestrian Intention Estimation)**        | 車前行車紀錄器影片 (ego-view)，有 bounding box、pose、意圖標註                              | ✅ 有明確的「過街意圖」標籤，是 PCIP 的黃金標準         | 單視角 (前方攝影)                  |
+| **JAAD (Joint Attention in Autonomous Driving)** | 行車紀錄器影片，標註行人動作 (看左右、走/停)                                                   | ✅ 有「head orientation、動作」標籤，可做意圖推斷   | 單視角                         |
+| **STIP (Sussex Traffic Intention Prediction)**   | 英國交通場景，標註意圖                                                                | ✅ 為 Intention Prediction 設計，適合 PCIP | 單視角                         |
+| **TITAN**                                        | 行人與車輛交互，含 3D bbox                                                          | ✅ 有交互意圖，可延伸到 PCIP                   | 多視角部分支援                     |
+| **NuScenes**                                     | 6 攝影機 (360°)、LiDAR、Radar，標註行人 bbox、屬性 (moving/standing)，含 HD map (斑馬線/車道線) | ✅ 可利用「地圖+行人屬性」做過街意圖                 | 多視角 (6 cam + LiDAR + Radar) |
+| **Waymo Open Dataset**                           | 5 攝影機、5 LiDAR，標註 3D bbox + velocity                                        | ✅ 有速度向量，可推斷是否加速跨入車道                 | 多視角 (5 cam + 5 LiDAR)       |
 
 👉 **建議組合**：
 
