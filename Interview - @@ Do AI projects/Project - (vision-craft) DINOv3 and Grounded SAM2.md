@@ -6,6 +6,8 @@
 
 vision-craft github: https://github.com/George-wu509/VisionCraft
 
+My Colab: https://colab.research.google.com/drive/1Zk540B_ItqKnylZUJfDMG7vZaV595OC6
+
 Resume:
 **Open-Vocabulary Object Tracking and Segmentation in Dynamic Video Scenes using DINOv3:**
 
