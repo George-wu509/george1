@@ -14,7 +14,7 @@ Developed a Visual understanding library integrating a Vision Language Model (Qw
 
 
 
-My Qwen2-VL [Colab](https://colab.research.google.com/drive/1Zahrn91uzsndMvaLefk8xQot4qsAQgIS?usp=sharing#scrollTo=N-kIKVdhxczd)
+My Qwen2-VL [Colab](https://colab.research.google.com/drive/1Zahrn91uzsndMvaLefk8xQot4qsAQgIS?usp=sharing#scrollTo=N-kIKVdhxczd)   Qwen2-VL: Expert Vision Language Model for Video Analysis and Q&A.ipynb
 
 Original Qwen2-VL [Colab](https://colab.research.google.com/drive/1Zahrn91uzsndMvaLefk8xQot4qsAQgIS?usp=sharing)
 
