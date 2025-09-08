@@ -22,6 +22,34 @@
             }
           },
           {
+            "id": "93d4f8874996c7d9",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "@@ Interview prepare.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "@@ Interview prepare"
+            }
+          },
+          {
+            "id": "0a5e9d30927cdb65",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "DL - CNN/CNN - Setting.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "CNN - Setting"
+            }
+          },
+          {
             "id": "ee219f24d6ef44c5",
             "type": "leaf",
             "state": {
@@ -35,7 +63,8 @@
               "title": "Project - (Qwen-Ground-SG) Qwen2-VL"
             }
           }
-        ]
+        ],
+        "currentTab": 2
       }
     ],
     "direction": "vertical"
@@ -175,44 +204,45 @@
   },
   "left-ribbon": {
     "hiddenItems": {
-      "switcher:Open quick switcher": false,
-      "graph:Open graph view": false,
-      "canvas:Create new canvas": false,
-      "daily-notes:Open today's daily note": false,
-      "templates:Insert template": false,
-      "command-palette:Open command palette": false,
-      "bases:Create new base": false,
+      "switcher:開啟快速切換": false,
+      "graph:查看關聯圖": false,
+      "canvas:建立新畫布": false,
+      "daily-notes:開啟今天的每日筆記": false,
+      "templates:插入模板": false,
+      "command-palette:開啟命令面板": false,
+      "bases:建立新的 base": false,
       "table-editor-obsidian:Advanced Tables Toolbar": false
     }
   },
-  "active": "75f1ed540a39f975",
+  "active": "0a5e9d30927cdb65",
   "lastOpenFiles": [
-    "Interview - @@ Do AI projects/Project - (Qwen-Ground-SG) Qwen2-VL.md",
-    "DL - VLM/VLM - Qwen2-VL.md",
+    "DL - CNN/Focal Loss.md",
     "DL - CNN/CNN - Setting.md",
+    "DL - CNN/Smooth L1 Loss.md",
+    "@@ Interview prepare.md",
     "DL - CNN/AI model的量化指標.md",
+    "DL - CNN/CNN - Basic.md",
+    "DL - CNN/手撕项目代码.md",
+    "Code - AI/JAX - concept.md",
+    "Code - AI/PyTorch - interview.md",
+    "CVML - ML/Machine learning matlab.md",
+    "DL - VLM/VLM - Qwen2-VL.md",
+    "Interview - @@ Do AI projects/Project - (Qwen-Ground-SG) Qwen2-VL.md",
+    "materials/Pasted image 20250907154244.png",
+    "DL - CUDA/CUDA - concepts.md",
+    "DL - CLIP/OpenVision - concept.md",
+    "Interview - @@ AI projects/Project - World model and YOLO.md",
     "DL - CNN/AI model Summary.md",
     "DL - CNN/AI model Summary architecture.md",
     "CVML - Image CV/Traditional Computer Vision summary.md",
-    "CVML - ML/Machine learning matlab.md",
-    "DL - CNN/手撕项目代码.md",
     "DL - Ground/Image video detection segmentation summary.md",
     "DL - GNN/ST-GCN.md",
-    "Code - AI/JAX - concept.md",
-    "DL - CNN/CNN - Basic.md",
     "DL - GNN/GNN - Summary.md",
     "DL - YOLO and object detection/Object detection - summary.md",
-    "Code - AI/PyTorch - interview.md",
-    "@@ Interview prepare.md",
     "DL - VLM/VLM - summary.md",
     "DL - GNN/GNN - concept.md",
     "DL - CNN/LSTM.md",
     "DL - YOLO and object detection/Object detection and NMS.md",
-    "DL - World model/World model and V-JEPA 2.md",
-    "DL - Self Supervised Learning/DINOv3 - Summary.md",
-    "DL - Action/ETH-XGaze - Gaze estimation.md",
-    "DL - Tracking/Tracking - Summary.md",
-    "Interview - @@ Do AI projects/Project - (PedestrianIntent) 行人偵測 PCIP.md",
     "materials/Pasted image 20250905104535.png",
     "materials/Pasted image 20250905104358.png",
     "materials/Pasted image 20250905001756.png",
@@ -223,7 +253,6 @@
     "DL - GNN",
     "materials/Pasted image 20250904170759.png",
     "materials/Pasted image 20250904171038.png",
-    "materials/Pasted image 20250904093001.png",
     "DL - CUDA",
     "DL - VLM",
     "Interview - @@ AI projects",
