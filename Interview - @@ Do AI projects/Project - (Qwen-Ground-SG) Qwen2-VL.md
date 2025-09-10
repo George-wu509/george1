@@ -8,8 +8,17 @@ https://github.com/George-wu509/Qwen-Ground-SG
 
 Resume:
 **Vision-language model based Visual Understanding and Scene Graph Generation Framework:**
+**基於視覺語言模型的視覺理解與場景圖生成框架 (Qwen-Ground-SG)**
 
 Developed a Visual understanding library integrating a Vision Language Model (Qwen2-VL) with Grounded SAM to generate dynamic Scene Graphs from images and videos. This system enriches the VLM's context, significantly improving performance in downstream tasks like VQA, complex reasoning, and multi-object tracking by providing structured semantic understanding of the scene.
+
+我們開發了一個多任務視覺理解庫，該庫整合了多模態大型語言模型Qwen2-VL和開放式目標檢測模型Grounded SAM，能夠自動生成場景圖（SGG），從而提供結構化的語義上下文。這顯著增強了系統的深度視覺理解能力，包括視覺問答、多模態推理、視覺定位以及多目標檢測、分割和追蹤等功能。
+
+->
+> VLM model Qwen2-VL可以提供image recognition, video understanding, OCR等功能, 也有object grounding可以support boxes and points. Grounded SAM增強了grounding空間的精確度能增強object detection, segmentation, tracking. 而且這library可以生成Scene Graph Generation (SGG)動態場景圖生成並輸入到VLM Qwen2-VL顯著提升了複雜多模態任務的表現
+
+
+
 
 
 

@@ -10,5 +10,7 @@ https://github.com/George-wu509/FastTrack
 
 Resume:
 **FastTrack: High-Performance Multi-Object Detection and Tracking:**
+**FastTrack：高效能多目標偵測與追蹤技術**
 
-Engineered FastTrack, a high-performance Python library for real-time multi-object tracking in traffic and drone videos. The system features a flexible dual-backend (PyTorch/JAX) architecture with SOTA models like YOLOv9. Achieved significant inference speedup and minimal latency by implementing advanced optimizations including TensorRT, ONNX conversion, and knowledge distillation.
+Engineered FastTrack, a high-performance Python library for real-time multi-object tracking in traffic and aerial (drone) videos. Designed a flexible dual-backend architecture (PyTorch/JAX) supporting SOTA detection and tracking models such as YOLOv10, RT-DETR and DeepSORT. Achieved substantial inference speedups and ultra-low latency through advanced optimizations, including TensorRT, CUDA kernel integration and knowledge distillation.
+開發了FastTrack，這是一個高性能的Python庫，專用於即時處理交通和無人機視訊中的多目標追蹤。本函式庫採用靈活的雙後端架構（PyTorch/JAX），支援YOLOv10、RT-DETR和DeepSORT等最先進的目標偵測和追蹤模型。透過TensorRT、CUDA核心整合和知識蒸餾等高級優化技術，實現了顯著的推理速度提升和極低的延遲。

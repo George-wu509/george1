@@ -6,6 +6,9 @@ ref: [多模态架构--clip](https://zhuanlan.zhihu.com/p/674126634)
 
 ref: [【多模态模型学习】CLIP模型](https://zhuanlan.zhihu.com/p/11259128726)
 
+CLIP为何搞不定分割与检测？哈工大团队开源通用视觉任务新框架：突破开放词汇稠密感知瓶颈！ - Mark·AI的文章 - 知乎
+https://zhuanlan.zhihu.com/p/1948476962336138691
+
 
 |                 |     |
 | --------------- | --- |

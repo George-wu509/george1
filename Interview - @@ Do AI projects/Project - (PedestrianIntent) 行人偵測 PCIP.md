@@ -8,9 +8,12 @@
 Github: https://github.com/George-wu509/PedestrianIntent
 
 Resume:
-**Zero-Shot Pedestrian Intention Prediction and Model-Driven Scene Understanding:**
+**Enhanced Pedestrian Intention Prediction based on Dynamic Behavior Decoding**
+**基於動態行為解碼的行人意圖預測增強技術 (PedestrianIntent)**
 
-Engineered a novel Python pipeline to predict pedestrian crossing intention by orchestrating foundation models like Grounding DINO and SAM2. The system performs zero-shot detection, tracking, and segmentation, fusing pose, gaze, and trajectory data to analyze behavior in real-time without requiring custom model training
+Developed a comprehensive analysis pipeline that predicts pedestrian crossing intent from video. The system leverages foundation models for real-time, zero-shot scene understanding, integrating multi-modal inputs including pose estimation, gaze direction, and trajectory to provide actionable insights for autonomous vehicle systems and urban safety analysis.
+開發了一個完整的系統流程，能夠從影片中預測行人過街意圖。該系統利用基礎模型實現即時、零樣本場景理解，並整合多種模式的輸入數據，包括姿態和視線估計以及軌跡數據，從而為自動駕駛系統和城市安全分析提供有價值的洞察資訊。
+
 
 
 |                                                           |     |

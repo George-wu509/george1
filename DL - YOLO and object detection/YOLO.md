@@ -1,4 +1,6 @@
 
+![[Pasted image 20250909233631.png]]
+
 Backbone: DarkNet, CSPDarkNet, C2f
 Neck:  PAN
 head: Conv, Decoupled Head

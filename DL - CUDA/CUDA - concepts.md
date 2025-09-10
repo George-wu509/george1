@@ -37,3 +37,6 @@ https://zhuanlan.zhihu.com/p/1944509358760240868
 [cuda][cublas]实现一个Attention算子 - 平平无奇小熊猫的文章 - 知乎
 https://zhuanlan.zhihu.com/p/1947713049097146962
 
+cuda教学之线程模型和显存模型 - 敢为天下先的文章 - 知乎
+https://zhuanlan.zhihu.com/p/1948512692701737758
+

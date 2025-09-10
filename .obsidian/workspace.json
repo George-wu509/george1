@@ -4,11 +4,11 @@
     "type": "split",
     "children": [
       {
-        "id": "9523706a8e375689",
+        "id": "2592e9db37615bf3",
         "type": "tabs",
         "children": [
           {
-            "id": "f13079a5fb939d58",
+            "id": "8bfd1d73ae6e4852",
             "type": "leaf",
             "state": {
               "type": "markdown",
@@ -22,31 +22,17 @@
             }
           },
           {
-            "id": "75f1ed540a39f975",
+            "id": "f646f7357d41e475",
             "type": "leaf",
             "state": {
               "type": "markdown",
               "state": {
-                "file": "DL - VLM/VLM - Qwen2-VL.md",
+                "file": "Interview - @@ Do AI projects/Project - (ImageAlchemy) Stable diffusion.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "VLM - Qwen2-VL"
-            }
-          },
-          {
-            "id": "ee219f24d6ef44c5",
-            "type": "leaf",
-            "state": {
-              "type": "markdown",
-              "state": {
-                "file": "Interview - @@ Do AI projects/Project - (Qwen-Ground-SG) Qwen2-VL.md",
-                "mode": "source",
-                "source": false
-              },
-              "icon": "lucide-file",
-              "title": "Project - (Qwen-Ground-SG) Qwen2-VL"
+              "title": "Project - (ImageAlchemy) Stable diffusion"
             }
           }
         ],
@@ -73,7 +59,7 @@
                 "autoReveal": false
               },
               "icon": "lucide-folder-closed",
-              "title": "Files"
+              "title": "檔案瀏覽器"
             }
           },
           {
@@ -190,54 +176,55 @@
   },
   "left-ribbon": {
     "hiddenItems": {
-      "switcher:Open quick switcher": false,
-      "graph:Open graph view": false,
-      "canvas:Create new canvas": false,
-      "daily-notes:Open today's daily note": false,
-      "templates:Insert template": false,
-      "command-palette:Open command palette": false,
-      "bases:Create new base": false,
+      "switcher:開啟快速切換": false,
+      "graph:查看關聯圖": false,
+      "canvas:建立新畫布": false,
+      "daily-notes:開啟今天的每日筆記": false,
+      "templates:插入模板": false,
+      "command-palette:開啟命令面板": false,
+      "bases:建立新的 base": false,
       "table-editor-obsidian:Advanced Tables Toolbar": false
     }
   },
-  "active": "75f1ed540a39f975",
+  "active": "f646f7357d41e475",
   "lastOpenFiles": [
     "@@ Interview prepare.md",
-    "DL - SAM/SAM - SAM.md",
-    "DL - Video/TrackFormer.md",
-    "DL - YOLO and object detection/Object detection on edge.md",
-    "DL - Ground/Image video detection segmentation summary.md",
-    "DL - GNN/GNN - Summary.md",
-    "DL - CNN/AutoEncoder.md",
-    "CVML - Image CV/Traditional Computer Vision summary.md",
+    "Interview - @@ Do AI projects/Project - (MV-ReconKit) multi-view dense 3D reconstruction and segmentation.md",
+    "Interview - @@ Do AI projects/Project - (PedestrianIntent) 行人偵測 PCIP.md",
+    "Interview - @@ Do AI projects/Project - (VisionCraft) DINOv3 and Grounded SAM2.md",
+    "Interview - @@ Do AI projects/Project - (FastTrack) Real time object detection and optimization.md",
+    "DL - YOLO and object detection/YOLO.md",
+    "materials/Pasted image 20250909233631.png",
+    "Interview - @@ AI projects/Project - Face-MoGLE.md",
+    "Interview - @@ Do AI projects/Projects - climbing action analysis.md",
+    "Interview - @@ Do AI projects/Project - GNN on video analysis.md",
+    "materials/Pasted image 20250909233253.png",
+    "Interview - @@ Do AI projects/Project - (Qwen-Ground-SG) Qwen2-VL.md",
     "DL - VLM/VLM - Qwen2-VL.md",
+    "DL - Ground/Grounding DINO.md",
+    "DL - CUDA/CUDA - concepts.md",
+    "DL - Ground/Image video detection segmentation summary.md",
+    "DL - VLM/VLM - summary.md",
+    "DL - 3D Image,CV and Camera/Multi-Target Multi-Camera Tracking（MTMCT）.md",
+    "DL - 3D Image,CV and Camera/World to camera to pixel coordinate.md",
+    "DL - Action/ETH-XGaze - Gaze estimation.md",
+    "DL - Video/MAE and VideoMAE.md",
+    "DL - Tracking/MMVOT.md",
+    "DL - Video/TrackFormer.md",
+    "DL - Tracking/Tracking and ReID.md",
+    "DL - Tracking/Tracking - Summary.md",
+    "DL - CNN/AI model Summary architecture.md",
+    "DL - CNN/LSTM.md",
+    "DL - CNN/AutoEncoder(AE), VAE, MAE.md",
+    "materials/Pasted image 20250909204840.png",
+    "materials/Pasted image 20250909154829.png",
+    "materials/Pasted image 20250909100823.png",
+    "materials/Pasted image 20250909015935.png",
+    "materials/Pasted image 20250909020055.png",
+    "interview - @@ interview QA",
     "materials/68747470733a2f2f7169616e77656e2d7265732e6f73732d636e2d6265696a696e672e616c6979756e63732e636f6d2f5177656e322e352d564c2f7177656e322e35766c5f6172632e6a706567.jpg",
     "materials/Pasted image 20250828102105.png",
-    "Interview - @@ Do AI projects/Project - (Qwen-Ground-SG) Qwen2-VL.md",
-    "DL - Transformer and ViT/Transformer and ViT - encoder &decoder.md",
-    "DL - Transformer and ViT/Transformer and ViT - Summary.md",
-    "DL - Transformer and ViT/ViT vs Transformer.md",
-    "DL - Transformer and ViT/Transformer and ViT - Attention.md",
-    "Sensor fusion - concept.md",
-    "DL - Application fields/Autonomous-Driving - Summary.md",
-    "DL - Performance optimization/FlashAttention.md",
-    "DL - Action/ETH-XGaze - Gaze estimation.md",
-    "Interview - @@ ongoing/Instrumental Inc. - Machine Learning Engineer.md",
-    "DL - CNN/CNN - Setting.md",
-    "DL - CNN/Focal Loss.md",
-    "DL - CNN/Smooth L1 Loss.md",
-    "DL - CNN/AI model的量化指標.md",
-    "DL - CNN/CNN - Basic.md",
-    "DL - CNN/手撕项目代码.md",
-    "Code - AI/JAX - concept.md",
     "materials/Pasted image 20250907154244.png",
-    "materials/Pasted image 20250905104535.png",
-    "materials/Pasted image 20250905104358.png",
-    "materials/Pasted image 20250905001756.png",
-    "materials/Pasted image 20250905000422.png",
-    "materials/Pasted image 20250904174432.png",
-    "materials/Pasted image 20250904174417.png",
-    "materials/Pasted image 20250904174144.png",
     "DL - GNN",
     "DL - CUDA",
     "DL - VLM",
@@ -246,7 +233,6 @@
     "DL - Scene",
     "DL - Self Supervised Learning",
     "DL - Distributed training",
-    "DL - Robotic",
-    "DL - Action"
+    "DL - Robotic"
   ]
 }
