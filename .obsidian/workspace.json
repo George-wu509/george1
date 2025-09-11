@@ -11,10 +11,14 @@
             "id": "161e4f98efb54783",
             "type": "leaf",
             "state": {
-              "type": "empty",
-              "state": {},
+              "type": "markdown",
+              "state": {
+                "file": "Interview - @@ Do AI projects/Colab project list.md",
+                "mode": "source",
+                "source": false
+              },
               "icon": "lucide-file",
-              "title": "新分頁"
+              "title": "Colab project list"
             }
           }
         ]
@@ -40,7 +44,7 @@
                 "autoReveal": false
               },
               "icon": "lucide-folder-closed",
-              "title": "檔案瀏覽器"
+              "title": "Files"
             }
           },
           {
@@ -74,7 +78,8 @@
       }
     ],
     "direction": "horizontal",
-    "width": 300
+    "width": 300,
+    "collapsed": true
   },
   "right": {
     "id": "e8aa8d072fa51c07",
@@ -156,44 +161,45 @@
   },
   "left-ribbon": {
     "hiddenItems": {
-      "switcher:開啟快速切換": false,
-      "graph:查看關聯圖": false,
-      "canvas:建立新畫布": false,
-      "daily-notes:開啟今天的每日筆記": false,
-      "templates:插入模板": false,
-      "command-palette:開啟命令面板": false,
-      "bases:建立新的 base": false,
+      "switcher:Open quick switcher": false,
+      "graph:Open graph view": false,
+      "canvas:Create new canvas": false,
+      "daily-notes:Open today's daily note": false,
+      "templates:Insert template": false,
+      "command-palette:Open command palette": false,
+      "bases:Create new base": false,
       "table-editor-obsidian:Advanced Tables Toolbar": false
     }
   },
   "active": "161e4f98efb54783",
   "lastOpenFiles": [
-    "DL - Datasets/Scene Datasets.md",
-    "DL - Datasets/Autonomous Driving Datasets.md",
-    "DL - Datasets/Drone Datasets.md",
-    "DL - Datasets/Pedestrian Crossing Intention Prediction Datasets.md",
-    "@@ Interview prepare.md",
-    "DL - VLM/VLM - summary.md",
-    "LLM - MCP and RAG.md",
-    "DL - NLP LLM/LLM - concepts.md",
-    "DL - NLP LLM/LLM - Introduction.md",
-    "interview - @@ interview QA/Interview QA - LLM and VLM.md",
-    "Code - AI/JAX - concept.md",
-    "Code - AI/PyTorch - interview.md",
-    "DL - MLOPs/Model Deployment.md",
-    "Interview - @@ ongoing/Instrumental Inc. - Machine Learning Engineer.md",
-    "DL - CV Generative Models/CV Generative Models - Introduction.md",
-    "DL - CLIP/CLIP.md",
-    "DL - CUDA/CUDA programming - Basic.md",
-    "DL - Performance optimization/PTQ and QAT quantification.md",
-    "DL - Performance optimization/Performance optimization summary.md",
-    "DL - Performance optimization/weight clustering and weight sharing.md",
-    "DL - embedded and edge/Edge system design.md",
-    "DL - World model/World model and V-JEPA 2.md",
-    "DL - VLM/VLM - Qwen2-VL.md",
-    "DL - Ground/Grounding DINO.md",
-    "DL - MLOPs/MLOPs - Introduction.md",
+    "Transformer - Attention summary.md",
+    "Interview - @@ Do AI projects/Colab project list.md",
+    "Interview - @@ AI projects/Project - Video key point detection project.md",
+    "LLM - RLHF.md",
+    "DL - CUDA/CUDA - concepts.md",
+    "DL - NLP LLM/LLM - MCP, RAG, and more...md",
+    "Interview - @@ AI projects/Project - Weakly-Supervised Learning and CTC loss on surgical video.md",
+    "Interview - @@ AI projects/Project - TotalSegmentator.md",
+    "Interview - @@ AI projects/Project - Text Prompts for Video Segmentation(SAMWISE).md",
+    "Interview - @@ AI projects/Project - SoccerNet 2025.md",
+    "Interview - @@ AI projects/Project - RF-DETR for drone detection.md",
+    "Interview - @@ AI projects/Project - Real-Time On-Device Video Segmentation.md",
+    "Interview - @@ AI projects/Project - Large World Model's (LWM).md",
+    "Interview - @@ AI projects/Project - Grounded-SAM and inpainting.md",
+    "Interview - @@ AI projects/Project - GPU optimization Gurobi.md",
     "Interview - @@ AI projects/Project - Gemini 2.5 Flash Image.md",
+    "Interview - @@ AI projects/Project - Gaze Target Estimation via Foundation Models.md",
+    "Interview - @@ AI projects/Project - Face-MoGLE.md",
+    "Interview - @@ AI projects/Project - DINOv3 video segmentation and tracking.md",
+    "Interview - @@ AI projects/Project - DINOv3 image Automatic mask generator.md",
+    "Interview - @@ AI projects/Project - DIFT (3D reconstruction using DINOv3).md",
+    "Interview - @@ AI projects/Project - Detection and Segmentation with VLMs.md",
+    "DL - NLP LLM/LLM - Introduction.md",
+    "Pasted image 20250911111814.png",
+    "Pytorch - offload.md",
+    "Interview - @@ Do AI projects/Project - (Qwen-Ground-SG) Qwen2-VL.md",
+    "DL - Datasets/Scene Datasets.md",
     "materials/Pasted image 20250910123734.png",
     "materials/Pasted image 20250909233631.png",
     "materials/Pasted image 20250909233253.png",
@@ -204,7 +210,6 @@
     "materials/Pasted image 20250909020055.png",
     "interview - @@ interview QA",
     "materials/68747470733a2f2f7169616e77656e2d7265732e6f73732d636e2d6265696a696e672e616c6979756e63732e636f6d2f5177656e322e352d564c2f7177656e322e35766c5f6172632e6a706567.jpg",
-    "materials/Pasted image 20250828102105.png",
     "DL - GNN",
     "DL - CUDA",
     "DL - VLM",

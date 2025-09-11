@@ -1,4 +1,30 @@
 
+MCP - 
+
+RAG - (Retrieval-Augmented Generation)
+
+AI Agent -
+
+MoE -
+
+LoRA - (a lightweight fine-tuning method)
+
+RLHF - (Reinforcement Learning from Human Feedback)
+hallucinate - 
+
+Speculative decoding - 是Google和DeepMind发现的大模型推理加速方法
+
+packing - 把多个样本（或样本的不同段）拼接到一个固定长度的序列里训练，从而减少padding浪费、提升GPU利用率。
+
+|                           |     |
+| ------------------------- | --- |
+| [[#### MCP and RAG]]      |     |
+| [[#### AI Agent and MoE]] |     |
+|                           |     |
+
+
+#### MCP and RAG
+
 在大型語言模型（LLM）的快速發展下，模型上下文協定（MCP）與檢索增強生成（RAG）成為了兩項關鍵技術，旨在突破LLM的內在限制，擴展其應用場景。本文將以中文詳細解釋MCP與RAG的定義，並深入探討它們各自以及共同與LLM之間的關係。
 
 ### MCP (Model Context Protocol)：賦予LLM與世界互動的能力
@@ -66,6 +92,8 @@ MCP和RAG的結合，使得大型語言模型不再是一個封閉的系統。RA
 
 
 
+
+#### AI Agent and MoE
 
 這就為您詳細解釋 AI Agent（人工智慧代理）以及 MoE（專家混合模型）的定義，並深入探討它們與大型語言模型（LLM）之間的關係。
 

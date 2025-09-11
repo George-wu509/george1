@@ -40,3 +40,9 @@ https://zhuanlan.zhihu.com/p/1947713049097146962
 cuda教学之线程模型和显存模型 - 敢为天下先的文章 - 知乎
 https://zhuanlan.zhihu.com/p/1948512692701737758
 
+cuda教程之Softmax算子的实现及优化 - 敢为天下先的文章 - 知乎
+https://zhuanlan.zhihu.com/p/1949232224663758626
+
+CUDA编程#pragma unroll引发的血案 - 北田圭人的文章 - 知乎
+https://zhuanlan.zhihu.com/p/1948009887977145646
+
