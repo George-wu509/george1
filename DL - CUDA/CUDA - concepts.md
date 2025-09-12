@@ -46,3 +46,6 @@ https://zhuanlan.zhihu.com/p/1949232224663758626
 CUDA编程#pragma unroll引发的血案 - 北田圭人的文章 - 知乎
 https://zhuanlan.zhihu.com/p/1948009887977145646
 
+如何系统地学习CUDA？ - DefTruth的回答 - 知乎
+https://www.zhihu.com/question/263832290/answer/88074576627
+
