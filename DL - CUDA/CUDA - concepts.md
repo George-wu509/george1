@@ -49,3 +49,6 @@ https://zhuanlan.zhihu.com/p/1948009887977145646
 如何系统地学习CUDA？ - DefTruth的回答 - 知乎
 https://www.zhihu.com/question/263832290/answer/88074576627
 
+有哪些优秀的CUDA开源代码？ - 水木皇工仔的回答 - 知乎
+https://www.zhihu.com/question/29036289/answer/13592262485
+
