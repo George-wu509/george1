@@ -4,21 +4,49 @@
     "type": "split",
     "children": [
       {
-        "id": "9e659344b9891a55",
+        "id": "ef8985dbd2e7b076",
         "type": "tabs",
         "children": [
           {
-            "id": "2bffe3b67bf68e4a",
+            "id": "2fa3c9e8d8a32209",
             "type": "leaf",
             "state": {
               "type": "markdown",
               "state": {
-                "file": "Torc Robotics - Senior Embedded ML Engineer - Vision.md",
+                "file": "@@ Interview prepare.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "Torc Robotics - Senior Embedded ML Engineer - Vision"
+              "title": "@@ Interview prepare"
+            }
+          },
+          {
+            "id": "f41c7e9387b6f905",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "DL - Application fields/Autonomous-Driving - Tesla.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "Autonomous-Driving - Tesla"
+            }
+          },
+          {
+            "id": "463bd1cdbaf42ae2",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "DL - Application fields/Autonomous-Driving - Summary.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "Autonomous-Driving - Summary"
             }
           }
         ]
@@ -44,7 +72,7 @@
                 "autoReveal": false
               },
               "icon": "lucide-folder-closed",
-              "title": "檔案瀏覽器"
+              "title": "Files"
             }
           },
           {
@@ -161,20 +189,27 @@
   },
   "left-ribbon": {
     "hiddenItems": {
-      "switcher:開啟快速切換": false,
-      "graph:查看關聯圖": false,
-      "canvas:建立新畫布": false,
-      "daily-notes:開啟今天的每日筆記": false,
-      "templates:插入模板": false,
-      "command-palette:開啟命令面板": false,
-      "bases:建立新的 base": false,
+      "switcher:Open quick switcher": false,
+      "graph:Open graph view": false,
+      "canvas:Create new canvas": false,
+      "daily-notes:Open today's daily note": false,
+      "templates:Insert template": false,
+      "command-palette:Open command palette": false,
+      "bases:Create new base": false,
       "table-editor-obsidian:Advanced Tables Toolbar": false
     }
   },
-  "active": "2bffe3b67bf68e4a",
+  "active": "2fa3c9e8d8a32209",
   "lastOpenFiles": [
-    "Interview - @@ ongoing/Torc Robotics - Senior, ML Engineer - Camera Branch.md",
+    "DL - Application fields/Autonomous-Driving - Tesla.md",
+    "DL - Application fields/Autonomous-Driving - Summary.md",
+    "DL - Application fields/Autonomous-Driving - Waymo.md",
+    "@@ Interview prepare.md",
+    "DL - Distributed training/Distributed training and inference.md",
+    "DL - Robotic/Robotic - summary.md",
+    "CVML - Image CV/Traditional Computer Vision summary.md",
     "Torc Robotics - Senior Embedded ML Engineer - Vision.md",
+    "Interview - @@ ongoing/Torc Robotics - Senior, ML Engineer - Camera Branch.md",
     "Interview - @@ ongoing/KLA - Senior Algorithm Engineer (Image Processing & Computer Vision).md",
     "Vertex Pharmaceuticals - Senior Data Scientist II, Image Analytics.md",
     "Interview - @@ ongoing/Deep Film inc - Senior Founding Engineer (AI ML).md",
@@ -195,15 +230,8 @@
     "Interview - @@ AI projects/Project - RKO_LIO - LiDAR-Inertial Odometry.md",
     "materials/Pasted image 20250912003102.png",
     "Code - AI/Python library - video image transform.md",
-    "Interview - @@ AI projects/Project - Inpaint4Drag.md",
     "materials/Pasted image 20250911140724.png",
-    "Code - Python/args.md",
-    "DL - Transformer and ViT/Transformer - Attention summary.md",
-    "Interview - @@ AI projects/Project - PartPacker.md",
     "materials/Pasted image 20250911124729.png",
-    "Interview - @@ AI projects/Project - Video key point detection project.md",
-    "DL - NLP LLM/LLM - RLHF.md",
-    "DL - NLP LLM/LLM - MCP, RAG, and more...md",
     "materials/Pasted image 20250911111814.png",
     "materials/Pasted image 20250910123734.png",
     "materials/Pasted image 20250909233631.png",
