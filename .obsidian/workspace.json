@@ -4,21 +4,21 @@
     "type": "split",
     "children": [
       {
-        "id": "4b355770cc0e445f",
+        "id": "9e659344b9891a55",
         "type": "tabs",
         "children": [
           {
-            "id": "beaa7d5bb1b7839f",
+            "id": "2bffe3b67bf68e4a",
             "type": "leaf",
             "state": {
               "type": "markdown",
               "state": {
-                "file": "Pip - install ..md",
+                "file": "Torc Robotics - Senior Embedded ML Engineer - Vision.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "Pip - install ."
+              "title": "Torc Robotics - Senior Embedded ML Engineer - Vision"
             }
           }
         ]
@@ -44,7 +44,7 @@
                 "autoReveal": false
               },
               "icon": "lucide-folder-closed",
-              "title": "Files"
+              "title": "檔案瀏覽器"
             }
           },
           {
@@ -161,21 +161,34 @@
   },
   "left-ribbon": {
     "hiddenItems": {
-      "switcher:Open quick switcher": false,
-      "graph:Open graph view": false,
-      "canvas:Create new canvas": false,
-      "daily-notes:Open today's daily note": false,
-      "templates:Insert template": false,
-      "command-palette:Open command palette": false,
-      "bases:Create new base": false,
+      "switcher:開啟快速切換": false,
+      "graph:查看關聯圖": false,
+      "canvas:建立新畫布": false,
+      "daily-notes:開啟今天的每日筆記": false,
+      "templates:插入模板": false,
+      "command-palette:開啟命令面板": false,
+      "bases:建立新的 base": false,
       "table-editor-obsidian:Advanced Tables Toolbar": false
     }
   },
-  "active": "beaa7d5bb1b7839f",
+  "active": "2bffe3b67bf68e4a",
   "lastOpenFiles": [
-    "Pip - install ..md",
+    "Interview - @@ ongoing/Torc Robotics - Senior, ML Engineer - Camera Branch.md",
+    "Torc Robotics - Senior Embedded ML Engineer - Vision.md",
+    "Interview - @@ ongoing/KLA - Senior Algorithm Engineer (Image Processing & Computer Vision).md",
+    "Vertex Pharmaceuticals - Senior Data Scientist II, Image Analytics.md",
+    "Interview - @@ ongoing/Deep Film inc - Senior Founding Engineer (AI ML).md",
+    "materials/Arc-1 1.png",
+    "materials/Arc-1.png",
+    "Interview - @@ Do AI projects/Project - (VisionCraft) DINOv3 and Grounded SAM2.md",
+    "DL - Self Supervised Learning/DINOv3 - Summary.md",
+    "Interview - @@ AI projects/Project - DINOv3 image Automatic mask generator.md",
+    "Interview - @@ AI projects/Project - DINOv3 video segmentation and tracking.md",
+    "DL - Self Supervised Learning/DINOv3 - potential projects.md",
+    "Interview - @@ ongoing/KLA - Artificial Intelligence Engineer.md",
+    "Tool - others/Pip - install ..md",
     "Interview - @@ Do AI projects/Colab project list.md",
-    "Git - clone.md",
+    "Tool - others/Git - clone.md",
     "DL - SAM/SAM - Video SamAutomaticMaskGenerator.md",
     "DL - CUDA/CUDA - concepts.md",
     "Interview - @@ AI projects/Project - Grounded-SAM and inpainting.md",
@@ -191,24 +204,11 @@
     "Interview - @@ AI projects/Project - Video key point detection project.md",
     "DL - NLP LLM/LLM - RLHF.md",
     "DL - NLP LLM/LLM - MCP, RAG, and more...md",
-    "Interview - @@ AI projects/Project - Weakly-Supervised Learning and CTC loss on surgical video.md",
-    "Interview - @@ AI projects/Project - TotalSegmentator.md",
-    "Interview - @@ AI projects/Project - Text Prompts for Video Segmentation(SAMWISE).md",
-    "Interview - @@ AI projects/Project - SoccerNet 2025.md",
-    "Interview - @@ AI projects/Project - RF-DETR for drone detection.md",
-    "Interview - @@ AI projects/Project - Real-Time On-Device Video Segmentation.md",
-    "Interview - @@ AI projects/Project - Large World Model's (LWM).md",
-    "Interview - @@ AI projects/Project - GPU optimization Gurobi.md",
-    "Interview - @@ AI projects/Project - Gemini 2.5 Flash Image.md",
-    "Interview - @@ AI projects/Project - Gaze Target Estimation via Foundation Models.md",
-    "Interview - @@ AI projects/Project - Face-MoGLE.md",
     "materials/Pasted image 20250911111814.png",
     "materials/Pasted image 20250910123734.png",
     "materials/Pasted image 20250909233631.png",
     "materials/Pasted image 20250909233253.png",
     "materials/Pasted image 20250909204840.png",
-    "materials/Pasted image 20250909154829.png",
-    "materials/Pasted image 20250909100823.png",
     "interview - @@ interview QA",
     "DL - GNN",
     "DL - CUDA",

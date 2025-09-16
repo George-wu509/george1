@@ -75,6 +75,12 @@ model.eval()
 | [[#### 17. Checking GPU Memory Usage]]                  | 檢查 GPU 記憶體使用                                                                                                                                |
 |                                                         |                                                                                                                                             |
 
+|                                                |     |
+| ---------------------------------------------- | --- |
+| [[#### DINOv3 Video segmentation tracking 步驟]] |     |
+
+
+
 #### 1. Import
 ```python
 !pip install -q lovely_tensors mediapy
@@ -998,3 +1004,42 @@ print(f"Peak GPU memory: {torch.cuda.max_memory_allocated() / 2**30:.1f} GB")
 
 
 
+#### DINOv3 Video segmentation tracking 步驟
+
+### 總結來說：
+
+這個 Notebook **並不是**在每一幀都去「比對第一幀Mask區域的所有特徵」，而是採用了一種更高效的**「特徵簽名 (Feature Signature)」比對**方式。
+
+1. **第一步 (初始化)：** 它確實從第一幀的 Instance Segmentation Mask 開始。
+    
+2. **第二步 (建立目標簽名)：** 它對**整個第一幀**提取一次 DINOv3 特徵圖 (Feature Map)。然後，對於每一個要追蹤的物體（例如，一輛車的 mask），它會將這個 mask 區域內所有的特徵向量 (high-dimensional features) **平均 (average)** 起來，形成一個**單一的、代表這個物體的「特徵簽名」或「嵌入向量 (Embedding)」**。例如，它會得到一個 `car_1_signature_vector` 和 `car_2_signature_vector`。
+    
+3. **第三步 (追蹤)：** 對於後續的每一幀，它同樣對**整個新畫面**提取 DINOv3 特徵圖。然後，它拿著 `car_1_signature_vector` 這個「簽名」，去和新畫面的特徵圖中的**每一個像素點的特徵向量**計算**餘弦相似度 (Cosine Similarity)**。
+    
+4. **第四步 (生成新 Mask)：** 這個計算會為 `car_1` 產生一個「相似度熱力圖 (Similarity Heatmap)」。圖上越亮的地方，代表該區域的特徵與 `car_1` 的原始簽名越相似。最後，透過設定一個閾值（例如，相似度 > 0.7），就可以從這個熱力圖中直接產生出 `car_1` 在新一幀畫面中的分割遮罩 (Segmentation Mask)。對 `car_2` 也重複同樣的過程。
+    
+
+---
+
+### 與您的假設對比分析
+
+讓我們來比對一下您的假設和 Notebook 的實際做法：
+
+|您的假設|Notebook 的實際做法|分析與差異|
+|---|---|---|
+|將 video file 的每個 frame 用 DINOv3 model 得到 high-dimensional features|**正確**。這是追蹤循環中的核心步驟。|這一點您的理解完全正確。|
+|比對**第一 frame 的 Instance segmentation masks 區域用 DINOv3 model 得到 high-dimensional features**|**不完全正確**。它不是直接拿 mask 區域內的所有特徵去比對，而是先將這些特徵**平均成一個單一的代表性向量** (a single representative vector)。|這是最關鍵的差異。取平均值有幾個好處：<br>1. **效率高**：後續比對時，只需要用一個向量去和全圖比，而不是用一大堆向量。<br>2. **魯棒性強**：平均後的特徵簽名更能代表物體的整體語意，而比較不容易被物體局部的紋理或光影變化干擾。|
+|(比對)...做到 video segmentation tracking|**大致正確**，但可以更精確。它的「比對」方式是計算**餘弦相似度**，產生一個**密集的相似度熱力圖**，然後透過**閾值化 (Thresholding)** 這個熱力圖來生成新的 mask。|這種「基於相似度搜尋的模板匹配」方式，是在特徵空間中進行的，比單純的像素比對強大得多。它能生成平滑且完整的分割遮罩，而不僅僅是找到幾個匹配點。|
+
+### 為什麼 DINOv3 的這種方法如此強大？
+
+這個 Notebook 完美地展示了 DINOv3 作為一個自監督學習模型的威力：
+
+1. **語意級別的特徵**：DINOv3 學習到的特徵是**語意相關**的。它不僅僅是顏色或紋理，而是物體的「概念」。這就是為什麼即使車子旋轉、光線改變，DINOv3 提取出的特徵依然保持高度的相似性，使得追蹤非常穩定。它認得「車子」，而不只是「灰色的像素塊」。
+    
+2. **空間對應性**：DINOv3 的 Vision Transformer (ViT) 架構保留了特徵的空間位置信息。這使得我們可以將第一幀某個位置的物體特徵，與後續幀不同位置的特徵進行直接比對，從而實現定位和追蹤。
+    
+3. **無需重新訓練**：整個追蹤過程**完全沒有進行任何的訓練或微調**。它僅僅是利用了 DINOv3 預訓練好的、強大的通用視覺表徵能力，這被稱為「零樣本追蹤 (Zero-Shot Tracking)」。
+    
+
+**總結來說**，您的直覺非常準確，這個 Notebook 的核心就是利用 DINOv3 的特徵不變性來進行追蹤。而其實現的關鍵技巧在於**將初始物體壓縮成一個平均的「特徵簽名」**，然後在後續幀中高效地搜尋這個簽名的再現，從而完成分割與追蹤。

@@ -19,12 +19,52 @@ DINOv3 github https://github.com/facebookresearch/dinov3
 
 DINOv3 projects
 
+|                         |     |
+| ----------------------- | --- |
+| segmentation_tracking   |     |
+| pca                     |     |
+| dense_sparsematchng     |     |
+| dinotxt_inference       |     |
+| foreground segmentation |     |
+
+
+
+
+
+
+
+
+
+
+
+
 |                                                      |     |
 | ---------------------------------------------------- | --- |
 | [[Project - DINOv3 image Automatic mask generator]]  |     |
 | [[Project - DINOv3 video segmentation and tracking]] |     |
 | [[DINOv3 - potential projects]]                      |     |
 |                                                      |     |
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
