@@ -8,20 +8,6 @@
         "type": "tabs",
         "children": [
           {
-            "id": "c12045c8ba03ed36",
-            "type": "leaf",
-            "state": {
-              "type": "markdown",
-              "state": {
-                "file": "Vertex Pharmaceuticals - Senior Data Scientist II, Image Analytics.md",
-                "mode": "source",
-                "source": false
-              },
-              "icon": "lucide-file",
-              "title": "Vertex Pharmaceuticals - Senior Data Scientist II, Image Analytics"
-            }
-          },
-          {
             "id": "3a7dcccab42265c2",
             "type": "leaf",
             "state": {
@@ -35,8 +21,7 @@
               "title": "KLA - Senior Algorithm Engineer (Image Processing & Computer Vision)"
             }
           }
-        ],
-        "currentTab": 1
+        ]
       }
     ],
     "direction": "vertical"
@@ -59,7 +44,7 @@
                 "autoReveal": false
               },
               "icon": "lucide-folder-closed",
-              "title": "檔案瀏覽器"
+              "title": "Files"
             }
           },
           {
@@ -93,8 +78,7 @@
       }
     ],
     "direction": "horizontal",
-    "width": 300,
-    "collapsed": true
+    "width": 300
   },
   "right": {
     "id": "e8aa8d072fa51c07",
@@ -176,18 +160,21 @@
   },
   "left-ribbon": {
     "hiddenItems": {
-      "switcher:開啟快速切換": false,
-      "graph:查看關聯圖": false,
-      "canvas:建立新畫布": false,
-      "daily-notes:開啟今天的每日筆記": false,
-      "templates:插入模板": false,
-      "command-palette:開啟命令面板": false,
-      "bases:建立新的 base": false,
+      "switcher:Open quick switcher": false,
+      "graph:Open graph view": false,
+      "canvas:Create new canvas": false,
+      "daily-notes:Open today's daily note": false,
+      "templates:Insert template": false,
+      "command-palette:Open command palette": false,
+      "bases:Create new base": false,
       "table-editor-obsidian:Advanced Tables Toolbar": false
     }
   },
   "active": "3a7dcccab42265c2",
   "lastOpenFiles": [
+    "DINOv3 -  Segmentation Tracking with DINOv3.md",
+    "Project - DINOv3 real time perception.md",
+    "Interview - @@ ongoing/KLA - Senior Algorithm Engineer (Image Processing & Computer Vision).md",
     "Vertex Pharmaceuticals - Senior Data Scientist II, Image Analytics.md",
     "@@ Interview prepare.md",
     "Interview - @@ ongoing/Torc Robotics - Senior Embedded ML Engineer - Vision.md",
@@ -211,9 +198,6 @@
     "DL - CNN/圖像分類loss.md",
     "DL - CNN/CNN - Basic.md",
     "DL - CNN/AI model的量化指標.md",
-    "DL - GNN/ST-GCN.md",
-    "DL - GNN/GNN - Summary.md",
-    "Code - AI/JAX - concept.md",
     "materials/Arc-1 1.png",
     "materials/Arc-1.png",
     "materials/Pasted image 20250912003102.png",
