@@ -4,16 +4,16 @@ Job : https://www.linkedin.com/jobs/view/4288295302/?alternateChannel=search&ref
 
 Job Description
 
-Vertex Pharmaceuticals is seeking a highly motivated computational scientist to join our Data & Computational Science (DCS) team as a Senior Data Scientist II focused on Image Analytics. This role will be instrumental in building and scaling our image analytics capabilities across histopathology, high content, multiplexed, in vivo, and materials imaging studies. Vertex Pharmaceuticals 正在招募一位積極進取的計算科學家加入我們的數據與計算科學 (DCS) 團隊，擔任專注於圖像分析的高級數據科學家 II。該職位將有助於我們建構和擴展影像分析能力，涵蓋組織病理學、高內涵、多重、活體和材料成像研究。
+Vertex Pharmaceuticals is seeking a highly motivated computational scientist to join our Data & Computational Science (DCS) team as a Senior Data Scientist II focused on Image Analytics. This role will be instrumental in building and scaling our image analytics capabilities across ==histopathology==, ==high content==, ==multiplexed==, ==in vivo==, and ==materials imaging== studies. 正在招募一位積極進取的計算科學家加入我們的數據與計算科學 (DCS) 團隊，擔任專注於圖像分析的高級數據科學家 II。該職位將有助於我們建構和擴展影像分析能力，涵蓋組織病理學、高內涵、多重、活體和材料成像研究。
 
 You will collaborate closely with DCS colleagues, research scientists, and the Data, Technology and Engineering (DTE) group to develop scalable, production-ready solutions that drive scientific innovation and improve patient outcomes. Thus, the ideal candidate will have a strong foundation in image analysis, but also a broad skillset to address data science problems. 您將與 DCS 的同事、研究科學家以及數據、技術與工程 (DTE) 團隊緊密合作，開發可擴展、可立即投入生產的解決方案，以推動科學創新並改善患者治療效果。因此，理想的候選人不僅應具備紮實的影像分析基礎，還應具備解決資料科學問題的廣泛技能。
 
 This is a Boston based, hybrid position requiring 3 day/week onsite.
 **Key Duties And Responsibilities**
 
-Develop novel computational methods and pipelines for imaging data across multiple modalities to quantify cellular and tissue assays. 開發用於多種模式成像數據的新型計算方法和流程，以量化細胞和組織分析。
+**Develop novel computational methods and pipeline**s for imaging data across multiple modalities to quantify cellular and tissue assays. 開發用於多種模式成像數據的新型計算方法和流程，以量化細胞和組織分析。
 
-Identify, evaluate, and adopt cutting-edge image analytics and AI/ML methods from academic and industry sources. 識別、評估並採用來自學術界和業界的尖端影像分析和人工智慧/機器學習方法。
+**Identify, evaluate, and adopt cutting-edge image analytics and AI/ML methods** from academic and industry sources. 識別、評估並採用來自學術界和業界的尖端影像分析和人工智慧/機器學習方法。
 
 Lead rigorous computational analyses of imaging and other biological data, contributing to new methodological approaches. 領導對成像和其他生物數據進行嚴格的計算分析，為新的方法論貢獻力量。
 
@@ -376,4 +376,72 @@ Vertex 的核心業務是針對**嚴重疾病的根本病因**開發和商業化
     - 你怎樣與生物科學家／醫學團隊／影像標註人員合作？標註質量怎麼保證？進度如何安排？
     - 遇到專案方向變動或資料有問題的時候怎麼調整。
 
+
+
+
+
+## 你處理過的影像類別（整理 & 中文解釋）
+
+1. **螢光顯微影像（Confocal & Light-sheet microscopy）**
+    - **處理內容**：果蠅胚胎 (embryo) 的細胞層級分析，包括細胞核 (nuclei)、細胞膜 (membrane) segmentation。
+    - **應用**：建立細胞地圖、發育生物學研究。
+        
+2. **RNA 原位探針訊號影像（RNAscope, smFISH）**
+    - **處理內容**：分析 RNA 探針訊號的定位與定量，通常在單細胞或組織切片中。
+    - **應用**：基因表達空間定位研究。
+        
+3. **功能性螢光影像（Calcium imaging）**
+    - **處理內容**：神經元鈣離子螢光訊號的時空分析，追蹤神經元活動。
+    - **應用**：神經科學研究，動態功能影像。
+        
+4. **醫學影像（Chest X-ray, 肺癌篩檢）**
+    - **處理內容**：X 光片的處理與 AI 模型開發，用於肺癌早期診斷與篩檢。
+    - **應用**：臨床醫學、影像診斷。
+        
+5. **活細胞影像（Incucyte 系統）**
+    - **處理內容**：自動化軟體開發，用於即時追蹤細胞增殖、死亡、反應，結合 AI 進行影像分析。
+    - **應用**：藥物測試、細胞生物學、長期追蹤。
+
+---
+
+## 與 Job Position 需求比對
+
+**需求類別 vs 你的經驗對應**
+
+1. **Histopathology（組織病理學影像）**
+    - **需求**：處理 H&E 染色或免疫組織化學切片影像，強調病理診斷。
+    - **你的經驗**：RNA scope / smFISH 的切片影像處理與定量可部分對應，但缺少傳統 H&E 病理切片經驗。
+        
+2. **High Content Imaging（高內涵影像）**
+    - **需求**：高通量細胞影像平台（如多孔板、自動化顯微鏡），用於藥物篩檢。
+    - **你的經驗**：Incucyte live-cell system 屬於 high content imaging，並且你負責軟體與 AI pipeline 開發 → 完全符合。
+        
+3. **Multiplexed Imaging（多重標記影像）**
+    - **需求**：同一樣本內多個分子/標記的同時偵測（如 CODEX、MIBI）。
+    - **你的經驗**：RNAscope 與 smFISH 都是多重 RNA 標記技術；confocal 與 light-sheet 也常結合多通道影像 → 有直接對應。
+        
+4. **In vivo Imaging（活體影像）**
+    - **需求**：動物體內即時影像，如小鼠活體 MRI、IVIS、in vivo two-photon imaging。
+    - **你的經驗**：主要是 ex vivo（胚胎、切片、細胞），但 calcium imaging 若是活體神經活動分析，可能可部分對應；Incucyte 算是活細胞但非 in vivo。
+        
+5. **Materials Imaging（材料影像）**
+    - **需求**：電子顯微鏡 (SEM, TEM)、X-ray CT 等，用於材料科學。
+    - **你的經驗**：目前偏向生物醫學影像，沒有直接涉及材料影像。
+
+---
+
+## 總結
+
+✅ **強項對應**
+- High content imaging → Incucyte
+- Multiplexed imaging → RNAscope / smFISH
+- Functional spatio-temporal imaging → Neuronal calcium imaging
+- Medical imaging AI → Chest X-ray
+
+⚠️ **部分相關**
+- Histopathology → 有分子探針影像經驗，但缺少傳統 H&E/病理切片
+- In vivo → 有活細胞/神經活動，但缺乏完整活體影像經驗
+
+❌ **缺少**
+- Materials imaging → 尚無材料科學或非生物影像處理經驗
 
