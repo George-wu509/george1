@@ -4,21 +4,72 @@
     "type": "split",
     "children": [
       {
-        "id": "996cb2bbfb883476",
+        "id": "9f150ca1a90eee18",
         "type": "tabs",
+        "dimension": 67.98418972332016,
         "children": [
           {
-            "id": "f86a5a2cede2cd0f",
+            "id": "84aafbbc1e381d09",
             "type": "leaf",
             "state": {
               "type": "markdown",
               "state": {
-                "file": "Interview - @@ ongoing/KLA - Artificial Intelligence Engineer.md",
+                "file": "GSK - AIML Engineer  Phenomics.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "KLA - Artificial Intelligence Engineer"
+              "title": "GSK - AIML Engineer  Phenomics"
+            }
+          },
+          {
+            "id": "2d4c5b5eb81e9fb1",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "HackerRank - ML design for GSK.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "HackerRank - ML design for GSK"
+            }
+          }
+        ],
+        "currentTab": 1
+      },
+      {
+        "id": "d98266405e4f28a4",
+        "type": "tabs",
+        "dimension": 32.015810276679844,
+        "children": [
+          {
+            "id": "6be76a2413f39745",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "HackerRank - ML design for GSK.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "HackerRank - ML design for GSK"
+            }
+          },
+          {
+            "id": "5ac407e1a0e59640",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "GSK - AIML Engineer  Phenomics.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "GSK - AIML Engineer  Phenomics"
             }
           }
         ]
@@ -78,7 +129,7 @@
       }
     ],
     "direction": "horizontal",
-    "width": 300,
+    "width": 274.5,
     "collapsed": true
   },
   "right": {
@@ -171,44 +222,45 @@
       "table-editor-obsidian:Advanced Tables Toolbar": false
     }
   },
-  "active": "f86a5a2cede2cd0f",
+  "active": "2d4c5b5eb81e9fb1",
   "lastOpenFiles": [
+    "GSK - AIML Engineer  Phenomics.md",
+    "materials/Pasted image 20250928024857.png",
+    "materials/Pasted image 20250928025519.png",
+    "KLA - Sr. Algorithm Engineer (Image Processing).md",
+    "materials/ChatGPT Image 2025年9月28日 上午02_31_25.png",
+    "HackerRank - ML design for GSK.md",
+    "materials/Pasted image 20250928040443.png",
+    "materials/Pasted image 20250928040403.png",
+    "materials/Pasted image 20250928040328.png",
+    "materials/Pasted image 20250928040251.png",
+    "materials/Pasted image 20250928040204.png",
+    "materials/Pasted image 20250928040125.png",
+    "materials/Pasted image 20250928040044.png",
+    "DL - Application fields/Autonomous-Driving - Summary.md",
+    "Code - Python/@Interview - Python Basic.md",
+    "Code - Python/args.md",
+    "Code - C++/Programming - C++ Basic 1.md",
+    "Code - C++/Programming - C++ Basic.md",
     "Interview - @@ ongoing/KLA - Senior Algorithm Engineer (Image Processing & Computer Vision).md",
-    "Interview - @@ ongoing/KLA - Artificial Intelligence Engineer.md",
-    "Vertex Pharmaceuticals - Senior Data Scientist II, Image Analytics.md",
-    "DL - Self Supervised Learning/DINOv3 -  Segmentation Tracking with DINOv3.md",
-    "Project - DINOv3 real time perception.md",
-    "@@ Interview prepare.md",
+    "GSK - AI ML Engineer - Phenomics.md",
+    "DL - Application fields/Autonomous-Driving - TORC Robotics.md",
     "Interview - @@ ongoing/Torc Robotics - Senior Embedded ML Engineer - Vision.md",
-    "DL - Self Supervised Learning/DINOv3 - potential projects.md",
-    "DL - Tracking/Tracking and ReID.md",
-    "DL - Video/Video object detection summary.md",
-    "DL - Tracking/Tracking - Summary.md",
-    "DL - Ground/Grounding DINO.md",
-    "DL - CNN/AI model Summary architecture.md",
-    "DL - Ground/Image video detection segmentation summary.md",
-    "DL - Video/TrackFormer.md",
-    "DL - Segmentation/Image segmentation summary.md",
-    "DL - YOLO and object detection/Object detection and NMS.md",
-    "DL - YOLO and object detection/Object detection - summary.md",
-    "CVML - ML/Machine learning matlab.md",
+    "@@ Interview prepare.md",
+    "DL - CNN/手撕项目代码.md",
     "DL - CNN/CNN - Setting.md",
-    "DL - CNN/AutoEncoder(AE), VAE, MAE.md",
-    "DL - CNN/Focal Loss.md",
-    "DL - CNN/Smooth L1 Loss.md",
-    "DL - CNN/Criterion.md",
-    "DL - CNN/圖像分類loss.md",
+    "CVML - Image CV/Traditional Computer Vision summary.md",
+    "Interview - @@ ongoing/Vertex Pharmaceuticals - Senior Data Scientist II, Image Analytics.md",
+    "DL - CNN/AI model Summary architecture.md",
+    "DL - YOLO and object detection/Object detection on edge.md",
+    "Code - AI/PyTorch - interview.md",
     "DL - CNN/CNN - Basic.md",
-    "materials/Arc-1 1.png",
-    "materials/Arc-1.png",
-    "materials/Pasted image 20250912003102.png",
-    "materials/Pasted image 20250911140724.png",
-    "materials/Pasted image 20250911124729.png",
-    "materials/Pasted image 20250911111814.png",
-    "materials/Pasted image 20250910123734.png",
-    "materials/Pasted image 20250909233631.png",
-    "materials/Pasted image 20250909233253.png",
-    "materials/Pasted image 20250909204840.png",
+    "CVML - ML/Machine learning matlab.md",
+    "CVML - Image CV/ISP Pipeline.md",
+    "CVML - Image CV/algorithms/Blind deconvolution.md",
+    "CVML - Image CV/algorithms/Hough transformation.md",
+    "CVML - ISP",
+    "1758465474084.jfif",
     "interview - @@ interview QA",
     "DL - GNN",
     "DL - CUDA",
@@ -216,8 +268,6 @@
     "Interview - @@ AI projects",
     "DL - VLM",
     "DL - Scene",
-    "DL - Self Supervised Learning",
-    "DL - Distributed training",
-    "DL - Robotic"
+    "DL - Self Supervised Learning"
   ]
 }

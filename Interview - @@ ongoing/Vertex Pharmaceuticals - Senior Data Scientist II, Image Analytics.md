@@ -6,7 +6,7 @@ Job Description
 
 Vertex Pharmaceuticals is seeking a highly motivated computational scientist to join our Data & Computational Science (DCS) team as a Senior Data Scientist II focused on Image Analytics. This role will be instrumental in building and scaling our image analytics capabilities across ==histopathology==, ==high content==, ==multiplexed==, ==in vivo==, and ==materials imaging== studies. 正在招募一位積極進取的計算科學家加入我們的數據與計算科學 (DCS) 團隊，擔任專注於圖像分析的高級數據科學家 II。該職位將有助於我們建構和擴展影像分析能力，涵蓋組織病理學、高內涵、多重、活體和材料成像研究。
 
-You will collaborate closely with DCS colleagues, research scientists, and the Data, Technology and Engineering (DTE) group to develop scalable, production-ready solutions that drive scientific innovation and improve patient outcomes. Thus, the ideal candidate will have a strong foundation in image analysis, but also a broad skillset to address data science problems. 您將與 DCS 的同事、研究科學家以及數據、技術與工程 (DTE) 團隊緊密合作，開發可擴展、可立即投入生產的解決方案，以推動科學創新並改善患者治療效果。因此，理想的候選人不僅應具備紮實的影像分析基礎，還應具備解決資料科學問題的廣泛技能。
+You will collaborate closely with DCS colleagues, research scientists, and the **Data, Technology and Engineering (DTE)** group to develop scalable, production-ready solutions that drive scientific innovation and improve patient outcomes. Thus, the ideal candidate will have a strong foundation in image analysis, but also a broad skillset to address data science problems. 您將與 DCS 的同事、研究科學家以及數據、技術與工程 (DTE) 團隊緊密合作，開發可擴展、可立即投入生產的解決方案，以推動科學創新並改善患者治療效果。因此，理想的候選人不僅應具備紮實的影像分析基礎，還應具備解決資料科學問題的廣泛技能。
 
 This is a Boston based, hybrid position requiring 3 day/week onsite.
 **Key Duties And Responsibilities**
@@ -25,7 +25,7 @@ Support downstream analyses integrating imaging with other data types such as ge
 
 **Knowledge And Skills**
 
-Proven expertise in image analytics method development in at least two of the following areas: histopathology, high content, multiplexed, in vivo, or materials imaging. 在以下至少兩個領域擁有影像分析方法開發的豐富經驗：組織病理學、高內涵成像、多重成像、活體成像或材料成像。
+Proven expertise in image analytics method development in at least two of the following areas: ==histopathology, high content, multiplexed, in vivo, or materials imaging==. 在以下至少兩個領域擁有影像分析方法開發的豐富經驗：組織病理學、高內涵成像、多重成像、活體成像或材料成像。
 
 Strong programming skills in Python and experience with image analysis toolkits 精通 Python 編程，並具備影像分析工具包使用經驗
 
@@ -119,7 +119,14 @@ Reference: https://aws.amazon.com/tw/blogs/industries/vertex-pharmaceuticals-acc
 
 
 
+PHD: == Bio-imaging/Medical-imaging algorithm development ==
+1. Confocal & Light-sheet microscopy imaging - cell, nuclei, membrane
+2. RNAscope, smFISH - (Multiplexed Imaging)->cell or tissue
+3. Calcium imaging - (In vivo brain Imaging)
+4. Chest X-ray - (Medical imaging)
 
+Sartorius:
+1. Incucyte - (High Content Live-Cell Imaging Analysis System)
 
 
 #### Vertex Pharmaceuticals 公司與圖像分析平台與計算解決方案

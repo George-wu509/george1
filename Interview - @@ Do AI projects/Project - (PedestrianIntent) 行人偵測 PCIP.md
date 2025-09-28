@@ -6,10 +6,22 @@
 ```
 
 Github: https://github.com/George-wu509/PedestrianIntent
+My Colab: https://colab.research.google.com/drive/1qb2cNNTT_4T5L4GDffdLUH1ZyG87pF-z#scrollTo=__m2_MbbSmFz
 
 Resume:
 **Enhanced Pedestrian Intention Prediction based on Dynamic Behavior Decoding**
 **基於動態行為解碼的行人意圖預測增強技術 (PedestrianIntent)**
+
+Object detection colabs:
+1. YOLOv8 [colab](https://colab.research.google.com/github/roboflow-ai/notebooks/blob/main/notebooks/train-yolov8-object-detection-on-custom-dataset.ipynb)
+2. 使用 Google Colab 加速 YOLO11 项目 [link](https://docs.ultralytics.com/zh/integrations/google-colab/) [Colab](https://colab.research.google.com/github/ultralytics/ultralytics/blob/main/examples/tutorial.ipynb)
+3. Basketball AI: Automatic Detection of 3-Second Violation [colab](https://colab.research.google.com/github/roboflow-ai/notebooks/blob/main/notebooks/basketball-ai-automatic-detection-of-3-second-violations.ipynb#scrollTo=GETjE03rCUph)  [linkedin lost](https://lnkd.in/p/gsnkkwXH)
+4. # How to Train RF-DETR Object Detection on a Custom Dataset [colab](https://colab.research.google.com/github/roboflow-ai/notebooks/blob/main/notebooks/how-to-finetune-rf-detr-on-detection-dataset.ipynb)
+
+Pose estimation:
+1. ViTPose and ViTPose++  [Hugging Face](https://huggingface.co/docs/transformers/model_doc/vitpose)
+2. ViTPose [github](https://github.com/ViTAE-Transformer/ViTPose)
+
 
 Developed a comprehensive analysis pipeline that predicts pedestrian crossing intent from video. The system leverages foundation models for real-time, zero-shot scene understanding, integrating multi-modal inputs including pose estimation, gaze direction, and trajectory to provide actionable insights for autonomous vehicle systems and urban safety analysis.
 開發了一個完整的系統流程，能夠從影片中預測行人過街意圖。該系統利用基礎模型實現即時、零樣本場景理解，並整合多種模式的輸入數據，包括姿態和視線估計以及軌跡數據，從而為自動駕駛系統和城市安全分析提供有價值的洞察資訊。

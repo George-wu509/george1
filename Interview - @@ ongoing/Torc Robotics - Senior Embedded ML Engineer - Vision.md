@@ -2,6 +2,22 @@
 Job: 
 [https://www.linkedin.com/jobs/view/4297893877/?refId=3f87623a-8838-4fe7-8964-234e0d2fda40&trackingId=j4%2FH66YOSXqCXsK5GK7SJw%3D%3D&trk=flagship3_job_home_savedjobs](https://www.google.com/url?q=https://www.linkedin.com/jobs/view/4297893877/?refId%3D3f87623a-8838-4fe7-8964-234e0d2fda40%26trackingId%3Dj4%252FH66YOSXqCXsK5GK7SJw%253D%253D%26trk%3Dflagship3_job_home_savedjobs&sa=D&source=calendar&usd=2&usg=AOvVaw2Hg1ZYP36K2tpLOttJVqH_)
 
+
+|                                                |     |
+| ---------------------------------------------- | --- |
+| [[#### Job description]]                       |     |
+| [[#### Glassdoor interview ]]                  |     |
+| [[#### Detail position description]]           |     |
+| [[#### Torc Robotics 4 hours 技術面試]]            |     |
+| [[#### Torc Robotics 4 hours 技術面試2]]           |     |
+| [[#### Torc Robotics interview 120 questions]] |     |
+
+
+
+
+
+
+#### Job description
 **Keywords:**
 
 |                                                                                   |     |
@@ -42,17 +58,35 @@ The Feature Development team is seeking a Senior Embedded ML Engineer - Vision w
 - Experience with sensor calibration. 具備感測器校準經驗。
 - Familiarity with automotive or embedded safety standards (e.g., ISO 26262). 熟悉汽車或嵌入式安全標準（例如 ISO26262）。
 
-|     |                                                                                                                                                                                                                                                                                         |
-| --- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-|     | ML engineer 面試<br>面試流程流暢有序，首先是與招募人員的電話篩選，然後是與招募經理的30分鐘交流。虛擬現場面試持續了大約3-4個小時，深入探討了軟體技能、過往項目，並包含程式設計問題以評估應徵者對機器學習及相關主題的了解，此外還涉及行為問題和針對特定職位的技術問題，以評估應徵者的專業知識和文化契合度。                                                                                                                         |
-|     | Software engineer面試<br>初步Zoom篩選後不久就收到了OA。篩選過程很短，招募人員詢問了整體的匹配度。一周後收到了OA。這是一篇很長的OA，包含多項選擇題和LeetCode題。                                                                                                                                                                                     |
-|     | ML engineer 面試<br>最初，我們安排了一項帶回家的程式設計測試，之後一天進行了四次面試。其中一次面試著重於機器學習的基礎知識，第二次面試則關注 Python 相關問題，第三次面試關注 PyTorch 編碼問題，第四次面試關注行為方面的問題。                                                                                                                                                         |
-|     | Senior software engineer 面試<br>面試流程分為三個階段：首先，遠端進行一般面試；其次，同樣遠端進行技術面試，需要準備 PowerPoint 簡報；最後，現場面試，並專注於更深入的技術問題。                                                                                                                                                                            |
-|     | Senior ML engineer 面試<br>1. 與 HR 的視訊通話（30 分鐘）：介紹 2. 與團隊成員和上級的視訊通話（60 分鐘）：簡歷演練，包括技術問題和團隊契合度 3. 與兩名團隊成員的視訊通話（90 分鐘）：簡歷演練、更深入的技術問題和 30 分鐘編碼挑戰。                                                                                                                                             |
-|     | System engineer 面試<br>面試了三輪——先是自我介紹，然後是技術面試和行為面試。技術面試——他們只是深入研究了我的履歷，詢問了他們希望我具備的方面。行為面試－他們問了一些關於我的經驗的綜合問題。                                                                                                                                                                              |
-|     | SDET engineer 面試<br>我填寫申請表的第二天，招募人員就聯絡了我，並安排了第一次電話面試。整個過程大約持續了3週，進行了3輪面試（首先是與招募人員的30分鐘會面，然後是與經理進行的一個小時文化契合度面試，最後是與兩位工程師進行的2小時技術面試）。總的來說，整個過程順利清晰，面試官也非常友善。我在最後一次面試後的下週一就收到了                                                                                                             |
-|     | Senior Perception engineer 面試<br>我面試了近六個月，面試過各種各樣的公司：FAANG巨頭、矽谷創業公司、航空航太公司等等。 Torc 的面試體驗是迄今為止最好的。一位招募人員在領英上聯絡了我，我們安排了一個大約一小時的電話面試，她會問一些問題。接下來是「公司適應度」面試，持續一小時，主要涉及高階技術，但也涉及一些行為和領導方面的問題。最後一輪是兩小時的程式設計面試，重點不是資料結構和演算法，而是兩位工程師的互動式問題解決環節。面對類似 LeetCode 的題目，這種題目很少與你將要從事的工作有關，這感覺真是令人耳目一新。 |
 
+
+
+#### Glassdoor interview 
+
+|     |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| --- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+|     | 軟體工程師面試<br><br>面試持續了4小時，重點是行為設計、系統設計、管理和編碼。面試重點放在系統設計上，因為我的期望值沒有達到。管理面試主要看履歷。 C++面試深入探討了STL、記憶體管理、智慧指標和一些C++內部函數。系統設計面試的重點是答案的清晰度，而不是正確性。值得慶幸的是，面試官給了非常坦誠的深入回饋，指出了我的不足之處。希望下次還能參加。<br><br>面試問題<br>關於設計模式的問題，深入的 C++ 問題。                                                                                                                                                                                                                                                                                                      |
+|     | 軟體工程師面試<br><br>進行了 4 輪技術面試，每輪都很輕鬆，但儘管我表現得非常好，還是被拒絕了。 4 輪分別是**專案討論**、**python 技術**、**白板**、**行為**。<br><br>面試問題<br>在他們的筆記型電腦上編寫 Python 程式碼。                                                                                                                                                                                                                                                                                                                                                                                     |
+|     | 機器學習工程師面試<br><br>面試流程流暢有序，首先是與招募人員的電話篩選，然後是與招募經理的30分鐘交流。虛擬現場面試持續了大約3-4個小時，深入探討了軟體技能、過往項目，並包含程式設計問題以評估應徵者對機器學習及相關主題的了解，此外還涉及行為問題和針對特定職位的技術問題，以評估應徵者的專業知識和文化契合度。<br><br>面試問題<br><br>他們要求我更深入地講解我的軟體技能並解釋我的經驗，特別是在過去的專案中，重點介紹我如何處理問題以及我使用的工具。                                                                                                                                                                                                                                                                                   |
+|     | 機器學習工程師面試<br><br>最初，我們安排了一次家庭程式設計測試，之後一天進行了四次面試。第一次面試著重於**機器學習的基礎知識**，第二次面試則關注 **Python 相關問題**，第三次面試關注 **PyTorch 程式設計問題**，第四次面試關注**行為上的問題**。<br><br>面試問題<br>解釋一下Transformer？                                                                                                                                                                                                                                                                                                                                                 |
+|     | 資深軟體工程師面試<br><br>面試流程分為三個階段：首先，遠端進行一般面試；其次，同樣遠端進行技術面試，需要準備 PowerPoint 簡報；最後，現場面試，並專注於更深入的技術問題。<br><br>面試問題<br>審查從自動駕駛卡車收集的真實數據並詢問我下一步應該採取什麼措施來解決這個問題。                                                                                                                                                                                                                                                                                                                                                                        |
+|     | 資深機器學習工程師面試<br><br>1. 與 HR 的視訊通話（30 分鐘）：介紹 2. 與團隊成員和上級的視訊通話（60 分鐘）：簡歷演練，包括技術問題和團隊契合度 3. 與兩名團隊成員的視訊通話（90 分鐘）：簡歷演練、更深入的技術問題和 30 分鐘編碼挑戰。<br><br>面試問題<br>解釋不同類型的模型量化......有哪些權衡？                                                                                                                                                                                                                                                                                                                                                 |
+|     | 數據科學家面試<br><br>第一輪是 Hackerrank - OA，這是一個中等難度的問題。第二輪是程式碼對面試，這是一個中等難度的問題，包含不少邊緣案例。最後一輪是與團隊成員和經理的面試，面試官主要問了關於個人簡介和技能的問題。<br><br>面試問題<br>給定兩個圓，檢查它們是否接觸、相交。                                                                                                                                                                                                                                                                                                                                                                      |
+|     | 軟體開發工程師測試（SDET）面試<br><br>我填寫申請表的第二天，招募人員就聯絡了我，並安排了第一次電話面試。整個過程大約持續了3週，進行了3輪面試（第一次是與招募人員的30分鐘會面，第二次是與經理的1小時文化契合度面試，最後是與兩位工程師的2小時技術面試）。總的來說，整個過程順利清晰，面試官也非常友善。最後一次面試後的下週一，我收到了錄取通知。<br><br>面試問題<br>Q：解釋一下什麼是多態性。 Q：找出這些程式碼中的錯誤並告訴我們如何修復它們。                                                                                                                                                                                                                                                                                     |
+|     | 自主感知高階軟體工程師面試<br><br>我面試了近六個月，面試過各種各樣的公司：FAANG 巨頭、矽谷新創公司、航空航太公司等等。 Torc 的面試體驗是迄今為止最好的。一位 LinkedIn 的招募人員聯絡了我，我們安排了一個大約一小時的電話面試，她會問一些問題。接下來是「公司適應度」面試，持續一小時，主要涉及高階技術，但也涉及一些行為和領導方面的問題。最後一輪是兩小時的程式設計面試，重點不是資料結構和演算法，而是兩位工程師的互動式問題解決環節。面對 LeetCode 風格的題目，感覺非常新鮮，因為這類題目很少與你將要從事的工作相關。<br><br>面試問題<br>描述一下你管理技術團隊的經歷                                                                                                                                                                                                               |
+|     | 軟體工程師面試<br><br>我獲得了非常正面的體驗。我透過 LinkedIn 被招聘，我的招聘人員非常投入並且非常善於與我保持聯繫。整個流程如下：招募人員透過 LinkedIn 聯絡我 > 與招募人員進行電話交談以確定我是否適合該職位 > 與招募經理進行視訊通話 > 完成案例研究以進行最終面試 > 最終面試由兩個小組組成，每個小組有兩名團隊成員，面試時間為一小時。在被錄用之前，我了解了很多關於公司的信息，與我交談的每個人的熱情都具有感染力。你可以看出，公司在開發創新和突破性軟體的同時，真的關心員工。透過面試過程，我了解了很多關於團隊如何運作的信息，他們問了很多問題以了解我的專業水平和是否適合公司。<br><br>面試問題<br>描述一下專案中出現問題時的情形，您是如何處理這個問題的？                                                                                                                                                                  |
+|     | 機器人軟體工程師面試<br><br>我於 2021 年 10 月申請。在第三輪（最後一輪）面試（本來應該在現場進行，但由於疫情而改為線上進行）之後，我沒有收到任何回复，直到大約 2 週後我聯繫招聘人員。我以為會得到一個簡單的“是”或“否”的結果。招募人員打電話給我，告訴我背景知識很棒，但我們擔心 C++ 編碼，儘管我在上次面試中聽到了什麼，但他們希望我解決 Hackerrank 中的 4 小時編碼挑戰以獲得最終反饋。解決了編碼挑戰，所有測試案例都檢查為綠色並準備就緒。提交測試大約一周後，我收到一封拒絕郵件，說我沒有通過評估！他們是好人，但完全浪費了我的時間（大約一個月）和精力，對我完全不誠實。我不會向我的任何朋友推薦這種類型的公司，並希望你們都知道他們的伎倆和藉口。<br><br>面試問題<br>第一輪：招募人員半小時，介紹公司概況、薪資期望，並檢視整體技能。第二輪：1小時，與招募經理和另一位軟體工程師進行文化契合度測試。除了履歷中提到的技術問題外，還會詢問行為方面的問題。第三輪（最後一輪）：2小時，內容包含機器人軟體開發中C++程式設計的基本概念和設計問題，以及線性代數、估計理論和感測器融合等內容。 |
+|     |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+|     |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+|     |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+|     |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+|     |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+
+
+
+
+
+#### Detail position description
 ### **負責的產品**
 
 此職位負責開發 Torc Robotics 的**自動駕駛系統 (Autonomous Driving System)**。從描述中的「perception systems used in autonomous driving」和「real-world autonomous driving scenarios」可以明確看出，產品的核心是應用於車輛（尤其是卡車）的自動駕駛技術。
@@ -99,6 +133,311 @@ The Feature Development team is seeking a Senior Embedded ML Engineer - Vision w
 - **合成數據與數據增強 (Synthetic Data & Augmentation)**：利用非真實數據來訓練和強化模型。
 - **感測器校準 (Sensor Calibration)**：確保感測器數據準確性的校準技術。
 
+
+
+#### Torc Robotics 4 hours 技術面試
+
+**兩天、四個 sections（共 4 小時）** 的技術面試可能內容，依照公開回報與 Torc 的職缺描述整理成清晰的項目：每個 section 會問什麼、常出現的題型範例、以及是否會有線上 coding。重要的來源我會在段落後標註。
+
+# 快速總覽（結論先給你）
+
+Torc 對工程面試常見的是 **履歷/行為（CV）走查 + 深度技術問答（系統設計 / Perception / Embedded ML） + 實作/程式題（live coding / HackerRank/CodePair）** 的組合；有許多候選人回報是 4 小時 loop，重點會落在 system-design 與 coding。[Glassdoor+1](https://www.glassdoor.com/Interview/TORC-Robotics-Software-Engineer-Interview-Questions-EI_IE1027022.0%2C13_KO14%2C31.htm?utm_source=chatgpt.com)
+
+---
+
+# Section 1：Behavior / CV walkthrough（通常 45–60 min）
+
+重點：確認你的背景、project ownership、leadership、跟這個職位的 match。  
+常問方向與範例題：
+- 「請走一次你在**嵌入式部署**或 productionize ML model 的專案（從資料、training、到部署）」，面試官會追問你如何衡量 latency、memory、power、以及 trade-offs。
+- 行為題常用 STAR（Situation/Task/Action/Result）格式問：跨團隊協作、bug/incident 處理、deadline 壓力下如何取捨。  
+來源回報顯示 Torc 面試第一階段會有較多 CV 與行為問題。
+
+---
+
+# Section 2：Vision / Embedded-ML 深度技術（通常 45–60 min）
+
+重點：computer-vision 模型原理、evaluation、以及**如何把模型放到 embedded / 車用平台上（optimization / quantization / runtime）**。Torc 的 Senior Embedded ML – Vision 職缺明確要求這類經驗。
+典型主題與題型（實戰型問法）：
+
+- **模型壓縮/量化**：問你「不同型態的 quantization（PTQ、QAT、per-tensor vs per-channel, symmetric vs asymmetric）有什麼 tradeoffs？會在哪些情況用？」（這題在公開回報裡直接出現過）。
+- **推理優化**：FP16/INT8、TensorRT/ONNX、batch vs streaming inference、memory layout、CPU/GPU/NPU 的差異和選擇理由。
+- **感知演算法**：detector/segmenter 常見架構、loss、NMS、mAP 評估、召回/精確度 tradeoff、anchor vs anchor-free。
+- **針對嵌入式的測試/validation**：如何設計 latency/throughput 測試、回歸性測試、模擬 edge cases。
+
+準備建議：能把一個 float32 → int8 的流程（包括 calibration、校準資料選取、accuracy rollback 的 debug 步驟）講清楚，最好能用你自己專案的數字與結果來說明。
+
+---
+
+# Section 3：System Design / Perception Pipeline（通常 45–60 min）
+
+重點：設計整體感知 pipeline（camera → preproc → model → postproc → tracking/fusion → downstream）並能討論延遲 budget、冗餘、failure modes、測試策略。面試常要求白板式設計或口頭拆解。
+常見題型與要點：
+- 「設計一個用來偵測路上行人與障礙物的 camera-only pipeline，請列出每一段 latency（ms）預估、資料帶寬、以及如何在極端光照下維持 robust。」
+- 「如果模型在某些場景會有 false-positive，系統層面你會如何減緩（sensor fusion、temporal smoothing、confidence thresholding）？」  
+    回答要能說出**數字級估計（fps、ms、MB）**與**tradeoffs**，以及如何驗證/部署（A/B test、shadow mode、rollout policy）。Interview guides 和候選人回報都顯示 Torc 重視這類系統層面的思考。
+
+---
+
+# Section 4：Coding / Live coding（通常 45–60 min）
+
+重點：**會有線上 coding 或 live coding 的機會**（候選人回報包含 HackerRank、CodePair、以及與工程師的 live coding），語言/題型傾向與職位有關：對嵌入式偏好 C++、對 ML 側重 Python，亦可能問 C++ 的 OOP/記憶體細節或演算法題。
+公開回報的具體例子：
+- HackerRank 的線上測驗（曾有人提到 105 分鐘、包含幾個問題）。
+- CodePair / live coding：有人被問到 C++ 繼承（subclassing）、以及一些 LeetCode/shortest-path 類型題。
+    可能的題型範例（針對 vision/embedded）：
+- 資料結構/演算法（圖、shortest path、heap、滑動視窗）
+- C++ 特性（記憶體管理、virtual/final、多型、move semantics）
+- 小型影像處理實作（計算 IoU、NMS、connected components、實作簡單 filter）或簡短 pseudo-code 去描述某些影像後處理流程。  
+    準備建議：練 C++ 的細節（指標、引用、RAII、std 容器）、常見演算法題、以及可以在白板上快速寫出 NMS/IoU/box conversion 的程式碼或解法。
+
+---
+
+# 常被問到的實例題（整理）與簡短答題方向
+
+- 「說明 model quantization 的方式與 tradeoffs（PTQ vs QAT、per-channel vs per-tensor）。」→ 解釋原理、精度影響、校準流程、何時選擇 QAT。
+- 「如何把一個 detector 從 30 FPS 提升到 60 FPS 在同一硬體？」→ network pruning、backbone 輕量化、input downscale、加速 runtimes（TensorRT）、batching/流水線、延長資料 prefetch。
+- 「設計 camera-only perception pipeline，如何處理夜間/逆光？」→ 前處理、HDR、temporal fusion、confidence threshold + fallback。
+- 「實作一個 Non-Max Suppression（NMS）或 IoU 函式（白板/codepair）。」→ 記得談時間複雜度與邊界情況。  
+    （以上題目均與各公開回報與職缺技能相符。）
+
+---
+
+### 結論：是否會有 Online Coding？
+
+**會**。公開回報多次提到 HackerRank、CodePair 或 live coding（與工程師一對一或多人 panel）—有時先做線上測驗，再做 live coding loop。若是「Embedded ML / GPU 優化」類職位，也有人回報是 fully technical、live coding 與實際性能優化討論。準備上把 LeetCode + C++ 細節 + NMS/IoU/簡易影像演算法準備好會有很大幫助。
+
+---
+
+### 針對你（高命中率）準備清單（最短可用清單）
+
+1. 把你**1–2 個最強專案**準備成 5–8 分鐘的技術敘述（含 metric、數字、tradeoffs、你做的 trade-offs）。
+2. 量化/壓縮/部署：整理 float32→FP16→INT8 的流程（QAT vs PTQ）、自己做過的實驗結果或你會做的驗證步驟。
+3. 練 C++（OOP、pointer/move、常見 pitfalls）、LeetCode 中等題型（圖、heap、two-pointers）；準備在 CodePair 寫出 NMS / IoU。
+4. 系統設計：練習設計一個 perception pipeline（把 latency/mb/s/fps 寫出估計數字）。
+5. 準備問答：測試基礎、部署 rollout、如何回滾、如何在 production 測 model drift。
+
+
+### Coding / Live Coding Section – 已出現過的題目整理
+
+#### 1. **演算法 / LeetCode 型題**
+
+許多候選人回報 Torc 會用 **HackerRank 或 CodePair**，題目跟 LeetCode 中等難度接近：
+- **Graph / Shortest Path**：例如 Dijkstra’s / BFS/DFS 找路徑、計算最短路徑。
+- **Sliding Window / Two Pointers**：例如找最長子陣列、子字串、連續和。
+- **Heap / Priority Queue**：實作 top-K / 排程問題。
+- **Interval / Geometry**：處理區間合併或矩形相交問題。
+（候選人有提到 shortest path、sliding window、heap 等題型）
+
+#### 2. **Computer Vision / ML 實用題**
+
+由於是 Vision + Embedded ML 職位，出現過與 **影像處理/檢測 pipeline 相關的小實作**：
+- **IoU (Intersection over Union)**  
+    👉 給定兩個 bounding boxes，計算 IoU。需要考 precision（小數誤差處理）。
+- **NMS (Non-Max Suppression)**  
+    👉 實作簡化版 NMS，輸入一組 boxes + confidence，輸出篩選後的 boxes。
+- **Connected Components / Flood Fill**  
+    👉 給一張二值圖，實作 connected-component labeling 或 flood-fill。
+- **Image Filter**  
+    👉 手寫一個簡單的 convolution / box blur，處理 2D 陣列。
+
+（這些題目雖然不像純演算法常見，但候選人與 JD skill match，屬於「嵌入式 vision engineer」的常考範圍）
+
+
+#### 3. **C++ 語言與系統細節**
+
+Torc 偏好 **C++ 為 coding 語言**（Python 偶爾也會用在 ML pipeline），所以 coding 題目中可能會要求
+- **OOP / Inheritance**：候選人分享過被問到 subclassing / 虛擬函數 / override。
+- **Memory Management**：指標 vs 智能指標、深拷貝 vs 淺拷貝、RAII。
+- **Move Semantics**：`std::move`、copy elision、避免不必要的複製。
+- **Performance**：如何在演算法中降低 memory allocation、O(n log n) vs O(n²) 的比較。
+
+
+#### 4. **Online Coding / HackerRank 題目**
+
+有候選人回報 Torc 會先給 **HackerRank 測驗（~105 分鐘，數題）**，題目是演算法題為主，然後再進 live coding。
+- 常見題型是 **array / string 操作、graph traversal、數學演算法**。
+- 形式：線上 IDE（HackerRank / CodePair）或直接共享螢幕。
+
+
+### 總結 – Torc Coding 面試題目分布
+
+1. **演算法題**（最常見）：Shortest path、heap、sliding window、interval。
+2. **CV / ML pipeline 小實作**：IoU、NMS、connected component。
+3. **C++ 系統題**：OOP、記憶體、move semantics。
+4. **Online 測驗**：HackerRank 類題目（array / graph / string）。
+
+準備建議：
+- LeetCode **Medium 題**要熟（尤其 graph / interval / sliding window）。
+- 寫過 **IoU / NMS / image filter** 這類程式碼，並能說明時間複雜度。
+- C++ 細節要穩（特別是 class 設計 + 記憶體管理）。
+
+
+
+
+
+
+
+#### Torc Robotics 4 hours 技術面試2
+
+- 根據多位求職者的分享，Torc Robotics 的技術面試通常分為四個部分，每部分約 45 分鐘，總計約 4 小時（包含休息時間），可能分散在兩天進行。這些部分包括==文化契合（Culture）==、==角色特定技術（Role Specific Technical）==、==白板練習（Whiteboard Exercise）==和==一般技術知識（General Technical）==。 這與感知團隊（Perception Team，包括視覺相關角色）的面試流程高度吻合。
+- 考題重點在於機器學習、電腦視覺、嵌入式系統優化，以及程式設計技能。常見題目包括解釋視覺轉換器（Vision Transformers）、模型量化（Model Quantization）的類型與權衡，以及處理感測器資料的挑戰。 研究顯示，這些題目強調實際應用於自動駕駛車輛（AV）的知識，而非純理論。
+- 有線上編碼（Online Coding）環節，可能使用 HackerRank 或類似平台，包含 LeetCode 風格的問題、Python/PyTorch 編碼，或 C++ 相關測試。 然而，並非所有流程都強制線上編碼，取決於角色與面試官。
+- 整體流程強調團隊契合與問題解決能力，求職者應準備過去專案討論，並展現對==嵌入式 ML 在視覺任務（如物件偵測、感測器融合）==的了解。面試可能有不確定性，如某些求職者提到缺乏回饋，但多數評價正面。
+
+#### 四個部分的簡要說明
+
+Torc Robotics 的 Senior Embedded ML Engineer - Vision 角色屬於感知團隊，面試設計評估技術深度、嵌入式硬體知識與文化適配。以下是基於求職者經驗的整理：
+
+1. **文化契合（Culture）**：探討你的價值觀、為何選擇 Torc，以及團隊合作經驗。求職者可反問公司文化與團隊氛圍。
+2. **角色特定技術（Role Specific Technical）**：聚焦視覺相關 ML 技能，如==嵌入式模型部署==、==量化優化==與 AV 挑戰。
+3. **白板練習（Whiteboard Exercise）**：解決角色相關問題，如設計視覺系統或演算法，可能使用虛擬白板。
+4. **一般技術知識（General Technical）**：涵蓋廣泛 ML、程式設計與嵌入式概念，如 Python、C++ 與感測器融合。
+
+#### 常見考題範例
+
+- 解釋監督式、無監督式與強化學習的差異，並舉例在 AV 中的應用。
+- 描述一個完整的 ML 專案，包括挑戰與結果（強調嵌入式部署）。
+- 模型量化的類型與權衡（e.g., INT8 vs. FP16）。
+- 如何處理 LiDAR 與相機等感測器資料（Sensor Fusion）。
+
+#### 是否有線上編碼
+
+是的，多數求職者提到有編碼測試，可能在白板或線上平台進行。準備 ==LeetCode 中等難度問題==、==PyTorch 模型實現==，以及 ==C++ 記憶體管理==。 若有家庭作業（Take-home），可能涉及視覺任務優化。
+
+---
+
+Torc Robotics 作為 Daimler Truck 的子公司，專注於自動駕駛卡車開發，其 Senior Embedded ML Engineer - Vision 角色的面試流程設計嚴謹，旨在評估求職者在嵌入式機器學習、電腦視覺與自動駕駛應用上的專業能力。根據多個求職平台（如 Glassdoor、Reddit、TeamBlind 與 InterviewQuery）的分享，技術面試通常分為四個部分，總計約 4 小時，可能分散在兩天進行（例如第一天兩個部分，第二天兩個部分），每部分約 45 分鐘，並有 15 分鐘休息。這與感知團隊（Perception Team）的面試高度一致，視覺（Vision）角色屬於此團隊，強調嵌入式硬體上的 ML 優化，如模型壓縮、實時推論與感測器整合。
+
+### 四個部分的詳細內容解釋
+
+以下基於求職者經驗整理每個部分的內容、預期重點與準備建議。注意，實際順序可能因面試官而異，但核心元素一致。
+
+1. **文化契合（Culture Fit）** 這部分通常是第一或最後一個，持續 45 分鐘，目的是評估你是否適合 Torc 的合作文化。面試官（可能包括團隊成員或主管）會問你的職業價值觀、為何想加入 Torc（如對自動駕駛的熱情），以及過去團隊合作經驗。求職者有機會反問公司氛圍、團隊動態或工作生活平衡。
+    - **考過的題目**：
+        - 你曾遇過職場上的團隊衝突嗎？如何解決？（Behavioral question，強調溝通技能）。
+        - 為什麼選擇 Torc 而非其他 AV 公司？（測試對公司的了解）。
+        - 描述你理想的團隊環境。
+    - **準備建議**：使用 STAR 方法（Situation, Task, Action, Result）回答行為問題。研究 Torc 的價值觀（如創新與安全），並準備問題如「團隊如何處理跨部門合作？」這部分無技術深度，但影響整體評價。
+    
+2. **角色特定技術（Role Specific Technical）** 這是針對 Senior Embedded ML Engineer - Vision 的核心部分，聚焦嵌入式 ML 在視覺任務的應用，如物件偵測、分割與硬體優化。面試官可能是資深工程師，會深入探討你的簡歷與專案。
+    - **考過的題目**：
+        - 解釋視覺轉換器（Vision Transformers）的原理與在 AV 中的應用（e.g., 如何處理影像序列）。
+        - 不同模型量化類型的差異與權衡（e.g., 動態 vs. 靜態量化，INT8 的精度損失 vs. 速度提升）。
+        - 如何在嵌入式硬體上部署 ML 模型？討論挑戰如記憶體限制與實時性。
+        - 處理 AV 中的感測器資料，如 LiDAR 與相機的融合（Sensor Fusion，使用 Kalman Filter 等）。
+        - 審查真實卡車資料並提出解決方案（e.g., 偵測異常並建議模型調整）。
+    - **準備建議**：回顧嵌入式 ML 工具如 TensorFlow Lite 或 ONNX Runtime。準備討論過去專案，如優化 YOLO 模型在邊緣裝置上的效能。強調視覺任務的 AV 應用，如邊緣偵測在卡車導航。
+    
+3. **白板練習（Whiteboard Exercise）** 這部分使用虛擬白板（e.g., via Zoom 或 Miro）解決問題，測試你的問題解決與設計能力。對於 Vision 角色，可能涉及系統設計或演算法實現。
+    - **考過的題目**：
+        - 設計一個嵌入式視覺系統（如物件偵測管道，從輸入影像到輸出預測）。
+        - 在白板上實現簡單演算法，如卷積神經網路（CNN）的基本運算，或優化記憶體使用。
+        - 解決 AV 情境問題，如處理低光影像的視覺模型（討論資料增強與轉移學習）。
+    - **準備建議**：練習 LeetCode 系统设计题，或模擬白板如設計感測器融合架構。重點在清晰溝通思考過程，而非完美代碼。
+    
+4. **一般技術知識（General Technical）** 涵蓋廣泛技術基礎，如 ML 原理、程式語言與嵌入式概念。適合評估你的全面性。
+    - **考過的題目**：
+        - 監督式、無監督式與強化學習的差異，以及在 AV 中的例子。
+        - Python 與 ML 函式庫的經驗（e.g., NumPy、Pandas、PyTorch）。
+        - C++ 深入問題，如 STL、智慧指標與記憶體管理。
+        - Git 等版本控制的經驗，以及在團隊中的應用。
+        - AV 中部署 ML 模型的關鍵挑戰（如實時處理與安全性）。
+    - **準備建議**：複習基礎 ML 概念與嵌入式知識。練習口頭解釋複雜主題。
+    
+
+### 考過的題目總表
+
+以下表格彙整常見題目，按類型分類（基於求職者分享）。難度分為易（Easy）、中（Medium）、難（Hard）。
+
+|類型|題目範例|難度|相關部分|來源|
+|---|---|---|---|---|
+|ML 基礎|解釋監督式、無監督式與強化學習差異|中|一般技術||
+|視覺特定|視覺轉換器的原理與應用|難|角色特定||
+|嵌入式優化|模型量化的類型與權衡|中|角色特定||
+|感測器處理|如何融合 LiDAR 與相機資料|難|角色特定||
+|程式設計|C++ 記憶體管理與智慧指標|中|一般技術||
+|專案討論|描述完整 ML 專案與挑戰|中|所有||
+|行為問題|處理團隊衝突的經驗|易|文化契合||
+|AV 挑戰|部署 ML 在 AV 的關鍵問題|難|角色特定||
+
+### 是否有線上編碼
+
+是的，根據多位求職者經驗，流程中常包含線上編碼。 形式包括：
+
+- **HackerRank 或類似平台**：測試 ML 技能，如 4 道 LeetCode 問題（中等難度，涵蓋資料結構與演算法）。
+- **面試中編碼**：使用 Python/PyTorch 寫代碼，或 C++ 相關測試（如在面試官電腦上寫 Python 程式）。
+- **家庭作業（Take-home）**：可能有 ML 相關編碼任務，如優化視覺模型。
+- **白板編碼**：在白板練習中融入簡單實現。 然而，並非所有流程都強制，可能視角色而定。有些求職者提到最終面試有小組編碼挑戰。 準備重點：練習 PyTorch 模型建置、C++ STL，以及 AV 相關問題如影像處理。
+### 整體準備與注意事項
+
+面試強調實際經驗與 AV 應用，建議研究 Torc 的卡車自動駕駛技術（如 [https://torc.ai/）。](https://torc.ai/%EF%BC%89%E3%80%82) 多數求職者評價流程順暢，但有些提到 HR 回應緩慢或缺乏回饋。 為平衡觀點，準備反駁常見 AV 挑戰，如安全性與邊緣案例。總之，這流程測試全面能力，展現熱情與技術深度將有助脫穎而出。
+
+### 關鍵要點
+
+- 根據求職者分享，Torc Robotics的面試中Coding/Live Coding部分常見於HackerRank或類似平台，涵蓋LeetCode風格問題、ML相關編碼，以及C++或Python實作。研究顯示，這些題目強調實際應用於自動駕駛的技能，如模型優化與感測器處理，但難度因角色而異，可能包括中等到困難級別。 然而，題目並非絕對固定，視面試官而定。
+- 常見語言為Python（含PyTorch）、C++，題目類型包括資料結構、演算法、ML模型實作與優化。證據顯示，ML角色（如Embedded ML Engineer - Vision）更注重PyTorch編碼與感測器融合，而非純LeetCode。
+- 雖然多數題目為標準型，但有爭議指出某些測試過於數學導向（如三角函數），可能不完全反映實務技能。建議準備時考慮AV特定情境，如實時處理與記憶體管理，以平衡不同觀點。
+
+#### 常見題目類型
+
+Coding/Live Coding通常分為線上評測（OA）、家庭作業（Take-home）或現場編碼。以下是基於求職經驗的整理：
+
+- **LeetCode風格問題**：簡單到中等難度，如資料結構（陣列、樹）與演算法（排序、搜尋）。例如，實作函數處理特定任務。
+- **ML特定編碼**：使用PyTorch實作模型，如物件偵測或超參數調整。常問如何防止過擬合或處理感測器資料。
+- **嵌入式/C++重點**：STL、記憶體管理、智慧指標。可能包括OOP實作類別。
+
+#### 準備建議
+
+練習HackerRank或LeetCode上的AV相關問題（如[https://leetcode.com/company/torc-robotics/），並熟悉PyTorch在嵌入式環境的優化。考慮數學基礎，如三角函數在映射中的應用，以應對潛在挑戰。](https://leetcode.com/company/torc-robotics/%EF%BC%89%EF%BC%8C%E4%B8%A6%E7%86%9F%E6%82%89PyTorch%E5%9C%A8%E5%B5%8C%E5%85%A5%E5%BC%8F%E7%92%B0%E5%A2%83%E7%9A%84%E5%84%AA%E5%8C%96%E3%80%82%E8%80%83%E6%85%AE%E6%95%B8%E5%AD%B8%E5%9F%BA%E7%A4%8E%EF%BC%8C%E5%A6%82%E4%B8%89%E8%A7%92%E5%87%BD%E6%95%B8%E5%9C%A8%E6%98%A0%E5%B0%84%E4%B8%AD%E7%9A%84%E6%87%89%E7%94%A8%EF%BC%8C%E4%BB%A5%E6%87%89%E5%B0%8D%E6%BD%9B%E5%9C%A8%E6%8C%91%E6%88%B0%E3%80%82) 若題目涉及生產部署，強調安全與實時性。
+
+---
+
+Torc Robotics作為自動駕駛技術的領導者，其Senior Embedded ML Engineer - Vision角色的面試Coding/Live Coding部分設計用以評估求職者在機器學習、電腦視覺與嵌入式系統上的程式設計能力。根據多個求職平台（如Glassdoor、Reddit與InterviewQuery）的綜合分析，這部分通常整合於技術面試中，可能以HackerRank、Take-home作業或現場白板形式出現，持續30分鐘至數小時。 題目強調實務應用，尤其在自動駕駛車輛（AV）情境下，如感測器資料處理與模型部署，而非純理論。以下詳細整理求職者分享的題目，依類型分類，並附上格式、語言與難度評估。注意，這些題目基於匿名回饋，可能因面試官或特定角色（如Perception Team）而略有差異；研究顯示，ML角色更偏向PyTorch實作，而嵌入式角色則注重C++優化。
+
+### Coding/Live Coding流程概述
+
+Torc的面試Coding部分常見於虛擬現場（Virtual Onsite）或初步評測階段。典型流程包括：
+
+- **線上評測（Online Assessment, OA）**：使用HackerRank，包含4-5道LeetCode風格問題加多選題（MCQ），時間約90-120分鐘。語言通常為C++或Python。
+- **家庭作業（Take-home Test）**：設計ML模型或優化演算法，後續面試中討論解決方案。常見於ML角色，如實作物件偵測管道。
+- **現場/Live Coding**：在Zoom或面試官電腦上編碼，持續30-45分鐘。可能使用白板或共享螢幕，測試即時問題解決能力。
+- **語言與工具**：Python（NumPy、Pandas、PyTorch）、C++（STL、智慧指標）。嵌入式ML強調記憶體管理與實時優化。
+
+求職者回饋指出，題目難度中等，但數學成分（如三角函數在映射中的應用）可能增加挑戰性。有些評論批評測試過於理論化，未充分考量實務經驗，但多數同意這有助篩選AV領域的專業技能。
+
+### 詳細題目整理
+
+以下表格按類型分類求職者分享的題目，包含具體描述、難度（易/中/難）、相關角色與準備提示。表格基於多源回饋彙整，至少涵蓋10個以上範例以提供全面視角。
+
+|類型|題目描述|難度|相關角色/格式|語言/工具|來源與提示|
+|---|---|---|---|---|---|
+|LeetCode風格|實作函數處理陣列或樹結構任務（如排序或搜尋）。例如，給定輸入陣列，輸出特定結果。|中|軟體工程師/OA|C++ 或 Python|練習LeetCode Easy-Medium題，如陣列操作。考慮AV應用，如處理感測器陣列。|
+|LeetCode風格|4道LeetCode問題加MCQ（如時間複雜度計算）。|中|通用/ML Engineer/OA|不指定|聚焦資料結構選擇與漸近複雜度。|
+|OOP/基礎|實作類別（Class）處理特定任務，如模擬物件互動。|易|嵌入式工程師/Live Coding|C++|回顧OOP原則，如繼承與多態。|
+|C++特定|STL、記憶體管理、智慧指標的使用。|中|軟體工程師/Live Coding|C++|強調嵌入式環境的記憶體優化。|
+|Python基礎|在面試官電腦上寫Python程式碼。|易|ML Engineer/Live Coding|Python|練習基本腳本，如資料處理。|
+|ML編碼|使用PyTorch實作模型，如物件偵測或分割。|難|Vision/ML Engineer/Take-home|PyTorch|包含資料擴增與優化。|
+|ML優化|如何進行超參數調整（如Grid Search）。|中|ML Engineer/Live Coding|Python/PyTorch|討論驗證指標避免過擬合。|
+|ML優化|防止過擬合的技術（如L2正則化、Dropout）。|中|ML Engineer/Live Coding|Python|舉例在神經網路應用。|
+|感測器處理|處理LiDAR與相機資料融合（如使用Kalman Filter）。|難|Vision Engineer/Take-home|Python|強調AV實時挑戰。|
+|生產部署|除錯生產中ML模型的步驟（如資料偏移）。|中|Embedded ML/Live Coding|Python|包含監控工具與再訓練。|
+|數學導向|三角函數在映射或路徑規劃中的應用。|難|Mapping/ML/OA|不指定|測試60分鐘映射或5小時路徑規劃。|
+|版本控制|Git命令與分支策略。|易|通用/ML Engineer/Live Coding|Git|強調團隊合作。|
+|程式品質|如何確保程式碼品質（如PEP 8、測試）。|中|ML Engineer/Live Coding|Python|討論文件與審核。|
+|專案實作|從頭到尾實作ML專案，包含挑戰。|難|Vision Engineer/Take-home|Python/PyTorch|聚焦AV部署挑戰，如安全。|
+|AV挑戰|AV中ML模型部署的關鍵問題（如實時處理）。|中|Embedded ML/Live Coding|不指定|討論模擬環境測試。|
+
+### 額外洞察與爭議
+
+求職者常提到Coding部分數學成分高，可能導致壓力，但這有助評估AV領域的基礎。 另一方面，有些回饋指出題目偏向標準LeetCode，而非創新解決方案，建議準備時平衡理論與實務。為獲取平衡觀點，考慮反方意見：某些測試（如路徑規劃）過長，可能不公平，但Torc強調這能篩選適合嵌入式ML的候選人。 整體而言，準備LeetCode（[https://leetcode.com/company/torc-robotics/）與PyTorch專案將大幅提升通過率。](https://leetcode.com/company/torc-robotics/%EF%BC%89%E8%88%87PyTorch%E5%B0%88%E6%A1%88%E5%B0%87%E5%A4%A7%E5%B9%85%E6%8F%90%E5%8D%87%E9%80%9A%E9%81%8E%E7%8E%87%E3%80%82)
+
+
+
+
+
+
+#### Torc Robotics interview 120 questions
 
 |                  | 第一部分：核心電腦視覺與機器學習                                                                                                                                                                                                                                                                                                                                                                                                           |
 | ---------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |

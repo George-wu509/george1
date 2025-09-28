@@ -1,22 +1,47 @@
 
-ref: 
-[相机ISP通路笔记【篇1-ISP全流程】](https://zhuanlan.zhihu.com/p/706412188)
+|                                             |     |
+| ------------------------------------------- | --- |
+| [[#### ISP main steps]]                     |     |
+|                                             |     |
+| [[#### ISP main parts detail explanations]] |     |
+|                                             |     |
+|                                             |     |
+|                                             |     |
 
-[【VISION GUIDE-01】—— 什么是ISP？](https://zhuanlan.zhihu.com/p/698056624)
 
-[ISP Pipeline | camera成像原理](https://zhuanlan.zhihu.com/p/698293711)
 
-[ISP（图像信号处理）算法概述、工作原理、架构、处理流程](https://zhuanlan.zhihu.com/p/412712529)
+#### ISP main steps
 
-[ISP调试流程概述](https://zhuanlan.zhihu.com/p/538058920)
+|     | Steps                                                                              |                                                                                                   |
+| --- | ---------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
+|     | RAW Input                                                                          |                                                                                                   |
+| 1   | 黑电平校正(BLC)<br>Black Level Correction                                               | - 方法<br>1. 全黑采集RAW图，分为R、Gr、Gb、B 四个通道；<br>2. 对四个通道求平均值（或中值）作为校正值；<br>3. 对图像的每个通道都减去这个校正值。          |
+| 2   | 去马赛克<br> [[ISP - Demosaicking]]                                                    | - 原理：通过插值恢复Bayer图像缺失的颜色通道。<br>- 实现：双线性插值、边缘感知插值（如Malvar算法）。<br>- 实践：用OpenCV实现`cv2.demosaicing()`。 |
+| 3   | <mark style="background: #BBFABBA6;">白平衡(AWB)</mark><br>Auto-White Balance<br><br> | - 方法：灰度世界假设、完美反射法（PRW）、基于色温统计的算法。<br>- 实践：调整RGB增益（Gain）平衡颜色。                                      |
+| 4   | <mark style="background: #BBFABBA6;">色彩校正</mark><br>[[ISP - Color Correction]]     | - 使用3x3色彩矩阵（Color Matrix）调整色偏。<br>- 实践：通过矩阵乘法实现色彩空间转换。                                            |
+| 5   | <mark style="background: #FFF3A3A6;">自动曝光</mark><br>Auto-Exposure<br>              |                                                                                                   |
+| 6   | 降噪<br>Denoising                                                                    | - 传统算法：非局部均值（NL-Means）、BM3D。<br>- 实践：OpenCV中的`fastNlMeansDenoising()`或自定义中值滤波器。                   |
+| 7   | <mark style="background: #FFF3A3A6;">伽马校正</mark><br>Gamma Correction               | - 非线性调整亮度，补偿显示设备特性。<br>- 公式：`output = input^gamma`（通常gamma=2.2）。                                  |
+| 8   | 锐化<br>Sharpening                                                                   | 拉普拉斯算子（Laplacian）或非锐化掩模（Unsharp Masking）                                                          |
+|     | 输出RGB/YUV图像                                                                        |                                                                                                   |
 
-[Camera ISP与DSP的区别](https://juejin.cn/post/7223909722838024247)
+1. **什么是ISP？**
+- ISP是处理图像传感器（如[CMOS](https://zhida.zhihu.com/search?content_id=258249438&content_type=Article&match_order=1&q=CMOS&zhida_source=entity)/[CCD](https://zhida.zhihu.com/search?content_id=258249438&content_type=Article&match_order=1&q=CCD&zhida_source=entity)）原始数据（[RAW](https://zhida.zhihu.com/search?content_id=258249438&content_type=Article&match_order=1&q=RAW&zhida_source=entity)）的核心模块，负责将传感器输出的原始信号转换为高质量图像。
+- 核心功能包括：**去马赛克（[Demosaic](https://zhida.zhihu.com/search?content_id=258249438&content_type=Article&match_order=1&q=Demosaic&zhida_source=entity)）、白平衡（[AWB](https://zhida.zhihu.com/search?content_id=258249438&content_type=Article&match_order=1&q=AWB&zhida_source=entity)）、自动曝光（[AE](https://zhida.zhihu.com/search?content_id=258249438&content_type=Article&match_order=1&q=AE&zhida_source=entity)）、降噪（[Denoise](https://zhida.zhihu.com/search?content_id=258249438&content_type=Article&match_order=1&q=Denoise&zhida_source=entity)）、色彩校正（[Color Correction](https://zhida.zhihu.com/search?content_id=258249438&content_type=Article&match_order=1&q=Color+Correction&zhida_source=entity)）、伽马校正（[Gamma Correction](https://zhida.zhihu.com/search?content_id=258249438&content_type=Article&match_order=1&q=Gamma+Correction&zhida_source=entity)）、锐化（[Sharpening](https://zhida.zhihu.com/search?content_id=258249438&content_type=Article&match_order=1&q=Sharpening&zhida_source=entity)）** 等。
 
-[关于ISP中各模块的调试顺序，及相互影响概述](https://zhuanlan.zhihu.com/p/548109528)
+**3. 关键指标**
+- 动态范围（Dynamic Range）、信噪比（[SNR](https://zhida.zhihu.com/search?content_id=258249438&content_type=Article&match_order=1&q=SNR&zhida_source=entity)）、色彩保真度（[Color Accuracy](https://zhida.zhihu.com/search?content_id=258249438&content_type=Article&match_order=1&q=Color+Accuracy&zhida_source=entity)）、实时性（Latency）等。
 
-[Understanding ISP Pipeline](https://zhuanlan.zhihu.com/p/98820927)
 
-[AISP Pipeline | 端到端camera成像原理](https://zhuanlan.zhihu.com/p/698293678)
+
+
+
+
+
+
+
+
+#### ISP main parts detail explanations
 
 | 攝像頭ISP處理（ISP Process）                                                                        | 攝像頭ISP過程與普通影像校準有相似之處，但它包含<mark style="background: #FFB8EBA6;">更多自動化和即時處理步驟</mark>，特別是針對拜耳濾色陣列的<mark style="background: #BBFABBA6;">去馬賽克處理</mark>、<mark style="background: #BBFABBA6;">色彩校準</mark>和<mark style="background: #BBFABBA6;">動態範圍壓縮</mark>。與其他影像校準相比，ISP流程更專注於實時性和優化顯示效果，特別是在消費級電子設備中。 |
 | -------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
@@ -52,3 +77,28 @@ ref:
 - **精確性**: <mark style="background: #ADCCFFA6;">醫學影像</mark>和工<mark style="background: #ADCCFFA6;">業檢測影像</mark>對校準的精度要求最高，因為這些影像會直接影響診斷或檢測結果。
 - **處理複雜性**: <mark style="background: #ADCCFFA6;">衛星遙感影像</mark>由於涉及大氣校正、輻射校準等因素，校準過程最為複雜，而普通影像和攝像頭ISP流程則相對簡單。
 - **實時性需求**: <mark style="background: #ADCCFFA6;">攝像頭ISP過程</mark>尤其強調即時處理，確保影像可以迅速呈現，這在即時捕捉和顯示影像的設備中非常重要。
+
+
+
+
+Reference:
+【图像处理基石】如何入门ISP算法开发？ - 智能守恒 HengAI的文章 - 知乎
+https://zhuanlan.zhihu.com/p/1910663199407215496
+
+[相机ISP通路笔记【篇1-ISP全流程】](https://zhuanlan.zhihu.com/p/706412188)
+
+[【VISION GUIDE-01】—— 什么是ISP？](https://zhuanlan.zhihu.com/p/698056624)
+
+[ISP Pipeline | camera成像原理](https://zhuanlan.zhihu.com/p/698293711)
+
+[ISP（图像信号处理）算法概述、工作原理、架构、处理流程](https://zhuanlan.zhihu.com/p/412712529)
+
+[ISP调试流程概述](https://zhuanlan.zhihu.com/p/538058920)
+
+[Camera ISP与DSP的区别](https://juejin.cn/post/7223909722838024247)
+
+[关于ISP中各模块的调试顺序，及相互影响概述](https://zhuanlan.zhihu.com/p/548109528)
+
+[Understanding ISP Pipeline](https://zhuanlan.zhihu.com/p/98820927)
+
+[AISP Pipeline | 端到端camera成像原理](https://zhuanlan.zhihu.com/p/698293678)
