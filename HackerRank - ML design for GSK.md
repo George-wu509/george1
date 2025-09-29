@@ -44,6 +44,8 @@
 | **13** | 為高通量篩選數據設計批次效應校正系統                   | 先進表型組學與數據融合   | 統計建模、批次效應、混淆變量、數據預處理、HTS                   |
 | **14** | 為高內涵成像設計表型分析的ML系統                    | 先進表型組學與數據融合   | 計算機視覺、特徵提取、自監督學習、非監督學習、表型分析                |
 | **15** | 利用大型語言模型融合非結構化與結構化數據進行靶點識別           | 先進表型組學與數據融合   | 大型語言模型 (LLM)、多模態融合、知識圖譜、靶點識別               |
+|        |                                      |               |                                            |
+|        | [[#### 第四部份]]                        |               |                                            |
 | **16** | 為已部署的臨床診斷AI設計模型監控系統                  | 生產環境ML與生命週期管理 | 模型監控、概念漂移、數據漂移、公平性與偏見、醫療AI                 |
 | **17** | 為生產環境中的ML模型設計回滾策略                    | 生產環境ML與生命週期管理 | MLOps、部署策略 (Canary/Blue-Green)、風險管理、模型版本控制 |
 | **18** | 為藥物靶點推薦系統設計A/B測試框架                   | 生產環境ML與生命週期管理 | A/B測試、實驗設計、科學家工作流分析、長期指標                   |
@@ -2279,11 +2281,11 @@ HIPAA 合規性不是單一功能，而是一個貫穿整個系統設計和運�
 
 **Question 11: Design a Cell-Type Deconvolution System for Tumor Spatial Transcriptomics Data**
 
-- **Problem Statement:** Spatial transcriptomics (ST) reveals gene expression within a tissue's spatial context. However, current technologies often capture a mix of multiple cells at each measurement spot. To study the tumor microenvironment, it's essential to "deconvolute" each spot's signal to estimate the relative proportions of different cell types (e.g., cancer cells, immune cells).
+- **Problem Statement:** ==Spatial transcriptomics (ST)== reveals gene expression within a tissue's spatial context. However, current technologies often capture a mix of multiple cells at each measurement spot. To study the tumor microenvironment, it's essential to "deconvolute" each spot's signal to estimate the relative proportions of different cell types (e.g., cancer cells, immune cells).
 - 空間轉錄組學（ST）技術能夠在保留組織空間位置信息的同時測量基因表達，為理解腫瘤微環境（TME）提供了前所未有的機會。然而，當前主流的ST技術（如10x Visium）其空間分辨率有限，每個測量點（spot）通常包含多個甚至數十個細胞的混合信號。為了準確研究TME中不同細胞類型（如癌細胞、免疫細胞、基質細胞）的空間分佈和相互作用，必須對每個spot的信號進行「解卷積」（deconvolution），即估算出其中每種細胞類型的相對比例。
 
 - **System Requirements:**
-    - **Data Integration Pipeline:** A pipeline to process and align ST data (gene expression with spatial coordinates) and a reference single-cell RNA-seq (scRNA-seq) dataset. 
+    - **Data Integration Pipeline:** A pipeline to process and align ==ST data== (gene expression with spatial coordinates) and a reference ==single-cell RNA-seq== (scRNA-seq) dataset. 
 	 **數據整合管道：** 系統需要一個能夠處理和對齊兩種不同數據模態的管道：
     1. **ST數據：** 包含空間坐標的基因表達矩陣。
     2. **scRNA-seq數據：** 來自相似組織類型的高質量、已註釋細胞類型的單細胞基因表達數據集，作為解卷積的「參考圖譜」
@@ -2638,7 +2640,7 @@ HIPAA 合規性不是單一功能，而是一個貫穿整個系統設計和運�
 
 **Question 13: Design a Batch Effect Correction System for High-Throughput Screening Data**
 
-- **Problem Statement:** Large High-Throughput Screening (HTS) campaigns are run over weeks or months, introducing strong, non-biological systemic variations known as "batch effects" (e.g., from different plates, dates, operators). If uncorrected, these effects can severely distort the data, leading to high false-positive or false-negative rates. **問題陳述：** 高通量篩選（High-Throughput Screening, HTS）是藥物發現的基石，它允許在一次實驗中測試數千至數百萬個化合物。一個大型的HTS項目通常會持續數週或數月，使用多塊微孔板（microplate）、多台不同的讀板儀，甚至由不同的操作員在不同的日期進行。這些實驗條件的變化會引入強烈的、非生物學的系統性變異，即「批次效應」（Batch Effects）。如果不加以校正，批次效應會嚴重扭曲數據，導致極高的假陽性或假陰性率，從而使後續的hit-picking決策產生嚴重偏差。您的任務是設計一個自動化的系統，用於檢測、可視化和校正HTS數據中的批次效應，同時確保不移除真實的生物學信號。
+- **Problem Statement:** Large ==High-Throughput Screening (HTS)== campaigns are run over weeks or months, introducing strong, non-biological systemic variations known as "batch effects" (e.g., from different plates, dates, operators). If uncorrected, these effects can severely distort the data, leading to high false-positive or false-negative rates. **問題陳述：** 高通量篩選（High-Throughput Screening, HTS）是藥物發現的基石，它允許在一次實驗中測試數千至數百萬個化合物。一個大型的HTS項目通常會持續數週或數月，使用多塊微孔板（microplate）、多台不同的讀板儀，甚至由不同的操作員在不同的日期進行。這些實驗條件的變化會引入強烈的、非生物學的系統性變異，即「批次效應」（Batch Effects）。如果不加以校正，批次效應會嚴重扭曲數據，導致極高的假陽性或假陰性率，從而使後續的hit-picking決策產生嚴重偏差。您的任務是設計一個自動化的系統，用於檢測、可視化和校正HTS數據中的批次效應，同時確保不移除真實的生物學信號。
     
 - **System Requirements:**
     
@@ -3090,6 +3092,8 @@ graph TD
 - **Online**: 追蹤科學家對推薦結果的交互率（點擊、保存）以及最終進入實驗驗證階段的靶點比例。
 
 ---
+
+#### 第四部份
 
 ### **Q16: 為已部署的臨床診斷AI設計模型監控系統**
 
