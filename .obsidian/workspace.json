@@ -6,7 +6,7 @@
       {
         "id": "9f150ca1a90eee18",
         "type": "tabs",
-        "dimension": 46.19407321324811,
+        "dimension": 48.00231615518239,
         "children": [
           {
             "id": "2d4c5b5eb81e9fb1",
@@ -23,39 +23,26 @@
             }
           },
           {
-            "id": "84aafbbc1e381d09",
+            "id": "cf67275a1cdcf663",
             "type": "leaf",
             "state": {
               "type": "markdown",
               "state": {
-                "file": "GSK - AIML Engineer  Phenomics.md",
+                "file": "ML system design - Biological imaging.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "GSK - AIML Engineer  Phenomics"
-            }
-          },
-          {
-            "id": "47ff09185f53d38d",
-            "type": "leaf",
-            "state": {
-              "type": "markdown",
-              "state": {
-                "file": "Datasets - Biology data type.md",
-                "mode": "source",
-                "source": false
-              },
-              "icon": "lucide-file",
-              "title": "Datasets - Biology data type"
+              "title": "ML system design - Biological imaging"
             }
           }
-        ]
+        ],
+        "currentTab": 1
       },
       {
         "id": "d98266405e4f28a4",
         "type": "tabs",
-        "dimension": 53.80592678675189,
+        "dimension": 51.9976838448176,
         "children": [
           {
             "id": "6be76a2413f39745",
@@ -72,31 +59,17 @@
             }
           },
           {
-            "id": "5ac407e1a0e59640",
+            "id": "653acfea63e90f37",
             "type": "leaf",
             "state": {
               "type": "markdown",
               "state": {
-                "file": "GSK - AIML Engineer  Phenomics.md",
+                "file": "ML system design - Biological imaging.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "GSK - AIML Engineer  Phenomics"
-            }
-          },
-          {
-            "id": "0441024bd09f3963",
-            "type": "leaf",
-            "state": {
-              "type": "markdown",
-              "state": {
-                "file": "Datasets - Biology data type.md",
-                "mode": "source",
-                "source": false
-              },
-              "icon": "lucide-file",
-              "title": "Datasets - Biology data type"
+              "title": "ML system design - Biological imaging"
             }
           }
         ]
@@ -249,10 +222,13 @@
       "table-editor-obsidian:Advanced Tables Toolbar": false
     }
   },
-  "active": "2d4c5b5eb81e9fb1",
+  "active": "cf67275a1cdcf663",
   "lastOpenFiles": [
-    "Datasets - Biology data type.md",
     "HackerRank - ML design for GSK.md",
+    "ML system design - Biological imaging.md",
+    "Pasted image 20250929220856.png",
+    "Pasted image 20250929213119.png",
+    "Datasets - Biology data type.md",
     "Encoder - Summary.md",
     "GSK - AIML Engineer  Phenomics.md",
     "materials/Pasted image 20250928024857.png",
@@ -264,8 +240,6 @@
     "materials/Pasted image 20250928040328.png",
     "materials/Pasted image 20250928040251.png",
     "materials/Pasted image 20250928040204.png",
-    "materials/Pasted image 20250928040125.png",
-    "materials/Pasted image 20250928040044.png",
     "DL - Application fields/Autonomous-Driving - Summary.md",
     "Code - Python/@Interview - Python Basic.md",
     "Code - Python/args.md",
@@ -285,8 +259,6 @@
     "Code - AI/PyTorch - interview.md",
     "DL - CNN/CNN - Basic.md",
     "CVML - ML/Machine learning matlab.md",
-    "CVML - Image CV/ISP Pipeline.md",
-    "CVML - Image CV/algorithms/Blind deconvolution.md",
     "CVML - ISP",
     "1758465474084.jfif",
     "interview - @@ interview QA",
