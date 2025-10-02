@@ -4,72 +4,21 @@
     "type": "split",
     "children": [
       {
-        "id": "9f150ca1a90eee18",
+        "id": "131539aea9b60bf1",
         "type": "tabs",
-        "dimension": 48.00231615518239,
         "children": [
           {
-            "id": "2d4c5b5eb81e9fb1",
+            "id": "40dedd6deed034e1",
             "type": "leaf",
             "state": {
               "type": "markdown",
               "state": {
-                "file": "HackerRank - ML design for GSK.md",
+                "file": "KLA - Sr. Algorithm Engineer (Image Processing).md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "HackerRank - ML design for GSK"
-            }
-          },
-          {
-            "id": "cf67275a1cdcf663",
-            "type": "leaf",
-            "state": {
-              "type": "markdown",
-              "state": {
-                "file": "ML system design - Biological imaging.md",
-                "mode": "source",
-                "source": false
-              },
-              "icon": "lucide-file",
-              "title": "ML system design - Biological imaging"
-            }
-          }
-        ],
-        "currentTab": 1
-      },
-      {
-        "id": "d98266405e4f28a4",
-        "type": "tabs",
-        "dimension": 51.9976838448176,
-        "children": [
-          {
-            "id": "6be76a2413f39745",
-            "type": "leaf",
-            "state": {
-              "type": "markdown",
-              "state": {
-                "file": "HackerRank - ML design for GSK.md",
-                "mode": "source",
-                "source": false
-              },
-              "icon": "lucide-file",
-              "title": "HackerRank - ML design for GSK"
-            }
-          },
-          {
-            "id": "653acfea63e90f37",
-            "type": "leaf",
-            "state": {
-              "type": "markdown",
-              "state": {
-                "file": "ML system design - Biological imaging.md",
-                "mode": "source",
-                "source": false
-              },
-              "icon": "lucide-file",
-              "title": "ML system design - Biological imaging"
+              "title": "KLA - Sr. Algorithm Engineer (Image Processing)"
             }
           }
         ]
@@ -104,7 +53,7 @@
             "state": {
               "type": "search",
               "state": {
-                "query": "",
+                "query": "fourier",
                 "matchingCase": false,
                 "explainSearch": false,
                 "collapseAll": false,
@@ -222,43 +171,46 @@
       "table-editor-obsidian:Advanced Tables Toolbar": false
     }
   },
-  "active": "cf67275a1cdcf663",
+  "active": "40dedd6deed034e1",
   "lastOpenFiles": [
-    "HackerRank - ML design for GSK.md",
-    "ML system design - Biological imaging.md",
-    "Pasted image 20250929220856.png",
-    "Pasted image 20250929213119.png",
-    "Datasets - Biology data type.md",
-    "Encoder - Summary.md",
-    "GSK - AIML Engineer  Phenomics.md",
-    "materials/Pasted image 20250928024857.png",
-    "materials/Pasted image 20250928025519.png",
+    "Interview - @@ ongoing/Blue River Technology - Image Signal Processing Engineer.md",
     "KLA - Sr. Algorithm Engineer (Image Processing).md",
-    "materials/ChatGPT Image 2025年9月28日 上午02_31_25.png",
-    "materials/Pasted image 20250928040443.png",
-    "materials/Pasted image 20250928040403.png",
-    "materials/Pasted image 20250928040328.png",
-    "materials/Pasted image 20250928040251.png",
-    "materials/Pasted image 20250928040204.png",
-    "DL - Application fields/Autonomous-Driving - Summary.md",
-    "Code - Python/@Interview - Python Basic.md",
-    "Code - Python/args.md",
-    "Code - C++/Programming - C++ Basic 1.md",
-    "Code - C++/Programming - C++ Basic.md",
-    "Interview - @@ ongoing/KLA - Senior Algorithm Engineer (Image Processing & Computer Vision).md",
-    "GSK - AI ML Engineer - Phenomics.md",
-    "DL - Application fields/Autonomous-Driving - TORC Robotics.md",
-    "Interview - @@ ongoing/Torc Robotics - Senior Embedded ML Engineer - Vision.md",
     "@@ Interview prepare.md",
-    "DL - CNN/手撕项目代码.md",
-    "DL - CNN/CNN - Setting.md",
+    "DL - Ground/Image video detection segmentation summary.md",
+    "DL - YOLO and object detection/Object detection - summary.md",
     "CVML - Image CV/Traditional Computer Vision summary.md",
-    "Interview - @@ ongoing/Vertex Pharmaceuticals - Senior Data Scientist II, Image Analytics.md",
-    "DL - CNN/AI model Summary architecture.md",
-    "DL - YOLO and object detection/Object detection on edge.md",
-    "Code - AI/PyTorch - interview.md",
-    "DL - CNN/CNN - Basic.md",
     "CVML - ML/Machine learning matlab.md",
+    "CVML - Image CV/algorithms/1. Laplacian Filtering, 2. Sobel Filtering, 3. Canny filtering.md",
+    "CVML - Image CV/algorithms/Bilateral Filter.md",
+    "CVML - Image CV/algorithms/Gaussian Filter.md",
+    "DL - YOLO and object detection/Object detection on edge.md",
+    "DL - Ground/Grounding DINO.md",
+    "DL - Video/Video object detection summary.md",
+    "DL - Tracking/Tracking and ReID.md",
+    "DL - CNN/AI model Summary architecture.md",
+    "DL - Tracking/Tracking - Summary.md",
+    "40 questions about hands-on experience in image processing.md",
+    "CVML - Optics/Optics - Fourier optics.md",
+    "Code - C++/Programming - C++ Basic.md",
+    "CVML - Optics/Optics - KLA inspection system.md",
+    "DL - 3D Image,CV and Camera/Depth Estimation.md",
+    "CVML - Image CV/Image Calibration.md",
+    "CVML - Image CV/algorithms/Cross-correlation.md",
+    "CVML - Image CV/Morphological.md",
+    "CVML - Image CV/algorithms/SIFT.md",
+    "CVML - Image CV/algorithms/Geometric transformation.md",
+    "materials/Pasted image 20251002095714.png",
+    "materials/Pasted image 20251002070427.png",
+    "materials/Pasted image 20251001102634.png",
+    "materials/Pasted image 20250930195157.png",
+    "materials/Pasted image 20250930194652.png",
+    "materials/Pasted image 20250930190525.png",
+    "materials/Pasted image 20250930154226.png",
+    "materials/Pasted image 20250930152158.png",
+    "CVML - Optics",
+    "Interview - System design",
+    "materials/Pasted image 20250929220856.png",
+    "materials/Pasted image 20250929213119.png",
     "CVML - ISP",
     "1758465474084.jfif",
     "interview - @@ interview QA",
@@ -266,8 +218,6 @@
     "DL - CUDA",
     "DL - VLM",
     "Interview - @@ AI projects",
-    "DL - VLM",
-    "DL - Scene",
-    "DL - Self Supervised Learning"
+    "DL - VLM"
   ]
 }

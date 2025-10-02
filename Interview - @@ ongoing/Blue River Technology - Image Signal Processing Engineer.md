@@ -15,11 +15,11 @@ https://www.indeed.com/viewjob?jk=1678dfe7904986eb&q=Artificial+Intelligence+AI+
 
 We're Blue River, a team of innovators driven to create intelligent machinery that solves monumental problems for our customers. We empower our customers – farmers, construction crews, and foresters - to implement safer and more sustainable solutions, driving increased profitability with less reliance on scarce labor. We believe that focusing on the small stuff – pixel-by-pixel and task-by-task - leads to big gains. 我們是Blue River，一個由創新者組成的團隊，致力於研發智慧機械設備，為客戶解決重大難題。我們幫助客戶——包括農場主、建築工人、林業人員等——採用更安全、更永續的解決方案，從而提高獲利能力，同時減少對稀缺勞動力資源的依賴。我們相信，專注於細節——從像素到任務，從點滴做起——才能帶來巨大的收益。
 
-Blue River Technology aligns with John Deere's vision to "innovate on behalf of humanity" by quickly identifying and solving high-value, high-uncertainty challenges in AI, machine learning, computer vision, and robotics. BRT acts as a research and development flywheel, building not only new products but also new platforms that reliably create value for both Deere and its customers. From fully autonomous machines to highly precise farming equipment, BRT and Deere are partnering to create technical breakthroughs in industries like agriculture and construction. Blue River Technology秉承約翰迪爾「以人為本，不斷創新」的理念，致力於快速識別並解決人工智慧、機器學習、電腦視覺和機器人技術等領域中的高價值、高不確定性挑戰。 Blue River Technology作為約翰迪爾的研發引擎，不僅開發新產品，還建構能夠為約翰迪爾及其客戶持續創造價值的新平台。從全自動機械設備到高精準度農業裝備，Blue River Technology與約翰迪爾攜手合作，在農業、建築等產業不斷實現技術突破。
+Blue River Technology aligns with John Deere's vision to "innovate on behalf of humanity" by quickly identifying and solving high-value, high-uncertainty challenges in AI, machine learning, computer vision, and robotics. BRT acts as a research and development flywheel, building not only new products but also new platforms that reliably create value for both Deere and its customers. From fully autonomous machines to highly precise farming equipment, BRT and Deere are partnering to create technical breakthroughs in industries like agriculture and construction. Blue River Technology 秉承約翰迪爾「以人為本，不斷創新」的理念，致力於快速識別並解決人工智慧、機器學習、電腦視覺和機器人技術等領域中的高價值、高不確定性挑戰。 Blue River Technology作為約翰迪爾的研發引擎，不僅開發新產品，還建構能夠為約翰迪爾及其客戶持續創造價值的新平台。從全自動機械設備到高精準度農業裝備，Blue River Technology與約翰迪爾攜手合作，在農業、建築等產業不斷實現技術突破。
 
 **Summary**
 
-We are looking for a highly motivated individual to join our team as an Image Signal Processing engineer. This position supports the See & Spray CVML (Computer Vision Machine Learning) team within Blue River Technology. It is at the intersection of Image processing pipelines (ISP) development, image quality assessment, and ML modeling. Our ideal candidate (you!) will play a crucial role in implementing a state-of-the-art ISP for the See & Spray project. You have an analytical mind and take a data-driven approach to answering questions. Your contributions will be instrumental in driving the success of our machine learning initiatives. 我們正在尋找一位充滿熱情、積極進取的影像訊號處理工程師加入我們的團隊。該職位隸屬於Blue River Technology的See & Spray計算機視覺機器學習（CVML）團隊。工作內容涉及影像處理流程（ISP）開發、影像品質評估以及機器學習模型建構等領域。我們理想的候選人（也就是您！）將在See & Spray專案中負責開發先進的影像訊號處理系統，並發揮關鍵作用。您具備優秀的分析能力，並習慣以數據驅動的方式解決問題。您的貢獻將對我們機器學習專案的成功至關重要。
+We are looking for a highly motivated individual to join our team as an ==Image Signal Processing engineer==. This position supports the ==See & Spray CVML (Computer Vision Machine Learning) team== within Blue River Technology. It is at the intersection of ==Image processing pipelines (ISP) development, image quality assessment, and ML modeling==. Our ideal candidate (you!) will play a crucial role in implementing a state-of-the-art ISP for the See & Spray project. You have an analytical mind and take a data-driven approach to answering questions. Your contributions will be instrumental in driving the success of our machine learning initiatives. 我們正在尋找一位充滿熱情、積極進取的影像訊號處理工程師加入我們的團隊。該職位隸屬於Blue River Technology的See & Spray計算機視覺機器學習（CVML）團隊。工作內容涉及影像處理流程（ISP）開發、影像品質評估以及機器學習模型建構等領域。我們理想的候選人（也就是您！）將在See & Spray專案中負責開發先進的影像訊號處理系統，並發揮關鍵作用。您具備優秀的分析能力，並習慣以數據驅動的方式解決問題。您的貢獻將對我們機器學習專案的成功至關重要。
 
 - **Employment Type**: Contract (6 months)
 - **Work Location**: US-Remote
@@ -30,8 +30,8 @@ We are looking for a highly motivated individual to join our team as an Image Si
 A combination, not necessarily all-inclusive, of the following:
 
 - Designing, implementing, and improving image signal processing within Blue River Technology's See & Spray system. 負責設計、實現和優化Blue River Technology公司See & Spray系統的影像訊號處理演算法。
-- Optimizing and understanding the benefits of specific operations such as demosaicking, color correction, and tonemapping on image quality for both human and machine vision. 最佳化並評估去馬賽克、色彩校正和色調映射等處理方法對影像品質的影響，以提升人眼和機器視覺效果。
-- Analyzing approaches to interaction between image signal processing and convolutional neural networks. 研究影像訊號處理與卷積神經網路的協同機制。
+- Optimizing and understanding the benefits of specific operations such as ==demosaicking, color correction, and tonemapping== on image quality for both human and machine vision. 最佳化並評估去馬賽克、色彩校正和色調映射等處理方法對影像品質的影響，以提升人眼和機器視覺效果。
+- Analyzing approaches to interaction between ==image signal processing== and ==convolutional neural networks==. 研究影像訊號處理與卷積神經網路的協同機制。
 - Quantifying and measuring image signal processing software quality across varied conditions and scene compositions. 在各種場景和條件下，量化並評估影像訊號處理軟體的效能。
 - Working with teams to improve overall system abilities, detection performance, and consistency. 與團隊合作，提升系統的整體效能、目標偵測精度和穩定性。
 - Building processing time-constrained algorithms and architecturing efficient implementations for edge and cloud applications. 開發即時性要求高的演算法，並為邊緣運算和雲端應用設計高效的實現方案。
@@ -40,16 +40,16 @@ A combination, not necessarily all-inclusive, of the following:
 
 - Bachelor's or Master's degree in Computer Science, Data Science, Physics, or a related field.
 - 6+ years of related experience. 6年以上相關工作經驗。
-- Proficiency in Python and C++, including CUDA development.
-- Strong problem-solving and analytical skills with a keen attention to detail.
-- Ability to work collaboratively in a team environment and effectively communicate complex technical concepts.
-- Passion for emerging technologies, artificial intelligence, and computer vision.
+- Proficiency in ==Python and C++, including CUDA development==. 精通Python和C++語言，包括CUDA開發技術
+- Strong problem-solving and analytical skills with a keen attention to detail. 具備很強的解決問題和分析能力，同時對細節有著高度的關注
+- Ability to work collaboratively in a team environment and effectively communicate complex technical concepts. 能夠在團隊環境中與他人協作，並能有效傳達複雜的技術概念
+- Passion for emerging technologies, artificial intelligence, and computer vision. 對新興技術、人工智慧和電腦視覺充滿熱情。
 
 **Preferred Experience and Skills**
 
-- Prior experience or coursework in CVML and ISP projects or research.
-- Familiarity with deep learning frameworks, such as PyTorch or TensorFlow.
-- Familiarity with agriculture technology, agronomy, or farming.
+- Prior experience or coursework in CVML and ISP projects or research. 具備電腦視覺與機器學習（CVML）以及智慧型系統與程式設計（ISP）專案或研究的相關經驗或學習經驗
+- Familiarity with deep learning frameworks, such as PyTorch or TensorFlow. 熟悉深度學習框架，例如PyTorch或TensorFlow。
+- Familiarity with agriculture technology, agronomy, or farming. 熟悉農業技術、作物學或耕種知識。
 
 Only individual applicants will be considered. We do not work with unsolicited third-party agencies or proxy interview services.
 
