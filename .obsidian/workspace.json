@@ -4,21 +4,17 @@
     "type": "split",
     "children": [
       {
-        "id": "131539aea9b60bf1",
+        "id": "8e7a80bdae8cdd1c",
         "type": "tabs",
         "children": [
           {
-            "id": "40dedd6deed034e1",
+            "id": "3cdcea11bfb666ca",
             "type": "leaf",
             "state": {
-              "type": "markdown",
-              "state": {
-                "file": "KLA - Sr. Algorithm Engineer (Image Processing).md",
-                "mode": "source",
-                "source": false
-              },
+              "type": "empty",
+              "state": {},
               "icon": "lucide-file",
-              "title": "KLA - Sr. Algorithm Engineer (Image Processing)"
+              "title": "新分頁"
             }
           }
         ]
@@ -171,14 +167,21 @@
       "table-editor-obsidian:Advanced Tables Toolbar": false
     }
   },
-  "active": "40dedd6deed034e1",
+  "active": "3cdcea11bfb666ca",
   "lastOpenFiles": [
     "Interview - @@ ongoing/Blue River Technology - Image Signal Processing Engineer.md",
     "KLA - Sr. Algorithm Engineer (Image Processing).md",
+    "CVML - Image CV/Traditional Computer Vision summary.md",
+    "CVML - Image CV/Machine Vision algorithms.md",
+    "CVML - Image CV/ISP Pipeline.md",
+    "CVML - Image CV/Cellphone Camera algorithms.md",
+    "CVML - Image CV/algorithms/SIFT.md",
     "@@ Interview prepare.md",
     "DL - Ground/Image video detection segmentation summary.md",
+    "DL - YOLO and object detection/Object detection and NMS.md",
+    "DL - CNN/AI model Summary architecture.md",
+    "DL - CNN/AutoEncoder(AE), VAE, MAE.md",
     "DL - YOLO and object detection/Object detection - summary.md",
-    "CVML - Image CV/Traditional Computer Vision summary.md",
     "CVML - ML/Machine learning matlab.md",
     "CVML - Image CV/algorithms/1. Laplacian Filtering, 2. Sobel Filtering, 3. Canny filtering.md",
     "CVML - Image CV/algorithms/Bilateral Filter.md",
@@ -187,18 +190,11 @@
     "DL - Ground/Grounding DINO.md",
     "DL - Video/Video object detection summary.md",
     "DL - Tracking/Tracking and ReID.md",
-    "DL - CNN/AI model Summary architecture.md",
     "DL - Tracking/Tracking - Summary.md",
     "40 questions about hands-on experience in image processing.md",
     "CVML - Optics/Optics - Fourier optics.md",
     "Code - C++/Programming - C++ Basic.md",
     "CVML - Optics/Optics - KLA inspection system.md",
-    "DL - 3D Image,CV and Camera/Depth Estimation.md",
-    "CVML - Image CV/Image Calibration.md",
-    "CVML - Image CV/algorithms/Cross-correlation.md",
-    "CVML - Image CV/Morphological.md",
-    "CVML - Image CV/algorithms/SIFT.md",
-    "CVML - Image CV/algorithms/Geometric transformation.md",
     "materials/Pasted image 20251002095714.png",
     "materials/Pasted image 20251002070427.png",
     "materials/Pasted image 20251001102634.png",
