@@ -4,17 +4,41 @@
     "type": "split",
     "children": [
       {
-        "id": "8e7a80bdae8cdd1c",
+        "id": "040b305e2eef100e",
         "type": "tabs",
         "children": [
           {
-            "id": "3cdcea11bfb666ca",
+            "id": "9612119a98a110fa",
             "type": "leaf",
             "state": {
-              "type": "empty",
-              "state": {},
+              "type": "markdown",
+              "state": {
+                "file": "Code - C++/Programming - C++ Basic 1.md",
+                "mode": "source",
+                "source": false
+              },
               "icon": "lucide-file",
-              "title": "新分頁"
+              "title": "Programming - C++ Basic 1"
+            }
+          }
+        ]
+      },
+      {
+        "id": "7c8256e5a3c248db",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "a08d5d881d3a5ef9",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "Code - C++/Programming - C++ Basic 1.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "Programming - C++ Basic 1"
             }
           }
         ]
@@ -167,46 +191,46 @@
       "table-editor-obsidian:Advanced Tables Toolbar": false
     }
   },
-  "active": "3cdcea11bfb666ca",
+  "active": "a08d5d881d3a5ef9",
   "lastOpenFiles": [
-    "Interview - @@ ongoing/Blue River Technology - Image Signal Processing Engineer.md",
-    "KLA - Sr. Algorithm Engineer (Image Processing).md",
-    "CVML - Image CV/Traditional Computer Vision summary.md",
-    "CVML - Image CV/Machine Vision algorithms.md",
-    "CVML - Image CV/ISP Pipeline.md",
-    "CVML - Image CV/Cellphone Camera algorithms.md",
-    "CVML - Image CV/algorithms/SIFT.md",
-    "@@ Interview prepare.md",
-    "DL - Ground/Image video detection segmentation summary.md",
-    "DL - YOLO and object detection/Object detection and NMS.md",
-    "DL - CNN/AI model Summary architecture.md",
-    "DL - CNN/AutoEncoder(AE), VAE, MAE.md",
-    "DL - YOLO and object detection/Object detection - summary.md",
-    "CVML - ML/Machine learning matlab.md",
-    "CVML - Image CV/algorithms/1. Laplacian Filtering, 2. Sobel Filtering, 3. Canny filtering.md",
-    "CVML - Image CV/algorithms/Bilateral Filter.md",
-    "CVML - Image CV/algorithms/Gaussian Filter.md",
-    "DL - YOLO and object detection/Object detection on edge.md",
-    "DL - Ground/Grounding DINO.md",
-    "DL - Video/Video object detection summary.md",
-    "DL - Tracking/Tracking and ReID.md",
-    "DL - Tracking/Tracking - Summary.md",
-    "40 questions about hands-on experience in image processing.md",
-    "CVML - Optics/Optics - Fourier optics.md",
     "Code - C++/Programming - C++ Basic.md",
-    "CVML - Optics/Optics - KLA inspection system.md",
+    "Code - C++/Programming - C++ Basic 1.md",
+    "KLA - Sr. Algorithm Engineer (Image Processing).md",
+    "@@ Interview prepare.md",
+    "DL - Distributed training/ML optimization frameworks.md",
+    "DL - Application fields/Autonomous-Driving - Summary.md",
+    "DL - Performance optimization/FlashAttention.md",
+    "DL - MLOPs/Model Deployment.md",
+    "DL - Action/Action - Summary.md",
+    "DL - Ground/Grounded SAM.md",
+    "DL - YOLO and object detection/Object detection - summary.md",
+    "DL - Ground/Image video detection segmentation summary.md",
+    "DL - CNN/AI model Summary.md",
+    "CVML - ML/Machine learning matlab.md",
+    "CVML - Image CV/Traditional Computer Vision summary.md",
+    "DL - CUDA/CUDA programming - Basic.md",
+    "DL - Performance optimization/Performance optimization summary.md",
+    "DL - Performance optimization/weight clustering and weight sharing.md",
+    "DL - Performance optimization/PTQ and QAT quantification.md",
+    "DL - Cloud/AWS and AzureML.md",
+    "DL - MLOPs/MLOPs - Introduction.md",
+    "DL - Performance optimization/Mixed Precision vs PTQ and QAT.md",
+    "DL - CNN/Depthwise Separable Convolution.md",
+    "DL - CNN/AI model Summary architecture.md",
+    "DL - CNN/LSTM.md",
+    "DL - YOLO and object detection/Object detection and NMS.md",
+    "materials/Pasted image 20251015190144.png",
+    "materials/Pasted image 20251012163850.png",
+    "materials/Pasted image 20251012163831.png",
+    "materials/Pasted image 20251012163806.png",
+    "materials/Pasted image 20251012161935.png",
+    "materials/Pasted image 20251011085502.png",
+    "materials/Pasted image 20251009114042.png",
+    "materials/Pasted image 20251009095121.png",
     "materials/Pasted image 20251002095714.png",
     "materials/Pasted image 20251002070427.png",
-    "materials/Pasted image 20251001102634.png",
-    "materials/Pasted image 20250930195157.png",
-    "materials/Pasted image 20250930194652.png",
-    "materials/Pasted image 20250930190525.png",
-    "materials/Pasted image 20250930154226.png",
-    "materials/Pasted image 20250930152158.png",
     "CVML - Optics",
     "Interview - System design",
-    "materials/Pasted image 20250929220856.png",
-    "materials/Pasted image 20250929213119.png",
     "CVML - ISP",
     "1758465474084.jfif",
     "interview - @@ interview QA",

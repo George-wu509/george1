@@ -1,5 +1,5 @@
 
-[[傅里叶变换（Fourier Transform）]]
+[[Fourier Transform on image]]
 
 ### **一、 傅立葉光學的核心思想是什麼？**
 
