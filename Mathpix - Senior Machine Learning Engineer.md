@@ -12,13 +12,16 @@ Job: 
 | [[#### SynthText (ICDAR Synthetic)等OCR datasets的datasets]] |     |
 |                                                            |     |
 
+**===================================================
 
+**複習 >>>
+1. multimodal: OCR, text recognition, document understanding, machine translation, text generation, speech-to-text, image captioning
+2. sequence-to-sequence models, attention mechanisms
+3. optimization, regularization, model scaling, and distributed training
+4. large-scale multimodal foundation models and techniques for fine-tuning/adaptation
+5. evaluation methodologies for sequence and multimodal models
 
-Keywords:
-OCR
-text recognition, document understanding
-sequence-to-sequence models
-attention mechanisms
+**===================================================
 
 
 
@@ -67,26 +70,6 @@ We are looking for a candidate with a PhD in CS, ML, CV, NLP, or a related field
 - Experience mentoring teams and driving research agendas in applied AI settings 擁有在應用人工智慧領域指導團隊和推動研究議程的經驗
 
 
-**===================================================
-
-**複習 >>>
-1. text recognition and document understanding
-2. sequence-to-sequence models, attention mechanisms
-3. OCR and multimodal document understanding tasks
-4. sequence-to-sequence and attention-based architectures for text recognition, translation, and generation tasks
-5. machine translation, text generation, speech-to-text, OCR, image captioning, or related multimodal tasks
-6.  optimization, regularization, model scaling, and distributed training
-7. large-scale multimodal foundation models and techniques for fine-tuning/adaptation
-8. valuation methodologies for sequence and multimodal models
-
-
-**===================================================
-
-
-
-
-
-
 
 
 
@@ -103,13 +86,9 @@ Mathpix 最初以「**Snip**」App 成名 —— 能夠即時從螢幕截圖中�
 目前公司產品與 API 被廣泛用於：
 
 - 教育科技（EdTech）
-    
 - LLM（大型語言模型）訓練與微調資料生成
-    
 - AI PDF Parsing / Knowledge Extraction 工具
-    
 - 文件數位化與學術出版流程自動化
-    
 
 ---
 
@@ -130,19 +109,12 @@ Mathpix 最初以「**Snip**」App 成名 —— 能夠即時從螢幕截圖中�
 ## 三、公司規模與評價
 
 - 規模：約 **20–30人左右**（屬於小型、高技術密集型 startup）
-    
 - 創辦人：**Nicolas Jimenez（CEO）**，擁有物理與數學背景
-    
 - 公司盈利：自稱已經 **盈利（profitable）**，主要收入來自 **API 授權與企業訂閱服務**
-    
 - 技術評價：
-    
     - 被業界視為 **「最佳數學公式 OCR 解決方案」**
-        
     - 在 EdTech 和 LLM 領域具 **關鍵資料供應鏈地位**（尤其是數學公式和科學文件資料）
-        
     - 在 Glassdoor、Reddit 上評價多為 **技術導向、節奏快、扁平組織、遠端友好**
-        
 
 ---
 

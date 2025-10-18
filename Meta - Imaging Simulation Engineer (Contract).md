@@ -56,14 +56,43 @@ Meta Reality Labs is a world leader in the design of virtual and augmented reali
 
 **複習 >>>
 
-1. image formation process (spectrum, optics/aberrations, PSF, sensor noise, Fourier theory, sampling/aliasing)
-2. Image Signal Processing (ISP) algorithms and pipeline
-3.  image quality testing of camera systems,  image quality metrics
-4. lab setups for camera system performance study
-5. camera calibration and modeling of imaging systems
-6. image sensor, imaging optics, and image processing algorithms
-7. imaging software simulation tools
-8. novel camera HW explorations, machine learning dataset generation, and product architecture tasks
-9.  imaging simulation methods (e.g. ISET, ZEMAX, non-sequential ray tracing)
+1. [[Image formation process summary]] (spectrum, optics/aberrations, PSF, sensor noise, Fourier theory, sampling/aliasing)
+
+|                                      |                                                                                                                                                                                                                                                                |
+| ------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Modeling the Physical World          | 1. 3D CAD(Mesh) 場景幾何<br>2. Material Properties 物體表面光學屬性<br>   - Material properties(BRDF) 雙向反射分佈函數<br>3. Light source 光源 <br><br>                                                                                                                              |
+| Simulating the Optical System        | 1. Ray Tracing 光線追蹤 <br>  - Geometric Distortion 幾何畸變<br>  - Vignetting 暗角<br>  - Chromatic Aberration 色差<br>  - Depth of Field & Blur 景深與模糊<br>  - Stray Light 雜散光 <br><br>                                                                                   |
+| Simulating the Sensor                | 1. QE(Quantum Efficiency) 量子效率<br>2. Bayer Filter 拜耳濾鏡<br>3. Noise Model 雜訊模型<br><br>                                                                                                                                                                          |
+| Image Signal Processor<br>simulation | [[ISP Pipeline]]<br>1. Black Level Correction  黑电平校正(BLC)<br>2. Demosaicking 去馬賽克<br>3. Auto-White Balance (AWB)白平衡<br>4. Color correction  色彩校正<br>5. Auto-Exposure (AE)自动曝光<br>6. Auto-Focus (AF)自動對焦<br>7. Denoising 降噪<br>8. Gamma Correction 伽马校正<br><br> |
+
+2. [[Image Signal Processing (ISP) code]] algorithms and pipeline
+3.  [[image quality testing of camera systems]],  image quality metrics
+
+|                                         |                                                                                                                                                                                                                               |
+| --------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Standardized Test Charts 標準化測試圖卡        | ISO 12233 Chart: 用於測量解析度 (Sharpness/Resolution)、鏡頭失真 (Distortion) 和色差 (Chromatic Aberration)<br><br>ColorChecker Classic: 用於測量色彩還原的準確度 (Color Accuracy)<br><br>Grayscale Chart: 測量動態範圍 (Dynamic Range) 和色調響應 (Tonal Response) |
+| Image Analysis Software 影像分析軟體          | Imatest  (業界標準)                                                                                                                                                                                                               |
+|                                         |                                                                                                                                                                                                                               |
+| Image Quality Metrics                   |                                                                                                                                                                                                                               |
+| 1. Sharpness / Resolution <br>清晰度 / 解析度 | MTF (Modulation Transfer Function) / SFR (Spatial Frequency Response) <br>MTF 描述了相機系統在不同空間頻率（可以理解為線條的疏密程度）下，能夠還原多少的對比度。一個完美的系統，MTF 值在所有頻率下都是 1 (100%)。實際上，隨著線條越來越密（頻率增高），系統還原的對比度會下降                                          |
+| 2. Noise <br>噪點                         | Signal-to-Noise Ratio (SNR) 信噪比                                                                                                                                                                                               |
+| 3. color Accuracy <br>色彩還原準確度           | Delta E (拍攝 ColorChecker 圖卡) 在一個標準化的色彩空間（如 CIELAB）中，測量拍攝顏色與標準顏色之間的「距離」。這個距離越小，代表顏色越準確                                                                                                                                         |
+| 4. Lens Distortion <br>鏡頭失真             | 百分比 (%) 來量化失真程度(桶狀失真(Barrel Distortion) or 枕狀失真 (Pincushion Distortion))。正值代表枕狀失真，負值代表桶狀失真。數值的絕對值越大，失真越嚴重                                                                                                                     |
+| 5. Vignetting <br>邊角失光 / 暗角             | 以 光圈級數 (f-stops) 或百分比 (%) 來量化從中心到邊角的光亮衰減程度, 測量影像的四個角落比中心區域暗的現象                                                                                                                                                                |
+| 6. Chromatic Aberration <br>色差 / 紫邊     | 以 像素寬度 (Pixel Width) 來衡量色邊的嚴重程度, 因為色差會降低影像的清晰度，並在高對比邊緣產生干擾視覺的偽色                                                                                                                                                               |
+| 7. Dynamic Range <br>動態範圍               | 光圈級數 (f-stops) 或 分貝 (dB) 來表示。數值越大，代表動態範圍越廣，越能在高反差場景（如日落、室內窗邊）中同時保留亮部和暗部的細節                                                                                                                                                    |
+
+4. [[camera calibration and modeling of imaging systems]]
+
+|                                    |                                                                                                                                                                                                     |
+| ---------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 相機成像模型 <br>(Camera Model)          | 1. 坐標系 - 世界坐標系, 相機坐標系, 圖像像素坐標系<br><br>2. 針孔相機模型的核心轉換<br>   - 步驟一：從世界坐標系到相機坐標系（extrinsic外部參數）<br>   - 步驟二：從相機坐標系到圖像物理坐標系（Intrinsic內部參數）<br>   - 步驟三：從圖像物理坐標系到圖像像素坐標系<br><br>3. 相機矩陣P (Camera Matrix) |
+| 鏡頭畸變模型 <br>(Lens Distortion Model) | 1. 徑向畸變 (Radial Distortion) - <br>由鏡頭形狀引起，導致圖像中的直線在邊緣處彎曲<br><br>2. 切向畸變 (Tangential Distortion)<br>由鏡頭與感光元件不完全平行引起                                                                                  |
+| 主流的相機校準方法                          | 方法一：張氏校準法 (Zhang's Method) <br>方法二：攝影測量校準法 (Photogrammetric Calibration)<br>方法三：自校準法 (Self-Calibration / Auto-Calibration)                                                                          |
+
+5. image sensor, imaging optics, and image processing algorithms
+6. [[imaging software simulation tools]], imaging simulation methods (e.g. ISET, ZEMAX, non-sequential ray tracing)
+7. novel camera HW explorations, machine learning dataset generation, and product architecture tasks
+
   
 ===================================================
