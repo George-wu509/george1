@@ -4,41 +4,57 @@
     "type": "split",
     "children": [
       {
-        "id": "040b305e2eef100e",
+        "id": "68e63df957437d0f",
         "type": "tabs",
+        "dimension": 45.47090581883623,
         "children": [
           {
-            "id": "9612119a98a110fa",
+            "id": "d8872bfbc3ba3bbe",
             "type": "leaf",
             "state": {
               "type": "markdown",
               "state": {
-                "file": "Code - C++/Programming - C++ Basic 1.md",
+                "file": "Meta - Imaging Simulation Engineer (Contract).md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "Programming - C++ Basic 1"
+              "title": "Meta - Imaging Simulation Engineer (Contract)"
             }
           }
         ]
       },
       {
-        "id": "7c8256e5a3c248db",
+        "id": "e7cbfb4888cc5efe",
         "type": "tabs",
+        "dimension": 54.529094181163764,
         "children": [
           {
-            "id": "a08d5d881d3a5ef9",
+            "id": "5dc6faeccfc60e09",
             "type": "leaf",
             "state": {
               "type": "markdown",
               "state": {
-                "file": "Code - C++/Programming - C++ Basic 1.md",
+                "file": "Meta - Imaging Simulation Engineer (Contract).md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "Programming - C++ Basic 1"
+              "title": "Meta - Imaging Simulation Engineer (Contract)"
+            }
+          },
+          {
+            "id": "6056f0099587db9f",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "@@ Interview prepare.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "@@ Interview prepare"
             }
           }
         ]
@@ -191,44 +207,44 @@
       "table-editor-obsidian:Advanced Tables Toolbar": false
     }
   },
-  "active": "a08d5d881d3a5ef9",
+  "active": "d8872bfbc3ba3bbe",
   "lastOpenFiles": [
-    "Code - C++/Programming - C++ Basic.md",
-    "Code - C++/Programming - C++ Basic 1.md",
-    "KLA - Sr. Algorithm Engineer (Image Processing).md",
+    "Mathpix - Senior Machine Learning Engineer.md",
+    "Novateur Research Solutions Senior Research Engineer - Computer Vision & Geospatial AI.md",
+    "Protech AI - Artificial Intelligence Engineer.md",
     "@@ Interview prepare.md",
-    "DL - Distributed training/ML optimization frameworks.md",
-    "DL - Application fields/Autonomous-Driving - Summary.md",
-    "DL - Performance optimization/FlashAttention.md",
-    "DL - MLOPs/Model Deployment.md",
-    "DL - Action/Action - Summary.md",
-    "DL - Ground/Grounded SAM.md",
+    "Interview - @@ AI projects/Project - 3D VLMs for Unified Scene Understanding.md",
+    "DL - Scene/Scene Graph generation.md",
+    "DL - Performance optimization/weight clustering and weight sharing.md",
+    "Interview - @@ Do AI projects/Project - (VisionCraft) DINOv3 and Grounded SAM2.md",
+    "Interview - @@ Do AI projects/Project - (PedestrianIntent) 行人偵測 PCIP.md",
+    "DL - Performance optimization/PTQ and QAT quantification.md",
+    "DL - Performance optimization/Performance optimization summary.md",
+    "DL - MLOPs/MLOPs - Introduction.md",
+    "Meta - Imaging Simulation Engineer (Contract).md",
+    "DL - CNN/AI model Summary architecture.md",
     "DL - YOLO and object detection/Object detection - summary.md",
     "DL - Ground/Image video detection segmentation summary.md",
-    "DL - CNN/AI model Summary.md",
-    "CVML - ML/Machine learning matlab.md",
-    "CVML - Image CV/Traditional Computer Vision summary.md",
-    "DL - CUDA/CUDA programming - Basic.md",
-    "DL - Performance optimization/Performance optimization summary.md",
-    "DL - Performance optimization/weight clustering and weight sharing.md",
-    "DL - Performance optimization/PTQ and QAT quantification.md",
-    "DL - Cloud/AWS and AzureML.md",
-    "DL - MLOPs/MLOPs - Introduction.md",
-    "DL - Performance optimization/Mixed Precision vs PTQ and QAT.md",
-    "DL - CNN/Depthwise Separable Convolution.md",
-    "DL - CNN/AI model Summary architecture.md",
-    "DL - CNN/LSTM.md",
+    "DL - Action/MMPose - Keypoint detection + Pose Estimation.md",
+    "DL - embedded and edge/Edge system design.md",
+    "DL - Ground/GLIP.md",
+    "DL - Video/Video object detection summary.md",
+    "DL - Video/TrackFormer.md",
+    "DL - Ground/Grounding DINO.md",
+    "DL - Ground/Grounded SAM.md",
+    "DL - MLOPs/Model Deployment.md",
+    "DL - embedded and edge/Cloud service.md",
     "DL - YOLO and object detection/Object detection and NMS.md",
+    "materials/Pasted image 20251017130358.png",
+    "materials/Pasted image 20251017130232.png",
+    "materials/Pasted image 20251017125936.png",
+    "materials/Pasted image 20251017125748.png",
+    "materials/Pasted image 20251017124442.png",
     "materials/Pasted image 20251015190144.png",
     "materials/Pasted image 20251012163850.png",
     "materials/Pasted image 20251012163831.png",
     "materials/Pasted image 20251012163806.png",
     "materials/Pasted image 20251012161935.png",
-    "materials/Pasted image 20251011085502.png",
-    "materials/Pasted image 20251009114042.png",
-    "materials/Pasted image 20251009095121.png",
-    "materials/Pasted image 20251002095714.png",
-    "materials/Pasted image 20251002070427.png",
     "CVML - Optics",
     "Interview - System design",
     "CVML - ISP",
