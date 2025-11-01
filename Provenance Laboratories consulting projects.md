@@ -116,7 +116,53 @@ We found foreground masks are always Texture(std) small and saturation small
 ->  # ----- 8d. (version 2) DINOv3 Mask Analysis (Frame Removal & Skeleton) -----
 
 11011024結果:
+輸出的segmentation mask不夠精細不能支持後續的分析. 用2 step 方式DINOv3 -> otsu 得到精細的
+segmentation mask在原圖尺寸上
 
+
+```
+請幫我分析這段code, 因為這段code涉及將image縮小到size=768當成dinov3的輸入, 但在接續的下一個Colab會從這個colab cell得到的結果generated_masks繼續後續的分析, 但這段code是否有保留原始image的height跟height? 如果有的話在下一個colab要如何讀取? 如果沒有請修改code 保留這個原始image的height跟height
+
+已修改上一個colab cell code 保留在讀取影像時捕捉原始的 (height, width) 可以在
+
+for img_path, (initial_mask, original_image_np, safe_filename, original_shape) in tqdm(generated_masks.items(), ...):
+
+original_h, original_w = original_shape
+
+知道每個image原始的 (height, width). 因為在下列的code裡從原本segmentation mask移除這個有寬度的長方形框的segmentation mask, 接下來則保留segmentation mask最大連續塊應該就是3, 其他小塊segmentation mask也刪除. 對這個只保留3的mask的image(IMAGE_SIZE = 768)我們要回復成原始的 (height, width)大小. 接下來我們要在這個已經恢復原始大小的3的segmentation mask先用pixel=5的dilation morphology filter擴大, 然後在這個新的segmentation mask區域內對原圖用otsu method得到精細版本的segmentation mask. 接下來把數字的segmentation mask計算skeleton, 然後計算這個skeleton line到數字mask boundary的距離(thickness)以及數字的boundary. 進一步分析數字3個外層輪廓, 把外層輪廓的直線部分跟明顯轉折點以及轉折的角度都計算出來並輸出, 多增加figure把直線部分跟明顯轉折點也標示在figure上
+
+這個新增加的colab code跟上一個colab code一樣figure file存在OUTPUT_PATH下面的新開一個sub folder以月分日期跟時間命名譬如"10301639"代表10月30日16點39分使用now = datetime.datetime.now(ZoneInfo("America/New_York")). 然後再把這個subfolder名字後面加上"_dinov3(v2)". 把figuers儲存存在這個新subfolder. 在之前colab已經定義OUTPUT_PATH = os.path.join(PROJECT_ROOT, "output", "Lume images"). 如果有輸出txt file則存在同個subfolder. 把code裡面會影響結果的parameter集中放在import下方方便設定, code儘量function化, code中的comments也都用英文.
+```
+-> # ----- 8c.(version 3) use self-supervised learning model (DINOv3) -----
+-> # ----- 8d. (version 3) DINOv3 Mask Analysis (Frame Removal & Skeleton) -----
+
+110113251結果:
+DINOv3得到3跟矩形框沒有問題, 但要將矩形框移除還是有問題, 另外用otsu去做精細的segmentation mask似乎也效果不好
+
+```
+在下面code試過偵測矩形的效果都不好. 改成計算segmentation mask連續塊中, 計算連續塊內最大最小的x跟y, 如果x方向距離跟y方向距離相加為最大則為有寬度的長方形框的segmentation mask, 從原來的segmentation mask移除之後接下來則保留segmentation mask最大連續塊應該就是3, 其他小塊segmentation mask也刪除. 對這個只保留3的mask的image(IMAGE_SIZE = 768)我們要回復成原始的 (height, width)大小. 接下來我們要在這個已經恢復原始大小的3的segmentation mask先用pixel=10的dilation morphology filter擴大, 然後在這個新的segmentation mask區域以每個pixel的Texture(std dev)為基準(3的區域應該是texture較低, 3的外面區域texture較高). 從segmentation mask外圍向內部包圍得到新的3的精細segmentation mask. 接下來把數字的segmentation mask計算skeleton, 然後計算這個skeleton line到數字mask boundary的距離(thickness)以及數字的boundary. 進一步分析數字3個外層輪廓, 把外層輪廓的直線部分跟明顯轉折點以及轉折的角度都計算出來並輸出, 多增加figure把直線部分跟明顯轉折點也標示在figure上
+
+這個新增加的colab code跟上一個colab code一樣figure file存在OUTPUT_PATH下面的新開一個sub folder以月分日期跟時間命名譬如"10301639"代表10月30日16點39分使用now = datetime.datetime.now(ZoneInfo("America/New_York")). 然後再把這個subfolder名字後面加上"_dinov3(v2)". 把figuers儲存存在這個新subfolder. 在之前colab已經定義OUTPUT_PATH = os.path.join(PROJECT_ROOT, "output", "Lume images"). 如果有輸出txt file則存在同個subfolder. 把code裡面會影響結果的parameter集中放在import下方方便設定, code儘量function化, code中的comments也都用英文.
+```
+-> # ----- 8d. (version 4) DINOv3 Mask Analysis (Frame Removal & Skeleton) -----
+
+11011531結果:
+矩形框正確移除及其他小塊區域也可移除, 3已經可以在未恢復原圖size的image得到segmentation mask. 但之後的運算應該都完全在原始image的size下運算. 
+
+
+```
+矩形框正確移除及其他小塊區域也可移除, 3已經可以在未恢復原圖size的image得到segmentation mask. 但之後的運算應該都完全在原始image的size下運算包括原始image以及segmentation mask的image. 包括在原始圖大小的segmentation mask image先用pixel=10的dilation morphology filter處理, 然後在這個新的segmentation mask區域以每個pixel的Texture(std dev)為基準(3的區域應該是texture較低, 3的外面區域texture較高). 從segmentation mask外圍向內部包圍得到新的3的精細segmentation mask. 最後再針對segmentation mask的輪廓做平滑化為最終的segmentation mask. 在這計算得到最終的segmentation mask的過程盡量展示過程每一個figure都要輸出image size. 接下來把數字的最終的segmentation mask計算skeleton, 然後計算這個skeleton line到數字mask boundary的距離(thickness)以及數字的boundary. 進一步分析數字3個外層輪廓, 把外層輪廓的直線部分跟明顯轉折點以及轉折的角度都計算出來並輸出, 多增加figure把直線部分跟明顯轉折點也標示在figure上. 
+
+這個新增加的colab code跟上一個colab code一樣figure file存在OUTPUT_PATH下面的新開一個sub folder以月分日期跟時間命名譬如"10301639"代表10月30日16點39分使用now = datetime.datetime.now(ZoneInfo("America/New_York")). 然後再把這個subfolder名字後面加上"_dinov3(v2)". 把figuers儲存存在這個新subfolder. 在之前colab已經定義OUTPUT_PATH = os.path.join(PROJECT_ROOT, "output", "Lume images"). 如果有輸出txt file則存在同個subfolder. 把code裡面會影響結果的parameter集中放在import下方方便設定, code儘量function化, code中的comments也都用英文.
+```
+-> # ----- 8d. (version 5) DINOv3 Mask Analysis (Frame Removal & Skeleton) -----
+
+11011531結果:
+在3的計算精細segmentation mask仍然有patch化, 但它顯示是操作在原始image上? 或者我們用texture map應該用gaussian 平滑化之後再去計算新的segmentation mask? 另外texture計算太久, 或者用其他的features?
+
+```
+
+```
 
 
 
