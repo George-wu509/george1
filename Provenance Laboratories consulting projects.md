@@ -39,7 +39,7 @@ create OCR region segmentation masks and analysis
 | # ----- 2. Project folder and device/device setup -----                            | 1   | 1    |      |
 | # ----- 3. images loading: DATA_LUME_PATH -----                                    | 1   | 1    |      |
 | # ----- 4. calculate image features summary                                        | 1   | 1    |      |
-| # ----- 5. (version 2) Example-Based Segmentation (Histogram Backprojection) ----- | 1,2 | 2    |      |
+| # ----- 5. (version 3) Example-Based Segmentation (Histogram Backprojection) ----- | 1-3 | 3    |      |
 | # ----- 6. (version 1) Lume mask classification and analysis -----                 | 1   | 1    |      |
 |                                                                                    |     |      |      |
 
@@ -110,6 +110,8 @@ FFT not working
 ```
 -> # ----- 5. (version 2) Example-Based Segmentation (Histogram Backprojection) -----
 
+11031521結果:
+
 
 
 ```
@@ -126,6 +128,83 @@ FFT not working
 -> # ----- 6. (version 1) Lume mask classification and analysis -----
 
 11031521結果:
+
+
+
+```
+以下是colab code可以用Example-Based Segmentation / Histogram Backprojection在image上偵測相似區域並建立segmentation mask. 請幫我新增功能可以每個POSITIVE_REFERENCE or NEGATIVE_REFERENCE的image都輸出figure並標示ROI在上面. 另外我想要把從POSITIVE_REFERENCE or NEGATIVE_REFERENCE最後計算的2D histogram以及所有需要用來在target計算segmentation masks的所有data跟參數存在txt file, 目的是往後用在其他target images不需要載入POSITIVE_REFERENCE or NEGATIVE_REFERENCE的image, 只需要txt上面的參數就好.
+
+這個新增加的colab code跟上一個colab code一樣figure file存在OUTPUT_PATH下面的新開一個sub folder以月分日期跟時間命名譬如"10301639"代表10月30日16點39分使用now = datetime.datetime.now(ZoneInfo("America/New_York")). 然後再把這個subfolder名字後面加上"_lume_analysis_result(v3)". 把figuers儲存存在這個新subfolder. 在之前colab已經定義OUTPUT_PATH = os.path.join(PROJECT_ROOT, "output", "Lume images"). 如果有輸出txt file則存在同個subfolder. 把code裡面會影響結果的parameter集中放在import下方方便設定, code儘量function化, code中的comments也都用英文. 並注意不要犯這個錯誤: module 'cv2' has no attribute 'COLOR_BGR_RGB'
+```
+-> # ----- 5. (version 3) Example-Based Segmentation (Histogram Backprojection) -----
+
+
+結果:11041459_histBack_model(v3) 
+BINS_CH1 = 15, BINS_CH2 = 15
+
+結果:11041459_histBack_model(v3) 
+BINS_CH1 = 10, BINS_CH2 = 10
+
+結果:11041524_histBack_model(v3) 
+BINS_CH1 = 10, BINS_CH2 = 10
+POSITIVE_REFERENCE_PATHS = [hour_image_paths[0], hour_image_paths[3]]
+POSITIVE_ROI_FACTORS_LIST = [[0.50, 0.70, 0.4, 0.6],[0.16, 0.79, 0.10, 0.86]]
+NEGATIVE_REFERENCE_PATHS = [hour_image_paths[6]]
+NEGATIVE_ROI_FACTORS_LIST = [[0.18, 0.30, 0.26, 0.38]]
+好像加入negative samples幾乎所有segmentation masks都消失
+
+
+結果:11041529_histBack_model(v3) 
+BINS_CH1 = 15, BINS_CH2 = 15
+NEGATIVE_REFERENCE_PATHS = [hour_image_paths[6]]
+NEGATIVE_ROI_FACTORS_LIST = [[0.18, 0.30, 0.26, 0.38]]
+
+結果:11041538_histBack_model(v3) 
+BINS_CH1 = 15, BINS_CH2 = 15
+POSITIVE_REFERENCE_PATHS = [hour_image_paths[0]]
+POSITIVE_ROI_FACTORS_LIST = [[0.50, 0.70, 0.4, 0.6]]
+NEGATIVE_REFERENCE_PATHS = [hour_image_paths[6]]
+NEGATIVE_ROI_FACTORS_LIST = [[0.18, 0.30, 0.26, 0.38]]
+
+
+```
+以下是colab code可以用Example-Based Segmentation / Histogram Backprojection在image上偵測相似區域並建立segmentation mask. 想改變機制 POSITIVE_ROI_FACTORS_LIST跟NEGATIVE_ROI_FACTORS_LIST內部代表每個ROI的list多加一個參數weight(0~1)所以現在每個list有五個數字. 這個weight代表權重, 權重越大越dominate直方圖. 另外positive_ROI跟negative_ROI都作用在同個直方圖上, positive_ROI會增加對應bin的數值(也受權重影響), neative_ROI會減少對應bin的數值(也受權重影響). 請提供新的code.
+
+這個新增加的colab code跟上一個colab code一樣figure file存在OUTPUT_PATH下面的新開一個sub folder以月分日期跟時間命名譬如"10301639"代表10月30日16點39分使用now = datetime.datetime.now(ZoneInfo("America/New_York")). 然後再把這個subfolder名字後面加上"_lume_histBack_result(v4)". 把figuers儲存存在這個新subfolder. 在之前colab已經定義OUTPUT_PATH = os.path.join(PROJECT_ROOT, "output", "Lume images"). 如果有輸出txt file則存在同個subfolder. 把code裡面會影響結果的parameter集中放在import下方方便設定, code儘量function化, code中的comments也都用英文. 並注意不要犯這個錯誤: module 'cv2' has no attribute 'COLOR_BGR_RGB'
+```
+-> # ----- 5. (version 4) Example-Based Segmentation (Histogram Backprojection) -----
+
+結果:11041613_lume_histBack_result(v4)
+	POSITIVE_REFERENCE_PATHS = [hour_image_paths[0], hour_image_paths[1]]
+	POSITIVE_ROI_FACTORS_LIST = [[0.50, 0.70, 0.4, 0.6, 1.0],[0.16, 0.79, 0.10, 0.86, 1.0]]
+	NEGATIVE_REFERENCE_PATHS = [hour_image_paths[6]]
+	NEGATIVE_ROI_FACTORS_LIST = [[0.18, 0.3, 0.26, 0.38, 0.2]]
+	
+結果:11041622_lume_histBack_result(v4)
+	POSITIVE_REFERENCE_PATHS = [hour_image_paths[0], hour_image_paths[1]]
+	POSITIVE_ROI_FACTORS_LIST = [[0.50, 0.70, 0.4, 0.6, 1.0],[0.16, 0.79, 0.10, 0.86, 1.0]]
+	NEGATIVE_REFERENCE_PATHS = [hour_image_paths[6]]
+	NEGATIVE_ROI_FACTORS_LIST = [[0.18, 0.3, 0.26, 0.38, 1.0]]
+--> 全部都是segmentation masks?
+
+結果:11041622_lume_histBack_result(v4)
+	POSITIVE_REFERENCE_PATHS = [hour_image_paths[0], hour_image_paths[1]]
+	POSITIVE_ROI_FACTORS_LIST = [[0.50, 0.70, 0.4, 0.6, 1.0],[0.16, 0.79, 0.10, 0.86, 1.0]]
+	NEGATIVE_REFERENCE_PATHS = [hour_image_paths[6]]
+	NEGATIVE_ROI_FACTORS_LIST = [[0.18, 0.3, 0.26, 0.38, 1.0]]
+
+結果:11041636_lume_histBack_result(v4)
+	POSITIVE_REFERENCE_PATHS = [hour_image_paths[6]]
+	POSITIVE_ROI_FACTORS_LIST = [[0.40, 0.56, 0.21, 0.39, 1.0]]
+	NEGATIVE_REFERENCE_PATHS = [hour_image_paths[6]]
+	NEGATIVE_ROI_FACTORS_LIST = [[0.18, 0.3, 0.26, 0.38, 1.0]]
+	
+結果:11041643_lume_histBack_result(v4)
+		Select: [ 2, 3 ]
+	POSITIVE_REFERENCE_PATHS = [hour_image_paths[6]]
+	POSITIVE_ROI_FACTORS_LIST = [[0.40, 0.56, 0.21, 0.39, 1.0]]
+	NEGATIVE_REFERENCE_PATHS = [hour_image_paths[6]]
+	NEGATIVE_ROI_FACTORS_LIST = [[0.18, 0.3, 0.26, 0.38, 1.0]]
 
 
 
