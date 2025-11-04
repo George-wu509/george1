@@ -13,14 +13,35 @@
 
 #### Project 4 - Dialtext
 
+|                                                                                | All | Best | Note |
+| ------------------------------------------------------------------------------ | --- | ---- | ---- |
+| # ----- 1. Import dependent -----                                              | 1   | 1    |      |
+| # ----- 2. Project folder and device/device setup -----                        | 1   | 1    |      |
+| # ----- 3. images loading: dial text -----                                     | 1   | 1    |      |
+| # ----- 4. (version 2)create OCR region segmentation masks and analysis  ----- | 2   | 2    |      |
+
 1031
 create OCR region segmentation masks and analysis
+```
+這個Colab code 用easyOCR跟pytesseract兩階段偵測text. 但在pytesseract有時候在較緊密的字間隔時可能會漏掉字, 以及明明easyOCR已經偵測出一串字譬如"GMT"的box, 但pytesseract都辨識不出來. 或者有時候easyOCR偵測的"PERPETUAL"但pytesseract把"UA"框成一個. 請想辦法解決上述issue並提供code. 
 
+這個colab codefigure file存在OUTPUT_PATH下面的新開一個sub folder以月分日期跟時間命名譬如"10301639"代表10月30日16點39分使用now = datetime.datetime.now(ZoneInfo("America/New_York")). 然後再把這個subfolder名字後面加上"_dialtext_result(v2)". 把figuers儲存存在這個新subfolder. 在之前colab已經定義OUTPUT_PATH = os.path.join(PROJECT_ROOT, "output", "Lume images"). 如果有輸出txt file則存在同個subfolder. 把code裡面會影響結果的parameter集中放在import下方方便設定, code儘量function化, code中的comments也都用英文. 並注意不要犯這個錯誤: module 'cv2' has no attribute 'COLOR_BGR_RGB'
+```
+-> ----- 4. (version 2)create OCR region segmentation masks and analysis  -----
 
 
 
 #### Project 5 - Lume
 
+|                                                                                    | All | Best | Note |
+| ---------------------------------------------------------------------------------- | --- | ---- | ---- |
+| # ----- 1. Import dependent -----                                                  | 1   | 1    |      |
+| # ----- 2. Project folder and device/device setup -----                            | 1   | 1    |      |
+| # ----- 3. images loading: DATA_LUME_PATH -----                                    | 1   | 1    |      |
+| # ----- 4. calculate image features summary                                        | 1   | 1    |      |
+| # ----- 5. (version 2) Example-Based Segmentation (Histogram Backprojection) ----- | 1,2 | 2    |      |
+| # ----- 6. (version 1) Lume mask classification and analysis -----                 | 1   | 1    |      |
+|                                                                                    |     |      |      |
 
 1031
 Features: Hue, Sarturation contrast looks good, Texture not working
@@ -29,9 +50,97 @@ FFT not working
 [New code result] 
 
 
+```
+對「基於範例的分割（直方圖反向投影）」(Example-Based Segmentation / Histogram Backprojection) 方法的詳細中文解釋。
+
+什麼是直方圖反向投影？
+直方圖反向投影 (Histogram Backprojection) 是一種影像分割技術，其核心思想是：使用一個「範例」（Model）來尋找一張「目標影像」（Target Image）中所有與該範例相似的區域。它是一種"有監督" (supervised) 的方法，因為您需要先提供一個您感興趣的物體（即前景，Foreground）的範例。想像一下，您有一個物體（例如一塊特定的藍色布料）的「特徵指紋」。這個「指紋」就是直方圖(Histogram)。然後，您拿著這個指紋去掃描整張目標影像，為每個像素打分，分數高低代表該像素與「指紋」的匹配程度。這張「分數地圖」就是機率圖 (Probability Map)。最後，您設定一個分數門檻（Threshold），高於這個門檻的像素就被認為是您要找的物體。
+
+核心流程詳解
+1. 建立「模型」（特徵指紋）
+最簡單的反向投影是使用「顏色」。
+
+選定範例 (ROI)： 從一張參考影像中，手動框選一小塊您感興趣的區域 (Region of Interest, ROI)，例如您想找的皮膚、草地或天空。
+
+計算直方圖： 計算這個 ROI 區域的顏色直方圖（例如，在 HSV 色彩空間中，只計算 H (色相) 和 S (飽和度) 的 2D 直方圖）。
+
+正規化 (Normalize)： 將這個直方圖正規化（數值縮放到 0-1 或 0-255 之間）。
+
+這個正規化後的直方圖就是您的模型 (Model)。直方圖中的每個「bin」（區間）現在代表的是「一個像素具有 這個 特徵組合（例如 Hue=50, Sat=100）的機率有多高」。
+
+2. 執行「反向投影」
+載入目標影像： 讀取您想要進行分割的完整影像。
+
+遍歷像素： 對目標影像中的每一個像素執行以下操作：
+
+取得該像素的特徵值（例如，它的 H 和 S 值）。
+
+查找模型： 以這個 (H, S) 值作為索引，去您在步驟 1 建立的「模型直方圖」中查找對應的機率分數。
+
+繪製機率圖： 將這個分數寫入到一張新的、空白的單通道影像（機率圖）的相同位置。
+
+取得機率圖： 當所有像素都處理完畢後，您會得到一張灰階影像。這就是反向投影機率圖 (Back-Projection Probability Map)。
+
+在這張圖上，越亮的像素代表其特徵（顏色、紋理等）與您的「範例 ROI」越相似，屬於前景的機率越高。
+越暗的像素代表越不相似。
+
+3. 後處理與分割
+二值化 (Thresholding)： 對這張機率圖設定一個閾值（Threshold）。
+
+高於閾值的像素設為 255 (白色，前景)。
+
+低於閾值的像素設為 0 (黑色，背景)。
+
+您現在得到了一個二值遮罩 (Binary Mask)。
+
+形態學操作 (Morphological Operations)： 這個遮罩通常會有很多雜訊（小黑點或小白點）。
+
+開啟 (Opening)： (先侵蝕再膨脹) 可以去除小的白色雜訊點（像「鹽巴」）。
+
+關閉 (Closing)： (先膨脹再侵蝕) 可以填補前景物體內部的小黑洞（像「胡椒」）。
+```
+-> # ----- 5. (version 1) Example-Based Segmentation (Histogram Backprojection) -----
+
+11031521結果:
+對很多image可正確segment lume region但有些外面的小顆粒 or 內部有些小區域沒分割到, 只需要用opening or closing處理或改變threshold. 但有些images幾乎所有區域都分割到, 要檢查哪個ROI或bin number, 或threshold可以有最robust的結果適用所有images.
+
+--> (1) open or close (2) smooth contour
+```
+以下是colab code可以用Example-Based Segmentation / Histogram Backprojection在image上偵測相似區域並建立segmentation mask. 因為這樣生成出來的mask外面有很多小顆粒, 內部也有空洞. 在這個colab cell code請稍微修改加上proprocessing用opening operator並把mask內部的hole填補成為mask, 而如果有多餘一個連續的masks出現則取最大面積為main segmentation mask. 而這個main mask在下一個Colab cell 6會繼續進一步的分析.
+```
+-> # ----- 5. (version 2) Example-Based Segmentation (Histogram Backprojection) -----
+
+
+
+```
+在這個Colab cell 6中會判斷這個mask的類別. 有四種mask類別包括1."hours", 2."minutes", 3."seconds", 4."GMT". 可以從計算mask的輪廓去判斷. 計算mask的輪廓然後可以用最長直線跟最長圓型的去嘗試fit mask的輪廓(譬如如果是長方形應該就會有四條直線). 並計算輪廓上的直線跟曲線(可以用有圓心跟固定radius去逼近)的佔比, 以及直線跟直線之間的角度. 另外如果是直線則要儲存兩端點的座標以及長度, 如果是曲線, 則儲存圓心跟固定radius, 以及曲線兩端點.
+
+如果mask的輪廓曲線佔30%以上, 以及輪廓直線佔30%以上, mask則屬於"hours"
+如果mask的輪廓曲線佔5%以下, 以及輪廓直線佔95%以上, 而且有兩個直線mask角度是80度到100度之間則屬於"minutes"
+如果mask的輪廓曲線佔90%以上, 以及輪廓直線佔10%以下, mask則屬於"seconds"
+如果mask的輪廓曲線佔5%以下, 以及輪廓直線佔95%以上, 而且只有一個或沒有直線mask角度是80度到100度之間mask則屬於"GMT"
+這些mask類別以及直線跟曲線各項information可以儲存在txt file.
+
+這個新增加的colab code跟上一個colab code一樣figure file存在OUTPUT_PATH下面的新開一個sub folder以月分日期跟時間命名譬如"10301639"代表10月30日16點39分使用now = datetime.datetime.now(ZoneInfo("America/New_York")). 然後再把這個subfolder名字後面加上"_lume_analysis_result". 把figuers儲存存在這個新subfolder. 在之前colab已經定義OUTPUT_PATH = os.path.join(PROJECT_ROOT, "output", "Lume images"). 如果有輸出txt file則存在同個subfolder. 把code裡面會影響結果的parameter集中放在import下方方便設定, code儘量function化, code中的comments也都用英文. 並注意不要犯這個錯誤: module 'cv2' has no attribute 'COLOR_BGR_RGB'
+```
+-> # ----- 6. (version 1) Lume mask classification and analysis -----
+
+11031521結果:
+
+
+
 
 
 #### Project 6 - Features
+
+|                                                                          | All | Best | Note |
+| ------------------------------------------------------------------------ | --- | ---- | ---- |
+| # ----- 1. Import dependent -----                                        | 1   | 1    |      |
+| # ----- 2. Project folder and device/device setup -----                  | 1   | 1    |      |
+| # ----- 3. images loading: Features -----                                | 1   | 1    |      |
+| # ----- 4. calculate image features summary                              | 1   | 1    |      |
+| # ----- 5.(version 6) - Image automatic mask generation using SAM  ----- | 1-6 | 6    |      |
+|                                                                          |     |      |      |
 
 1031
 SAM can do good segmentation but how to decide foreground and background?
@@ -48,7 +157,7 @@ FFT good in some images, but all image type?
 
 這個新增加的colab code跟上一個colab code一樣figure file存在OUTPUT_PATH下面的新開一個sub folder以月分日期跟時間命名譬如"10301639"代表10月30日16點39分, 然後再把這個subfolder名字後面加上"_dinov3(v2)". 把figuers儲存存在這個新subfolder. 在之前colab已經定義OUTPUT_PATH = os.path.join(PROJECT_ROOT, "output", "Lume images"). 如果有輸出txt file則存在同個subfolder. code儘量function化, code中的comments也都用英文
 ```
---> # ----- 10.(version 2) - Image automatic mask generation using SAM  -----
+--> # ----- 5.(version 2) - Image automatic mask generation using SAM  -----
 
 11010925結果:
 結果發現在分割跟cluster segment背景區域時會找到某些小區域, 所以新增限制條件background一定要大於30% image pixel numbers. 另外結果也發現center_mask有包含background區域, 也重寫code.
@@ -59,7 +168,7 @@ FFT good in some images, but all image type?
 這個新增加的colab code跟上一個colab code一樣figure file存在OUTPUT_PATH下面的新開一個sub folder以月分日期跟時間命名譬如"10301639"代表10月30日16點39分, 然後再把這個subfolder名字後面加上"_dinov3(v2)". 把figuers儲存存在這個新subfolder. 在之前colab已經定義OUTPUT_PATH = os.path.join(PROJECT_ROOT, "output", "Lume images"). 如果有輸出txt file則存在同個subfolder. code儘量function化, code中的comments也都用英文
 
 ```
---> # ----- 10.(version 3) - Image automatic mask generation using SAM  -----
+--> # ----- 5.(version 3) - Image automatic mask generation using SAM  -----
 
 11011024結果:
 結果發現:
@@ -70,7 +179,7 @@ FFT good in some images, but all image type?
 
 這個新增加的colab code跟上一個colab code一樣figure file存在OUTPUT_PATH下面的新開一個sub folder以月分日期跟時間命名譬如"10301639"代表10月30日16點39分, 然後再把這個subfolder名字後面加上"_dinov3(v2)". 把figuers儲存存在這個新subfolder. 在之前colab已經定義OUTPUT_PATH = os.path.join(PROJECT_ROOT, "output", "Lume images"). 如果有輸出txt file則存在同個subfolder. 把code裡面會影響結果的parameter集中放在import下方方便設定, code儘量function化, code中的comments也都用英文
 ```
---> # ----- 10.(version 4) - Image automatic mask generation using SAM  -----
+--> # ----- 5.(version 4) - Image automatic mask generation using SAM  -----
 
 11011024結果:
 結果如果刪除例外區域應該重新再clustering, 所以修正
@@ -80,13 +189,39 @@ FFT good in some images, but all image type?
 
 這個新增加的colab code跟上一個colab code一樣figure file存在OUTPUT_PATH下面的新開一個sub folder以月分日期跟時間命名譬如"10301639"代表10月30日16點39分使用now = datetime.datetime.now(ZoneInfo("America/New_York")). 然後再把這個subfolder名字後面加上"_dinov3(v2)". 把figuers儲存存在這個新subfolder. 在之前colab已經定義OUTPUT_PATH = os.path.join(PROJECT_ROOT, "output", "Lume images"). 如果有輸出txt file則存在同個subfolder. 把code裡面會影響結果的parameter集中放在import下方方便設定, code儘量function化, code中的comments也都用英文
 ```
---> # ----- 10.(version 5) - Image automatic mask generation using SAM  -----
+--> # ----- 5.(version 5) - Image automatic mask generation using SAM  -----
 
 11011024結果:
+
+```
+以下是colab code想要增加一點功能. 在最後得到Background mask之後計算background的Texture(std dev), texture(entropy), contrast(range). 以及三種texture類別. "highly textured", "lightly textured", or "smooth". 如果Texture(std dev) >= 50則為textured", 如果20 < Texture(std dev) >50則為"lightly textured", 如果Texture(std dev) <= 20則為"smooth"
+
+這個新增加的colab code跟上一個colab code一樣figure file存在OUTPUT_PATH下面的新開一個sub folder以月分日期跟時間命名譬如"10301639"代表10月30日16點39分使用now = datetime.datetime.now(ZoneInfo("America/New_York")). 然後再把這個subfolder名字後面加上"_features_feature result". 把figuers儲存存在這個新subfolder. 在之前colab已經定義OUTPUT_PATH = os.path.join(PROJECT_ROOT, "output", "Lume images"). 如果有輸出txt file則存在同個subfolder. 把code裡面會影響結果的parameter集中放在import下方方便設定, code儘量function化, code中的comments也都用英文
+```
+--> # ----- 5.(version 6) - Image automatic mask generation using SAM  -----
+
+
+
+
+
+
+
+
 
 
 
 #### Project 7 - Movement dimensions1
+
+|                                                                           | All | Best | Note |
+| ------------------------------------------------------------------------- | --- | ---- | ---- |
+| # ----- 1. Import dependent -----                                         | 1   | 1    |      |
+| # ----- 2. Project folder and device/device setup -----                   | 1   | 1    |      |
+| # ----- 3. images loading: movement dimensions1 -----                     | 1   | 1    |      |
+| # ----- 4. calculate image features summary                               | 1   | 1    |      |
+| # ----- 5a. Clone and install DINOv3 repo and load checkpoints  -----     | 1   | 1    |      |
+| # ----- 5b. Create DINOv3 model with weights and related functions  ----- | 1   | 1    |      |
+| # ----- 5c.(version 3) use self-supervised learning model (DINOv3) -----  | 3   | 3    |      |
+| # ----- 5d. (version 12) DINOv3 Mask Analysis -----                       | 12  | 12   |      |
 
 1031
 Looks like DINOv3 works great, but sometimes need to automatically decide the “positive” or “negative” value to generate segmentation masks
@@ -177,7 +312,7 @@ DINOv3得到3跟矩形框沒有問題, 但要將矩形框移除還是有問題, 
 
 這個新增加的colab code跟上一個colab code一樣figure file存在OUTPUT_PATH下面的新開一個sub folder以月分日期跟時間命名譬如"10301639"代表10月30日16點39分使用now = datetime.datetime.now(ZoneInfo("America/New_York")). 然後再把這個subfolder名字後面加上"_dinov3(v2)". 把figuers儲存存在這個新subfolder. 在之前colab已經定義OUTPUT_PATH = os.path.join(PROJECT_ROOT, "output", "Lume images"). 如果有輸出txt file則存在同個subfolder. 把code裡面會影響結果的parameter集中放在import下方方便設定, code儘量function化, code中的comments也都用英文.
 ```
--> # ----- 8d. (version 7) DINOv3 Mask Analysis (Frame Removal & Skeleton) -----
+-> # ----- 5d. (version 7) DINOv3 Mask Analysis (Frame Removal & Skeleton) -----
 
 ```
 矩形框正確移除及其他小塊區域也可移除, 3已經可以在未恢復原圖size的image得到segmentation mask. 但之後的運算應該都完全在原始image的size下運算包括原始image以及segmentation mask的image. 包括在原始圖大小的segmentation mask image先平滑化segmentation mask的邊緣, 再用pixel=40的dilation morphology filter處理, 然後在這個新的segmentation mask區域以每個pixel的contrast為基準(3的區域應該是contrast較低, 3的外面區域contrast較高)先建立contrast map, 並用大小為20的gaussian filter平滑化contrast map, 再從segmentation mask外圍向內部包圍得到新的3的精細segmentation mask. 在這裡對segmentation mask用大小為10的opening filter之後再對輪廓做平滑化, 再用Stage 1：Morphological closing 修補凹痕, 去除 jagged edges、鋸齒或過於複雜的邊界, 平滑後的邊界貼合真實影像邊緣，而不只是幾何平均化(使用 DenseCRF (Krähenbühl & Koltun))為最終的segmentation mask. 
@@ -191,17 +326,29 @@ DINOv3得到3跟矩形框沒有問題, 但要將矩形框移除還是有問題, 
 (version 9)
 
 ```
--> # ----- 8d. (version 8) DINOv3 Mask Analysis (Frame Removal & Skeleton) -----
+-> # ----- 5d. (version 10) DINOv3 Mask Analysis (Frame Removal & Skeleton) -----
 
 11011531結果:
-試驗結果對一些case有很平滑的輪廓, 但某些case還是凹下去或形狀奇怪. 需要繼續改進平滑化
+試驗結果對一些case有很平滑的輪廓, 但某些case還是凹下去或形狀奇怪. 需要繼續改進平滑化. 
 
 
 ```
+這個Colab code新增及修改一些功能請提供新的code: 對最後得到的final mask得到輪廓線, 並用直線和曲線去fit這條輪廓線(某些線段是直線, 有些線段是曲線有圓心跟固定radius), 記錄下每個直線段的頭尾座標以及距離, 直線部分跟明顯轉折點以及轉折的角度都計算出來. 曲線的頭尾座標, 圓心座標跟radius以及線段長. 接著計算mask的skeleton以及這個skeleton line到數字mask boundary的距離(thickness), 可以用在skeleton每隔一段距離的座標點並記下thickness. 還有skeleton line的頭跟尾各有一條接近垂直於skeleton line的直線, 輸出這兩條直線(頭跟尾)的夾角. 另外檢查這個mask的skeleton line的1/3*thickness區域在image上有明顯的黑色區域, 則這個mask類型是"type 1", 如果沒有則是"type 2"
+
+這個colab code一樣figure file存在OUTPUT_PATH下面的新開一個sub folder以月分日期跟時間命名譬如"10301639"代表10月30日16點39分使用now = datetime.datetime.now(ZoneInfo("America/New_York")). 然後再把這個subfolder名字後面加上"_movement1_dinov3_bone_result". 把figuers儲存存在這個新subfolder. 在之前colab已經定義OUTPUT_PATH = os.path.join(PROJECT_ROOT, "output", "Lume images"). 如果有輸出txt file則存在同個subfolder. 把code裡面會影響結果的parameter集中放在import下方方便設定, code儘量function化, code中的comments也都用英文.
+
 
 ```
+-> # ----- 5d. (version 11) DINOv3 Mask Analysis -----
 
 
+
+```
+這個Colab code新增及修改一個功能: 在已得到的skeleton, 找尋skeleton中間最靠近的中間輪廓直線. 並計算之前計算過的skeleton兩條直線(頭跟尾)接近垂直於skeleton line的直線跟中間輪廓直線的夾角
+
+這個colab code一樣figure file存在OUTPUT_PATH下面的新開一個sub folder以月分日期跟時間命名譬如"10301639"代表10月30日16點39分使用now = datetime.datetime.now(ZoneInfo("America/New_York")). 然後再把這個subfolder名字後面加上"_movement1_dinov3_bone_result(v12)". 把figuers儲存存在這個新subfolder. 在之前colab已經定義OUTPUT_PATH = os.path.join(PROJECT_ROOT, "output", "Lume images"). 如果有輸出txt file則存在同個subfolder. 把code裡面會影響結果的parameter集中放在import下方方便設定, code儘量function化, code中的comments也都用英文.
+```
+-> # ----- 5d. (version 12) DINOv3 Mask Analysis -----
 
 
 
@@ -213,6 +360,18 @@ DINOv3得到3跟矩形框沒有問題, 但要將矩形框移除還是有問題, 
 
 
 #### Project 8 - Movement dimensions2
+
+|                                                                                   | All | Best | Note |
+| --------------------------------------------------------------------------------- | --- | ---- | ---- |
+| # ----- 1. Import dependent -----                                                 | 1   | 1    |      |
+| # ----- 2. Project folder and device/device setup -----                           | 1   | 1    |      |
+| # ----- 3. images loading: movement dimensions1 -----                             | 1   | 1    |      |
+| # ----- 4. calculate image features summary                                       | 1   | 1    |      |
+| # ----- 5a. Clone and install DINOv3 repo and load checkpoints  -----             | 1   | 1    |      |
+| # ----- 5b. Create DINOv3 model with weights and related functions  -----         | 1   | 1    |      |
+| # ----- 5c.(version 8) use self-supervised learning model (DINOv3) -----          | 8   | 8    |      |
+| # ----- 5d. (version 1) Smooth  DINOv3 segmentation mask and follow analysis----- | 1-7 | 3    |      |
+| ----- 5e. (version 1) DINOv3 fine segmentation Text Mask Analysis -----           | 1   | 1    |      |
 
 1031
 DINOv3 first and second PCA affect by light and texture, but 3nd PCA may works, still have positive and negative issue
@@ -442,5 +601,16 @@ Text的輪廓segmentation mask有抓到, 但內部有洞, 外部也有獨立小�
 11030127結果(8d. (version 6)): 11030127_movement2_dinov3_ske_result
 
 
-看起來目前使用11021835_movement2_dinov3_ske_result
+看起來目前使用11021835_movement2_dinov3_ske_result  (應該是5d. (version 3))
 ![[Pasted image 20251103075610.png]]
+
+
+
+```
+這個Colab code (5d.(version 3)) 會輸出一個final_refined_mask. 請新創一個新的colab cell繼續final_refined_mask下面的分析請提供code: 對最後得到的final_refined_mask得到輪廓線, 並用直線和曲線去fit這條輪廓線(某些線段是直線, 有些線段是曲線有圓心跟固定radius), 記錄下每個直線段的頭尾座標以及距離, 直線部分跟明顯轉折點以及轉折的角度都計算出來. 曲線的頭尾座標, 圓心座標跟radius以及線段長. 接著計算mask的skeleton以及這個skeleton line到數字mask boundary的距離(thickness), 可以用在skeleton每隔一段距離的座標點並記下thickness. 另外檢查這個mask的skeleton line的1/3*thickness區域在image上有明顯的黑色區域, 則這個mask類型是"type 1", 如果沒有則是"type 2". 
+
+然後這個final mask是由幾個獨立mask(連續有接連的pixel區域)組成. 這是水平方向的幾個英文字數字, 或者是字體轉90度垂直方向的幾個英文字數字. 我們可以判斷這些字體是水平方向字體或垂直方向字體可以把這些獨立mask各計算中心座標, 然後看他們如果中心座標主要x方向間距大於 y方向間距那代表就是水平. x方向間距小於 y方向間距那代表就是垂直. 當判斷是水平方向字體, 則final mask的每個獨立mask(連續有接連的pixel區域)用x,y的min, max得到box的四個端點座標以及個別的height跟width, 以及用OCR去辨識是甚麼英文字或數字, 對每個box用原來的box以及轉180度再去用OCR去辨識並採最高confidence去決定text並輸出. 當判斷是垂直方向字體時, 先把每個box先轉90度, 之後的流程就跟水平方向字體流程一樣.
+
+這個新增加的colab code跟上一個colab code一樣figure file存在OUTPUT_PATH下面的新開一個sub folder以月分日期跟時間命名譬如"10301639"代表10月30日16點39分使用now = datetime.datetime.now(ZoneInfo("America/New_York")). 然後再把這個subfolder名字後面加上"_movement2_dinov3_text_result(v1)". 把figuers儲存存在這個新subfolder. 在之前colab已經定義OUTPUT_PATH = os.path.join(PROJECT_ROOT, "output", "Lume images"). 如果有輸出txt file則存在同個subfolder. 把code裡面會影響結果的parameter集中放在import下方方便設定, code儘量function化, code中的comments也都用英文. 並注意不要犯這個錯誤: module 'cv2' has no attribute 'COLOR_BGR_RGB'
+```
+-> # ----- 5e. (version 1) DINOv3 fine segmentation Text Mask Analysis -----
