@@ -10,24 +10,44 @@
 
 
 
-
 #### Project 4 - Dialtext
 
-|                                                                                | All | Best | Note |
-| ------------------------------------------------------------------------------ | --- | ---- | ---- |
-| # ----- 1. Import dependent -----                                              | 1   | 1    |      |
-| # ----- 2. Project folder and device/device setup -----                        | 1   | 1    |      |
-| # ----- 3. images loading: dial text -----                                     | 1   | 1    |      |
-| # ----- 4. (version 2)create OCR region segmentation masks and analysis  ----- | 2   | 2    |      |
 
-1031
+|                                                                                    | All | Best | Note |
+| ---------------------------------------------------------------------------------- | --- | ---- | ---- |
+| # ----- 1. Import dependent -----                                                  | 1   | 1    |      |
+| # ----- 2. Project folder and device/device setup -----                            | 1   | 1    |      |
+| # ----- 3. images loading: dial text -----                                         | 1   | 1    |      |
+| ----- 4. (version 6) create OCR region segmentation masks and analysis ----- ----- | 6   | 6    |      |
+
+
+
+
 create OCR region segmentation masks and analysis
 ```
 這個Colab code 用easyOCR跟pytesseract兩階段偵測text. 但在pytesseract有時候在較緊密的字間隔時可能會漏掉字, 以及明明easyOCR已經偵測出一串字譬如"GMT"的box, 但pytesseract都辨識不出來. 或者有時候easyOCR偵測的"PERPETUAL"但pytesseract把"UA"框成一個. 請想辦法解決上述issue並提供code. 
 
 這個colab codefigure file存在OUTPUT_PATH下面的新開一個sub folder以月分日期跟時間命名譬如"10301639"代表10月30日16點39分使用now = datetime.datetime.now(ZoneInfo("America/New_York")). 然後再把這個subfolder名字後面加上"_dialtext_result(v2)". 把figuers儲存存在這個新subfolder. 在之前colab已經定義OUTPUT_PATH = os.path.join(PROJECT_ROOT, "output", "Lume images"). 如果有輸出txt file則存在同個subfolder. 把code裡面會影響結果的parameter集中放在import下方方便設定, code儘量function化, code中的comments也都用英文. 並注意不要犯這個錯誤: module 'cv2' has no attribute 'COLOR_BGR_RGB'
 ```
--> ----- 4. (version 2)create OCR region segmentation masks and analysis  -----
+
+```
+以下是Colab code可以從錶面用2 step OCR去先用easyOCR辨識單詞, 並在這個單詞的box內利用pytesseract辨識character level 英文字或數字.
+
+但我使用時step OCR去先用easyOCR辨識單詞結果不錯, 但接下來character level似乎出一些issue. 譬如easyOCR辨識的"OYSTER", pytesseract無法辨識其中的"O","Y","S","T","E","R"的所有character. easyOCR辨識的"GMT", pytesseract無法辨識其中的"G","M","T"所有character. 譬如easyOCR辨識的"300m", pytesseract無法辨識其中的"3","0","0","m"的所有character.或者pytesseract辨識"PERPETUAL"他會把"UA"放在同個字, 或者pytesseract會把"ER", "AT"放在同個字,或者有些稍微傾斜類似稍微草寫的字也無法辨識. 
+
+這個colab codefigure file存在OUTPUT_PATH下面的新開一個sub folder以月分日期跟時間命名譬如"10301639"代表10月30日16點39分使用now = datetime.datetime.now(ZoneInfo("America/New_York")). 然後再把這個subfolder名字後面加上"_dialtext_result(v3)". 把figuers儲存存在這個新subfolder. 在之前colab已經定義OUTPUT_PATH = os.path.join(PROJECT_ROOT, "output", "Lume images"). 如果有輸出txt file則存在同個subfolder. 把code裡面會影響結果的parameter集中放在import下方方便設定, code儘量function化, code中的comments也都用英文. 並注意不要犯這個錯誤: module 'cv2' has no attribute 'COLOR_BGR_RGB'
+```
+
+
+
+參考# ----- 4.(version 1) create OCR region segmentation masks and analysis  -----
+```
+以下是Colab code可以從錶面用2 step OCR去先用easyOCR辨識單詞, 並在這個單詞的box內利用pytesseract辨識character level 英文字或數字. 但我使用時step OCR去先用easyOCR辨識單詞結果不錯, 但接下來character level似乎出一些issue. 譬如easyOCR辨識的"OYSTER", pytesseract無法辨識其中的"O","Y","S","T","E","R"的所有character. easyOCR辨識的"GMT", pytesseract無法辨識其中的"G","M","T"所有character. 譬如easyOCR辨識的"300m", pytesseract無法辨識其中的"3","0","0","m"的所有character.或者pytesseract辨識"PERPETUAL"他會把"UA"放在同個字, 或者pytesseract會把"ER", "AT"放在同個字,或者有些稍微傾斜類似稍微草寫的字也無法辨識. 請增加一些設定可以讓OCR可以解決這些問題(譬如ADAPTIVE_THRESH_BLOCK_SIZE, ADAPTIVE_THRESH_C等等等), 其他不改變. 
+```
+-> # ----- 4.(version 2) create OCR region segmentation masks and analysis  -----
+
+
+
 
 
 
@@ -39,9 +59,10 @@ create OCR region segmentation masks and analysis
 | # ----- 2. Project folder and device/device setup -----                            | 1   | 1    |      |
 | # ----- 3. images loading: DATA_LUME_PATH -----                                    | 1   | 1    |      |
 | # ----- 4. calculate image features summary                                        | 1   | 1    |      |
-| # ----- 5. (version 3) Example-Based Segmentation (Histogram Backprojection) ----- | 1-3 | 3    |      |
+| # ----- 5. (version 4) Example-Based Segmentation (Histogram Backprojection) ----- | 1-8 | 8    |      |
 | # ----- 6. (version 1) Lume mask classification and analysis -----                 | 1   | 1    |      |
 |                                                                                    |     |      |      |
+
 
 1031
 Features: Hue, Sarturation contrast looks good, Texture not working
@@ -54,7 +75,7 @@ FFT not working
 對「基於範例的分割（直方圖反向投影）」(Example-Based Segmentation / Histogram Backprojection) 方法的詳細中文解釋。
 
 什麼是直方圖反向投影？
-直方圖反向投影 (Histogram Backprojection) 是一種影像分割技術，其核心思想是：使用一個「範例」（Model）來尋找一張「目標影像」（Target Image）中所有與該範例相似的區域。它是一種"有監督" (supervised) 的方法，因為您需要先提供一個您感興趣的物體（即前景，Foreground）的範例。想像一下，您有一個物體（例如一塊特定的藍色布料）的「特徵指紋」。這個「指紋」就是直方圖(Histogram)。然後，您拿著這個指紋去掃描整張目標影像，為每個像素打分，分數高低代表該像素與「指紋」的匹配程度。這張「分數地圖」就是機率圖 (Probability Map)。最後，您設定一個分數門檻（Threshold），高於這個門檻的像素就被認為是您要找的物體。
+直方圖反向投影 (Histogram Backprojection) 是一種影像分割技術，其核心思想是：使用一個「範例」（Model）來尋找一張「目標影像」（Target Image）中所有與該範例相似的區域。它是一種"有監督" (supervised) 的方法，因為您需要先提供一個您感興趣的物體（即前景，Foreground）的範例。想像一下，您有一個物體（例如一塊特定的藍色布料）的「特徵指紋」。這個「指紋」就是直方圖(Histogram)。然後，您拿著這個指紋去掃描整張目標影像，為每個像素打分，分數高低代表該像素與「指紋」的匹配程度。這張「分數地圖」就是機率圖 (Probability Map)。最後，您設定一個分數門檻（Threshold），高於這個門檻的像素就被認為是您要找的物體
 
 核心流程詳解
 1. 建立「模型」（特徵指紋）
@@ -206,7 +227,207 @@ NEGATIVE_ROI_FACTORS_LIST = [[0.18, 0.30, 0.26, 0.38]]
 	NEGATIVE_REFERENCE_PATHS = [hour_image_paths[6]]
 	NEGATIVE_ROI_FACTORS_LIST = [[0.18, 0.3, 0.26, 0.38, 1.0]]
 
+結果:11041959_lume_histBack_result(v4)
+		Select: [ 2, 2 ]
+	POSITIVE_REFERENCE_PATHS = [hour_image_paths[6]]
+	POSITIVE_ROI_FACTORS_LIST = [[0.40, 0.56, 0.21, 0.39, 1.0]]
+	NEGATIVE_REFERENCE_PATHS = [hour_image_paths[6]]
+	NEGATIVE_ROI_FACTORS_LIST = [[0.18, 0.3, 0.26, 0.38, 1.0]]
 
+
+在這裡還是以5. (version 3) Example-Based Segmentation (Histogram Backprojection)做修正
+```
+以下是colab code可以用Example-Based Segmentation / Histogram Backprojection在image上偵測相似區域並建立segmentation mask. 基於以下的code做修正, POSITIVE_ROI_FACTORS_LIST跟NEGATIVE_ROI_FACTORS_LIST內部代表每個ROI的list多加一個參數weight(0~1)所以現在每個list有五個數字. 這個weight代表權重, 權重越大越dominate直方圖. BACKPROJ_THRESHOLD_FG跟BACKPROJ_THRESHOLD_BG
+有沒有方法可以自動選擇? post processing部分在用了opening跟closing之後用三種不同method進行(有parameter選擇哪個method) method 1. 提取邊界cv2.findContours, 接著用Gaussian filter 平滑邊界座標, 接著用重建 mask. method 2. 提取邊界cv2.findContours, 接著用B-spline 平滑邊界座標, 接著用重建 mask. method 3. 用from scipy.ndimage import distance_transform_edt, gaussian_filter使用Distance transform + Gaussian filter + threshold
+
+這個新增加的colab code跟上一個colab code一樣figure file存在OUTPUT_PATH下面的新開一個sub folder以月分日期跟時間命名譬如"10301639"代表10月30日16點39分使用now = datetime.datetime.now(ZoneInfo("America/New_York")). 然後再把這個subfolder名字後面加上"_lume_histBack_result(v5)". 把figuers儲存存在這個新subfolder. 在之前colab已經定義OUTPUT_PATH = os.path.join(PROJECT_ROOT, "output", "Lume images"). 如果有輸出txt file則存在同個subfolder. 把code裡面會影響結果的parameter集中放在import下方方便設定, code儘量function化, code中的comments也都用英文. 並注意不要犯這個錯誤: module 'cv2' has no attribute 'COLOR_BGR_RGB'
+
+```
+-> # ----- 5. (version 5) Example-Based Segmentation (Histogram Backprojection) -----
+
+結果:11042147_lume_histBack_result(v5)
+	POSITIVE_REFERENCE_PATHS = [hour_image_paths[0], hour_image_paths[10]]
+	POSITIVE_ROI_FACTORS_LIST = [ [0.50, 0.70, 0.4, 0.6, 1.0],[0.45, 0.65, 0.22, 0.42, 0.8]]
+	AUTO_THRESHOLD = False
+	SMOOTHING_METHOD = "gaussian_contour"
+
+結果:11042154_lume_histBack_result(v5)
+	POSITIVE_REFERENCE_PATHS = [hour_image_paths[0], hour_image_paths[10]]
+	POSITIVE_ROI_FACTORS_LIST = [ [0.50, 0.70, 0.4, 0.6, 1.0],[0.45, 0.65, 0.22, 0.42, 0.8]]
+	AUTO_THRESHOLD = True
+	SMOOTHING_METHOD = "gaussian_contour"
+
+結果:11042159_lume_histBack_result(v5)
+	POSITIVE_REFERENCE_PATHS = [hour_image_paths[0], hour_image_paths[10]]
+	POSITIVE_ROI_FACTORS_LIST = [ [0.50, 0.70, 0.4, 0.6, 1.0],[0.45, 0.65, 0.22, 0.42, 0.8]]
+	AUTO_THRESHOLD = True
+	SMOOTHING_METHOD = "bspline_contour"
+
+結果:11042206_lume_histBack_result(v5)
+	POSITIVE_REFERENCE_PATHS = [hour_image_paths[0], hour_image_paths[10]]
+	POSITIVE_ROI_FACTORS_LIST = [ [0.50, 0.70, 0.4, 0.6, 1.0],[0.45, 0.65, 0.22, 0.42, 0.8]]
+	AUTO_THRESHOLD = False
+	BACKPROJ_THRESHOLD_FG = 2
+	BACKPROJ_THRESHOLD_BG = 2
+	SMOOTHING_METHOD = "bspline_contour"
+	SMOOTHING_SPLINE_S = 5.0
+	
+結果:11042224_lume_histBack_result(v5)
+	POSITIVE_REFERENCE_PATHS = [hour_image_paths[0], hour_image_paths[10]]
+	POSITIVE_ROI_FACTORS_LIST = [ [0.50, 0.70, 0.4, 0.6, 1.0],[0.45, 0.65, 0.22, 0.42, 0.8]]
+	AUTO_THRESHOLD = True
+	AUTO_THRESHOLD_RATIO = 0.6
+	SMOOTHING_METHOD = "bspline_contour"
+	SMOOTHING_SPLINE_S = 50.0
+
+結果:11042235_lume_histBack_result(v5)
+	POSITIVE_REFERENCE_PATHS = [hour_image_paths[0]]
+	POSITIVE_ROI_FACTORS_LIST = [ [0.50, 0.70, 0.4, 0.6, 1.0]]
+	AUTO_THRESHOLD = True
+	AUTO_THRESHOLD_RATIO = 0.6
+	SMOOTHING_METHOD = "bspline_contour"
+	SMOOTHING_SPLINE_S = 100.0
+
+
+在這裡還是以5. (version 5) Example-Based Segmentation (Histogram Backprojection)做修正
+```
+以下是colab code可以用Example-Based Segmentation / Histogram Backprojection在image上偵測相似區域並建立segmentation mask. 這個code也會將code2D histogram以及所有需要用來在target計算segmentation masks的所有data跟參數存在segmentation_model.json, 目的是往後用在其他target images不需要載入POSITIVE_REFERENCE or NEGATIVE_REFERENCE的image, 只需要segmentation_model.json上面的參數就好.基於以下的code加入這個功能其他不改變. 可以用JSON_PATH這個參數載入segmentation_model.json的path, 如果JSON_PATH不是empty, 則載入JSON上面的parameters而在target iamges建立segmentation masks, 也代表本來colab參數就不會影響譬如POSITIVE_REFERENCE_PATHS,  POSITIVE_ROI_FACTORS_LIST等
+
+這個新增加的colab code跟上一個colab code一樣figure file存在OUTPUT_PATH下面的新開一個sub folder以月分日期跟時間命名譬如"10301639"代表10月30日16點39分使用now = datetime.datetime.now(ZoneInfo("America/New_York")). 然後再把這個subfolder名字後面加上"_lume_histBack_result(v6)". 把figuers儲存存在這個新subfolder. 在之前colab已經定義OUTPUT_PATH = os.path.join(PROJECT_ROOT, "output", "Lume images"). 如果有輸出txt file則存在同個subfolder. 把code裡面會影響結果的parameter集中放在import下方方便設定, code儘量function化, code中的comments也都用英文. 並注意不要犯這個錯誤: module 'cv2' has no attribute 'COLOR_BGR_RGB'
+```
+-> # ----- 5. (version 6) Example-Based Segmentation (Histogram Backprojection) -----
+
+結果:11042325_lume_histBack_result(v6)
+	POSITIVE_REFERENCE_PATHS = [hour_image_paths[2], hour_image_paths[5]]
+	POSITIVE_ROI_FACTORS_LIST = [[0.4, 0.70, 0.10, 0.40, 1.0] , [0.30, 0.60, 0.25, 0.55, 0.8]]
+	AUTO_THRESHOLD = True
+	AUTO_THRESHOLD_RATIO = 0.6
+	SMOOTHING_METHOD = "bspline_contour"
+	SMOOTHING_SPLINE_S = 500.0
+
+結果:11042336_lume_histBack_result(v6)
+	POSITIVE_REFERENCE_PATHS = [hour_image_paths[2], hour_image_paths[5]]
+	POSITIVE_ROI_FACTORS_LIST = [[0.4, 0.70, 0.10, 0.40, 1.0] , [0.30, 0.60, 0.25, 0.55, 0.4]]
+	AUTO_THRESHOLD = True
+	AUTO_THRESHOLD_RATIO = 0.8
+	SMOOTHING_METHOD = "bspline_contour"
+	SMOOTHING_SPLINE_S = 500.0
+	
+結果:11042343_lume_histBack_result(v6)
+	POSITIVE_REFERENCE_PATHS = [hour_image_paths[2], hour_image_paths[5]]
+	POSITIVE_ROI_FACTORS_LIST = [[0.4, 0.70, 0.10, 0.40, 1.0] , [0.30, 0.60, 0.25, 0.55, 0.4]]
+	AUTO_THRESHOLD = True
+	AUTO_THRESHOLD_RATIO = 0.6
+	SMOOTHING_METHOD = "bspline_contour"
+	SMOOTHING_SPLINE_S = 2000.0
+	
+結果:11042350_lume_histBack_result(v6)
+	POSITIVE_REFERENCE_PATHS = [hour_image_paths[2], hour_image_paths[5]]
+	POSITIVE_ROI_FACTORS_LIST = [[0.4, 0.70, 0.10, 0.40, 1.0] , [0.30, 0.60, 0.25, 0.55, 0.4]]
+	AUTO_THRESHOLD = True
+	AUTO_THRESHOLD_RATIO = 0.3
+	SMOOTHING_METHOD = "bspline_contour"
+	SMOOTHING_SPLINE_S = 10000.0
+
+結果:11042357_lume_histBack_result(v6)
+	POSITIVE_REFERENCE_PATHS = [hour_image_paths[2], hour_image_paths[5]]
+	POSITIVE_ROI_FACTORS_LIST = [[0.4, 0.70, 0.10, 0.40, 1.0] , [0.30, 0.60, 0.25, 0.55, 0.4]]
+	AUTO_THRESHOLD = True
+	AUTO_THRESHOLD_RATIO = 0.1
+	SMOOTHING_METHOD = "bspline_contour"
+	SMOOTHING_SPLINE_S = 50000.0
+
+結果:11050010_lume_histBack_result(v6)
+	POSITIVE_REFERENCE_PATHS = [hour_image_paths[2], hour_image_paths[5]]
+	POSITIVE_ROI_FACTORS_LIST = [[0.4, 0.70, 0.10, 0.40, 1.0] , [0.30, 0.60, 0.25, 0.55, 0.4]]
+	AUTO_THRESHOLD = True
+	AUTO_THRESHOLD_RATIO = 0.2
+	SMOOTHING_METHOD = "bspline_contour"
+	SMOOTHING_SPLINE_S = 100000.0
+
+結果:11050017_lume_histBack_result(v6)
+	POSITIVE_REFERENCE_PATHS = [hour_image_paths[2], hour_image_paths[5]]
+	POSITIVE_ROI_FACTORS_LIST = [[0.4, 0.70, 0.10, 0.40, 1.0] , [0.30, 0.60, 0.25, 0.55, 0.4]]
+	AUTO_THRESHOLD = True
+	AUTO_THRESHOLD_RATIO = 0.3
+	SMOOTHING_METHOD = "bspline_contour"
+	SMOOTHING_SPLINE_S = 100000.0
+
+結果:11050024_lume_histBack_result(v6)
+	POSITIVE_REFERENCE_PATHS = [hour_image_paths[2], hour_image_paths[5]]
+	POSITIVE_ROI_FACTORS_LIST = [[0.4, 0.70, 0.10, 0.40, 1.0] , [0.30, 0.60, 0.25, 0.55, 0.4]]
+	AUTO_THRESHOLD = True
+	AUTO_THRESHOLD_RATIO = 0.3
+	OPEN_KERNEL_SIZE = (30, 30)
+	SMOOTHING_METHOD = "bspline_contour"
+	SMOOTHING_SPLINE_S = 100000.0
+
+
+```
+**在 `(version 6)` 中，我已經修正了這個問題：**
+
+1. **修正 B-spline**：我將 `SMOOTHING_SPLINE_S` (絕對值) 替換為 `SMOOTHING_SPLINE_FACTOR` (比例因子)。`s_value = m * spline_factor`。現在，`SMOOTHING_SPLINE_FACTOR = 1.5` 將在所有情況下都提供一致的平滑效果。
+    
+2. **新增 `JSON_PATH`**：在「Parameters」區塊頂部新增了 `JSON_PATH = None`。
+    
+3. **新增 `load_segmentation_model` 函數**：用於讀取 JSON 並**覆蓋** (overwrite) 程式碼中的全域參數。
+    
+4. **新增「Build vs. Load」邏輯**：在「Block 1」中，程式碼現在會檢查 `JSON_PATH`：
+    
+    - **If `not JSON_PATH` (Build Mode)**：執行 `v5` 的所有模型建立、儲存 `json` 的邏輯。
+        
+    - **Else (Inference Mode)**：跳過建立，呼叫 `load_segmentation_model` 載入所有設定和直方圖。
+```
+-> # ----- 5. (version 7) Example-Based Segmentation (Histogram Backprojection) -----
+
+結果:11050054_lume_histBack_result(v6)
+	POSITIVE_REFERENCE_PATHS = [hour_image_paths[2], hour_image_paths[5]]
+	POSITIVE_ROI_FACTORS_LIST = [[0.4, 0.70, 0.10, 0.40, 1.0] , [0.30, 0.60, 0.25, 0.55, 0.4]]
+	AUTO_THRESHOLD = True
+	AUTO_THRESHOLD_RATIO = 0.3
+	OPEN_KERNEL_SIZE = (30, 30)
+	SMOOTHING_METHOD = "bspline_contour"
+	SMOOTHING_SPLINE_S = 100000.0
+
+
+
+```
+這將是一個 `(version 7)`，它會重寫 `apply_smoothing` 函數，使其能夠：
+
+1. 使用 `cv2.approxPolyDP` 找到輪廓的「斷點」(breakpoints)。 
+2. 將_原始_輪廓（有鋸齒的）分割成由這些斷點定義的多個「點集」。 
+3. 對每個「點集」**嘗試擬合一條直線**。 
+4. **如果** 擬合得足夠好（低於 `PIECEWISE_LINE_FIT_THRESH` 閾值），則用一條**完美的直線**取代該線段。
+5. **如果** 擬合得不好（即它是一條曲線），則**退回** (fallback) 到使用 B-spline **僅對該線段**進行平滑。
+6. 最後，將所有這些「完美的直線」和「平滑的曲線」無縫地縫合回一個單一的、極度平滑的輪廓。
+
+我還會保留您在 `(version 6)` 中要求的所有功能（`JSON_PATH` 載入、權重、自動閾值），並**修正** `B-spline` 的平滑因子問題。
+
+```
+-> # ----- 5. (version 8) Example-Based Segmentation (Histogram Backprojection) -----
+
+結果:11050128_lume_histBack_result(v7)
+	PIECEWISE_APPROX_EPSILON = 0.005 # 0.5% of arc length
+	PIECEWISE_LINE_FIT_THRESH = 0.5
+	PIECEWISE_FALLBACK_SPLINE_FACTOR = 1.0
+
+結果:11050136_lume_histBack_result(v7)
+	PIECEWISE_APPROX_EPSILON = 0.005 # 0.5% of arc length
+	PIECEWISE_LINE_FIT_THRESH = 1.5
+	PIECEWISE_FALLBACK_SPLINE_FACTOR = 2.0
+
+結果:11050149_lume_histBack_result(v7)
+	AUTO_THRESHOLD_RATIO = 0.3
+	PIECEWISE_APPROX_EPSILON = 0.005 # 0.05% of arc length
+	PIECEWISE_LINE_FIT_THRESH = 3
+	PIECEWISE_FALLBACK_SPLINE_FACTOR = 3.0
+
+結果:11050200_lume_histBack_result(v7)
+	AUTO_THRESHOLD_RATIO = 0.5
+	PIECEWISE_APPROX_EPSILON = 0.005 # 0.01% of arc length
+	PIECEWISE_LINE_FIT_THRESH = 3
+	PIECEWISE_FALLBACK_SPLINE_FACTOR = 3.0
+--> **用Version 8 跟這個parameters對不少的images表現很好, 先用這個**
 
 
 
@@ -218,8 +439,10 @@ NEGATIVE_ROI_FACTORS_LIST = [[0.18, 0.30, 0.26, 0.38]]
 | # ----- 2. Project folder and device/device setup -----                  | 1   | 1    |      |
 | # ----- 3. images loading: Features -----                                | 1   | 1    |      |
 | # ----- 4. calculate image features summary                              | 1   | 1    |      |
-| # ----- 5.(version 6) - Image automatic mask generation using SAM  ----- | 1-6 | 6    |      |
+| # ----- 5.(version 6) - Image automatic mask generation using SAM  ----- | 1-9 | 9    |      |
 |                                                                          |     |      |      |
+
+
 
 1031
 SAM can do good segmentation but how to decide foreground and background?
@@ -279,10 +502,71 @@ FFT good in some images, but all image type?
 ```
 --> # ----- 5.(version 6) - Image automatic mask generation using SAM  -----
 
+```
+3. 決策：決定 Background (BG)
+這是第二層決策，在 get_bg_fg_from_main_clusters 函數中執行。此時，程式只專注於 main_features (主要群組)。
+
+計算主要特徵： 程式會計算這些「主要群組」各自的平均 avg_texture 和 avg_saturation。
+
+排序候選者 (The Decision Tree)： 程式根據「主要群組」的數量 (k_main) 來決定**「背景候選者」的排序**：
+
+如果 k_main == 1： 只有一個主要群組，它自動成為背景候選者。
+
+如果 k_main == 2：
+
+計算兩個群組的飽和度差異 (sat_diff)。
+
+如果 sat_diff <= 100 (飽和度相似)：程式假設紋理是主要差異。背景候選者 = 紋理最高 (Max Texture) 的群組。
+
+如果 sat_diff > 100 (飽和度差異大)：程式假設飽和度是主要差異。背景候選者 = 紋理最低 (Min Texture) 的群組。
+
+如果 k_main >= 3：
+
+邏輯簡化。背景候選者 = 紋理最高 (Max Texture) 的群組。
+
+資格審查 (Area Veto)：
+
+程式會從「排序第一」的背景候選者開始檢查。
+
+這個候選者必須通過面積審查：Area >= MIN_BG_AREA_PERCENT (在您的 code 中設定為 30%)。
+
+如果「候選者 #1」的面積 >= 30%：它被正式選為 Background。
+
+如果「候選者 #1」的面積 < 30%：它失去資格。程式會接著檢查「候選者 #2」（如果有的話），看它是否 >= 30%。
+
+如果所有候選者都 < 30%：程式會「妥協」，並強制選擇「候選者 #1」 (無論其面積多小) 作為背景，並在日誌中留下一條警告。
+```
+
+
+參考 # ----- 5.(version 6) - Image automatic mask generation using SAM  -----
+```
+關於Colab code想做些修正請提供新的code: 在遞迴式例外排除 (Iterative Outlier Removal), 分群後，程式會計算每一個 cluster面積, 如果一個群組的總面積 < 10%(這是個參數)被存放到例外遮罩而且就不會再加入到main_features. 當決策：決定 Background (BG)時我們只專注於 main_features (主要群組), 這時我們選主要群組的前兩大面積群組. 如果第一大群組跟第二大群組的面積差不大於20%, 我們選取紋理最高 (Max Texture) 的群組為background. 如果第一大群組跟第二大群組的面積差大於20%, 我們選取由x_min跟x_max, y_min跟y_max定義的box最大群組為background. 而在選取Foreground時也不考慮例外遮罩.
+
+```
+-> # ----- 5.(version 7) - Image automatic mask generation using SAM  -----
 
 
 
+參考 # ----- 5.(version 7) - Image automatic mask generation using SAM  -----
+```
+請根據以下的code根據修正提供新的code: 
 
+請修改SAM參數因為有些細節的區域沒有正確segmentation.
+
+情境 B (面積懸殊)：如果 area_diff > 0.20 (20%), 邏輯：既然面積差異很大，就用「空間佔用率 (Bbox)」來決勝負。
+
+決策： 比較 cluster_1 和 cluster_2 的 bbox_area，Bbox 面積最大的那個群組被選為 Background。這裡Bbox改成用cluster pixel number也就是面積最大的那個群組被選為 Background而不是bbox area.
+```
+-> # ----- 5.(version 8) - Image automatic mask generation using SAM  -----
+
+
+-> # ----- 5.(version 8) - Image automatic mask generation using SAM  -----
+```
+以下是version 8colab code. 想多增加一個小功能. 就是最後決定了background跟其他的frontground, 請計算texture(std), texture(entropy)跟saturation跟contrast. 並把結果列在txt file
+
+這個colab codefigure file存在OUTPUT_PATH下面的新開一個sub folder以月分日期跟時間命名譬如"10301639"代表10月30日16點39分使用now = datetime.datetime.now(ZoneInfo("America/New_York")). 然後再把這個subfolder名字後面加上"_dialtext_result(v6)". 把figuers儲存存在這個新subfolder. 如果有輸出txt file則存在同個subfolder. 把code裡面會影響結果的parameter集中放在import下方方便設定, code儘量function化, code中的comments也都用英文. 並注意不要犯這個錯誤: module 'cv2' has no attribute 'COLOR_BGR_RGB'
+```
+-> # ----- 5.(version 9) - Image automatic mask generation using SAM  -----
 
 
 
@@ -291,16 +575,18 @@ FFT good in some images, but all image type?
 
 #### Project 7 - Movement dimensions1
 
-|                                                                           | All | Best | Note |
-| ------------------------------------------------------------------------- | --- | ---- | ---- |
-| # ----- 1. Import dependent -----                                         | 1   | 1    |      |
-| # ----- 2. Project folder and device/device setup -----                   | 1   | 1    |      |
-| # ----- 3. images loading: movement dimensions1 -----                     | 1   | 1    |      |
-| # ----- 4. calculate image features summary                               | 1   | 1    |      |
-| # ----- 5a. Clone and install DINOv3 repo and load checkpoints  -----     | 1   | 1    |      |
-| # ----- 5b. Create DINOv3 model with weights and related functions  ----- | 1   | 1    |      |
-| # ----- 5c.(version 3) use self-supervised learning model (DINOv3) -----  | 3   | 3    |      |
-| # ----- 5d. (version 12) DINOv3 Mask Analysis -----                       | 12  | 12   |      |
+|                                                                                       | All | Best | Note |
+| ------------------------------------------------------------------------------------- | --- | ---- | ---- |
+| # ----- 1. Import dependent -----                                                     | 1   | 1    |      |
+| # ----- 2. Project folder and device/device setup -----                               | 1   | 1    |      |
+| # ----- 3. images loading: movement dimensions1 -----                                 | 1   | 1    |      |
+| # ----- 4. calculate image features summary                                           | 1   | 1    |      |
+| ~~# ----- 5a. Clone and install DINOv3 repo and load checkpoints  -----~~                 | ~~1~~   | ~~1~~    |      |
+| ~~# ----- 5b. Create DINOv3 model with weights and related functions  -----~~             | ~~1~~   | ~~1~~    |      |
+| ~~# ----- 5c.(version 3) use self-supervised learning model (DINOv3) -----~~              | ~~3~~   | ~~3~~    |      |
+| ~~# ----- 5d. (version 12) DINOv3 Mask Analysis -----~~                                   | ~~15~~  | ~~15~~   |      |
+| # ----- 6. (version 6) Example-Based Segmentation (Histogram Backprojection) -----    | 6   | 6    |      |
+| # ----- 7. (version 1) Example-Based Segmentation (Skeleton Geometric Analysis) ----- | 1   | 1    |      |
 
 1031
 Looks like DINOv3 works great, but sometimes need to automatically decide the “positive” or “negative” value to generate segmentation masks
@@ -431,6 +717,555 @@ DINOv3得到3跟矩形框沒有問題, 但要將矩形框移除還是有問題, 
 
 
 
+基於# ----- 5d. (version 12) DINOv3 Mask Analysis -----
+```
+這個Colab將 Step 9: Apply Spline Fitting for final smoothing使用fit_spline_to_contour做輪廓平滑化參考下列方法:
+1.使用 cv2.approxPolyDP 找到輪廓的「斷點」(breakpoints)。
+2.將原始輪廓（有鋸齒的）分割成由這些斷點定義的多個「點集」。
+3.對每個「點集」嘗試擬合一條直線。
+4.如果 擬合得足夠好（低於 PIECEWISE_LINE_FIT_THRESH 閾值），則用一條完美的直線取代該線段。
+5.如果 擬合得不好（即它是一條曲線），則退回 (fallback) 到使用 B-spline 僅對該線段進行平滑。
+6.最後，將所有這些「完美的直線」和「平滑的曲線」無縫地縫合回一個單一的、極度平滑的輪廓。
+
+這個colab code一樣figure file存在OUTPUT_PATH下面的新開一個sub folder以月分日期跟時間命名譬如"10301639"代表10月30日16點39分使用now = datetime.datetime.now(ZoneInfo("America/New_York")). 然後再把這個subfolder名字後面加上"_movement1_dinov3_bone_result(v13)". 把figuers儲存存在這個新subfolder. 在之前colab已經定義OUTPUT_PATH = os.path.join(PROJECT_ROOT, "output", "Lume images"). 如果有輸出txt file則存在同個subfolder. 把code裡面會影響結果的parameter集中放在import下方方便設定, code儘量function化, code中的comments也都用英文.
+```
+-> # ----- 5d. (version 13) DINOv3 Mask Analysis -----
+
+11050230_movement1_dinov3_result(v3)
+11050233_movement1_dinov3_bone_result(v12)  比較v12跟v13
+11050245_movement1_dinov3_bone_result(v13)
+還是很不平滑
+
+基於-> # ----- 5d. (version 13) DINOv3 Mask Analysis -----
+```
+請將這Colab code修改將 Step 9: Apply Spline Fitting for final smoothing使用fit_spline_to_contour做輪廓平滑化參考下列方法:
+用了opening跟closing之後用三種不同method進行(有parameter選擇哪個method) method 1. 提取邊界cv2.findContours, 接著用Gaussian filter 平滑邊界座標, 接著用重建 mask. method 2. 提取邊界cv2.findContours, 接著用B-spline 平滑邊界座標, 接著用重建 mask. method 3. 用from scipy.ndimage import distance_transform_edt, gaussian_filter使用Distance transform + Gaussian filter + threshold
+
+這個colab code一樣figure file存在OUTPUT_PATH下面的新開一個sub folder以月分日期跟時間命名譬如"10301639"代表10月30日16點39分使用now = datetime.datetime.now(ZoneInfo("America/New_York")). 然後再把這個subfolder名字後面加上"_movement1_dinov3_bone_result(v13)". 把figuers儲存存在這個新subfolder. 在之前colab已經定義OUTPUT_PATH = os.path.join(PROJECT_ROOT, "output", "Lume images"). 如果有輸出txt file則存在同個subfolder. 把code裡面會影響結果的parameter集中放在import下方方便設定, code儘量function化, code中的comments也都用英文.
+
+
+這個colab code一樣figure file存在OUTPUT_PATH下面的新開一個sub folder以月分日期跟時間命名譬如"10301639"代表10月30日16點39分使用now = datetime.datetime.now(ZoneInfo("America/New_York")). 然後再把這個subfolder名字後面加上"_movement1_dinov3_bone_result(v13)". 把figuers儲存存在這個新subfolder. 在之前colab已經定義OUTPUT_PATH = os.path.join(PROJECT_ROOT, "output", "Lume images"). 如果有輸出txt file則存在同個subfolder. 把code裡面會影響結果的parameter集中放在import下方方便設定, code儘量function化, code中的comments也都用英文.
+```
+-> # ----- 5d. (version 14) DINOv3 Mask Analysis -----
+
+11050257_movement1_dinov3_bone_result(v14)
+
+11050257_movement1_dinov3_bone_result(v14)
+	FINAL_SMOOTHING_METHOD = "method_2"
+	"method_2_spline_s": 10000.0,
+	method_2_spline_n_pts": 1000,
+還是很不平滑
+
+11050307_movement1_dinov3_bone_result(v14)
+	FINAL_SMOOTHING_METHOD = "method_2"
+	"method_2_spline_s": 50000.0,
+	method_2_spline_n_pts": 1000,
+還是很不平滑
+
+11050314_movement1_dinov3_bone_result(v14)
+	INITIAL_SMOOTHING_KERNEL_SIZE = (31, 31)
+	DILATION_KERNEL_SIZE = (40, 40)
+	CONTRAST_GAUSSIAN_SMOOTH_KERNEL_SIZE = (101, 101)
+	OPENING_FILTER_KERNEL_SIZE = (21, 21)
+	CLOSING_FILTER_KERNEL_SIZE = (61, 61)
+	FINAL_SMOOTHING_METHOD = "method_3"
+	"method_3_dt_gaussian_sigma": 50.0
+
+11050328_movement1_dinov3_bone_result(v14)
+	INITIAL_SMOOTHING_KERNEL_SIZE = (31, 31)
+	DILATION_KERNEL_SIZE = (40, 40)
+	CONTRAST_GAUSSIAN_SMOOTH_KERNEL_SIZE = (101, 101)
+	OPENING_FILTER_KERNEL_SIZE = (21, 21)
+	CLOSING_FILTER_KERNEL_SIZE = (61, 61)
+	FINAL_SMOOTHING_METHOD = "method_2"
+	"method_2_spline_s": 1000000.0
+	"method_2_spline_n_pts": 1000
+
+參考 # ----- 5d. (version 14) DINOv3 Mask Analysis -----
+```
+請將這Colab code修改為不是參考contrast map來進行fine segmentation, 而是有選項可以選1. Texture(std)(字體輪廓texture小), 2. Hue(字體輪廓texture大), 3. Saturation(字體輪廓texture大), 4. Contrast(range)(字體輪廓texture小), 5. sharpness(字體輪廓texture小). 其他地方保持不變. 
+
+這個colab code一樣figure file存在OUTPUT_PATH下面的新開一個sub folder以月分日期跟時間命名譬如"10301639"代表10月30日16點39分使用now = datetime.datetime.now(ZoneInfo("America/New_York")). 然後再把這個subfolder名字後面加上"_movement1_dinov3_bone_result(v14)". 把figuers儲存存在這個新subfolder. 在之前colab已經定義OUTPUT_PATH = os.path.join(PROJECT_ROOT, "output", "Lume images"). 如果有輸出txt file則存在同個subfolder. 把code裡面會影響結果的parameter集中放在import下方方便設定, code儘量function化, code中的comments也都用英文.
+
+version 14的code怎麼沒有輪廓光滑的流程: 用了opening跟closing之後用三種不同method進行(有parameter選擇哪個method) method 1. 提取邊界cv2.findContours, 接著用Gaussian filter 平滑邊界座標, 接著用重建 mask. method 2. 提取邊界cv2.findContours, 接著用B-spline 平滑邊界座標, 接著用重建 mask. method 3. 用from scipy.ndimage import distance_transform_edt, gaussian_filter使用Distance transform + Gaussian filter + threshold?
+```
+-> # ----- 5d. (version 15) DINOv3 Mask Analysis -----
+
+
+11050408_movement1_dinov3_bone_result(v15)
+	FEATURE_MAP_METHOD = "texture"
+	FEATURE_MAP_GAUSSIAN_SMOOTH_KERNEL = (101, 101)
+	    "texture": {
+	        "kernel_size": (11, 11),
+	        "threshold_type": cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU
+結果平滑很多
+
+11050748_movement1_dinov3_result(v3)
+	20張images裡面有一張DINOv3 PCA1 segmentation有問題, 其他都還好
+11050756_movement1_dinov3_bone_result(v15)
+	FEATURE_MAP_METHOD = "texture"
+	FEATURE_MAP_GAUSSIAN_SMOOTH_KERNEL = (101, 101)
+	    "texture": {
+	        "kernel_size": (11, 11),
+	        "threshold_type": cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU
+	INITIAL_SMOOTHING_KERNEL_SIZE = (31, 31)
+	DILATION_KERNEL_SIZE = (40, 40)
+	OPENING_FILTER_KERNEL_SIZE = (21, 21)
+	CONTOUR_SMOOTHING_KERNEL_SIZE_MID = (11, 11)
+	CLOSING_FILTER_KERNEL_SIZE = (61, 61)
+	FINAL_SMOOTHING_METHOD = "method_3"
+	"method_3_dt_gaussian_sigma": 50.0
+
+11050918_movement1_dinov3_bone_result(v15)
+	FEATURE_MAP_METHOD = "texture"
+	FEATURE_MAP_GAUSSIAN_SMOOTH_KERNEL = **(51, 51)**
+	    "texture": {
+	        "kernel_size": (11, 11),
+	        "threshold_type": cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU
+	INITIAL_SMOOTHING_KERNEL_SIZE = (31, 31)
+	DILATION_KERNEL_SIZE = (40, 40)
+	OPENING_FILTER_KERNEL_SIZE = (21, 21)
+	CONTOUR_SMOOTHING_KERNEL_SIZE_MID = (11, 11)
+	CLOSING_FILTER_KERNEL_SIZE = (61, 61)
+	FINAL_SMOOTHING_METHOD = "method_3"
+	"method_3_dt_gaussian_sigma": 50.0
+
+11050932_movement1_dinov3_bone_result(v15)
+	FEATURE_MAP_METHOD = "texture"
+	FEATURE_MAP_GAUSSIAN_SMOOTH_KERNEL = (101, 101)
+	    "texture": {
+	        "kernel_size": (11, 11),
+	        "threshold_type": cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU
+	INITIAL_SMOOTHING_KERNEL_SIZE = (31, 31)
+	DILATION_KERNEL_SIZE = (40, 40)
+	OPENING_FILTER_KERNEL_SIZE = (21, 21)
+	CONTOUR_SMOOTHING_KERNEL_SIZE_MID = (11, 11)
+	CLOSING_FILTER_KERNEL_SIZE = (61, 61)
+	FINAL_SMOOTHING_METHOD = **"method_2"**
+	"method_2_spline_s": 1000000.0
+	"method_2_spline_n_pts": 1000
+
+11051017_movement1_dinov3_bone_result(v15)
+	FEATURE_MAP_METHOD = "texture"
+	FEATURE_MAP_GAUSSIAN_SMOOTH_KERNEL = (101, 101)
+	    "texture": {
+	        "kernel_size": (11, 11),
+	        "threshold_type": cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU
+	INITIAL_SMOOTHING_KERNEL_SIZE = (31, 31)
+	DILATION_KERNEL_SIZE = (40, 40)
+	OPENING_FILTER_KERNEL_SIZE = (21, 21)
+	CONTOUR_SMOOTHING_KERNEL_SIZE_MID = (11, 11)
+	CLOSING_FILTER_KERNEL_SIZE = (61, 61)
+	FINAL_SMOOTHING_METHOD = **"method_3"**
+	"method_3_dt_gaussian_sigma": 50.0
+
+11051032_movement1_dinov3_bone_result(v15)
+	FEATURE_MAP_METHOD = "texture"
+	FEATURE_MAP_GAUSSIAN_SMOOTH_KERNEL = (101, 101)
+	    "texture": {
+	        "kernel_size": (11, 11),
+	        "threshold_type": cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU
+	INITIAL_SMOOTHING_KERNEL_SIZE = (31, 31)
+	DILATION_KERNEL_SIZE = **(80, 80)**
+	OPENING_FILTER_KERNEL_SIZE = (21, 21)
+	CONTOUR_SMOOTHING_KERNEL_SIZE_MID = (11, 11)
+	CLOSING_FILTER_KERNEL_SIZE = (61, 61)
+	FINAL_SMOOTHING_METHOD = "method_3"
+	"method_3_dt_gaussian_sigma": 50.0
+
+11051032_movement1_dinov3_bone_result(v15)
+	FEATURE_MAP_METHOD = **"saturation"**
+	FEATURE_MAP_GAUSSIAN_SMOOTH_KERNEL = (101, 101)
+	    "texture": {
+	        "kernel_size": (11, 11),
+	        "threshold_type": cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU
+	INITIAL_SMOOTHING_KERNEL_SIZE = (31, 31)
+	DILATION_KERNEL_SIZE = (80, 80)
+	OPENING_FILTER_KERNEL_SIZE = (21, 21)
+	CONTOUR_SMOOTHING_KERNEL_SIZE_MID = (11, 11)
+	CLOSING_FILTER_KERNEL_SIZE = (61, 61)
+	FINAL_SMOOTHING_METHOD = "method_3"
+	"method_3_dt_gaussian_sigma": 50.0
+
+11051056_movement1_dinov3_bone_result(v15)
+	**THREAD_RATIO = 0.6**
+	FEATURE_MAP_METHOD = "saturation"
+	FEATURE_MAP_GAUSSIAN_SMOOTH_KERNEL = (101, 101)
+	    "texture": {
+	        "kernel_size": (11, 11),
+	        "threshold_type": cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU
+	INITIAL_SMOOTHING_KERNEL_SIZE = (31, 31)
+	DILATION_KERNEL_SIZE = (80, 80)
+	OPENING_FILTER_KERNEL_SIZE = (21, 21)
+	CONTOUR_SMOOTHING_KERNEL_SIZE_MID = (11, 11)
+	CLOSING_FILTER_KERNEL_SIZE = (61, 61)
+	FINAL_SMOOTHING_METHOD = "method_3"
+	"method_3_dt_gaussian_sigma": 50.0
+
+11051105_movement1_dinov3_bone_result(v15)
+	**THREAD_RATIO = 0.6**
+	FEATURE_MAP_METHOD = "saturation"
+	FEATURE_MAP_GAUSSIAN_SMOOTH_KERNEL = (21, 21)
+	    "texture": {
+	        "kernel_size": (11, 11),
+	        "threshold_type": cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU
+	INITIAL_SMOOTHING_KERNEL_SIZE = (31, 31)
+	DILATION_KERNEL_SIZE = (80, 80)
+	OPENING_FILTER_KERNEL_SIZE = (21, 21)
+	CONTOUR_SMOOTHING_KERNEL_SIZE_MID = (11, 11)
+	CLOSING_FILTER_KERNEL_SIZE = (61, 61)
+	FINAL_SMOOTHING_METHOD = "method_2"
+	"method_2_spline_s": 5000000.0
+	"method_2_spline_n_pts": 1000
+
+11051108_movement1_dinov3_bone_result(v15)
+	**THREAD_RATIO = 0.6**
+	FEATURE_MAP_METHOD = **"hue"**
+	FEATURE_MAP_GAUSSIAN_SMOOTH_KERNEL = (21, 21)
+	    "texture": {
+	        "kernel_size": (11, 11),
+	        "threshold_type": cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU
+	INITIAL_SMOOTHING_KERNEL_SIZE = (31, 31)
+	DILATION_KERNEL_SIZE = (80, 80)
+	OPENING_FILTER_KERNEL_SIZE = (21, 21)
+	CONTOUR_SMOOTHING_KERNEL_SIZE_MID = (11, 11)
+	CLOSING_FILTER_KERNEL_SIZE = (61, 61)
+	FINAL_SMOOTHING_METHOD = "method_2"
+	"method_2_spline_s": 5000000.0
+	"method_2_spline_n_pts": 1000
+
+11051110_movement1_dinov3_bone_result(v15)
+	**THREAD_RATIO = 0.6**
+	FEATURE_MAP_METHOD = **"contrast"**
+	FEATURE_MAP_GAUSSIAN_SMOOTH_KERNEL = (21, 21)
+	    "texture": {
+	        "kernel_size": (11, 11),
+	        "threshold_type": cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU
+	INITIAL_SMOOTHING_KERNEL_SIZE = (31, 31)
+	DILATION_KERNEL_SIZE = (80, 80)
+	OPENING_FILTER_KERNEL_SIZE = (21, 21)
+	CONTOUR_SMOOTHING_KERNEL_SIZE_MID = (11, 11)
+	CLOSING_FILTER_KERNEL_SIZE = (61, 61)
+	FINAL_SMOOTHING_METHOD = "method_2"
+	"method_2_spline_s": 5000000.0
+	"method_2_spline_n_pts": 1000
+
+11051115_movement1_dinov3_bone_result(v15)
+	**THREAD_RATIO = 0.6**
+	FEATURE_MAP_METHOD = **"texture"**
+	FEATURE_MAP_GAUSSIAN_SMOOTH_KERNEL = (21, 21)
+	    "texture": {
+	        "kernel_size": (11, 11),
+	        "threshold_type": cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU
+	INITIAL_SMOOTHING_KERNEL_SIZE = (31, 31)
+	DILATION_KERNEL_SIZE = (80, 80)
+	OPENING_FILTER_KERNEL_SIZE = (21, 21)
+	CONTOUR_SMOOTHING_KERNEL_SIZE_MID = (11, 11)
+	CLOSING_FILTER_KERNEL_SIZE = (61, 61)
+	FINAL_SMOOTHING_METHOD = "method_2"
+	"method_2_spline_s": 5000000.0
+	"method_2_spline_n_pts": 1000
+
+
+```
+用Example-Based Segmentation (Histogram Backprojection)方法
+但改成不取最大的segment, 而改以刪除min_max box最大的(frame)
+```
+-> # ----- 6. (version 1) Example-Based Segmentation (Histogram Backprojection) -----
+
+11051143_lume_histBack_result(v7)
+	只有positive images不少都不錯, 但有一些background也在裡面
+
+11051155_lume_histBack_result(v7)
+	加入negative images還是沒有segmentation masks
+
+11051157_lume_histBack_result(v7)
+	POSITIVE_REFERENCE_PATHS = [movement_image_paths[1], movement_image_paths[0]]
+	POSITIVE_ROI_FACTORS_LIST = [[0.41, 0.49, 0.26, 0.35, 1.0],[0.56, 0.64, 0.25, 0.33, 1.0]]
+	AUTO_THRESHOLD = True
+	AUTO_THRESHOLD_RATIO = 0.8
+	結果很好
+
+
+-參考 # ----- 6. (version 1) Example-Based Segmentation (Histogram Backprojection) -----
+```
+這是用2D histogram方法建立segmentation mask請基於這個做修正提供新的code. 在Step 4.6: Find Largest Mask Component這一步(main_mask = find_largest_mask(final_mask))變成計算每個獨立連續的segment區域計算x_min, x_max, y_min, y_max. 將這四個座標定義的box面積最大的獨立連續的segment先刪除, 然後取第二大的獨立連續的segment為final segmentaiton mask(也就是數字3). 對最後得到的final mask得到輪廓線, 並用直線和曲線去fit這條輪廓線(某些線段是直線, 有些線段是曲線有圓心跟固定radius), 記錄下每個直線段的頭尾座標以及距離, 直線部分跟明顯轉折點以及轉折的角度都計算出來. 曲線的頭尾座標, 圓心座標跟radius以及線段長. 接著計算mask的skeleton以及這個skeleton line到數字mask boundary的距離(thickness), 可以用在skeleton每隔一段距離的座標點並記下thickness. 還有skeleton line的頭跟尾各有一條接近垂直於skeleton line的直線, 輸出這兩條直線(頭跟尾)的夾角. 另外檢查這個mask的skeleton line的1/3*thickness區域在image上有明顯的黑色區域, 則這個mask類型是"type 1", 如果沒有則是"type 2".
+
+在已得到的skeleton, 找尋skeleton中間最靠近的中間輪廓直線. 並計算之前計算過的skeleton兩條直線(頭跟尾)接近垂直於skeleton line的直線跟中間輪廓直線的夾角
+```
+-> # ----- 6. (version 2) Example-Based Segmentation (Histogram Backprojection) -----
+
+
+參考# ----- 6. (version 2) Example-Based Segmentation (Histogram Backprojection) -----
+```
+這是用2D histogram方法建立segmentation mask請基於這個做修正提供新的code. 將找尋final mask的方式從計算x_min, x_max, y_min, y_max去掉最大區域的方式修正. 先找由2D histogram方法得到的coarse segmentation mask尋找五個最大獨立連續的segment. 從image的1/32*size,1/32*size中心區域開始從這五個之內找尋獨立連續的segment區域. 如果在這區域有找到獨立連續的segment的pixel(如果有兩個同時出現則取獨立連續的segment有最大pixel面積)則這獨立連續的segment就是final segmentation mask. 如果都沒有則擴大搜尋區域到1/16size, 搜尋區域到1/8size, 搜尋區域到1/4size, 搜尋區域到1/2size,搜尋區域到all image. final segmentation mask用B-spline（樣條曲線）平滑 segmentation mask 的邊界, spline_s參數用5000.
+
+對最後得到的final mask得到輪廓線, 並用直線和曲線去fit這條輪廓線(某些線段是直線, 有些線段是曲線有圓心跟固定radius), 記錄下每個直線段的頭尾座標以及距離, 直線部分跟明顯轉折點以及轉折的角度都計算出來. 曲線的頭尾座標, 圓心座標跟radius以及線段長. 接著計算mask的skeleton以及這個skeleton line到數字mask boundary的距離(thickness), 可以用在skeleton每隔一段距離的座標點並記下thickness. 還有skeleton line的頭跟尾各有一條接近垂直於skeleton line的直線, 輸出這兩條直線(頭跟尾)的夾角. 另外檢查這個mask的skeleton line的1/3*thickness區域在image上有明顯的黑色區域, 則這個mask類型是"type 1", 如果沒有則是"type 2".在已得到的skeleton, 找尋skeleton中間最靠近的中間輪廓直線. 並計算之前計算過的skeleton兩條直線(頭跟尾)接近垂直於skeleton line的直線跟中間輪廓直線的夾角. 也請提供skeleton及相關的figures. 另外執行時有出現WARNING:matplotlib.font_manager:findfont: Generic family 'sans-serif' not found because none of the following families were found: Noto Sans CJK TC請解決
+
+這個新增加的colab code跟上一個colab code一樣figure file存在OUTPUT_PATH下面的新開一個sub folder以月分日期跟時間命名譬如"10301639"代表10月30日16點39分使用now = datetime.datetime.now(ZoneInfo("America/New_York")). 然後再把這個subfolder名字後面加上"_movement1_histBack_result(v3)". 把figuers儲存存在這個新subfolder. 在之前colab已經定義OUTPUT_PATH = os.path.join(PROJECT_ROOT, "output", "Lume images"). 如果有輸出txt file則存在同個subfolder. 把code裡面會影響結果的parameter集中放在import下方方便設定, code儘量function化, code中的comments也都用英文. 並注意不要犯這個錯誤: module 'cv2' has no attribute 'COLOR_BGR_RGB'
+
+```
+-> # ----- 6. (version 3) Example-Based Segmentation (Histogram Backprojection) -----
+
+11051308_movement1_histBack_result(v4)
+	FEATURE_CHOICES = [1, 2]
+	POSITIVE_REFERENCE_PATHS = [movement_image_paths[1], movement_image_paths[0]]
+	POSITIVE_ROI_FACTORS_LIST = [[0.41, 0.49, 0.26, 0.35, 1.0], ][0.56, 0.64, 0.25, 0.33, 1.0]
+	FINAL_SPLINE_S = 5000
+
+11051312_movement1_histBack_result(v4)
+	FEATURE_CHOICES = [1, 2]
+	POSITIVE_REFERENCE_PATHS = [movement_image_paths[1], movement_image_paths[0]]
+	POSITIVE_ROI_FACTORS_LIST = [[0.41, 0.49, 0.26, 0.35, 1.0], ][0.56, 0.64, 0.25, 0.33, 1.0]
+	FINAL_SPLINE_S = 50000
+
+11051328_movement1_histBack_result(v3)
+	FEATURE_CHOICES = [1, 2]
+	POSITIVE_REFERENCE_PATHS = [movement_image_paths[1], movement_image_paths[0]]
+	POSITIVE_ROI_FACTORS_LIST = [[0.41, 0.49, 0.26, 0.35, 1.0], ][0.56, 0.64, 0.25, 0.33, 1.0]
+	SMOOTHING_METHOD = "bspline_contour"
+
+11051338_movement1_histBack_result(v3)
+	FEATURE_CHOICES = [1, 2]
+	POSITIVE_REFERENCE_PATHS = [movement_image_paths[1], movement_image_paths[0]]
+	POSITIVE_ROI_FACTORS_LIST = [[0.41, 0.49, 0.26, 0.35, 1.0], ][0.56, 0.64, 0.25, 0.33, 1.0]
+	SMOOTHING_METHOD = "distance_transform"
+
+11051348_movement1_histBack_result(v3)
+	FEATURE_CHOICES = [1, 2]
+	POSITIVE_REFERENCE_PATHS = [movement_image_paths[1], movement_image_paths[0]]
+	POSITIVE_ROI_FACTORS_LIST = [[0.41, 0.49, 0.26, 0.35, 1.0], ][0.56, 0.64, 0.25, 0.33, 1.0]
+	SMOOTHING_METHOD = "bspline_contour"
+	CLOSE_KERNEL_SIZE = (15, 15)
+	OPEN_KERNEL_SIZE = (3, 3)
+	SMOOTHING_SPLINE_S = 100000
+
+11051352_movement1_histBack_result(v3)
+	FEATURE_CHOICES = [1, 2]
+	POSITIVE_REFERENCE_PATHS = [movement_image_paths[1], movement_image_paths[0]]
+	POSITIVE_ROI_FACTORS_LIST = [[0.41, 0.49, 0.26, 0.35, 1.0], ][0.56, 0.64, 0.25, 0.33, 1.0]
+	SMOOTHING_METHOD = "bspline_contour"
+	CLOSE_KERNEL_SIZE = (15, 15)
+	OPEN_KERNEL_SIZE = (3, 3)
+	SMOOTHING_SPLINE_S = 1000
+
+
+
+參考 # ----- 6. (version 3) Example-Based Segmentation (Histogram Backprojection) -----
+```
+這是一段平滑化final segmentation mask輪廓的code為接下來skeleton做準備. 請用這段code的方法替代# ----- 6. (version 5 - MODIFIED) Example-Based Segmentation (Histogram Backprojection) -----裡面平滑化final segmentation mask輪廓的方法並提供新的code:def smooth_contour_gaussian(contour, sigma):
+
+    """Smooths contour coordinates using a 1D Gaussian filter."""
+
+    # Separate x and y coordinates
+
+    x = contour[:, 0, 0].astype(float)
+
+    y = contour[:, 0, 1].astype(float)
+
+    # Apply Gaussian filter. 'wrap' handles closed contours.
+
+    x_smooth = gaussian_filter(x, sigma, mode='wrap')
+
+    y_smooth = gaussian_filter(y, sigma, mode='wrap')
+
+    # Re-stack and format
+
+    new_contour = np.vstack((x_smooth, y_smooth)).T.astype(np.int32).reshape((-1, 1, 2))
+
+    return new_contour
+
+  
+
+# --- [NEW] Final Smoothing Method 2: B-Spline (v10/v11/v12 logic) ---
+
+def smooth_contour_spline(contour, s, n_pts):
+
+    """Smooths contour coordinates using a B-spline fit."""
+
+    if len(contour) < 5: # splprep needs at least k+1
+
+        return contour
+
+    x = contour[:, 0, 0]
+
+    y = contour[:, 0, 1]
+
+    try:
+
+        tck, u = splprep([x, y], s=s, per=True)
+
+    except Exception as e:
+
+        print(f"  Spline Fitting Warning: splprep failed ({e}). Returning original contour.")
+
+        return contour
+
+    u_new = np.linspace(u.min(), u.max(), n_pts)
+
+    x_new, y_new = splev(u_new, tck, der=0)
+
+    new_contour = np.vstack((x_new, y_new)).T.astype(np.int32).reshape((-1, 1, 2))
+
+    return new_contour
+
+  
+
+# --- [NEW] Final Smoothing Method 3: Distance Transform Blur ---
+
+def smooth_mask_distance_transform(mask, sigma):
+
+    """Smooths a mask by blurring its Signed Distance Function (SDF)."""
+
+    # Positive distance (inside)
+
+    dist_in = distance_transform_edt(mask)
+
+    # Negative distance (outside)
+
+    dist_out = distance_transform_edt(cv2.bitwise_not(mask))
+
+    # Create Signed Distance Function (SDF)
+
+    signed_dist = dist_in - dist_out
+
+    # Blur the SDF
+
+    smoothed_sdf = gaussian_filter(signed_dist, sigma)
+
+    # Re-threshold to get the new binary mask
+
+    new_mask = (smoothed_sdf > 0).astype(np.uint8) * 255
+
+    return new_mask
+
+  
+
+# --- [NEW] Final Smoothing Selector Function ---
+
+def apply_final_smoothing(mask, method, params):
+
+    """
+
+    Applies the selected final smoothing method to the mask.
+
+    """
+
+    print(f"  Applying final smoothing with: {method}")
+
+    if method == "method_3":
+
+        # This method operates on the whole mask
+
+        sigma = params["method_3_dt_gaussian_sigma"]
+
+        return smooth_mask_distance_transform(mask, sigma)
+
+  
+
+    # Methods 1 and 2 operate on the contour
+
+    contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
+
+    if not contours:
+
+        print("  Final Smoothing: No contour found.")
+
+        return mask
+
+    contours = sorted(contours, key=cv2.contourArea, reverse=True)
+
+    cnt = contours[0]
+
+    if method == "method_1":
+
+        sigma = params["method_1_gaussian_sigma"]
+
+        new_contour = smooth_contour_gaussian(cnt, sigma)
+
+    elif method == "method_2":
+
+        s = params["method_2_spline_s"]
+
+        n_pts = params["method_2_spline_n_pts"]
+
+        new_contour = smooth_contour_spline(cnt, s, n_pts)
+
+    else:
+
+        print(f"  Warning: Unknown smoothing method '{method}'. Returning original mask.")
+
+        return mask
+
+    # Re-draw the new contour to create the final mask
+
+    new_mask = np.zeros_like(mask)
+
+    cv2.drawContours(new_mask, [new_contour], -1, 255, -1)
+
+    return new_mask
+```
+-> # ----- 6. (version 4) Example-Based Segmentation (Histogram Backprojection) -----
+
+11051411_movement1_histBack_result(v4)
+	FINAL_SMOOTHING_METHOD = "method_2"
+	"method_2_spline_s": 50000
+	"method_2_spline_n_pts": 1000
+
+11051424_movement1_histBack_result(v4)
+	FINAL_SMOOTHING_METHOD = "method_3"
+	"method_2_spline_s": 50000
+	"method_2_spline_n_pts": 1000
+
+
+參考 # ----- 6. (version 4) Example-Based Segmentation (Histogram Backprojection) -----
+```
+修改下面的code把apply_smoothing 平滑化輪廓三種方法除了原本的方法之外多加幾種多階段整合方法, 因為結果顯示出現局部突起/毛刺(segmentation mask是雕刻文字"3"(大小約1500x1500pixel, thickness約250pixel)的輪廓及使用spline方法輪廓上還是有些20~30pixel大小突起, 以及一些細長型突起~10x40pixel.). 所以第四種方法就是先用用 B-spline 平滑大形狀, 再用 distance-map + Gaussian 修掉細小突起, 最後用中型 kernel 的 opening 清乾淨毛邊. 如果有其他推薦的方法也可以加進來. code其他部分不改變. 另外我用"method_3"時候內部常出現小hole. 請加上把內部hole填滿.
+
+  
+
+這個新增加的colab code跟上一個colab code一樣figure file存在OUTPUT_PATH下面的新開一個sub folder以月分日期跟時間命名譬如"10301639"代表10月30日16點39分使用now = datetime.datetime.now(ZoneInfo("America/New_York")). 然後再把這個subfolder名字後面加上"_movement1_histBack_result(v5)". 把figuers儲存存在這個新subfolder. 在之前colab已經定義OUTPUT_PATH = os.path.join(PROJECT_ROOT, "output", "Lume images"). 如果有輸出txt file則存在同個subfolder. 把code裡面會影響結果的parameter集中放在import下方方便設定, code儘量function化, code中的comments也都用英文. 並注意不要犯這個錯誤: module 'cv2' has no attribute 'COLOR_BGR_RGB':
+```
+-> # ----- 6. (version 5) Example-Based Segmentation (Histogram Backprojection) -----
+
+11051441_movement1_histBack_result(v5)
+	FINAL_SMOOTHING_METHOD = "method_4"
+	# (NEW v7) Params for Method 4 (Spline -> SDF -> Opening)
+	"method_4_spline_s": 50000
+	"method_4_spline_n_pts": 1000
+	"method_4_dt_gaussian_sigma": 3
+	"method_4_opening_kernel_size": 7
+
+11051447_movement1_histBack_result(v5)
+	FINAL_SMOOTHING_METHOD = "method_4"
+	# (NEW v7) Params for Method 4 (Spline -> SDF -> Opening)
+	"method_4_spline_s": 50000
+	"method_4_spline_n_pts": 1000
+	"method_4_dt_gaussian_sigma": 3
+	"method_4_opening_kernel_size": 7
+**segmentation mask及平滑結果很不錯. 使用這個方法跟設定**
+
+
+
+-> # ----- 6. (version 5) Example-Based Segmentation (Histogram Backprojection) -----
+```
+目前這個Colab code segmentation mask跟輪廓平滑化結果還不錯. 至於後續的skeleton跟geometric analysis我想把它放在下一個colab cell裡. 也就是在原本的colab cell完成segmentation mask跟輪廓平滑化跟輸出, 將結果在下一個colab cell執行後續分析. 另外關於這個雕刻文字"3"(大小約1500x1500pixel, thickness約250pixel)有關於skeleton兩條直線(頭跟尾)跟中間輪廓直線計算角度的分析用下面的方法取代. 雕刻文字"3"的skeleton line應該會有三個頂點,一個是3這個字的頭跟尾, 以及中間. 請在這三個頂點的200pixel範圍內的輪廓上的點, 設法去fit至少100pixel長的最長直線, 如果沒有夠長直線則嘗試用曲線去fit. 如果有直線就提供頭尾座標跟長度, 如果是曲線則提供頭尾座標跟長度根圓心跟radius. 並把直線跟曲線標示在圖上並如果有直線計算他們之間夾角.
+
+```
+-> # ----- 6. (version 6) Example-Based Segmentation (Histogram Backprojection) -----
+-> # ----- 7. (version 1) Example-Based Segmentation (Skeleton) -----
+
+
+11051517_movement1_histBack_result(v8)
+測試ok
+
+11051535_movement1_histBack_result(v8)
+	20張images for presentation
+
+
+
+
+
 
 
 
@@ -449,7 +1284,7 @@ DINOv3得到3跟矩形框沒有問題, 但要將矩形框移除還是有問題, 
 | # ----- 5a. Clone and install DINOv3 repo and load checkpoints  -----             | 1   | 1    |      |
 | # ----- 5b. Create DINOv3 model with weights and related functions  -----         | 1   | 1    |      |
 | # ----- 5c.(version 8) use self-supervised learning model (DINOv3) -----          | 8   | 8    |      |
-| # ----- 5d. (version 1) Smooth  DINOv3 segmentation mask and follow analysis----- | 1-7 | 3    |      |
+| # ----- 5d. (version 1) Smooth  DINOv3 segmentation mask and follow analysis----- | 1-8 | 8    |      |
 | ----- 5e. (version 1) DINOv3 fine segmentation Text Mask Analysis -----           | 1   | 1    |      |
 
 1031
@@ -678,6 +1513,95 @@ Text的輪廓segmentation mask有抓到, 但內部有洞, 外部也有獨立小�
 -> # ----- 8d. (version 7) Smooth  DINOv3 segmentation mask and follow analysis-----
 
 11030127結果(8d. (version 6)): 11030127_movement2_dinov3_ske_result
+
+
+
+
+
+參考# ----- 5d.(version 3) Refine Mask with Advanced Saturation Morphology -----
+```
+那請幫我按照你的方法步驟 1：準備 S-Map(不過這裡不只用saturation, 還有texture(std), contrast, sharpness可以有選項選擇), 步驟 2：應用「黑帽」轉換, 步驟 3：二值化並清理, 步驟 4：連接並填充輪廓. 另外另個選項就是cv2.grabCut以及preprocessing及proprocessing. 也提供詳細流程figures.
+```
+-> # ----- 5d.(version 8) Refine Mask with Advanced Saturation Morphology -----
+
+
+11052010_movement2_dinov3_ske_result(v4_blackhat)
+	METHOD_CHOICE = 'BLACKHAT'
+	BH_SATURATION_BLUR_RADIUS = 5
+	BH_KERNEL_SIZE = 41
+	BH_CLEAN_KERNEL_SIZE = 7
+	BH_CONNECT_KERNEL_SIZE = 21
+	BH_FINAL_SMOOTH_KERNEL_SIZE = 5
+	GC_DEFINITE_FG_ERODE_KSIZE = 15
+	GC_ITERATIONS = 5
+	GC_CONNECT_KERNEL_SIZE = 21
+	GC_FINAL_SMOOTH_KERNEL_SIZE = 5
+
+11052015_movement2_dinov3_ske_result(v4_blackhat)
+	METHOD_CHOICE = 'GRABCUT'
+Too slow and result bad
+
+11052043_movement2_dinov3_ske_result(v5_blackhat_texture_std)
+	METHOD_CHOICE = 'BLACKHAT'
+	FEATURE_MAP_CHOICE = TEXTURE_STD
+
+11052048_movement2_dinov3_ske_result(v5_blackhat_texture_std)
+	METHOD_CHOICE = 'BLACKHAT'
+	FEATURE_MAP_CHOICE = 'CONTRAST_GRADIENT'
+
+
+
+```
+# ----- 5d.(version 3) Refine Mask with Advanced Saturation Morphology -----
+表現好, 試著調整參數
+```
+
+11052104_movement2_dinov3_ske_result(v3)
+	DILATION_KERNEL_SIZE = 100
+	SATURATION_GAUSSIAN_RADIUS = 10
+	INITIAL_SMOOTH_KSIZE = 5
+	PARTICLE_CLEAN_KSIZE = 20
+	HOLE_FILL_KSIZE = 15
+	FINAL_SMOOTH_KSIZE = 40
+
+
+參考# ----- 5d.(version 3) Refine Mask with Advanced Saturation Morphology -----
+```
+版本 version 9 = version 3
+```
+-> # ----- 5d.(version 9) Refine Mask with Advanced Saturation Morphology -----
+
+11052104_movement2_dinov3_ske_result(v9)
+	分割輪廓結果好 但沒有連結
+
+
+參考 # ----- 5d.(version 9) Refine Mask with Advanced Saturation Morphology -----
+```
+不應該更換分割方法，而是應該修復 v3 的後處理邏輯
+**主要變更：**
+1. **全新的參數 (v6)**：我們刪除了 v3 的錯誤參數，換成了 `CLEAN_NOISE_KSIZE`、`CONNECT_GAP_KSIZE` 和 `FILL_SMOOTH_KSIZE`，並設定了正確的值。
+    
+2. **重寫 `refine_mask_based_on_saturation`**：
+    - **保留** 步驟 1-5 (Otsu 分割)。
+    - **步驟 6 (清理)**：使用 `CLEAN_NOISE_KSIZE = 7` (遠小於 15px)，只清除小噪點。
+    - **步驟 8 (連接)**：使用 `CONNECT_GAP_KSIZE = 31` (遠大於 15px)，強力連接斷裂的輪廓。  
+    - **步驟 9 (填充)**：新增 `cv2.findContours` + `cv2.drawContours(thickness=cv2.FILLED)` 來填充內部。
+    - **步驟 10 (平滑)**：使用 `FILL_SMOOTH_KSIZE = 9` (小於 15px)，只平滑最終遮罩的邊緣，而不會刪除它。
+        
+3. **更新 `save_refinement_visualizations`**：使其顯示新的、正確的處理步驟。
+```
+-> # ----- 5d.(version 10) Refine Mask with Advanced Saturation Morphology -----
+
+11052136_movement2_dinov3_ske_result(v10)
+	THRESHOLD_RATIO = 1.0
+
+11052144_movement2_dinov3_ske_result(v10)
+	THRESHOLD_RATIO = 0.8
+
+
+
+
+
 
 
 看起來目前使用11021835_movement2_dinov3_ske_result  (應該是5d. (version 3))
