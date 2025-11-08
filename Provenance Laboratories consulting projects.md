@@ -60,7 +60,7 @@ create OCR region segmentation masks and analysis
 | # ----- 3. images loading: DATA_LUME_PATH -----                                    | 1   | 1    |      |
 | # ----- 4. calculate image features summary                                        | 1   | 1    |      |
 | # ----- 5. (version 4) Example-Based Segmentation (Histogram Backprojection) ----- | 1-8 | 8    |      |
-| # ----- 6. (version 1) Lume mask classification and analysis -----                 | 1   | 1    |      |
+| # ----- 6. (version 2) Lume mask classification and analysis -----                 | 2   | 2    |      |
 |                                                                                    |     |      |      |
 
 
@@ -430,6 +430,32 @@ NEGATIVE_ROI_FACTORS_LIST = [[0.18, 0.30, 0.26, 0.38]]
 --> **用Version 8 跟這個parameters對不少的images表現很好, 先用這個**
 
 
+參考 # ----- 6. (version 1) Lume mask classification and analysis -----
+```
+這是一段Code以上一個Colab code得到的segmentation mask分析mask形狀, 嘗試用最長直線或最長曲線去fit輪廓, 也就是如果一段輪廓可能是fit兩個直線線段, 或更長的一段直線線段則取最長的為主. 計算出mask輪廓直線佔總輪廓長的比例(contour straight line ratio), 計算出mask輪廓曲線佔總輪廓長的比例(contour curve line ratio). 請修正接下來的分析. 這裡我們以下面的規則做classifications. 
+
+1. 如果 contour straight line ratio > 30% and contour curve line ratio > 30% 類別則是"hours".
+
+2. 如果 contour straight line ratio > 90% and 兩條或多於兩條直線延長線夾角介於80~100度 類別則是"minutes".  
+
+3. 如果 contour curve line ratio > 90% 類別則是"seconds".
+
+4. 如果 contour straight line ratio > 90% and 一條或小於一條直線夾角介於80~100度 類別則是"GMT". 
+
+如果是直線要記錄頭尾座標, 長度. 如果是曲線則紀錄頭尾座標, 長度, 圓心跟radius. 如果有兩條線以上也記錄兩條直線延長線夾角. 如果有接近平行的(夾角角度<10度)標記是平行並計算兩條線之間距離. 輸出的figures要畫上straight line和curve line在image上, 以及線的頭尾端點 . 另一張圖是曲線可以用圓表示, 畫上那個園以及標上圓心. 這些mask類別以及直線跟曲線各項information可以儲存在txt file.
+
+  
+
+這個colab code將figure file存在OUTPUT_PATH下面的新開一個sub folder以月分日期跟時間命名譬如"10301639"代表10月30日16點39分使用now = datetime.datetime.now(ZoneInfo("America/New_York")). 然後再把這個subfolder名字後面加上"_lume_classification_result(v2)". 把figuers儲存存在這個新subfolder. 在之前colab已經定義OUTPUT_PATH = os.path.join(PROJECT_ROOT, "output", "Lume images"). 如果有輸出txt file則存在同個subfolder. 把code裡面會影響結果的parameter集中放在import下方方便設定, code儘量function化, code中的comments也都用英文. 並注意不要犯這個錯誤: module 'cv2' has no attribute 'COLOR_BGR_RGB'
+```
+-> # ----- 6. (version 2) Lume mask classification and analysis -----
+
+
+
+
+
+
+
 
 #### Project 6 - Features
 
@@ -439,7 +465,7 @@ NEGATIVE_ROI_FACTORS_LIST = [[0.18, 0.30, 0.26, 0.38]]
 | # ----- 2. Project folder and device/device setup -----                  | 1   | 1    |      |
 | # ----- 3. images loading: Features -----                                | 1   | 1    |      |
 | # ----- 4. calculate image features summary                              | 1   | 1    |      |
-| # ----- 5.(version 6) - Image automatic mask generation using SAM  ----- | 1-9 | 9    |      |
+| # ----- 5.(version 9) - Image automatic mask generation using SAM  ----- | 1-9 | 9    |      |
 |                                                                          |     |      |      |
 
 
@@ -568,6 +594,167 @@ FFT good in some images, but all image type?
 ```
 -> # ----- 5.(version 9) - Image automatic mask generation using SAM  -----
 
+以下是code流程 # ----- 5.(version 9) - Image automatic mask generation using SAM  -----
+```
+### 流程總覽：四個階段
+
+1. **特徵提取 (Feature Extraction):** SAM 產生數百個小遮罩 (segments)，程式為**每一個**小遮罩計算一個關鍵特徵：**`avg_texture` (平均紋理)**。
+    
+2. **過濾階段 (Filtering):** 透過「遞迴分群」(`perform_iterative_clustering`)，將所有面積總和小於 10% 的「紋理群組」視為**"Outlier" (例外)** 並**丟棄**。
+    
+3. **決策階段 (Decision):** **只**拿著剩下的「主要群組」(`main_features`)，並使用您設計的「面積 vs 紋理」規則來選出**唯一**的「背景 (Background)」群組。
+    
+4. **組合階段 (Assembly):**
+    
+    - **前景 (Foreground):** 被定義為所有**未被**選為背景的「主要群組」。
+        
+    - **主要元件 (Main Element):** 從「前景」中，找出最靠近影像中心的那個物體。
+        
+
+---
+
+---
+
+### 1. 預處理：特徵提取
+
+(在 `calculate_mask_features` 函數中)
+
+- **SAM 生成遮罩：** 程式首先使用 `mask_generator.generate()` 產生數百個小遮罩。您設定的參數 (`PRED_IOU_THRESH = 0.86`, `MIN_MASK_REGION_AREA = 25`) 是**放寬**的，目的是為了產生**更多、更細緻**的遮罩，以捕捉影像細節。
+    
+- **計算紋理：** 對於_每一個_小遮罩，程式會計算其 `avg_texture`。
+    
+    - 這是透過 `ndi.generic_filter(gray_image, np.std, size=3)` 實現的，它代表遮罩內**「3x3 鄰域標準差」的平均值**。
+        
+    - `avg_texture` 值越高，代表該區域的紋理越複雜 (例如粗糙表面)；值越低，代表越平滑 (例如乾淨的天空或金屬表面)。
+        
+- **關鍵點：** 這個 `avg_texture` 是後續**所有分群 (Clustering) 的唯一依據**。
+    
+
+---
+
+### 2. 過濾階段：遞迴式「例外排除」
+
+(在 `perform_iterative_clustering` 函數中)
+
+這是您的流程中最關鍵的第一層過濾。它的目的**不是**選出背景，而是**「清理數據」**，丟掉所有無關緊要的小區域。
+
+1. **執行分群 (Iteration 1)：**
+    
+    - 程式拿著**所有**遮罩，並根據它們的 `avg_texture` 進行 K-Means 分群 (自動尋找最佳 K 值)。
+        
+2. **面積審核：**
+    
+    - 程式計算**每個群組 (cluster) 的「總像素面積」**（即該群組內所有遮罩的面積總和）。
+        
+    - **條件：** 檢查群組的總面積是否小於 `MIN_CLUSTER_AREA_PERCENT` (您設為 **10%**)。
+        
+    - **分流：**
+        
+        - **如果群組面積 < 10%：** 該群組被視為 **"Outlier" (例外)**。它包含的所有遮罩都會被移出，並放入 `all_outlier_masks` (一個「丟棄桶」)。
+            
+        - **如果群組面積 >= 10%：** 該群組被視為 **"Main" (主要)**。它包含的所有遮罩將**被保留**，進入下一輪。
+            
+3. **遞迴 (Loop)：**
+    
+    - 程式**只**拿著上一輪被保留的 "Main" 遮罩，**重新**執行 K-Means 分群（再次自動找 K 值）。
+        
+    - 接著**再次**進行面積審核 (第 2 步)。
+        
+4. **結束條件：**
+    
+    - 這個「分群 -> 審核 -> 移除例外」的過程會不斷重複，直到某一次分群中，**不再產生任何 "Outlier"**（即所有產生的群組面積都 >= 10%）。
+        
+    - 此時，迴圈停止。
+        
+
+**此階段的產出：**
+
+- `main_features`：一個「乾淨」的列表，只包含那些屬於最終、穩定、大面積「主要群組」的遮罩。
+    
+- `all_outlier_masks`：一個「丟棄桶」，包含所有在過程中被剔除的小面積群組遮罩。
+    
+
+---
+
+### 3. 決策階段：選定 Background (背景)
+
+(在 `get_bg_fg_from_main_clusters` 函數中)
+
+現在，程式**只**專注於 `main_features` (主要群組)，並應用您在 v8 中設計的決策邏輯：
+
+1. **計算統計數據：** 程式計算_每個_「主要群組」的 `total_area` (總像素面積) 和 `avg_texture`。
+    
+2. **找出前兩名：** 程式根據 `total_area` 排序，找出**面積第一大 (`cluster_1`)** 和**第二大 (`cluster_2`)** 的群組。
+    
+3. **執行決策樹：**
+    
+    - **如果只有 1 個主要群組：** 它自動被選為 `Background`。
+        
+    - **如果 > 1 個主要群組：**
+        
+        - 計算面積差異 `area_diff = (cluster_1.area - cluster_2.area) / cluster_1.area`。
+            
+        - **情境 A (面積相似)：如果 `area_diff <= 20%`**
+            
+            - **邏輯：** 面積接近，無法區分，改用「紋理」決勝負。
+                
+            - **決策：** 比較 `cluster_1` 和 `cluster_2` 的 `avg_texture`，**紋理最高 (Max Texture)** 的群組被選為 `Background`。
+                
+        - **情境 B (面積懸殊)：如果 `area_diff > 20%`**
+            
+            - **邏輯：** 面積差異明顯，以「面積」決勝負。
+                
+            - **決策：** 選擇 `cluster_1` (因為它已被排序為 `total_area` 最大) 作為 `Background`。
+                
+
+**此階段的產出：**
+
+- `bg_mask`：一個遮罩，僅包含**唯一勝出**的背景群組。
+    
+- `main_fg_mask`：一個遮罩，包含**所有其他**未被選中的「主要群組」。
+    
+
+---
+
+### 4. 組合階段：定義 Foreground 與 Main Element
+
+(在 `process_image` 函數的第 6、7 步)
+
+#### A. 如何決定 Foreground (前景)？
+
+- `final_fg_mask` = `main_fg_mask`。
+    
+- 根據您的要求，在第 2 階段被丟棄的「例外遮罩」(`all_outlier_masks`) **不會**被加回前景。
+    
+- **最終定義：** 前景**只包含**那些面積大於 10% 且未被選為背景的「主要群組」。所有 "Outlier" 區域在最終圖像中會是**黑色（未分配）**。
+    
+
+#### B. 如何決定 Main Element (主要元件)？
+
+- 程式接著呼叫 `find_center_foreground_component`。
+    
+- 它**只**在 `final_fg_mask` (前景) 中進行搜索。
+    
+- 它從影像中心點開始，透過 `CENTER_ROI_FRACTIONS` 定義的 expanding boxes (擴展框) 向外尋找。
+    
+- **決策：** 它會選中**第一個**在擴展框中遇到的、且在該框中佔有**最大像素**的「前景物體 (connected component)」。
+    
+- **最終定義：** 「主要元件」被定義為**最靠近影像中心的那個「前景」物體**。
+```
+
+
+
+參考 # ----- 5.(version 9) - Image automatic mask generation using SAM  -----
+```
+以下是version 9 colab code利用SAM, clustering找出background跟main alament的segmentation masks. 並以avg_texture為唯一基準去進行clustering. 現在我想擴充這個方法. 並同時考慮texture, 亮度指標L*, 以及contrast三個index. Method1: 可以user從三個選擇一個index用來clustering. Method2: 三個同時考慮合併成1個index 用來clustering. Method2: 每次做clustering時, 自動選擇可以讓cluster間的差距遠大於cluster內差距的index再進行cluster. 另外cluster時無論哪個方法都避免最後的cluster有面積小於總面積10%出現. 另外新增圖就是SAM經過final clustering之後的overlap images, 就是屬於同樣的cluster應該用同樣顏色mask.
+```
+-> # ----- 5.(version 10) - Image automatic mask generation using SAM  -----
+
+11081413_dialtext_result(v10): 
+	CLUSTERING_METHOD = 'auto'
+
+11081539_dialtext_result(v10): 
+	CLUSTERING_METHOD = 'brightness'
 
 
 
