@@ -1275,17 +1275,17 @@ def apply_final_smoothing(mask, method, params):
 
 #### Project 8 - Movement dimensions2
 
-|                                                                                   | All | Best | Note |
-| --------------------------------------------------------------------------------- | --- | ---- | ---- |
-| # ----- 1. Import dependent -----                                                 | 1   | 1    |      |
-| # ----- 2. Project folder and device/device setup -----                           | 1   | 1    |      |
-| # ----- 3. images loading: movement dimensions1 -----                             | 1   | 1    |      |
-| # ----- 4. calculate image features summary                                       | 1   | 1    |      |
-| # ----- 5a. Clone and install DINOv3 repo and load checkpoints  -----             | 1   | 1    |      |
-| # ----- 5b. Create DINOv3 model with weights and related functions  -----         | 1   | 1    |      |
-| # ----- 5c.(version 8) use self-supervised learning model (DINOv3) -----          | 8   | 8    |      |
-| # ----- 5d. (version 1) Smooth  DINOv3 segmentation mask and follow analysis----- | 1-8 | 8    |      |
-| ----- 5e. (version 1) DINOv3 fine segmentation Text Mask Analysis -----           | 1   | 1    |      |
+|                                                                                   | All  | Best | Note |
+| --------------------------------------------------------------------------------- | ---- | ---- | ---- |
+| # ----- 1. Import dependent -----                                                 | 1    | 1    |      |
+| # ----- 2. Project folder and device/device setup -----                           | 1    | 1    |      |
+| # ----- 3. images loading: movement dimensions1 -----                             | 1    | 1    |      |
+| # ----- 4. calculate image features summary                                       | 1    | 1    |      |
+| # ----- 5a. Clone and install DINOv3 repo and load checkpoints  -----             | 1    | 1    |      |
+| # ----- 5b. Create DINOv3 model with weights and related functions  -----         | 1    | 1    |      |
+| # ----- 5c.(version 8) use self-supervised learning model (DINOv3) -----          | 8    | 8    |      |
+| # ----- 5d. (version 1) Smooth  DINOv3 segmentation mask and follow analysis----- | 1-10 | 10   |      |
+| ----- 5e. (version 1) DINOv3 fine segmentation Text Mask Analysis -----           | 1    | 1    |      |
 
 1031
 DINOv3 first and second PCA affect by light and texture, but 3nd PCA may works, still have positive and negative issue
