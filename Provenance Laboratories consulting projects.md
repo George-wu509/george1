@@ -459,14 +459,14 @@ NEGATIVE_ROI_FACTORS_LIST = [[0.18, 0.30, 0.26, 0.38]]
 
 #### Project 6 - Features
 
-|                                                                          | All | Best | Note |
-| ------------------------------------------------------------------------ | --- | ---- | ---- |
-| # ----- 1. Import dependent -----                                        | 1   | 1    |      |
-| # ----- 2. Project folder and device/device setup -----                  | 1   | 1    |      |
-| # ----- 3. images loading: Features -----                                | 1   | 1    |      |
-| # ----- 4. calculate image features summary                              | 1   | 1    |      |
-| # ----- 5.(version 9) - Image automatic mask generation using SAM  ----- | 1-9 | 9    |      |
-|                                                                          |     |      |      |
+|                                                                          | All  | Best | Note |
+| ------------------------------------------------------------------------ | ---- | ---- | ---- |
+| # ----- 1. Import dependent -----                                        | 1    | 1    |      |
+| # ----- 2. Project folder and device/device setup -----                  | 1    | 1    |      |
+| # ----- 3. images loading: Features -----                                | 1    | 1    |      |
+| # ----- 4. calculate image features summary                              | 1    | 1    |      |
+| # ----- 5.(version 9) - Image automatic mask generation using SAM  ----- | 1-10 | 10   |      |
+|                                                                          |      |      |      |
 
 
 
@@ -756,6 +756,32 @@ FFT good in some images, but all image type?
 11081539_dialtext_result(v10): 
 	CLUSTERING_METHOD = 'brightness'
 
+
+參考 # ----- 5.(version 11) - Image automatic mask generation using SAM  -----
+```
+要實現您要的「每個 pixel 只能屬於一種類別」的拼圖式計算，我們必須**修改 `perform_iterative_clustering` 函數**，改變它計算面積的方式。
+
+我們將採用一種**「優先權」**策略：
+
+1. **建立「標籤圖」：** 建立一個和影像一樣大的空白「地圖」（`label_map`），每個 pixel 的值預設為 -1 (未分配)。
+    
+2. **決定優先權：** 當兩個遮罩重疊時，誰「贏得」這個 pixel？我們採用**「最小遮罩優先」**的原則。面積越小的遮罩（通常代表越精細的細節）優先權越高。
+    
+3. **繪製地圖：** 程式會**從面積最小的遮罩開始**，將其群組編號 (e.g., `cluster=3`) 畫到 `label_map` 上。然後再畫面積第二小的、第三小的...
+    
+4. **計算面積：** 最後，程式**不再加總** `mask['area']`，而是**直接計算 `label_map` 上有多少個 pixel 屬於 `cluster=0`、`cluster=1`...** 這樣就能確保每個 pixel 只被計算一次，所有群組的面積總和**絕對會小於等於 100%**。
+```
+-> # ----- 5.(version 11) - Image automatic mask generation using SAM  -----
+
+11081539_dialtext_result(v11)
+
+
+參考 # ----- 5.(version 11) - Image automatic mask generation using SAM  -----
+```
+基於下面(version 11)的code要修正一下clustering的部分. 需要改動的是如果在Iterative check num_masks < 4 不需要停止. 而是拿這幾個masks直接進入決策：決定 Background (BG)的階段. 在Background (BG)的階段的每個cluster都幫我在txt file列出每個cluster texture, saturation, hue, contrast, 以及這個cluster任意三個positions讓我可以檢查. 提供新的code (version 11)
+
+```
+-> # ----- 5.(version 12) - Image automatic mask generation using SAM  -----
 
 
 
@@ -1793,6 +1819,12 @@ Too slow and result bad
 
 看起來目前使用11021835_movement2_dinov3_ske_result  (應該是5d. (version 3))
 ![[Pasted image 20251103075610.png]]
+
+
+
+
+
+
 
 
 
