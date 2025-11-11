@@ -47,6 +47,18 @@ create OCR region segmentation masks and analysis
 -> # ----- 4.(version 2) create OCR region segmentation masks and analysis  -----
 
 
+參考 # ----- 4.(version 2) create OCR region segmentation masks and analysis  -----
+```
+請提供colab code 可以識別錶面的文字同時輸出 character-level 與 text-level 的辨識結果與位置 (bounding box). 想同時測試DocTR (by Mindee), PaddleOCR (PP-OCRv4), mmOCR (OpenMMLab), 並有bounding box, segmentation masks的figures並將結果輸出到txt. 
+
+figure file存在OUTPUT_PATH(在之前colab已經定義OUTPUT_PATH = os.path.join(PROJECT_ROOT, "output", "Lume images"))下面的新開一個sub folder以月分日期跟時間命名譬如"10301639"代表10月30日16點39分使用now = datetime.datetime.now(ZoneInfo("America/New_York")). 然後再把這個subfolder名字後面加上"_movement2_dinov3_text_result(v1)". 把figuers儲存存在這個新subfolder. 如果有輸出txt file則存在同個subfolder. 把code裡面會影響結果的parameter集中放在import下方方便設定, code儘量function化, code中的comments也都用英文. 並注意不要犯這個錯誤: module 'cv2' has no attribute 'COLOR_BGR_RGB'
+
+請根據之前如下Colab code改寫將library換成這三個新OCR library:
+```
+-> # ----- 5.(version 1) test DocTR PaddleOCR mmOCR libraries  -----
+
+
+
 
 
 
