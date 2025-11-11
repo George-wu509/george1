@@ -28,7 +28,7 @@ Create and deliver python code that takes matlab structures of file information 
 
 a.      This should work for a specified general part type, detailed part type, image type, view, and/or other sets of 1 or more parameters. The image should be extracted to be used in a given processing algorithm. Edge cases and fault tolerances should be handled. 程式碼應適用於指定的通用零件類型、詳細零件類型、影像類型、檢視和/或其他一個或多個參數組合。提取的圖像應用於給定的處理演算法。程式碼應考慮邊界情況和容錯機制。
 
-
+![[Pasted image 20251111074904.png]]
 
 
 
@@ -51,6 +51,12 @@ a.      The mean, median, std, 25%, 75%, min, and max should be found for e
 b.     The values should be plotted directly and as histograms (for numeric metrics). This should be done in aggregate, per era, per model, and per reference. 數值指標應直接繪製成圖表，並以直方圖的形式呈現。應依時期、型號及參考編號進行總結分析。
 
 c.      For metrics that are lines, the data should be plotted as overlapping values. This should be done in aggregate, per era, per model, and per reference. 對於折線圖指標，資料應以重疊值的形式繪製。應依時期、型號及參考編號進行總結分析。
+
+![[Pasted image 20251111074722.png]]
+
+![[Pasted image 20251111074813.png]]
+
+![[Pasted image 20251111074836.png]]
 
 
 #### Project 13 - Crystal Crown
@@ -85,6 +91,10 @@ a.      A mask of the textured region 紋理區域的遮罩
 
 b.     A description of the type of texturing (e.g. bumpy or striated) 紋理類型的描述（例如，凹凸不平或條紋狀）
 
+![[Pasted image 20251111074949.png]]
+
+![[Pasted image 20251111075008.png]]
+![[Pasted image 20251111075037.png]]
 #### Project 16 - Bracelet Pin
 
 Create and deliver python code that processes images of the microscopic pin of the bracelet and provides 錶帶銷釘：編寫並提交 Python 程式碼，用於處理錶帶微觀銷釘的圖像，並提供以下資訊：
@@ -99,6 +109,9 @@ b4. The variation in radius of the pin 銷釘半徑的變化
 b5. The variation in radius of the hole 孔半徑的變化
 b6. An analysis of case B for the same as for case A. 分析情況 B，與情況 A 相同。
 
+![[Pasted image 20251111075202.png]]
+
+
 #### Project 17 - Reading Case Side
 
 Create and deliver python code that processes images of the sides of the case (aka body) of watches. This should be done in a manner that is robust to dust, uneven lighting, highlights and shadows, specular reflections, uneven feature edge shape, small occlusions, and all variations of background and feature colors, textures, and reflectivity 讀取錶殼側面：編寫並提交 Python 程式碼，用於處理手錶錶殼（又稱表身）側面的圖像。這項工作應能有效應對灰塵、光照不均、高光和陰影、鏡面反射、特徵邊緣形狀不規則、輕微遮擋以及背景和特徵顏色、紋理和反射率的各種變化。
@@ -112,3 +125,5 @@ c.      Determine the height of the text 確定文字高度。
 d.     Determine if the text is engraved or laser etched. 確定文字是雕刻還是雷射蝕刻。
 
 e.      Create metrics that can be repeatably seen in the engravings, even with wear and challenging lighting conditions. 創建即使在磨損和光照條件不佳的情況下，也能在雕刻中重複觀察到的度量標準。
+
+![[Pasted image 20251111075230.png]]
