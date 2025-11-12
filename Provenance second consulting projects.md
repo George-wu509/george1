@@ -127,3 +127,13 @@ d.     Determine if the text is engraved or laser etched. 確定文字是雕
 e.      Create metrics that can be repeatably seen in the engravings, even with wear and challenging lighting conditions. 創建即使在磨損和光照條件不佳的情況下，也能在雕刻中重複觀察到的度量標準。
 
 ![[Pasted image 20251111075230.png]]
+
+
+參考text_run.py 跟text_config.yaml
+```
+11/11 2226
+以下是一段python script code跟他的yaml config file. 可以從錶面detect OCR及一系列分析. 想按照以下python script code跟他的yaml config file新寫一個python script code(ocr_compare_run.py)跟他的yaml config file(ocr_compare_config.yaml)目的是比較不同的OCR library. 將OCR library新增加PaddleOCR, DocTR, Surya, mmOCR, 希望將不同library儘可能模組化方便未來擴充新的OCR library. 希望就像下面python script code進行text level detection跟同樣的輸出. 如果OCR library也有提供character level detection也進行, 並同樣的輸出. 包括figure跟txt file儲存到output folder. 在yaml config file有選項可以針對每個OCR library選擇要不要執行. 最後並附上environment file create python environment.
+
+請根據原始code儘量少變動提供新的python script code跟yaml config file, code comments全部用英文.
+```
+
