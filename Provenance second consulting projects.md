@@ -100,7 +100,38 @@ def load_mat_auto(filename):
 ```
 
 
+```
+我的python code會load mat file(闢如A03FF1C13FCE053512F5686451B5CC23.mat)裏面的watchentry變數, 並讀取這個watchentry變數的很多value. 譬如在matlab裡面的watchentry.watchview(1).glasspoint.etchID = 'C84EEDCE31308831A8D4F8BD522A7507'. 請幫我檢查這個python function: def search_watchview_id(self, mat_data, watchview_id, watchview_image_path) 我執行的時候mat_data就等於watchentry變數, watchview_id是之前我在ImagingWatch_config.yaml寫下的
+watchview_id:
+  glasspoint 1: '["watchentry"]["watchview"][0]["glasspoint"]["etchID"]'
+  toppoint 1: '["watchentry"]["watchview"][0]["toppoint"]["topID"]'
+  toppoint 2: '["watchentry"]["watchview"][1]["toppoint"]["topID"]'
+  toppoint 3: '["watchentry"]["watchview"][2]["toppoint"]["topID"]'
+  toppoint 4: '["watchentry"]["watchview"][3]["toppoint"]["topID"]'
+  toppoint 5: '["watchentry"]["watchview"][4]["toppoint"]["topID"]'
 
+watchview_image_path則是'D:/Provenance Project/ImagingLibWatch/images/matlab_images\\A03FF1C13FCE053512F5686451B5CC23'這個folder裡面有很多png file. 譬如C84EEDCE31308831A8D4F8BD522A7507.png. 
+
+所以在for key, eval_str in watchview_id.items()迴圈裏面result_dict[key]應該可以正確指到那張png file的path 'D:/Provenance Project/ImagingLibWatch/images/matlab_images\\A03FF1C13FCE053512F5686451B5CC23\\C84EEDCE31308831A8D4F8BD522A7507.png' 但似乎會有Error 請幫我修改
+
+```
+
+
+```
+
+目前Error已經解決可以正確定位到image並跳出視窗展示image. 想做個小修正, 就是跳出image視窗後可以縮放, 可能用滑鼠滾論縮放.
+
+還有另一個新增功能是按下pushButton_view_info之後要跳出視窗顯示很多值(這些值也是來自於watchentry變數), 譬如
+X: 80
+Y: 140等...
+
+以function search_watchview_id(self, mat_data, watchview_id, watchview_image_path)來說在for key, eval_str in watchview_id.items()迴圈裡, key='glasspoint 1', eval_str='["watchentry"]["watchview"][0]["glasspoint"]["etchID"]'. 那要顯示的value就是["watchentry"]["watchview"][0]["glasspoint"]下面所有的值譬如["watchentry"]["watchview"][0]["glasspoint"]["X"] = 80, ["watchentry"]["watchview"][0]["glasspoint"][Y] = 140 等等. 
+
+```
+
+```
+目前可以用視窗縮放, 但效果很不理想請修正. 目前用滾輪控制是只擷取image從左上開始擷取小區域並沒有image放大縮小. 我想要的效果是如果滑鼠滾輪往上滾, 在滑鼠指的地方為中心放大. 譬如本來image是100x100, 顯示的區域是x的40到60, y的40到60. 滑鼠滾輪往上滾原來image變成新的放大image 200x200, 但顯示的區域仍然新的放大image的x的40到60, y的40到60區域. 但如果是縮小, 譬如顯示的區域是x的40到60, y的40到60, 但縮小後的image不到20pixel x 20pixel, 則視窗也進行縮小. 請提供新的ImageViewer
+```
 
 
 #### Project 11 - Image Processing Pipeline
