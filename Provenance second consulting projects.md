@@ -170,6 +170,8 @@ b.     The location of the dots and any that are out of place, missing, or v
 
 c.      Method should be made more robust to bright spots than what is currently in the Matlab code. 該方法應該比目前 Matlab 程式碼中的方法更能有效應對亮點。
 
+![[Pasted image 20251113135921.png]]
+
 
 #### Project 14 - Links
 
@@ -183,6 +185,7 @@ c.      Determine thickness (absolute and along curvature) 確定厚度（�
 
 d.     If a pin is present, determine the radius and center of it 如果存在銷釘，則確定其半徑和中心
 
+![[Pasted image 20251114075629.png]]
 
 #### Project 15 - Movement Isolation
 
