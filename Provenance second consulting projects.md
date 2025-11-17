@@ -241,3 +241,205 @@ e.      Create metrics that can be repeatably seen in the engravings, even 
 請根據原始code儘量少變動提供新的python script code跟yaml config file, code comments全部用英文.
 ```
 
+
+
+```
+我在surya github看到下列到OCR (text recognition)使用方式, 請修改surya相關的import及python script code使用方法: 
+
+OCR (text recognition)
+from PIL import Image
+from surya.foundation import FoundationPredictor
+from surya.recognition import RecognitionPredictor
+from surya.detection import DetectionPredictor
+
+image = Image.open(IMAGE_PATH)
+foundation_predictor = FoundationPredictor()
+recognition_predictor = RecognitionPredictor(foundation_predictor)
+detection_predictor = DetectionPredictor()
+
+predictions = recognition_predictor([image], det_predictor=detection_predictor)
+
+
+(Text line detection)
+from PIL import Image
+from surya.detection import DetectionPredictor
+
+image = Image.open(IMAGE_PATH)
+det_predictor = DetectionPredictor()
+
+# predictions is a list of dicts, one per image
+predictions = det_predictor([image])
+```
+
+
+```
+我查到DocTR, Surya, mmOCR 都有character level OCR. 所以我想比較的是easyOCR(text level)+pytesseract(character level), PaddleOCR(text level)+pytesseract(character level), DocTR (text level and character level), surya (text level and character level), mmOCR (text level and character level). 提供character level box, text level box以及其他資訊譬如text, character, confidence等等. 請中文詳細解釋如何用「主控腳本 (Controller Script)」使用 Python 的 subprocess 模組來呼叫**其他環境的 Python 執行檔來做到將原有的（EasyOCR + Tesseract）分析流程，擴展為一個模組化的比較框架，以評估多個OCR library（PaddleOCR, DocTR, Surya, mmOCR）個別的text level OCR跟character level OCR. 請提供新的code. 以下是我查到的:
+
+(DocTR library) github: https://github.com/mindee/doctr
+
+DocTR支援 character level OCR：DocTR 採兩階段架構，先偵測文字區域再將每一區域經過 recognition 模型辨識所有字元，結果可提供到字元層級
+
+  
+
+from doctr.models import ocr_predictor
+
+model = ocr_predictor(pretrained=True)
+
+result = model(["your_image.jpg"])
+
+# result 內包含偵測到的每個文字區域，以及區域內的文字（可拆分為每個字元）
+
+  
+
+如要針對單個字元進行細緻辨識，可將圖片切割為單字圖，傳入 recognition_predictor
+
+from doctr.io import DocumentFile
+
+from doctr.models import recognition_predictor
+
+doc = DocumentFile.from_images("char_image.png")
+
+model = recognition_predictor(pretrained=True)
+
+result = model(doc)
+
+print(result)
+
+  
+
+  
+
+  
+
+(surya library) github: https://github.com/datalab-to/surya
+
+The results.json file will contain a json dictionary where the keys are the input filenames without extensions. Each value will be a list of dictionaries, one per page of the input document. Each page dictionary contains:
+
+chars - the individual characters in the line
+
+text - the text of the character
+
+bbox - the character bbox (same format as line bbox)
+
+polygon - the character polygon (same format as line polygon)
+
+confidence - the confidence of the model in the detected character (0-1)
+
+bbox_valid - if the character is a special token or math, the bbox may not be valid
+
+  
+
+  
+
+(mmOCR library) github: https://github.com/open-mmlab/mmocr
+
+支援 character level OCR：mmOCR 支援多種模型（如 CRNN、SAR），這些模型底層字元編碼，可自訂導出每個 word 的 character
+
+from mmocr.apis import MMOCR
+
+ocr = MMOCR(det='DB_r18', rec='CRNN')
+
+result = ocr.readtext('your_image.jpg')
+
+# result['text'] 會回傳識別到的字串，可拆為每個字元
+```
+
+
+```
+在這裡我想做一下變動. 將controller.py裡的功能跟設定, 將mmocr OCR library部分獨立成類似run_mmocr_subprocess.py可獨立運行的python file請提供code. 可以讀取folder裡面的images, 然後用那個OCR library進行text level OCR跟character level OCR, 如果這個OCR library輸出character level OCR結果是empty或根本沒這功能, 則用Tesseract library從text的box內部去辨識到character(要標示用哪個library)進行後續character level分析. 如果這個OCR library有character level OCR結果, 就同時計算並輸出這個OCR library跟Tesseract library的兩個內容並進行後續character level分析.
+
+輸出text bbox(Individual Detections), text跟confidence score. 如果text(Individual Detections)是在同個水平位置用group_words_into_lines變成Grouped Lines, 也輸出box coordinates跟text. 而在Character-Level OCR則輸出letter, character的bbox, height, width, Skeleton Endpoints, junctions, Thickness and totla length, 並計算Hu Moments (log), 並計算x direction projection(每隔PROFILE_SPACING=5計錄一次), 並計算y direction projection(每隔PROFILE_SPACING=5計錄一次), 並計算Skeleton thickness(每隔PROFILE_SPACING=5計錄一次). Figure則輸出原圖跟text-level bbox結果的overlay figure, 原圖跟character-level bbox結果的overlay figure, 原圖跟text-level bbox + character-level bbox 結果的overlay figure, 對每個character bbox用otsu方法得到的所有letter 的segmentation masks的overlay figure, 圖跟skeleton的overlay figure. 
+
+figure file存在OUTPUT_PATH下面的新開一個sub folder以月分日期跟時間命名譬如"10301639"代表10月30日16點39分使用now = datetime.datetime.now(ZoneInfo("America/New_York")). 然後再把這個subfolder名字後面加上"_mmocr_result(v1)". 把figuers儲存存在這個新subfolder. 在之前colab已經定義OUTPUT_PATH = os.path.join(PROJECT_ROOT, "output", "Lume images"). 如果有輸出txt file則存在同個subfolder. 把code裡面會影響結果的parameter集中放在import下方方便設定, code儘量function化, code中的comments也都用英文.
+
+
+請把所有跟參數設定都放在獨立的mmocr_config.yaml 管理, 請提供新的code包括run_mmocr_pipeline.py, mmocr_config.yaml還有設定python environment的files(conda, pip)
+
+
+
+這是是我之前確認成功建立且mmocr可以用的environemt file. 請參考這個提供conda , pip 建立python environment的files: conda create -n ocr_mmocr_env python=3.8 -y
+
+conda activate ocr_mmocr_env
+conda install pytorch==1.10.0 torchvision cudatoolkit=11.3 -c pytorch -y
+
+pip install -U openmim
+mim install "mmengine>=0.7.1,<1.1.0"
+mim install "mmcv>=2.0.0rc4,<2.1.0"
+mim install "mmdet>=3.0.0rc5,<3.2.0"
+pip install "mmocr==1.0.1"
+pip install opencv-python numpy pyyaml pillow pytesseract
+```
+
+
+```
+在這裡我想做一下變動. 將controller.py裡的功能跟設定, 將paddle OCR library部分獨立成類似run_paddle_subprocess.py可獨立運行的python file請提供code. 可以讀取folder裡面的images, 然後用那個OCR library進行text level OCR跟character level OCR, 如果這個OCR library輸出character level OCR結果是empty或根本沒這功能, 則用Tesseract library從text的box內部去辨識到character(要標示用哪個library)進行後續character level分析. 如果這個OCR library有character level OCR結果, 就同時計算並輸出這個OCR library跟Tesseract library的兩個內容並進行後續character level分析.
+
+輸出text bbox(Individual Detections), text跟confidence score. 如果text(Individual Detections)是在同個水平位置用group_words_into_lines變成Grouped Lines, 也輸出box coordinates跟text. 而在Character-Level OCR則輸出letter, character的bbox, height, width, Skeleton Endpoints, junctions, Thickness and totla length, 並計算Hu Moments (log), 並計算x direction projection(每隔PROFILE_SPACING=5計錄一次), 並計算y direction projection(每隔PROFILE_SPACING=5計錄一次), 並計算Skeleton thickness(每隔PROFILE_SPACING=5計錄一次). Figure則輸出原圖跟text-level bbox結果的overlay figure, 原圖跟character-level bbox結果的overlay figure, 原圖跟text-level bbox + character-level bbox 結果的overlay figure, 對每個character bbox用otsu方法得到的所有letter 的segmentation masks的overlay figure, 圖跟skeleton的overlay figure. 
+
+figure file存在OUTPUT_PATH下面的新開一個sub folder以月分日期跟時間命名譬如"10301639"代表10月30日16點39分使用now = datetime.datetime.now(ZoneInfo("America/New_York")). 然後再把這個subfolder名字後面加上"_paddle_result(v1)". 把figuers儲存存在這個新subfolder. 在之前colab已經定義OUTPUT_PATH = os.path.join(PROJECT_ROOT, "output", "Lume images"). 如果有輸出txt file則存在同個subfolder. 把code裡面會影響結果的parameter集中放在import下方方便設定, code儘量function化, code中的comments也都用英文.
+```
+
+
+```
+在這裡我想做一下變動. 將controller.py裡的功能跟設定, 將Surya OCR library部分獨立成類似run_paddle_subprocess.py可獨立運行的python file請提供code. 可以讀取folder裡面的images, 然後用那個OCR library進行text level OCR跟character level OCR, 如果這個OCR library輸出character level OCR結果是empty或根本沒這功能, 則用Tesseract library從text的box內部去辨識到character(要標示用哪個library)進行後續character level分析. 如果這個OCR library有character level OCR結果, 就同時計算並輸出這個OCR library跟Tesseract library的兩個內容並進行後續character level分析. 請把所有跟參數設定都放在獨立的paddle_config.yaml 管理, 也請提供建立python environment code.
+
+輸出text bbox(Individual Detections), text跟confidence score. 如果text(Individual Detections)是在同個水平位置用group_words_into_lines變成Grouped Lines, 也輸出box coordinates跟text. 而在Character-Level OCR則輸出letter, character的bbox, height, width, Skeleton Endpoints, junctions, Thickness and totla length, 並計算Hu Moments (log), 並計算x direction projection(每隔PROFILE_SPACING=5計錄一次), 並計算y direction projection(每隔PROFILE_SPACING=5計錄一次), 並計算Skeleton thickness(每隔PROFILE_SPACING=5計錄一次). Figure則輸出原圖跟text-level bbox結果的overlay figure, 原圖跟character-level bbox結果的overlay figure, 原圖跟text-level bbox + character-level bbox 結果的overlay figure, 對每個character bbox用otsu方法得到的所有letter 的segmentation masks的overlay figure, 圖跟skeleton的overlay figure. 
+
+figure file存在OUTPUT_PATH下面的新開一個sub folder以月分日期跟時間命名譬如"10301639"代表10月30日16點39分使用now = datetime.datetime.now(ZoneInfo("America/New_York")). 然後再把這個subfolder名字後面加上"_Surya_result(v1)". 把figuers儲存存在這個新subfolder. 在之前colab已經定義OUTPUT_PATH = os.path.join(PROJECT_ROOT, "output", "Lume images"). 如果有輸出txt file則存在同個subfolder. 把code裡面會影響結果的parameter集中放在import下方方便設定, code儘量function化, code中的comments也都用英文.
+```
+
+
+
+```
+mmocr_env
+---------------------------
+conda create -n ocr_mmocr_env python=3.8 -y
+conda activate ocr_mmocr_env
+conda install pytorch==1.10.0 torchvision cudatoolkit=11.3 -c pytorch -y
+pip install -U pip
+pip install -U openmim
+mim install "mmengine>=0.7.1,<1.1.0"
+mim install "mmcv>=2.0.0rc4,<2.1.0"
+mim install "mmdet>=3.0.0rc5,<3.2.0"
+pip install "mmocr==1.0.1"
+pip install opencv-python numpy pyyaml pillow pytesseract scipy scikit-image tqdm tomli platformdirs
+python -m pip install backports.zoneinfo
+
+
+
+
+paddle_env
+---------------------------
+conda create -n ocr_paddle_env python=3.10 -y
+conda activate ocr_paddle_env
+python -m pip install -U pip
+python -m pip install paddlepaddle==3.2.0 -i https://www.paddlepaddle.org.cn/packages/stable/cpu/https://www.paddlepaddle.org.cn/packages/stable/cpu/
+python -m pip install "paddleocr==3.2.0"
+python -m pip install opencv-python numpy pyyaml tqdm scikit-image scipy Pillow
+python -m pip install "torch==2.2.2" --index-url https://download.pytorch.org/whl/cpu
+python -m pip install pytesseract
+
+
+
+
+Surya_env
+---------------------------
+conda create -n ocr_surya_env python=3.10 -y
+conda activate ocr_Surya_env
+pip install surya-ocr
+python -m pip install scikit-image scipy pytesseract
+
+
+
+doctr_env
+---------------------------
+conda create -n ocr_doctr_env python=3.10 -y
+conda activate ocr_doctr_env   
+pip install python-doctr
+python -m pip install scikit-image scipy pytesseract
+
+
+
+
+
+```
