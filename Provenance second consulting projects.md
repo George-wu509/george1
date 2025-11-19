@@ -443,3 +443,243 @@ python -m pip install scikit-image scipy pytesseract
 
 
 ```
+
+
+
+```
+這裡是run_doctr_subprocess.py跟設定檔doctr_config.yaml. 這裡IMAGE_SCALE控制image進行縮放(譬如IMAGE_SCALE=0.5則200x200pixel變成100x100pixel). 請按照下列需求更改doctr_config.yaml跟run_doctr_subprocess.py
+
+1. 這裡要修改縮放的方式. IMAGE_SCALE=0.5則200x200pixel image縮小成100x100pixel的區域在200x200pixel的左上角, 其他區域則補0. 而當OCR library detect到text and letter得到bbox之後, 將bbox恢復原來尺寸到他本來要對應的地方. 並以原始尺寸輸出figures跟後續的結果. 
+
+2. 在preprocess_image時cv2.imread載入image之後, 進行局部對比增強（CLAHE）, 適度 gamma 調整(預設0.40), Unsharp (預設σ=1.5, α=5.0), Second CLAHE, IMADJUST, IMBINARIZE等步驟. 每個步驟都有parameter可以選擇true or false, 設定都放在yaml設定檔.
+
+請按照這需求更改doctr_config.yaml跟run_doctr_subprocess.py
+```
+
+```11190930 gemini
+
+以下是run_doctr_subprocess.py跟設定yaml file 會從image進行前處理並用OCR library讀取image中的文字並輸出含有文字的bbox的一系列figures跟txt files. 現在要在儘量不改變原本code的前提下基於需求做稍微修改並提供新的完整code:
+
+需求: 
+在apply_advanced_preprocessing() function, 在# --- 3. Scaling (Canvas Method) ---部分目前是用Canvas Method方式, 現在要加入另一種方式就是單純的resize method. 譬如IMAGE_SCALE = 0.5, 則原本200 x 200pixel的image就變成100 x 100pixel image. 有選項在doctr_config.yaml 可以選擇用哪種方式. 
+
+run_doctr_subprocess.py輸出含有text or character bbox的figures時, 尤其在有resize跟rotate時bbox的位置明顯不match. 請特別檢查code這方面並進行修正.
+
+(doctr_config.yaml file)
+
+```
+
+目前doctr_config.yaml可以提供最好的效果
+
+PATHS:
+  DATA_TEXT_PATH: "./images/text_images3"
+  OUTPUT_PATH: "./output/doctr_standalone_results"
+
+SYSTEM:
+  TESSERACT_CMD_PATH: 'D:\Program Files\Tesseract-OCR\tesseract.exe'
+
+OUTPUT:
+  SUFFIX: "_DocTR_result(v6)(images3_r0_CANVAS_scale0.3)"
+  TIMEZONE: "America/New_York"
+
+PREPROCESSING_PARAMS:
+  # 1. Scaling
+  # Options: 'CANVAS' (Keep original canvas size, shrink image to corner) 
+  #          'RESIZE' (Physically resize the image dimensions)
+  SCALING_MODE: 'CANVAS'
+  IMAGE_SCALE: 0.3
+  
+  # 2. Rotation (0, 90, 180, 270)
+  ROTATION_ANGLE: 0
+
+  # 3. Preprocessing Steps (True/False switches & parameters)
+  ENABLE_CLAHE: true
+  CLAHE_CLIP_LIMIT: 0.04
+  CLAHE_TILE_GRID_SIZE: [20, 20]
+
+  ENABLE_GAMMA: true
+  GAMMA_VALUE: 1.2
+
+  ENABLE_UNSHARP: true
+  UNSHARP_SIGMA: 1.5
+  UNSHARP_ALPHA: 5.0
+
+  ENABLE_CLAHE_2: false
+  CLAHE_2_CLIP: 0.04
+  CLAHE_2_GRID: [15, 15]
+
+  ENABLE_IMADJUST: false
+  ENABLE_IMBINARIZE: false
+
+# --- Visualization Parameters ---
+VISUALIZATION_PARAMS:
+  OVERLAY_OPACITY: 0.4
+  TEXT_BOX_COLOR: [0, 255, 0]
+  TEXT_BOX_THICKNESS: 3
+  CHAR_BOX_TESS_COLOR: [255, 0, 0]
+  CHAR_BOX_TESS_THICKNESS: 3
+  CHAR_BOX_DOCTR_COLOR: [255, 255, 0]
+  CHAR_BOX_DOCTR_THICKNESS: 3
+
+DOCTR_PARAMS:
+  DEVICE: "cuda"
+  MIN_CONFIDENCE: 0.1
+  PRETRAINED: true
+
+GROUPING_PARAMS:
+  LINE_GROUPING_Y_THRESHOLD: 0.5
+
+POLARITY_PARAMS:
+  GAUSSIAN_BLUR_KERNEL: [5, 5]
+  NUM_SAMPLES: 5
+
+TESSERACT_CHAR_PARAMS:
+  TESSERACT_CHAR_CONFIG: "--oem 1 --psm 8"
+  TESSERACT_PADDING: 10
+
+FILTERING_PARAMS:
+  ENABLE_TILT_FILTER: true
+  MAX_TEXT_TILT_DEGREES: 30.0
+  TEXT_HEIGHT_THRESHOLD: 0.0
+  ENABLE_LARGEST_COMPONENT_FILTER: true
+  CHAR_EXCEPTIONS_TO_FILTERING: ['i', 'j', '!', ':', ';', '=']
+
+ANALYSIS_PARAMS:
+  GAUSSIAN_BLUR_KERNEL: [3, 3]
+  MORPH_OPEN_KERNEL_SIZE: [3, 3]
+  UPSCALING_FACTOR: 2.0
+  BINARIZATION_MODE: 'AUTO_OTSU'
+  
+  ADAPTIVE:
+    BLOCK_SIZE: 19
+    C_CONSTANT: 9
+  GLOBAL_OTSU:
+    OTSU_RATIO: 1.0
+  AUTO_OTSU:
+    RATIO_SEARCH_LIST: [0.8, 1.0, 0.6, 1.2]
+  
+  N_FOURIER_DESCRIPTORS: 16
+  PROFILE_SPACING: 5
+
+
+``` 11191036 gemini
+以下是python script run_mmocr_subprocess.py跟設定file mmocr_config.yaml會從image進行前處理並用OCR library讀取image中的文字並輸出含有文字的bbox的一系列figures跟txt files. 現在要在儘量不改變原本code的前提下基於需求做稍微修改並提供新的完整code:
+
+需求: 
+1. 在main function下的detect_words_with_mmocr之前是執行apply_preprocessing()進行前處理. 現在改成參考下面的apply_advanced_preprocessing()對Image進行一系列前處理並在yaml進行設定. 這系列前處理對image的OCR效果影響很大所以儘量照apply_advanced_preprocessing處理
+def apply_advanced_preprocessing(img, config, MAIN_RUN_OUTPUT_PATH):
+    """
+    Applies Rotation -> Enhancement -> Scaling (Canvas or Resize).
+    Returns: processed_img, meta_data (essential for coordinate mapping)
+    """
+    params = config.get('PREPROCESSING_PARAMS', {})
+    
+    # Store original shape
+    h_orig, w_orig = img.shape[:2]
+    meta = {'h_orig': h_orig, 'w_orig': w_orig}
+    
+    # --- 1. Rotation ---
+    angle = params.get('ROTATION_ANGLE', 0)
+    rotation_code = None
+    if angle == 90: rotation_code = cv2.ROTATE_90_CLOCKWISE
+    elif angle == 180: rotation_code = cv2.ROTATE_180
+    elif angle == 270: rotation_code = cv2.ROTATE_90_COUNTERCLOCKWISE
+    
+    if rotation_code is not None:
+        img = cv2.rotate(img, rotation_code)
+        logging.info(f"  [Preproc] Applied rotation: {angle} deg")
+        cv2.imwrite(os.path.join(MAIN_RUN_OUTPUT_PATH, "0_Rotation.png"), img)
+    
+    # Capture dimensions AFTER rotation but BEFORE scaling (Crucial for un-rotating)
+    h_rotated, w_rotated = img.shape[:2]
+    meta['rotation'] = angle
+    meta['h_rotated'] = h_rotated
+    meta['w_rotated'] = w_rotated
+
+    # --- 2. Enhancements ---
+    # CLAHE 1
+    if params.get('ENABLE_CLAHE', False):
+        clip = params.get('CLAHE_CLIP_LIMIT', 2.0)
+        grid = tuple(params.get('CLAHE_TILE_GRID_SIZE', [20, 20]))
+        img = apply_clahe(img, clip, grid)
+        cv2.imwrite(os.path.join(MAIN_RUN_OUTPUT_PATH, "1_clahe1.png"), img)
+        
+    # Gamma
+    if params.get('ENABLE_GAMMA', False): 
+        gamma = params.get('GAMMA_VALUE', 1.2)
+        img = apply_gamma_correction(img, gamma)
+        cv2.imwrite(os.path.join(MAIN_RUN_OUTPUT_PATH, "2_gamma.png"), img)
+
+    # Unsharp
+    if params.get('ENABLE_UNSHARP', False): 
+        sigma = params.get('UNSHARP_SIGMA', 1.5)
+        alpha = params.get('UNSHARP_ALPHA', 5.0)
+        img = apply_unsharp_mask(img, sigma, alpha)
+        cv2.imwrite(os.path.join(MAIN_RUN_OUTPUT_PATH, "3_unsharp.png"), img)
+        
+    # CLAHE 2
+    if params.get('ENABLE_CLAHE_2', False):
+        clip = params.get('CLAHE_2_CLIP', 0.04)
+        grid = tuple(params.get('CLAHE_2_GRID', [15, 15]))
+        img = apply_clahe(img, clip, grid)
+        cv2.imwrite(os.path.join(MAIN_RUN_OUTPUT_PATH, "4_clahe2.png"), img)
+        
+    # Imadjust & Imbinarize
+    if params.get('ENABLE_IMADJUST', False):
+        img = apply_imadjust(img)
+        cv2.imwrite(os.path.join(MAIN_RUN_OUTPUT_PATH, "5_imadjust.png"), img)
+    if params.get('ENABLE_IMBINARIZE', False):
+        img = apply_imbinarize(img)
+        cv2.imwrite(os.path.join(MAIN_RUN_OUTPUT_PATH, "6_imbinarize.png"), img)
+
+    # --- 3. Scaling (Updated for SCALING_MODE) ---
+    scaling_mode = params.get('SCALING_MODE', 'CANVAS').upper() # RESIZE or CANVAS
+    scale = params.get('IMAGE_SCALE', 1.0)
+    
+    if scale != 1.0:
+        w_curr = img.shape[1]
+        h_curr = img.shape[0]
+        w_scaled = int(w_curr * scale)
+        h_scaled = int(h_curr * scale)
+        
+        # Step A: Resize the content
+        resized_img = cv2.resize(img, (w_scaled, h_scaled), interpolation=cv2.INTER_AREA)
+        
+        if scaling_mode == 'RESIZE':
+            # Mode 1: Pure Resize (Image becomes smaller)
+            img = resized_img
+            logging.info(f"  [Preproc] Mode: RESIZE. Scaled {scale}x to {w_scaled}x{h_scaled}.")
+            
+        else: # Default to CANVAS
+            # Mode 2: Canvas (Image placed on original-sized canvas)
+            # Create canvas of ROTATED size (so we don't lose cropping if rotated)
+            # Actually, logic says: "canvas of ORIGINAL size". 
+            # However, if rotated 90, dims swapped. Using h_rotated/w_rotated is safer for "Canvas" logic on rotated image.
+            canvas = np.zeros((h_rotated, w_rotated, 3), dtype=np.uint8)
+            
+            # Place at top-left
+            h_place = min(h_rotated, h_scaled)
+            w_place = min(w_rotated, w_scaled)
+            canvas[0:h_place, 0:w_place] = resized_img[0:h_place, 0:w_place]
+            
+            img = canvas
+            logging.info(f"  [Preproc] Mode: CANVAS. Scaled content {scale}x on {w_rotated}x{h_rotated} canvas.")
+    else:
+        logging.info("  [Preproc] No scaling applied.")
+        
+    meta['scale'] = scale
+    meta['scaling_mode'] = scaling_mode
+
+    return img, meta
+
+
+2. 
+python script輸出含有text or character bbox的figures時, 尤其在有resize跟rotate時bbox的位置明顯不match. 請特別檢查code這方面並進行修正.
+
+
+
+(mmocr_config.yaml)
+
+
+(run_mmocr_subprocess.py)
+```
