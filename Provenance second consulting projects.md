@@ -172,6 +172,13 @@ c.      Method should be made more robust to bright spots than what is curr
 
 ![[Pasted image 20251113135921.png]]
 
+```
+那幫我稍微修正我提供的那一段code並提供完整的新Code, 請在code裡面自動為模板建立多個角度版本（0°, 90°, 180°, 270°），在 align_binary_to_double() 裡逐一用 matchTemplate 搜索，取最大相關值的那一個, 下一步嘗試在這個角度縮放尋找最適合的scaing(譬如 try scaling = [1, 1.05, 0.95, 1.10, 0.9]). 輸出也增加兩個figures將兩個模板當成segmentation masks做跟原始圖的overlap figures.
+```
+
+```
+那幫我稍微修正我提供的那一段olab code並提供完整的新Code, 首先可設定image的搜尋區域(user設定left, right, up, button). 關於搜尋的策略改變: 關於四個不同的方向, 現在換成可以選擇AUTO(自動為模板建立多個角度版本（0°, 90°, 180°, 270°）), 或者user指定旋轉（0°, 90°, 180°, 270°的一種. 另外scaling是二階段. 第一階段從先將模板放大至7(user可設定)倍(但模板放大不能大於原始圖), 然後在這個scale試旋轉的版本, 接下來6倍, 5....一直到1倍. 在這些裡面取最大相關值的那一個(包括scaling跟方向). 接著第二階段嘗試在這個角度微調縮放尋找最適合的scaing(譬如 try scaling = [1, 1.05, 0.95, 1.10, 0.9....]). 成為最後的scaling跟方向. 輸出保留原始所有的所有輸出, 並多增加兩個figures將兩個模板當成segmentation masks做跟原始圖的overlap figures 並把設定的參數統一放在import之後方便設定, 且comments都用英文請提供新的完整版code
+```
 
 #### Project 14 - Links
 
@@ -214,6 +221,86 @@ b5. The variation in radius of the hole 孔半徑的變化
 b6. An analysis of case B for the same as for case A. 分析情況 B，與情況 A 相同。
 
 ![[Pasted image 20251111075202.png]]
+
+```
+我們有一個folder(folder path = image_paths)在裡面有數張像這樣的image, 在暗色背景有雜訊跟白色刮痕而中間有一個白色的近圓形環pin是我們的target. 我們要寫兩個Colab cell並提供完整的colab python code, 並把設定的參數統一放在import之後方便設定, 且comments都用英文, figures跟結果的txt file都存在RUN_SPECIFIC_OUTPUT_PATH:
+
+第一個cell是判斷這幅image是out of focus or not, 計算數個常見的matrics, 並可設定參數threshold去判斷是out of focus or not. 結果存在txt file.
+
+第二個cell是要生成這個環pin的segmentation mask. 而且要得到pin外圍的radius跟中心, 以及內部hole的radius跟中心. 計算concentricity of the pin to the hole, 並計算variation in radius of the pin and hole. 方法可能是選適當的前處理image, otsu method得到bw image, 用opening and closing filtering處理image, 用一個圓形去fit這個pine的外輪廓, 另一個圓形去fit pine的內輪廓(hole). 結果寫在txt file, 跟輸出figures一起放在RUN_SPECIFIC_OUTPUT_PATH
+
+
+在前面的Colab cell已經有執行:
+DRIVE_BASE_PATH = "/content/drive/MyDrive/Colab my AI Projects/Provenance Laboratories Projects"
+PROJECT_ROOT = DRIVE_BASE_PATH
+DATA_PATH = os.path.join(DRIVE_BASE_PATH, "dataset", "BraceletPin images")
+OUTPUT_PATH = os.path.join(PROJECT_ROOT, "output", "BraceletPin images")
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+drive.mount('/content/drive', force_remount=True) 等必要的設定, 而且image都放在folder image_paths裡, 所以可以參考下列的code:
+
+# Main function execution
+if 'OUTPUT_PATH' not in globals():
+    print("ERROR: 'OUTPUT_PATH' is not defined. Please define it in a previous cell.")
+elif 'image_paths' not in globals(): # <-- Changed from hour_image_paths
+    print("Error: The list 'image_paths' was not found.") # <-- Changed from hour_image_paths
+else:
+    now = datetime.datetime.now(ZoneInfo("America/New_York"))
+    timestamp_str = now.strftime("%m%d%H%M")
+    subfolder_name = f"{timestamp_str}_nonlinear"
+    RUN_SPECIFIC_OUTPUT_PATH = os.path.join(OUTPUT_PATH, subfolder_name)
+    os.makedirs(RUN_SPECIFIC_OUTPUT_PATH, exist_ok=True)
+    print(f"Figures for this run will be saved to: {RUN_SPECIFIC_OUTPUT_PATH}")
+
+    # Loop through each image path provided in the list.
+    for img_path in tqdm(image_paths, desc="Processing Images"): # <-- Changed from hour_image_paths
+        print(f"\n" + "="*80)
+        print(f"Processing: {os.path.basename(img_path)}")
+
+        # Read the image from the specified path.
+        image_origin = cv2.imread(img_path, cv2.IMREAD_GRAYSCALE)
+        image_color = cv2.imread(img_path, cv2.COLOR_BGR2RGB) # This should be cv2.IMREAD_COLOR
+
+        # Reread image_color correctly
+        image_color = cv2.imread(img_path, cv2.IMREAD_COLOR)
+
+        # Check if the image was loaded successfully.
+        if image_origin is None or image_color is None:
+            print(f"Warning: Could not read image from '{img_path}'. Skipping.")
+            continue
+
+        # parameter setting
+        p = {
+            'erodeout_size': 10,
+            'gaussout_size': 20,
+            'openout_size': 50,
+            'erode_size': 2,
+            'dilate_size': 8
+        }
+
+        # to detect green/black region
+        print("Processing background region...")
+        result_out = preprocess_out(image_origin, p)
+
+        # to detect white tick mark target region
+        print("Processing target region...")
+        result = preprocess_target(image_origin, p, result_out)
+
+        # Data visualization and draw lines
+        print("Generating visualizations...")
+        # Pass the save path and img_path to the functions
+        data_visualization(image_origin, p, result, result_out, image_color, img_path, RUN_SPECIFIC_OUTPUT_PATH)
+        find_and_draw_side_lines(image_color.copy(), result['bw'], img_path, RUN_SPECIFIC_OUTPUT_PATH)
+        calculate_and_draw_corner_curvature(image_color.copy(), result['bw'], img_path, RUN_SPECIFIC_OUTPUT_PATH)
+
+        print(f"\nProcessing finished for {os.path.basename(img_path)}")
+        print("="*80)
+
+    print(f"\nAll nonlinear processing complete. Outputs are saved in: {RUN_SPECIFIC_OUTPUT_PATH}")
+```
+
+
+
+
 
 
 #### Project 17 - Reading Case Side
