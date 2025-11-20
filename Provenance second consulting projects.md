@@ -180,6 +180,36 @@ c.      Method should be made more robust to bright spots than what is curr
 那幫我稍微修正我提供的那一段olab code並提供完整的新Code, 首先可設定image的搜尋區域(user設定left, right, up, button). 關於搜尋的策略改變: 關於四個不同的方向, 現在換成可以選擇AUTO(自動為模板建立多個角度版本（0°, 90°, 180°, 270°）), 或者user指定旋轉（0°, 90°, 180°, 270°的一種. 另外scaling是二階段. 第一階段從先將模板放大至7(user可設定)倍(但模板放大不能大於原始圖), 然後在這個scale試旋轉的版本, 接下來6倍, 5....一直到1倍. 在這些裡面取最大相關值的那一個(包括scaling跟方向). 接著第二階段嘗試在這個角度微調縮放尋找最適合的scaing(譬如 try scaling = [1, 1.05, 0.95, 1.10, 0.9....]). 成為最後的scaling跟方向. 輸出保留原始所有的所有輸出, 並多增加兩個figures將兩個模板當成segmentation masks做跟原始圖的overlap figures 並把設定的參數統一放在import之後方便設定, 且comments都用英文請提供新的完整版code
 ```
 
+```
+從三張crown測量位置
+top  828  822  876 684
+button 2106  2124  2220 1926
+
+left 900 840 2880 3006
+right 2454 2442 4332 4428
+
+所以使用下列的parameters:
+SEARCH_ROI_PARAMS = {
+
+    'top': 600,      # pixels from top
+
+    'left': 800,     # pixels from left
+
+    'bottom': 700,   # pixels from bottom
+
+    'right': 700     # pixels from right
+
+}
+```
+
+```
+我上傳的第一張image就是含有crown. 第二張第三張是crown1no, crown1yes. 那幫我根據我提供的那一段colab code做修正(除搜尋的地方儘量少變動)並提供完整的新Code. 這新的colab code應該可以應用到一個folder下的很多張images. 
+
+關於template matching的部分請根據我上傳的images設計方法讓template matching更準確. 
+
+關於搜尋的策略改變: 關於四個不同的方向, 現在換成可以選擇AUTO(自動為模板建立多個角度版本（順時針0°, 90°, 180°, 270°）), 或者user指定旋轉（0°, 90°, 180°, 270°的一種. 另外scaling是二階段. 第一階段從先將模板放大至7(user可設定)倍(但模板放大不能大於原始圖), 然後在這個scale試旋轉的版本, 接下來6倍, 5....一直到1倍(user可設定). 在這些裡面取最大相關值的那一個(包括scaling跟方向). 接著第二階段嘗試在這個角度微調縮放尋找最適合的scaing(譬如 try scaling = [1, 1.05, 0.95, 1.10, 0.9....]). 成為最後的scaling跟方向. 輸出保留原始所有的所有輸出, 並多增加兩個figures將兩個模板當成segmentation masks做跟原始圖的overlap figures 並把設定的參數統一放在import之後方便設定, 且comments都用英文請提供新的完整版code
+```
+
 #### Project 14 - Links
 
 Create and deliver python code that processes images of the bracelet (aka strap) of watches and isolates the centrally shown link. This should be done in a manner that is robust to dust, uneven lighting, highlights and shadows, specular reflections, uneven feature edge shape, small occlusions, and all variations of background and feature colors, textures, and reflectivity. 錶鍊：編寫並提交 Python 程式碼，用於處理手錶錶帶（又稱錶鍊）的圖像，並提取圖中中心顯示的錶鍊節。此過程應能有效應對灰塵、光照不均、高光和陰影、鏡面反射、不規則邊緣形狀、輕微遮擋以及背景和特徵顏色、紋理和反射率的各種變化。
@@ -206,6 +236,33 @@ b.     A description of the type of texturing (e.g. bumpy or striated) 紋�
 
 ![[Pasted image 20251111075008.png]]
 ![[Pasted image 20251111075037.png]]
+
+
+|                    |                                                                                                                                                                                                 |
+| ------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 11201113_nonlinear | parameter = {<br>    'diff_erode_se': 15,<br>    'diff_gauss_r': 31,<br>    'diff_gauss_sigma': 0,<br>    'diff_otsu_ratio': 0.9,<br>    'diff_open_se': 70,<br>    'diff_close_se': 70,<br>}   |
+| 11201126_nonlinear | parameter = {<br>    'diff_erode_se': 20,<br>    'diff_gauss_r': 31,<br>    'diff_gauss_sigma': 0,<br>    'diff_otsu_ratio': 0.9,<br>    'diff_open_se': 100,<br>    'diff_close_se': 100,<br>} |
+| 11201132_nonlinear | parameter = {<br>    'diff_erode_se': 20,<br>    'diff_gauss_r': 31,<br>    'diff_gauss_sigma': 0,<br>    'diff_otsu_ratio': 0.8,<br>    'diff_open_se': 100,<br>    'diff_close_se': 100,<br>} |
+| 11201138_nonlinear | parameter = {<br>    'diff_erode_se': 20,<br>    'diff_gauss_r': 31,<br>    'diff_gauss_sigma': 0,<br>    'diff_otsu_ratio': 0.6,<br>    'diff_open_se': 100,<br>    'diff_close_se': 100,<br>} |
+| 11201156_nonlinear | parameter = {<br>    'diff_erode_se': 20,<br>    'diff_gauss_r': 31,<br>    'diff_gauss_sigma': 0,<br>    'diff_otsu_ratio': 0.7,<br>    'diff_open_se': 200,<br>    'diff_close_se': 200,<br>} |
+|                    |                                                                                                                                                                                                 |
+|                    |                                                                                                                                                                                                 |
+|                    |                                                                                                                                                                                                 |
+|                    |                                                                                                                                                                                                 |
+
+```
+我有很多張類似這樣的segmentation mask(紅色區域為mask). 可以按看到image上有一些主要區域, 譬如第一張image幾乎全部都是主要區域除了右上方有個半圓, 第一張image可以分為右上跟左下有兩個主要區域, 中間有一塊空白band在中間. 可觀察到這兩張圖都有很多細長有方向性的細紋空洞在這些主要區域內, 請推薦合適的方法可以把這些細長空洞補起來, 而主要區域維持邊界不變
+```
+
+
+
+
+
+
+
+
+
+
 #### Project 16 - Bracelet Pin
 
 Create and deliver python code that processes images of the microscopic pin of the bracelet and provides 錶帶銷釘：編寫並提交 Python 程式碼，用於處理錶帶微觀銷釘的圖像，並提供以下資訊：
