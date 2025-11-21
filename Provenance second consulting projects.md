@@ -238,17 +238,17 @@ b.     A description of the type of texturing (e.g. bumpy or striated) 紋�
 ![[Pasted image 20251111075037.png]]
 
 
-|                    |                                                                                                                                                                                                 |
-| ------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 11201113_nonlinear | parameter = {<br>    'diff_erode_se': 15,<br>    'diff_gauss_r': 31,<br>    'diff_gauss_sigma': 0,<br>    'diff_otsu_ratio': 0.9,<br>    'diff_open_se': 70,<br>    'diff_close_se': 70,<br>}   |
-| 11201126_nonlinear | parameter = {<br>    'diff_erode_se': 20,<br>    'diff_gauss_r': 31,<br>    'diff_gauss_sigma': 0,<br>    'diff_otsu_ratio': 0.9,<br>    'diff_open_se': 100,<br>    'diff_close_se': 100,<br>} |
-| 11201132_nonlinear | parameter = {<br>    'diff_erode_se': 20,<br>    'diff_gauss_r': 31,<br>    'diff_gauss_sigma': 0,<br>    'diff_otsu_ratio': 0.8,<br>    'diff_open_se': 100,<br>    'diff_close_se': 100,<br>} |
-| 11201138_nonlinear | parameter = {<br>    'diff_erode_se': 20,<br>    'diff_gauss_r': 31,<br>    'diff_gauss_sigma': 0,<br>    'diff_otsu_ratio': 0.6,<br>    'diff_open_se': 100,<br>    'diff_close_se': 100,<br>} |
-| 11201156_nonlinear | parameter = {<br>    'diff_erode_se': 20,<br>    'diff_gauss_r': 31,<br>    'diff_gauss_sigma': 0,<br>    'diff_otsu_ratio': 0.7,<br>    'diff_open_se': 200,<br>    'diff_close_se': 200,<br>} |
-|                    |                                                                                                                                                                                                 |
-|                    |                                                                                                                                                                                                 |
-|                    |                                                                                                                                                                                                 |
-|                    |                                                                                                                                                                                                 |
+|                                                 |                                                                                                                                                                                                 |
+| ----------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 11201113_nonlinear                              | parameter = {<br>    'diff_erode_se': 15,<br>    'diff_gauss_r': 31,<br>    'diff_gauss_sigma': 0,<br>    'diff_otsu_ratio': 0.9,<br>    'diff_open_se': 70,<br>    'diff_close_se': 70,<br>}   |
+| 11201126_nonlinear                              | parameter = {<br>    'diff_erode_se': 20,<br>    'diff_gauss_r': 31,<br>    'diff_gauss_sigma': 0,<br>    'diff_otsu_ratio': 0.9,<br>    'diff_open_se': 100,<br>    'diff_close_se': 100,<br>} |
+| 11201132_nonlinear                              | parameter = {<br>    'diff_erode_se': 20,<br>    'diff_gauss_r': 31,<br>    'diff_gauss_sigma': 0,<br>    'diff_otsu_ratio': 0.8,<br>    'diff_open_se': 100,<br>    'diff_close_se': 100,<br>} |
+| 11201138_nonlinear                              | parameter = {<br>    'diff_erode_se': 20,<br>    'diff_gauss_r': 31,<br>    'diff_gauss_sigma': 0,<br>    'diff_otsu_ratio': 0.6,<br>    'diff_open_se': 100,<br>    'diff_close_se': 100,<br>} |
+| 11201156_nonlinear                              | parameter = {<br>    'diff_erode_se': 20,<br>    'diff_gauss_r': 31,<br>    'diff_gauss_sigma': 0,<br>    'diff_otsu_ratio': 0.7,<br>    'diff_open_se': 200,<br>    'diff_close_se': 200,<br>} |
+| **TEST1. use nonlinear min filtering (modify)** |                                                                                                                                                                                                 |
+|                                                 |                                                                                                                                                                                                 |
+|                                                 |                                                                                                                                                                                                 |
+|                                                 |                                                                                                                                                                                                 |
 
 ```
 我有很多張類似這樣的segmentation mask(紅色區域為mask). 可以按看到image上有一些主要區域, 譬如第一張image幾乎全部都是主要區域除了右上方有個半圓, 第一張image可以分為右上跟左下有兩個主要區域, 中間有一塊空白band在中間. 可觀察到這兩張圖都有很多細長有方向性的細紋空洞在這些主要區域內, 請推薦合適的方法可以把這些細長空洞補起來, 而主要區域維持邊界不變
