@@ -10,6 +10,7 @@
 | [[#### 6. 現在開發核心模組未來再決定部署方式]]              |     |
 | [[#### 7. 實作cli跟server模式]]                 |     |
 |                                            |     |
+|                                            |     |
 
 
 
@@ -1824,3 +1825,77 @@ if __name__ == "__main__":
         
 
 這樣設計，您的 UI 永遠保持流暢，而背後的 Python 環境與 GPU 模型管理則由 `ServiceManager` 完美處理。
+
+
+
+
+
+
+
+```
+ImagingLibWatch/
+├── App/                     # UI 相關代碼
+│   ├── modules/
+│   ├── resources.qrc
+│   ├── ProveWatchApp.py     # UI 入口 (Entry Point 1)
+│   └── worker_thread.py     # [新增] 負責連接 UI 與 Orchestrator 的橋樑
+├── checkpoints/   
+├── config/                  # 設定檔
+│   ├── system_config.yaml   # [新增] 定義 Python 環境路徑、GPU 設定
+│   ├── tasks_map.yaml       # [新增] 定義 90 個 Tasks 的執行順序、環境與參數
+│   └── task_configs/        # 各個 Task 獨有的參數 (如閾值等)
+├── core/                    # [新增] 核心邏輯層
+│   ├── __init__.py
+│   ├── orchestrator.py      # [核心] 指揮官，負責調度 Subprocess
+│   └── service_manager.py   # 新增：負責啟動 API Server
+├── DB/                      # UI 相關代碼
+│   ├── WatchDB/             # watch mat DB files
+│   ├── hb_profile/          # texture fingerprint files
+│   └── Experiment.parquet   # Experiment index table file
+├── env/                     # Conda environments YAML
+├── Experiments/             # Image pipeline輸出結果 (Experiment result folder)
+├── images/                  # 輸入圖片庫
+├── output/                  # 輸出結果
+├── tasks/
+│   ├── algorithms/          # [關鍵] 這裡放純演算法，無 CLI 依賴
+│   │   ├── dial_algo.py
+│   │   └── ocr_algo.py
+│   ├── cli_wrappers/        # 這裡放原本的 run_taskX.py (for CLI/Subprocess mode)
+│   └── api_servers/         # 這裡放 server_seg.py (for Local Native/Docker mode)
+└── main_cli.py              # 純命令列入口 (Entry Point 2)
+
+```
+
+
+```
+ImagingLibWatch/
+├── App/                     # App/UI Layer
+│   ├── modules/
+│   ├── resources.qrc
+│   ├── ProveWatchApp.py     # UI entry (Entry Point 1)
+│   └── worker_thread.py     # connect UI to Orchestrator
+├── checkpoints/   
+├── config/                  
+│   ├── system_config.yaml   # Define Python env setting, tasks env and setting
+│   └── "task X"_config.yaml  # "Task X" config files
+├── core/                    # Core logic layer
+│   ├── __init__.py
+│   ├── orchestrator.py      # Core orchestrator to manage Subprocess
+│   └── service_manager.py   # Activate and manage API Server
+├── DB/                      # Database related files
+│   ├── WatchDB/             # watch mat DB files
+│   ├── hb_profile/          # texture fingerprint files
+│   └── Experiment.parquet   # Experiment index table file
+│   └── Authentication.parquet   # Authentication rule Database file
+├── env/                     # Conda environments YAML
+├── Experiments/             # Image pipeline results (Experiment result folder)
+├── images/                  # Image/Camera extraction folder
+├── output/                  # User output/statistics/authentication output folder
+├── tasks/
+│   ├── algorithms/          # algorithm functions
+│   │   └── "task X"_algo.py
+│   ├── cli_wrappers/        # run_"task X".py (for CLI/Subprocess mode)
+│   └── api_servers/         # server_"task X".py (for Local Native/Docker mode)
+└── main_cli.py              # CLI entry (Entry Point 2)
+
+```
