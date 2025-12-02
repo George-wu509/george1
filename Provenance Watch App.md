@@ -1,16 +1,18 @@
 
 
-|                                            |     |
-| ------------------------------------------ | --- |
-| [[#### 1. 初步架構分析]]                         |     |
-| [[#### 2. 具體架構分析]]                         |     |
-| [[#### 3. Deployment跟multi environment設定]] |     |
-| [[#### 4. 使用Docker]]                       |     |
-| [[#### 5. 所有方案(Native, Cloud跟其他)比較]]       |     |
-| [[#### 6. 現在開發核心模組未來再決定部署方式]]              |     |
-| [[#### 7. 實作cli跟server模式]]                 |     |
-|                                            |     |
-|                                            |     |
+|                                                   |     |
+| ------------------------------------------------- | --- |
+| [[#### 1. 初步架構分析]]                                |     |
+| [[#### 2. 具體架構分析]]                                |     |
+| [[#### 3. Deployment跟multi environment設定]]        |     |
+| [[#### 4. 使用Docker]]                              |     |
+| [[#### 5. 所有方案(Native, Cloud跟其他)比較]]              |     |
+| [[#### 6. 現在開發核心模組未來再決定部署方式]]                     |     |
+| [[#### 7. 實作cli跟server模式]]                        |     |
+| [[#### 8. Project new file system (CLI and API)]] |     |
+|                                                   |     |
+|                                                   |     |
+|                                                   |     |
 
 
 
@@ -1420,13 +1422,10 @@ requests.post("http://localhost:5000/analyze", json={"image": "img.jpg"})
 當使用者點擊 `Launcher.exe` (或執行 `main.py`) 時：
 
 1. **Main Process** 啟動。
-    
+
 2. **Main Process** 立刻在背景用 `subprocess.Popen` (注意不是 `run`) 去啟動 3 個隱藏的 Python Process。
-    
     - Process A: 啟動 PaddleOCR Server (Port 5000)
-        
     - Process B: 啟動 PyTorch Segmentation Server (Port 5001)
-        
     - Process C: 啟動 Base Processing Server (Port 5002)
         
 3. **Main Process** 等待 5 秒讓它們初始化完畢。
@@ -1612,18 +1611,13 @@ Project_Root/
 您目前的路線圖非常清晰。現在只需要專注於：
 
 1. **Environment Setup:** 把 env yaml 寫好。
-    
 2. **Core Algorithms:** 寫好 `tasks/algorithms/` 下的圖像處理邏輯。
-    
 3. **CLI Wrappers:** 先把 `main_cli.py` 和 `subprocess` 跑通（這是最基礎的）。
-    
 
 等到基礎跑通後，要升級成 **Local Native Microservices** 或 **Cloud** 時，只需要：
 
 1. 寫 `api_servers/*.py` (Import 剛剛寫好的 Algorithms)。
-    
 2. 在 `orchestrator.py` 裡加一個 `if mode == "api": requests.post(...)`。
-    
 
 這樣您就立於不敗之地，可以隨時根據客戶需求切換架構。
 
@@ -1832,6 +1826,8 @@ if __name__ == "__main__":
 
 
 
+#### 8. Project new file system (CLI and API)
+
 ```
 ImagingLibWatch/
 ├── App/                     # UI 相關代碼
@@ -1852,6 +1848,7 @@ ImagingLibWatch/
 │   ├── WatchDB/             # watch mat DB files
 │   ├── hb_profile/          # texture fingerprint files
 │   └── Experiment.parquet   # Experiment index table file
+├── deployments/             # 
 ├── env/                     # Conda environments YAML
 ├── Experiments/             # Image pipeline輸出結果 (Experiment result folder)
 ├── images/                  # 輸入圖片庫
@@ -1887,6 +1884,7 @@ ImagingLibWatch/
 │   ├── hb_profile/          # texture fingerprint files
 │   └── Experiment.parquet   # Experiment index table file
 │   └── Authentication.parquet   # Authentication rule Database file
+├── deployments/             # 
 ├── env/                     # Conda environments YAML
 ├── Experiments/             # Image pipeline results (Experiment result folder)
 ├── images/                  # Image/Camera extraction folder
@@ -1899,3 +1897,905 @@ ImagingLibWatch/
 └── main_cli.py              # CLI entry (Entry Point 2)
 
 ```
+
+
+
+
+#### 9. New system design (mixed mode)
+
+```
+我的project是分析watch的各個不同位置imagesm約共有50 tasks(有的tasks單純用opencv, 有的tasks需要載入Unet, SAM, OCR等AI models)也支援CPU/GPU排程. 目前我的project root folder有main_cli.py, 有sub folder core, tasks, config, App. 在core/有
+
+orchestrator.py跟service_manager.py. 在config/有system_config.yaml, task1_config.yaml, task2_config.yaml.... 在tasks/有tasks/algorithms/裡面有task1_algo.py, task2_algo.py.... 有tasks/cli_wrappers/裡面有run_task1_cli.py, run_task2_cli.py....在tasks/api_servers/裡面有server_task1.py, server_task2.py.... 在App folder下有做好的ImagingWatchApp.py App執行檔, main.ui, resources.qrc.
+
+那在這project架構下(1)如果要在CLI模式下依序執行run_task1_cli.py, run_task2_cli.py...到所有的tasks (2) 如果要在CLI模式下由orchestrator.py跟system_config.yaml管理去並行執行所有的tasks in cli mode. (3) 如果要在api server模式下依序執行server_task1.py, server_task2.py...到所有的tasks (4) 如果要在api server模式下由orchestrator.py跟system_config.yaml管理去並行執行所有的tasks in api server mode. (5) 在開啟ImagingWatchApp.py之後如果要由orchestrator.py跟system_config.yaml管理去並行執行所有的tasks(譬如按個按鈕之後執行所有的tasks), 應該要怎麼做, 是否可以在App執行時混合去執行tasks(譬如某些使用cli model有些使用api server model)? ()或者在command line時混合去執行tasks(譬如某些使用cli model有些使用api server model)? 請就這些不同的項目(1)~(6)解釋怎麼實作(譬如要先執行甚麼檔案, UI的按鍵要連到哪個function file..), 以及中文詳細分析優缺點及比較, 並建議最好執行的方式考量系統穩定, memory, 執行速度, 可擴充性等等全面分析.
+```
+
+這是一個非常好的系統架構問題。由於您的系統涉及 **異質任務（OpenCV 輕量級 vs AI 重型模型）** 以及 **異質硬體資源（CPU vs GPU）**，單純的一種執行模式通常無法滿足所有需求。
+
+為了達成您要求的 (1)~(6) 種場景，我們需要對 **`config/system_config.yaml`** 和 **`core/orchestrator.py`** 進行微調，使其支援「混合模式」與「批次處理」。
+
+以下是針對您提出的 6 種情境的詳細實作指南與分析。
+
+---
+
+### 前置作業：更新設定檔與核心
+
+為了支援 **混合模式 (Mixed Mode)** 和 **並行控制**，我們需要稍微修改 Config 和 Orchestrator。
+
+**1. 修改 `config/system_config.yaml`** 在 Task 層級增加 `execution_mode` 覆寫選項，並增加並行設定。
+
+YAML
+
+```
+# config/system_config.yaml
+
+# 全域預設模式
+global_execution_mode: "api" 
+max_parallel_workers: 4  # 最大同時執行緒數
+
+# 任務定義
+tasks:
+  task_ocr_analysis:
+    service_name: "ocr_service"
+    cli_script: "tasks/cli_wrappers/run_ocr_cli.py"
+    mode: "api"  # [關鍵] 這裡可以指定該 Task 專用的模式，覆蓋全域設定
+    timeout: 30
+
+  task_simple_opencv:
+    service_name: "none" # 輕量任務可能不需要 Service
+    cli_script: "tasks/cli_wrappers/run_cv_cli.py"
+    mode: "cli"  # 輕量任務強制用 CLI，省去 API 開銷
+```
+
+**2. 修改 `core/orchestrator.py` 以支援混合模式**
+
+Python
+
+```
+# core/orchestrator.py (修改版)
+import subprocess
+import requests
+import yaml
+import os
+import logging
+from concurrent.futures import ThreadPoolExecutor, as_completed
+
+class Orchestrator:
+    def __init__(self, config_path="config/system_config.yaml"):
+        with open(config_path, 'r', encoding='utf-8') as f:
+            self.config = yaml.safe_load(f)
+        # 預設全域模式
+        self.global_mode = self.config.get('global_execution_mode', 'cli')
+
+    def run_task(self, task_name, image_path, output_dir):
+        """智慧判斷要用 API 還是 CLI 執行"""
+        task_cfg = self.config['tasks'].get(task_name)
+        if not task_cfg:
+            raise ValueError(f"Task {task_name} not found.")
+
+        # 優先使用 Task 自己的 mode，如果沒有則使用全域 mode
+        mode = task_cfg.get('mode', self.global_mode)
+
+        if mode == 'api':
+            return self._run_via_api(task_name, task_cfg, image_path, output_dir)
+        else:
+            return self._run_via_cli(task_name, task_cfg, image_path, output_dir)
+
+    def run_batch(self, task_list, image_path, output_dir, parallel=False):
+        """批次執行多個 Tasks"""
+        results = {}
+        
+        if parallel:
+            # 並行執行
+            max_workers = self.config.get('max_parallel_workers', 4)
+            with ThreadPoolExecutor(max_workers=max_workers) as executor:
+                future_to_task = {
+                    executor.submit(self.run_task, t_name, image_path, output_dir): t_name 
+                    for t_name in task_list
+                }
+                for future in as_completed(future_to_task):
+                    t_name = future_to_task[future]
+                    try:
+                        results[t_name] = future.result()
+                    except Exception as e:
+                        results[t_name] = {"status": "error", "message": str(e)}
+        else:
+            # 依序執行
+            for t_name in task_list:
+                try:
+                    results[t_name] = self.run_task(t_name, image_path, output_dir)
+                except Exception as e:
+                    logging.error(f"Task {t_name} failed: {e}")
+                    results[t_name] = {"status": "error", "message": str(e)}
+        
+        return results
+
+    # ... (保留原有的 _run_via_api 和 _run_via_cli 方法) ...
+```
+
+---
+
+### 實作詳解 (1) ~ (6)
+
+假設我們有一組任務列表：`ALL_TASKS = ["task_ocr_analysis", "task_segmentation", "task_opencv_check"]`
+
+#### (1) CLI 模式 - 依序執行 (Sequential)
+
+- **實作方法**：設定 Config `global_execution_mode: "cli"`，然後在 `main_cli.py` 用迴圈呼叫。
+    
+- **代碼 (`main_cli.py`)**：
+    
+    Python
+    
+    ```
+    # Config 設為 "cli"
+    orchestrator = Orchestrator()
+    # parallel=False 代表依序
+    orchestrator.run_batch(ALL_TASKS, image_path, output_root, parallel=False)
+    ```
+    
+- **行為**：跑完 Task 1 的 Python Process -> 結束釋放記憶體 -> 跑 Task 2...
+    
+
+#### (2) CLI 模式 - 並行執行 (Parallel)
+
+- **實作方法**：Config `global_execution_mode: "cli"`，呼叫時開啟 `parallel=True`。
+    
+- **代碼 (`main_cli.py`)**：
+    
+    Python
+    
+    ```
+    orchestrator = Orchestrator()
+    # parallel=True
+    orchestrator.run_batch(ALL_TASKS, image_path, output_root, parallel=True)
+    ```
+    
+- **行為**：同時啟動多個 Python `subprocess`。
+    
+- **警告**：如果在 CLI 模式下並行跑多個重型 AI Task (如 SAM + Unet)，會瞬間啟動多個 Python 直譯器並嘗試載入模型，極高機率導致 **OOM (Out of Memory)** 或 GPU 顯存不足崩潰。**建議 CLI 並行只用於輕量 OpenCV 任務。**
+    
+
+#### (3) API Server 模式 - 依序執行
+
+- **實作方法**：Config `global_execution_mode: "api"`。需先啟動 `ServiceManager`。
+    
+- **代碼 (`main_cli.py`)**：
+    
+    Python
+    
+    ```
+    service_mgr = ServiceManager()
+    service_mgr.start_all_services() # 啟動背景伺服器
+    
+    orch = Orchestrator()
+    # 依序發送 Request
+    orch.run_batch(ALL_TASKS, img, out, parallel=False)
+    
+    service_mgr.stop_all_services()
+    ```
+    
+- **行為**：Task 1 Request -> Server 1 處理 -> 回傳 -> Task 2 Request...。雖然是依序，但因為模型已經 Warm Start，速度比 (1) 快非常多。
+    
+
+#### (4) API Server 模式 - 並行執行
+
+- **實作方法**：Config `global_execution_mode: "api"`，開啟 `parallel=True`。
+    
+- **代碼 (`main_cli.py`)**：
+    
+    Python
+    
+    ```
+    service_mgr.start_all_services()
+    orch.run_batch(ALL_TASKS, img, out, parallel=True)
+    ```
+    
+- **行為**：主程式同時發送 HTTP Request 給 Server 1, Server 2...。
+    
+- **優勢**：如果 Task 1 在 GPU 1 (Server 1)，Task 2 在 GPU 2 (Server 2)，或者 Task 3 是 CPU 任務，則可以達成**真正的硬體並行**，效率最高。
+    
+
+#### (5) App UI 觸發 - 並行執行
+
+- **實作方法**：在 `ImagingWatchApp.py` 中使用 `QThread` (Worker) 來呼叫 `orchestrator.run_batch`。UI 按鈕連結到 Worker 的啟動。
+    
+- **代碼 (`App/ImagingWatchApp.py`)**：
+    
+    Python
+    
+    ```
+    from PySide6.QtCore import QThread, Signal
+    from core.orchestrator import Orchestrator
+    # 注意：UI 啟動時通常就已經透過 ServiceManager 啟動了背景服務
+    
+    class AnalysisWorker(QThread):
+        finished = Signal(dict)
+    
+        def __init__(self, tasks, img_path, out_dir):
+            super().__init__()
+            self.tasks = tasks
+            self.img_path = img_path
+            self.out_dir = out_dir
+            self.orch = Orchestrator() # 讀取 Config
+    
+        def run(self):
+            # 這裡設定 parallel=True 進行並行處理
+            results = self.orch.run_batch(self.tasks, self.img_path, self.out_dir, parallel=True)
+            self.finished.emit(results)
+    
+    class MainWindow(QMainWindow):
+        def on_run_btn_click(self):
+            self.worker = AnalysisWorker(ALL_TASKS, self.current_image, self.output_dir)
+            self.worker.finished.connect(self.on_results_ready)
+            self.worker.start() # 不會卡死 UI
+    ```
+    
+
+#### (6) 混合模式 (Mixed Mode) - CLI 與 API 混用
+
+- **實作方法**：這是最推薦的實務做法。
+    
+    - 在 `config.yaml` 中，將輕量任務 (如 OpenCV crop, resizing) 設為 `mode: "cli"`。
+        
+    - 將重型任務 (如 SAM, OCR) 設為 `mode: "api"`。
+        
+- **執行**：
+    
+    - 無論是在 CLI 還是 App 中執行 `orchestrator.run_batch(..., parallel=True)`。
+        
+    - `Orchestrator` 會自動判斷：
+        
+        - 遇到 OCR 任務 -> 發送 Request 給 localhost:5000 (快速，不需重載模型)。
+            
+        - 遇到 Crop 任務 -> 啟動一個小 subprocess 快速處理掉 (省去維持一個常駐 Server 的資源)。
+            
+
+---
+
+### 優缺點比較與全方位分析
+
+|**執行模式**|**實作難度**|**記憶體 (RAM/VRAM)**|**執行速度 (Throughput)**|**穩定性**|**適用場景**|
+|---|---|---|---|---|---|
+|**(1) CLI 依序**|低|**極低** (用完即放)|**慢** (每次重載模型)|**高** (單一任務崩潰不影響其他)|開發除錯、資源極度受限的電腦|
+|**(2) CLI 並行**|中|**極高** (同時載入多個模型)|快 (但模型載入開銷仍大)|低 (容易 OOM 導致全崩)|**僅適合純 OpenCV 輕量任務**|
+|**(3) API 依序**|中|中高 (常駐佔用)|快 (Warm Start)|高|一般 GPU 單機部署|
+|**(4) API 並行**|中高|中高 (常駐佔用)|**極快** (資源最大化利用)|中 (需注意 Server 端併發處理)|**多顯卡、高性能工作站**|
+|**(5) App UI**|高 (需懂線程)|同上|同上|高 (UI 不卡頓)|用戶端操作|
+|**(6) 混合模式**|**高 (需精細 Config)**|**最佳化 (平衡)**|**極快**|**最高**|**正式產品 / 複雜流水線**|
+
+---
+
+### 最終建議：最佳執行方式
+
+針對您的 50 個 Tasks (混合 AI 與 OpenCV) 以及支援 GPU 的需求，我強烈建議採用 **(6) 混合模式 + (5) App UI 並行觸發** 的架構。
+
+**具體實施策略：**
+
+1. **任務分類 (Config 設定)：**
+    
+    - **Tier 1 (重型 AI - SAM, Unet, DocTR)**: 在 yaml 設定 `mode: "api"`。這些模型載入要 5-10 秒，必須常駐。
+        
+    - **Tier 2 (中型 AI - 簡單 CNN)**: 視 VRAM 大小決定。若 VRAM 夠，設為 `api`；若不夠，設為 `cli` (犧牲速度換空間)。
+        
+    - **Tier 3 (輕量 - OpenCV, Numpy)**: 全部設為 `mode: "cli"`。不需要為了算個 Histogram 特地開一個 Server 佔用 Port 和資源，直接起一個 subprocess 毫秒級完成。
+        
+2. **資源管理 (ServiceManager)：**
+    
+    - 在 App 啟動時 (`ImagingWatchApp.py` 的 `__init__`)，呼叫 `ServiceManager.start_all_services()`。這會一次性把 Tier 1 的重型模型載入 VRAM。
+        
+3. **執行流程 (Orchestrator)：**
+    
+    - 當使用者按下 "Analyze Watch"：
+    - UI 啟動 `QThread`。
+    - Thread 呼叫 `orchestrator.run_batch(tasks, ..., parallel=True)`。
+    - Orchestrator 內部：
+        - 遇到 Tier 1 任務 -> HTTP Request (極快回應)。
+        - 遇到 Tier 3 任務 -> `subprocess.run` (快速執行)。
+        - 由於開啟了 `parallel=True`，這些可以同時發生 (例如：CPU 在算 OpenCV 時，GPU 在跑 SAM)。
+
+**優點總結：**
+
+- **速度快**：重型模型不需重載。
+- **省資源**：輕量任務不佔用 Server 資源。
+- **不卡頓**：UI 與邏輯分離。
+- **穩定**：即便某個 CLI 任務 crash，因為是 subprocess，不會導致整個 App 閃退，且 API Server 依然活著。
+
+這就是最符合您「系統穩定、高效、可擴充」要求的設計。
+
+
+### 如何執行以滿足 (1) ~ (6) 種場景
+
+現在您有了這個 `main_cli.py`，以下是針對您問題中每個場景的具體執行指令：
+
+#### (1) CLI 模式 - 依序執行 (Sequential)
+
+最穩定的模式，適合除錯或低記憶體環境。
+
+Bash
+
+```
+python main_cli.py --image "test.jpg" --out_dir "out" --mode cli
+# 不加 --parallel 預設為 False
+```
+
+#### (2) CLI 模式 - 並行執行 (Parallel)
+
+**警告：** 這樣做會同時啟動多個 Python Process，每個都會嘗試載入 AI 模型 (如 SAM/Doctr)。非常容易導致 VRAM 爆炸 (OOM)。只建議用於輕量 OpenCV 任務。
+
+Bash
+
+```
+python main_cli.py --image "test.jpg" --out_dir "out" --mode cli --parallel
+```
+
+#### (3) API Server 模式 - 依序執行
+
+適合 VRAM 有限但希望利用 "Warm Start" (模型已載入) 加速的場景。
+
+Bash
+
+```
+python main_cli.py --image "test.jpg" --out_dir "out" --mode api
+```
+
+#### (4) API Server 模式 - 並行執行
+
+適合強大的工作站。所有 Server 同時在背景跑，Client 同時發送 Request。
+
+Bash
+
+```
+python main_cli.py --image "test.jpg" --out_dir "out" --mode api --parallel
+```
+
+#### (5) App UI - 並行執行 (模擬)
+
+在您的 `ImagingWatchApp.py` (PySide6) 中，邏輯應該是：
+
+1. App 啟動 (`__init__`) -> `ServiceManager.start_all_services()` (載入模型)。
+    
+2. 按鈕點擊 -> 呼叫 `Orchestrator.run_batch(..., parallel=True)`。
+    
+3. Orchestrator 會依據 `config/system_config.yaml` 裡的設定跑 (Mixed Mode)。
+    
+
+這等同於在 Command Line 執行場景 (6)。
+
+#### (6) 混合模式 (Mixed Mode) - 推薦方案
+
+這是最聰明的做法。
+
+- **Heavy AI** (Doctr, SAM) -> 走 API (常駐 VRAM)。
+    
+- **Light CV** (Crystal, Bracelet) -> 走 CLI (用完即丟)。
+    
+- **並行** -> CPU 任務和 GPU 任務可以重疊執行。
+    
+
+Bash
+
+```
+python main_cli.py --image "test.jpg" --out_dir "out" --mode mixed --parallel
+```
+
+### 優缺點分析總結
+
+|**模式**|**啟動速度**|**執行速度**|**記憶體消耗**|**穩定性**|**推薦場景**|
+|---|---|---|---|---|---|
+|**(1) CLI 依序**|快 (無Server)|慢 (每次載入模型)|低 (循序使用)|**最高**|除錯、單張測試|
+|**(2) CLI 並行**|快|中 (爭搶資源)|**極高** (易崩潰)|低|**不推薦** (除非全是 OpenCV)|
+|**(3) API 依序**|慢 (等Server啟動)|快 (API回應快)|中高 (Server常駐)|高|VRAM有限的生產環境|
+|**(4) API 並行**|慢 (等Server啟動)|**極快**|中高 (Server常駐)|中 (需處理併發)|高性能 Server / 工廠產線|
+|**(6) 混合模式**|慢 (等AI Server)|**極快**|**最佳化**|**高**|**最終產品部署**|
+
+```
+那我們的這個project如果是要deployment時, 請就1. 客戶deploy在他們的machine然後隔一段時間就側一組watch(也是要執行所有tasks, 但可能不需要常駐api model). 2. 客戶deploy在他們的machine然後有非常大量的watch要一直執行(也是要執行所有tasks, 但可能需要常駐api model). 3. Cloud server, 就是客戶用簡單的client將image都傳送到放在AWS的server. 4. Edge mode. 提供給客戶包括結合軟體跟硬體的機台, 客戶可以在封裝給他們的軟體系統執行. 請中文詳細解釋在這幾個狀況下之前的Project系統架構設計是否適合或需要修改, 以及有沒有哪個模式(1)~(6)最適合? 另外這個架構如果遇到客戶不是windows而是linux, mac系統, 或者沒有GPU或有不同版本的GPU, 或者想用Docker deployment 這些情況下如何?
+```
+
+這是一個非常全面的部署（Deployment）戰略問題。您目前的架構設計（Orchestrator + Service Manager + Config Driven）具有極高的彈性，這正是 **Microservices (微服務)** 與 **Monolithic (單體)** 混合架構的優勢。
+
+這套架構**原則上非常適合**上述所有場景，只需要透過修改 `config.yaml` 和少量的「啟動邏輯」調整即可適應。
+
+以下針對您提出的 4 種場景與跨平台/Docker 需求進行詳細分析：
+
+---
+
+### 場景 1：低頻率地端部署 (Intermittent On-Prem)
+
+情境：客戶久久才測一次（例如每天只測一組）。
+
+需求：不希望軟體關閉後，背景還掛著 5 個吃掉 10GB VRAM 的 API Server，影響電腦做其他事情。
+
+- **適合度**：⭐⭐⭐⭐ (需調整啟動邏輯)
+    
+- **推薦模式**：**模式 (6) 混合模式 (Mixed Mode) + 自動關閉機制** 或 **模式 (1) CLI 依序**
+    
+- **分析與策略**：
+    
+    - **為什麼不選純 CLI (模式1)？** 因為每次跑 Task 都要重新載入 SAM/DINOv3 模型（每次浪費 5-10秒），如果有 50 個 Tasks，總體時間會拖太長，客戶體驗不好。
+        
+    - **最佳策略 (Auto-Shutdown)**：
+        
+        1. UI 啟動時，**不要**馬上啟動 `ServiceManager`。
+            
+        2. 當客戶按下「開始分析」按鈕時：
+            
+            - `ServiceManager.start_all_services()` (載入模型，需顯示 Loading Bar)。
+                
+            - `Orchestrator.run_batch(..., parallel=True)` (快速執行)。
+                
+            - 執行完畢後，**立刻**呼叫 `ServiceManager.stop_all_services()` (釋放 VRAM)。
+                
+    - **Config 設定**：`global_execution_mode: "mixed"`。
+        
+
+### 場景 2：高頻率地端部署 (High Volume On-Prem)
+
+情境：產線或專業鑑識中心，每天連續跑幾百支手錶。
+
+需求：速度第一，記憶體佔用沒關係（專用機）。
+
+- **適合度**：⭐⭐⭐⭐⭐ (完美契合)
+    
+- **推薦模式**：**模式 (6) 混合模式 (Mixed Mode) - 並行 (Parallel)**
+    
+- **分析與策略**：
+    
+    - 這就是您目前架構設計的主要目標。
+        
+    - **啟動邏輯**：
+        
+        - App 啟動 (`__init__`) 時就呼叫 `ServiceManager.start_all_services()`。
+            
+        - 讓模型常駐記憶體 (Warm Start)。
+            
+        - App 關閉時才 Stop Services。
+            
+    - **優化**：如果客戶電腦有雙 GPU，可以在 Config 中指定不同的 Service 跑在不同的 GPU ID (`CUDA_VISIBLE_DEVICES`)。
+        
+
+### 場景 3：雲端伺服器 (Cloud SaaS / AWS)
+
+情境：客戶端只有輕量 Client，上傳圖片，雲端算完回傳結果。
+
+需求：水平擴充 (Scaling)、佇列管理 (Queue)。
+
+- **適合度**：⭐⭐⭐⭐ (需增加 Web 介面層)
+    
+- **推薦模式**：**模式 (4) API 並行** 或 **模式 (6) 混合**，運行在 Docker 容器內。
+    
+- **修改建議**：
+    
+    - 您的 `main_cli.py` 或 `orchestrator.py` 不需要大改。
+        
+    - **新增一層 Wrapper**：您需要一個 Web Server (如 FastAPI/Flask) 作為對外窗口，接收客戶上傳的 Zip 檔。
+        
+    - **架構變形**：
+        
+        - AWS EC2 (GPU Instance) 上運行您的 `ServiceManager` (啟動 SAM/Doctr 服務)。
+            
+        - Web Server 收到請求 -> 存圖 -> 呼叫 `Orchestrator.run_batch` -> 回傳 JSON。
+            
+    - **成本考量**：雲端 GPU 很貴。如果採用此架構，建議使用 **Async Queue (Celery/Redis)**，讓 Orchestrator 在背景慢慢跑，不要讓 HTTP Request 等待。
+        
+
+### 場景 4：Edge Mode (專用機台/黑盒子)
+
+情境：軟硬整合賣給客戶 (e.g., 含 NVIDIA Orin 或 RTX 4060 的工控機)。
+
+需求：極致穩定、代碼保護、開機即用。
+
+- **適合度**：⭐⭐⭐⭐⭐ (完美契合)
+    
+- **推薦模式**：**模式 (6) 混合模式 (Mixed Mode)**
+    
+- **實作建議**：
+    
+    - **OS**: 使用 Linux (Ubuntu)，因為 PyTorch 在 Linux 上效能通常優於 Windows，且驅動更穩定。
+        
+    - **Deployment**: 使用 **Docker Compose** (詳見後文) 或將 `ServiceManager` 寫成 Linux `systemd` 服務，設為開機自動啟動。
+        
+    - **加密**: 使用 Cython 編譯所有 `.py` 檔，保護核心演算法不被客戶複製。
+        
+
+---
+
+### 跨平台、硬體差異與 Docker 部署分析
+
+您的架構目前高度依賴 Python 路徑和 `subprocess`，這在跨平台時需要微調。
+
+#### 1. Windows vs. Linux/Mac
+
+您的代碼中有幾個 Windows 專用的寫法需要修改以支援跨平台：
+
+- **路徑問題**: `C:/Data/...` 是 Windows 寫法。
+    
+    - _解法_: 在 Config 中使用相對路徑 (e.g., `./data/`) 或環境變數。代碼中使用 `os.path.join` 或 `pathlib.Path`。
+        
+- **Service Manager 的 `subprocess`**:
+    
+    - `creationflags=subprocess.CREATE_NO_WINDOW` 只有 Windows 有。
+        
+    - _修改代碼_:
+        
+        Python
+        
+        ```
+        kwargs = {}
+        if sys.platform == 'win32':
+            kwargs['creationflags'] = subprocess.CREATE_NO_WINDOW
+        proc = subprocess.Popen(cmd, **kwargs)
+        ```
+        
+
+#### 2. GPU vs. No GPU (或不同型號)
+
+您的代碼已經做得不錯 (`torch.cuda.is_available()`)。
+
+- **建議**: 在 `config.yaml` 中增加一個 `device_override` 選項。
+    
+    - 如果客戶只有 CPU，PyTorch 跑 SAM/DINOv3 會非常慢 (可能一張圖要 30秒)。
+        
+    - _策略_: 針對無 GPU 客戶，自動將 Config 切換為 **模式 (1) CLI 依序**，避免同時跑多個 CPU 繁重任務導致電腦死機。
+        
+
+#### 3. Docker Deployment (最推薦的部署方式)
+
+如果想用 Docker，您的架構需要從「Process 管理 (`ServiceManager`)」轉變為「容器編排 (`Docker Compose`)」。
+
+**原本架構**:
+
+- Host OS -> 執行 `main.py` -> `ServiceManager` 啟動 `python server_ocr.py` (Subprocess)。
+    
+
+**Docker 架構**:
+
+- 我們不希望在一個 Docker 容器裡還去 `subprocess` 啟動其他 Python，這違反 Docker 原則。
+    
+- **新架構**: 每個 API Server 都是一個獨立的 Container。
+    
+
+**`docker-compose.yml` 範例**:
+
+YAML
+
+```
+version: '3.8'
+services:
+  # 1. 主程式 (Orchestrator / UI / CLI)
+  main_app:
+    build: .
+    volumes:
+      - ./data:/data
+    environment:
+      - EXECUTION_MODE=api  # Docker 內強制走 API 模式
+    depends_on:
+      - ocr_service
+      - sam_service
+
+  # 2. OCR 服務
+  ocr_service:
+    build: 
+      context: .
+      dockerfile: docker/ocr.Dockerfile
+    command: python tasks/api_servers/server_ocr.py --port 5000
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+
+  # 3. SAM 服務
+  sam_service:
+    build: 
+      context: .
+      dockerfile: docker/sam.Dockerfile
+    command: python tasks/api_servers/server_features.py --port 5003
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+```
+
+修改 Config (system_config.yaml):
+
+在 Docker 內部，服務網址不再是 127.0.0.1，而是 Service Name。
+
+YAML
+
+```
+services:
+  ocr_service:
+    # host: "127.0.0.1"  <-- 本機開發用
+    host: "ocr_service"  # <-- Docker 內部 DNS 名稱
+    port: 5000
+```
+
+---
+
+### 總結建議
+
+針對您的需求，以下是最終的決策矩陣：
+
+|**部署場景**|**推薦模式 (1~6)**|**架構調整建議**|**關鍵技術**|
+|---|---|---|---|
+|**1. 客戶偶爾測試**|**(6) 混合模式**|修改 App 邏輯：**任務結束後立即關閉 Services**。|ServiceManager Auto-stop|
+|**2. 客戶大量測試**|**(6) 混合模式**|App 啟動即開啟 Services，常駐背景。|Config Optimization|
+|**3. Cloud SaaS**|**(4) API 並行**|改用 **Docker Compose** 部署，主程式改為 Web API 接收請求。|Docker, Redis Queue|
+|**4. Edge 機台**|**(6) 混合模式**|使用 Linux 系統，設定開機自啟動，使用 Cython 加密代碼。|Systemd, Cython|
+
+結論：
+
+您目前設計的 「Orchestrator + Service Manager + 混合模式 (Mixed Mode)」 架構非常穩健且具有前瞻性。它既能在開發時方便除錯 (CLI)，也能在生產環境高效運行 (API)，甚至很容易移植到 Docker (Cloud)。
+
+您只需要在 `ServiceManager` 中加入跨平台的判斷 (`sys.platform`)，並在 UI 層實作「根據使用情境決定何時呼叫 start/stop services」的邏輯，這套系統就非常完美了。
+
+
+
+```
+那如果也考量到客戶端可能沒有python or docker, 以及要確保不能code leak, parameter, config leak. 這樣的系統設計是否適合? 以及要做那些額外的手續?
+```
+
+
+這是一個非常嚴肅且實際的商業部署問題。如果您的目標是 **B2B 商業軟體交付**（賣給工廠、檢測中心），且客戶環境受限（無 Python/Docker）並要求高度保密（IP Protection），目前的「源碼 + YAML」架構是 **完全不合格的**。
+
+目前的架構是「開發友善 (Developer Friendly)」，但對於商業交付，您必須導入 **「編譯與打包 (Compilation & Packaging)」** 的工序。
+
+以下是針對您提出的限制，對系統架構進行的 **改造方案** 與 **實作步驟**。
+
+---
+
+### 核心策略：從「直譯式腳本」轉向「二進位執行檔」
+
+我們要達成的目標是：給客戶一個資料夾，裡面只有 `.exe` (或 Linux binary)、`.dll` 和加密的數據檔。客戶不需要安裝 Python，也無法看到源碼。
+
+#### 1. 解決 "No Python / No Docker" -> **PyInstaller / Nuitka 打包**
+
+客戶機器上沒有 Python 環境，意味著您必須將 Python 直譯器、所有依賴庫 (PyTorch, OpenCV, Numpy) 以及您的代碼打包成一個獨立的執行環境。
+
+- **工具選擇**：
+    
+    - **PyInstaller**: 最主流，相容性好。它將 Python 解析器和您的 script 包在一起。
+        
+    - **Nuitka**: **強烈推薦**。它將 Python code 轉譯成 C++，然後編譯成真正的機器碼 (Machine Code)。這不僅解決了依賴問題，還提供了極高的代碼保護（幾乎無法反編譯）。
+        
+
+#### 2. 解決 "Code Leak" -> **Cython 編譯 (或 Nuitka)**
+
+Python 的 `.pyc` 檔很容易被反編譯。為了保護您的核心演算法 (`tasks/algorithms/*.py`)：
+
+- **作法**：使用 **Cython** 將 `.py` 檔編譯成 `.pyd` (Windows) 或 `.so` (Linux) 的擴充模組 (Extension Modules)。
+    
+- **效果**：`.pyd` 是二進位檔 (就像 `.dll`)，駭客打開只會看到亂碼，極難逆向工程。
+    
+
+#### 3. 解決 "Config/Parameter Leak" -> **AES 加密**
+
+`config.yaml` 裡面包含閾值 (Thresholds)、參數，這些是商業機密 (Know-How)。
+
+- **作法**：
+    
+    1. **開發端**：寫一個腳本將 `config.yaml` 使用 AES-256 加密成 `config.bin`。
+        
+    2. **執行端**：`Orchestrator` 內部寫死解密金鑰 (Key)，在記憶體中解密並讀取，**絕不**在客戶硬碟產生明文 yaml。
+        
+
+---
+
+### 架構修改實作指南
+
+我們需要修改 `ServiceManager` 和 `Orchestrator` 來適應「編譯後」的環境。
+
+#### A. 修改設定檔讀取 (支援加密配置)
+
+我們不再直接讀取 `.yaml`，而是讀取加密的二進位檔。
+
+Python
+
+```
+# core/security.py (新增)
+from cryptography.fernet import Fernet
+import yaml
+import io
+
+# 這是您的商業機密，藏在編譯後的 .pyd/.exe 裡
+# 實務上可以使用混淆技術隱藏這個 Key，不要直接寫明文
+_INTERNAL_KEY = b'YourGeneratedFernetKeyHere=' 
+
+def load_encrypted_config(path_enc):
+    """讀取並解密 Config"""
+    cipher = Fernet(_INTERNAL_KEY)
+    with open(path_enc, 'rb') as f:
+        encrypted_data = f.read()
+    
+    decrypted_data = cipher.decrypt(encrypted_data)
+    # 將解密後的 bytes 轉為 yaml dict
+    return yaml.safe_load(io.BytesIO(decrypted_data))
+```
+
+#### B. 修改 `ServiceManager` (適應 .exe 執行)
+
+在開發環境我們呼叫 `python server.py`，但在部署環境（Freeze 環境），我們呼叫的是編譯好的執行檔。
+
+Python
+
+```
+# core/service_manager.py (修改版)
+import sys
+import subprocess
+import os
+
+class ServiceManager:
+    # ... __init__ ...
+
+    def _start_single_service(self, name, cfg):
+        # 判斷是否處於 "Freeze" (打包後) 的狀態
+        is_frozen = getattr(sys, 'frozen', False)
+        
+        if is_frozen:
+            # --- 部署環境 (Deployment) ---
+            # 假設打包後，所有的 server 都被編譯成獨立的 exe，或者由主程式透過參數啟動
+            # 這裡示範：主程式 main_app.exe 帶參數啟動子服務 (這是 PyInstaller 常見做法)
+            
+            # 取得目前執行檔路徑 (e.g., C:/App/main_app.exe)
+            exe_path = sys.executable 
+            
+            # 使用同一個 exe，但傳入特殊參數讓它變身為 Service
+            # 你的 main.py 需要解析這些參數
+            cmd = [
+                exe_path,
+                "--mode", "service_worker", # 告訴 main 這是一個 worker
+                "--service_name", name,     # 告訴它要跑哪個服務
+                "--port", str(cfg['port']),
+                "--config_enc", "config/system_config.bin" # 傳入加密設定檔路徑
+            ]
+        else:
+            # --- 開發環境 (Development) ---
+            python_exe = cfg['env']
+            script_path = cfg['script']
+            cmd = [
+                python_exe, 
+                script_path, 
+                "--port", str(cfg['port']),
+                "--config", cfg['config_path']
+            ]
+
+        # ... (subprocess.Popen 啟動邏輯不變) ...
+```
+
+#### C. 修改 `main_cli.py` (統一入口 Launcher)
+
+為了不用打包 10 個 `.exe` (檔案會很大)，我們通常只打包一個 `main_app.exe`，然後透過參數決定它要扮演「主控台」還是「背景 OCR 服務」。
+
+Python
+
+```
+# main_cli.py (Entry Point)
+import sys
+import argparse
+from tasks.api_servers import server_ocr, server_features # Import 這些模組
+
+def run_service_worker(service_name, port, config_path):
+    """根據名稱啟動對應的 FastAPI Server"""
+    if service_name == "ocr_service":
+        server_ocr.start_server(port, config_path) # 需要去修改 server code 封裝成 function
+    elif service_name == "features_service":
+        server_features.start_server(port, config_path)
+    # ... 其他服務
+
+def main():
+    parser = argparse.ArgumentParser()
+    # 增加一個內部使用的模式
+    parser.add_argument("--mode", choices=["cli", "api", "mixed", "service_worker"], default="mixed")
+    parser.add_argument("--service_name", help="Internal use for spawning services")
+    # ... 其他參數 ...
+    args = parser.parse_args()
+
+    if args.mode == "service_worker":
+        # 這是背景服務模式 (由 ServiceManager 啟動的子進程)
+        run_service_worker(args.service_name, args.port, args.config_enc)
+    else:
+        # 這是正常的主程式模式
+        # ... 原本的 Orchestrator 邏輯 ...
+```
+
+---
+
+### 打包與部署流程 (Pipeline)
+
+要實現這個交付，您需要建立一個 Build Pipeline：
+
+#### 步驟 1：代碼編譯 (Cythonization)
+
+寫一個 `setup.py`，將所有 `tasks/algorithms/*.py` 編譯成 `.pyd` (Windows) 或 `.so` (Linux)。
+
+- 這會把 Python 代碼變成 C 代碼再變成機器碼。
+    
+- 刪除原始 `.py` 檔，只保留 `.pyd`。
+    
+
+#### 步驟 2：設定檔加密
+
+執行腳本將所有 `config/*.yaml` 加密成 `.bin`，並刪除原始 `.yaml`。
+
+#### 步驟 3：打包成執行檔 (PyInstaller)
+
+使用 `.spec` 文件配置 PyInstaller。
+
+- **Dependencies**: PyInstaller 會自動分析 import，將 PyTorch, OpenCV, Numpy 的 DLL 全部抓進來。
+    
+- **Data Files**: 確保將 AI 模型權重 (`.pth`)、加密的 Config (`.bin`) 包含在內。
+    
+- **Hidden Imports**: 確保所有隱式呼叫的庫都被包含。
+    
+
+**最終產出結構 (Delivery Folder):**
+
+Plaintext
+
+```
+MyWatchAnalyzer/
+├── main_app.exe          # 唯一的入口
+├── config/
+│   └── system_config.bin # 加密後的設定
+├── checkpoints/          # AI 模型 (可額外加密)
+│   └── sam_vit_h.pth
+├── internal/             # 這裡面全是編譯過的 .pyd 和依賴的 .dll
+│   ├── torch.dll
+│   ├── opencv_world.dll
+│   ├── core.pyd          # 用戶看不到源碼
+│   └── algorithms.pyd    # 用戶看不到源碼
+└── ...
+```
+
+---
+
+### 針對不同情境的優勢分析
+
+採用這種 **「編譯 + 單一執行檔啟動子服務」** 的架構後：
+
+1. **低頻率地端部署**：
+    
+    - **優勢**：客戶不需要安裝 Python/Conda，雙擊 `main_app.exe` 即可使用。退出後自動關閉所有子進程，不佔資源。
+        
+2. **高頻率地端部署**：
+    
+    - **優勢**：編譯後的代碼 (Cython) 執行速度通常比純 Python 快 10-30%。穩定性更高。
+        
+3. **Cloud Server**：
+    
+    - **優勢**：這個打包好的資料夾可以直接丟進 Docker Base Image (如 `python:3.9-slim`)，不需要在 Docker 裡重新 `pip install` 一堆東西，部署速度快，且 Image 內不含源碼，安全性高。
+        
+4. **Edge Mode**：
+    
+    - **優勢**：這是最完美的方案。硬體出廠前，您將編譯好的 binary 燒錄進去。客戶完全無法修改參數或竊取演算法，僅能透過您定義好的 API 或 UI 操作。
+        
+
+### 總結建議
+
+- **系統架構 (Orchestrator/ServiceManager)**：**不需要大改**，依然適用。唯獨 `ServiceManager` 啟動子進程的方式需要從 `python script.py` 改為 `executable --mode worker`。
+    
+- **額外手續**：
+    
+    1. **引入 Cython**：保護核心 IP。
+        
+    2. **引入 PyInstaller/Nuitka**：解決無 Python 環境問題。
+        
+    3. **引入 Cryptography**：保護 Config 參數。
+        
+    4. **重構 Entry Point**：將各個 `server_*.py` 的 `if __name__ == "__main__":` 改為可被外部呼叫的 `start_server()` 函式，以便統一由 `main_app.exe` 調用。
+        
+
+這套流程是標準的商業軟體交付流程，雖然增加了 Build 的複雜度，但能確保您的智慧財產權安全，並大幅降低客戶端的環境配置問題。
+
+
+
+
+
