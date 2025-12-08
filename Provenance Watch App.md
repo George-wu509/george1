@@ -2799,3 +2799,374 @@ MyWatchAnalyzer/
 
 
 
+#### 9. AWS training 
+
+這是一個從「本地開發環境」跨越到「雲端訓練環境」的關鍵步驟。很多人在這裡會卡住，因為雲端的檔案路徑結構跟本地完全不同。
+
+我將把這個過程拆解成 **5 個詳細步驟**，並解釋背後的原理。
+
+---
+
+### 整體架構概念圖
+
+在你開始之前，先理解資料是怎麼流動的：
+
+1. **上傳 (Upload)**: 你在本地執行 Python 腳本，將 `data/processed` 資料夾傳送到 **AWS S3** (儲存桶)。
+    
+2. **啟動 (Trigger)**: 你透過 Python SDK (`sagemaker` library) 告訴 AWS：「請幫我開一台有 GPU 的機器 (SageMaker Instance)」。
+    
+3. **掛載 (Mount)**: SageMaker 啟動後，會自動把 **S3 裡的資料** 下載到該機器的 `/opt/ml/input/data/training` 資料夾中。
+    
+4. **訓練 (Train)**: 你的 `train_unet.py` 或 `train_yolo.py` 在那台機器上執行，讀取 `/opt/ml/...` 裡的路徑。
+    
+5. **存檔 (Save)**: 訓練完的模型 (`model.pth` 或 `best.pt`) 會被存到機器的 `/opt/ml/model`，然後 SageMaker 會自動把它打包上傳回 **S3**。
+    
+
+---
+
+### 步驟 1: AWS 帳號與環境設定 (一次性設定)
+
+如果你還沒設定過 AWS CLI，請先做這步。
+
+1. **安裝 AWS CLI & Libraries**: 在你的本地電腦終端機 (Terminal/CMD) 執行：
+    
+    Bash
+    
+    ```
+    pip install boto3 sagemaker awscli
+    ```
+    
+2. **取得 Access Key**:
+    
+    - 登入 AWS Console -> 搜尋 "IAM" -> Users -> Create User (給予 AdministratorAccess 權限方便測試) -> Security credentials -> Create access key。
+        
+    - 記下 **Access Key ID** 和 **Secret Access Key**。
+        
+3. **設定本地認證**: 在終端機輸入：
+    
+    Bash
+    
+    ```
+    aws configure
+    ```
+    
+    依序輸入剛剛的 Key，Region 建議選 `us-east-1` (最便宜且功能最全) 或 `ap-northeast-1` (東京, 離台灣近)。
+    
+4. **建立 SageMaker 執行角色 (IAM Role)**: SageMaker 需要權限去讀 S3。
+    
+    - 到 AWS Console -> IAM -> Roles -> Create role.
+        
+    - Service 選擇 **SageMaker**.
+        
+    - Permissions 搜尋並勾選 `AmazonSageMakerFullAccess` (包含 S3 讀寫權限)。
+        
+    - Role Name 取名例如 `SageMaker-Execution-Role`.
+        
+    - **複製這個 Role 的 ARN** (類似 `arn:aws:iam::123456789:role/SageMaker-Execution-Role`)，等下程式碼要用。
+        
+
+---
+
+### 步驟 2: 修改訓練程式碼 (適配 AWS 路徑)
+
+這是最重要的一步。在本地，你的資料在 `data/processed/...`，但在 AWS 上，資料會被掛載到環境變數 `SM_CHANNEL_TRAINING` 指定的路徑。
+
+#### 2.1 修改 `src/train_unet.py`
+
+我們加入一段邏輯：檢查是否有環境變數 `SM_CHANNEL_TRAINING`。如果有，代表在 AWS 上跑；如果沒有，代表在本地跑。
+
+Python
+
+```
+# src/train_unet.py 修改版
+import torch
+import os
+import sys
+from torch.utils.data import DataLoader, Dataset
+import segmentation_models_pytorch as smp
+import cv2
+from pathlib import Path
+import numpy as np
+
+# ... (SegmentationDataset Class 保持不變) ...
+
+def train():
+    device = 'cuda' if torch.cuda.is_available() else 'cpu'
+    
+    # --- [關鍵修改] 路徑判斷邏輯 ---
+    if os.environ.get('SM_CHANNEL_TRAINING'):
+        # --- AWS 環境 ---
+        print("Running in AWS SageMaker mode.")
+        # SageMaker 會把資料下載到這裡
+        data_root = Path(os.environ['SM_CHANNEL_TRAINING'])
+        # 模型必須存到這裡，訓練結束後才會被上傳回 S3
+        model_dir = Path(os.environ['SM_MODEL_DIR'])
+    else:
+        # --- 本地環境 ---
+        print("Running in Local mode.")
+        data_root = Path('data/processed/unet_dataset')
+        model_dir = Path('.')
+    
+    print(f"Data Root: {data_root}")
+    print(f"Model Output Dir: {model_dir}")
+
+    # 1. 建立 Dataset (注意路徑拼接)
+    # 假設上傳後結構是 data_root/images/train
+    train_ds = SegmentationDataset(
+        data_root / 'images' / 'train', 
+        data_root / 'masks' / 'train'
+    )
+    
+    # ... (DataLoader, Model, Optimizer 保持不變) ...
+    
+    # 4. 訓練迴圈
+    # ... (訓練過程保持不變) ...
+    
+    # 5. 存檔 (必須存到 model_dir)
+    save_path = model_dir / "unet_model.pth"
+    torch.save(model.state_dict(), save_path)
+    print(f"U-Net saved to {save_path}")
+
+if __name__ == '__main__':
+    train()
+```
+
+#### 2.2 修改 `src/train_yolo.py`
+
+YOLO 比較麻煩，因為它依賴 `dataset.yaml` 檔案，而 YAML 裡面寫的是絕對路徑或相對路徑。在 AWS 上路徑變了，所以我們要在**程式執行時動態重寫 YAML 檔**。
+
+Python
+
+```
+# src/train_yolo.py 修改版
+from ultralytics import YOLO
+import os
+import yaml
+from pathlib import Path
+import shutil
+
+def train_yolo():
+    # --- [關鍵修改] 路徑判斷與 YAML 重寫 ---
+    if os.environ.get('SM_CHANNEL_TRAINING'):
+        # --- AWS 環境 ---
+        print("Running in AWS SageMaker mode.")
+        data_root = Path(os.environ['SM_CHANNEL_TRAINING'])
+        model_dir = Path(os.environ['SM_MODEL_DIR'])
+        
+        # 定義新的 YAML 內容 (指向 AWS 內部的絕對路徑)
+        # 注意：這裡假設你的資料夾結構上傳後，data_root 下面直接是 images 和 labels
+        yaml_content = {
+            'path': str(data_root),  # 絕對路徑 /opt/ml/input/data/training
+            'train': 'images/train',
+            'val': 'images/val',
+            # 這裡必須填入你的 11 個類別
+            'names': {i: f'class_{i+1}' for i in range(11)} 
+        }
+        
+        # 將新的 YAML 寫入到 data_root 下 (或其他暫存區)
+        dataset_yaml = data_root / 'dataset_aws.yaml'
+        with open(dataset_yaml, 'w') as f:
+            yaml.dump(yaml_content, f)
+            
+        print(f"Created AWS YAML at: {dataset_yaml}")
+        
+    else:
+        # --- 本地環境 ---
+        print("Running in Local mode.")
+        dataset_yaml = '../data/processed/yolo_dataset/dataset.yaml'
+        model_dir = Path('yolo_output')
+
+    # 載入模型
+    model = YOLO('yolov8n-seg.pt')
+    
+    # 開始訓練
+    # project 參數設定為 model_dir，這樣 YOLO 輸出的結果才會被 SageMaker 抓到
+    results = model.train(
+        data=str(dataset_yaml),
+        epochs=50,
+        imgsz=640,
+        batch=16,
+        project=str(model_dir), 
+        name='train_run',       # 結果會存到 model_dir/train_run
+        device=0 if torch.cuda.is_available() else 'cpu'
+    )
+    
+    # 匯出 ONNX
+    # YOLO 匯出通常在 runs/segment/... 我們需要確保它也在 model_dir
+    export_path = model.export(format='onnx')
+    
+    # 在 AWS 模式下，Ultralytics 會自動把東西存在 project 參數指定的地方
+    # 所以只要 project 設定成 os.environ['SM_MODEL_DIR'] 即可
+
+if __name__ == '__main__':
+    train_yolo()
+```
+
+---
+
+### 步驟 3: 上傳資料與啟動訓練 (`aws/push_and_train.py`)
+
+在你的本地電腦建立這個腳本，用來控制一切。
+
+**重要概念**：`Estimator` 的 `source_dir='src'` 參數。 這代表當你執行這個腳本時，SageMaker 會把你的本地 `src` 資料夾打包，上傳到 S3，然後解壓縮到雲端機器上執行。這就是為什麼你修改 `src/` 下的程式碼後，不需要手動上傳程式碼，SDK 會幫你做。
+
+Python
+
+```
+# aws/push_and_train.py
+import sagemaker
+from sagemaker.pytorch import PyTorch
+import os
+
+# ================= 設定區 =================
+# 填入步驟 1 取得的 Role ARN
+ROLE_ARN = "arn:aws:iam::123456789012:role/SageMaker-Execution-Role"
+
+# 選擇你要訓練的模型 ('unet' 或 'yolo')
+MODEL_TYPE = 'unet' 
+# =========================================
+
+sagemaker_session = sagemaker.Session()
+bucket = sagemaker_session.default_bucket() # 自動建立一個預設 bucket
+
+print(f"Using Bucket: {bucket}")
+
+# 1. 上傳資料集 (Dataset) 到 S3
+# -------------------------------------------------
+if MODEL_TYPE == 'unet':
+    local_path = 'data/processed/unet_dataset'
+    s3_prefix = 'semantic-seg/data/unet'
+    entry_point = 'train_unet.py'
+elif MODEL_TYPE == 'yolo':
+    local_path = 'data/processed/yolo_dataset'
+    s3_prefix = 'semantic-seg/data/yolo'
+    entry_point = 'train_yolo.py'
+
+print(f"Step 1: Uploading {MODEL_TYPE} dataset from '{local_path}' to S3...")
+
+# upload_data 會把本地資料夾的內容上傳到 s3://bucket_name/s3_prefix
+input_data_uri = sagemaker_session.upload_data(
+    path=local_path,
+    key_prefix=s3_prefix
+)
+print(f"Data uploaded to: {input_data_uri}")
+
+
+# 2. 定義訓練任務 (Estimator)
+# -------------------------------------------------
+print("Step 2: Defining SageMaker Estimator...")
+
+# PyTorch Estimator 會自動使用 AWS 官方維護的 PyTorch Docker Image
+estimator = PyTorch(
+    entry_point=entry_point,      # 指定啟動哪個檔案
+    source_dir='src',             # [重要] 指定包含所有程式碼的資料夾
+    role=ROLE_ARN,
+    framework_version='2.0.0',    # PyTorch 版本
+    py_version='py310',           # Python 版本
+    instance_count=1,
+    instance_type='ml.g4dn.xlarge', # 使用 GPU (T4)，每小時約 $0.5 ~ $0.7 美金
+    # instance_type='ml.m5.large',  # 如果只想測 CPU 可用這個 (便宜)
+    hyperparameters={
+        'epochs': 10,
+        'batch-size': 8
+    },
+    # 設定依賴包 (如果在 requirements.txt 裡有特殊套件)
+    # SageMaker Script Mode 會自動安裝 source_dir 下的 requirements.txt
+)
+
+# 3. 開始訓練
+# -------------------------------------------------
+print("Step 3: Launching Training Job...")
+
+# estimator.fit 會啟動機器，並將 input_data_uri 掛載到 /opt/ml/input/data/training
+estimator.fit({'training': input_data_uri})
+
+print("Training job started! Check AWS Console for logs.")
+print(f"Model artifacts will be uploaded to: {estimator.model_data}")
+```
+
+---
+
+### 步驟 4: 準備 `src/requirements.txt`
+
+因為 AWS 的 PyTorch 環境只有基礎套件，你需要告訴它安裝 YOLO 和其他庫。 在 `src/requirements.txt` 中寫入：
+
+Plaintext
+
+```
+opencv-python-headless
+segmentation-models-pytorch
+ultralytics
+matplotlib
+pandas
+tqdm
+```
+
+_(注意：在雲端環境建議用 `opencv-python-headless` 以免出現圖形介面錯誤)_
+
+---
+
+### 步驟 5: 執行與監控
+
+1. **確保檔案結構正確**:
+    
+    Plaintext
+    
+    ```
+    project/
+    ├── data/processed/... (你的資料)
+    ├── src/
+    │   ├── train_unet.py
+    │   ├── train_yolo.py
+    │   ├── data_prep.py
+    │   ├── requirements.txt
+    │   └── ...
+    └── aws/
+        └── push_and_train.py
+    ```
+    
+2. **執行**: 在專案根目錄執行：
+    
+    Bash
+    
+    ```
+    python aws/push_and_train.py
+    ```
+    
+3. **觀察**:
+    
+    - 終端機會顯示上傳進度。
+        
+    - 接著會顯示 Training Job 的 Logs (這可能需要幾分鐘來啟動機器)。
+        
+    - 你可以登入 **AWS Console -> SageMaker -> Training -> Training jobs**，你會看到一個正在跑的任務。點進去可以看到詳細的 CloudWatch Logs (如果程式報錯，這是除錯的地方)。
+        
+4. **取得模型**:
+    
+    - 訓練完成後，終端機會顯示 `Model artifacts will be uploaded to: s3://.../model.tar.gz`。
+        
+    - 你可以去 S3 下載這個 `.tar.gz` 檔，解壓縮後裡面就是你的 `unet_model.pth` 或 YOLO 的 `best.pt`。
+        
+
+---
+
+### 常見問題 (Troubleshooting)
+
+- **錯誤：`ClientError: An error occurred (AccessDenied)...`**:
+    
+    - 這通常代表你的 IAM Role 沒有權限。請確認 Role 有 `AmazonSageMakerFullAccess`。
+        
+- **錯誤：`FileNotFoundError`**:
+    
+    - 檢查 `train_unet.py` 裡的 `os.environ.get('SM_CHANNEL_TRAINING')` 是否正確抓到路徑。
+        
+    - 如果是 YOLO，檢查 YAML 是否成功重寫，且路徑指向 `/opt/ml/input/data/training`。
+        
+- **成本**: `ml.g4dn.xlarge` 不算太貴，但訓練完記得檢查 Training Job 是否顯示 "Completed" 或 "Failed"，SageMaker 是按秒計費的，訓練結束就會停止計費，不會像 EC2 一樣如果不關機就一直扣錢。
+
+
+
+
+
+
+
