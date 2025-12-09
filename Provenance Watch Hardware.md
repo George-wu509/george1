@@ -1,15 +1,18 @@
 
 
 
-|                                           |     |
-| ----------------------------------------- | --- |
-| [[#### 1. Provenance Watch Hardware硬體介紹]] |     |
-| [[#### 2. Python控制硬體]]                    |     |
-| [[#### 3. 遠端控制硬體可行性]]                     |     |
-| [[#### 4. 遠端控制硬體並回傳影像設計]]                 |     |
-| [[#### 5. 各硬體可控制選項細節]]                    |     |
-|                                           |     |
-|                                           |     |
+|                                              |     |
+| -------------------------------------------- | --- |
+| [[#### 1. Provenance Watch Hardware硬體介紹]]    |     |
+| [[#### 2. Python控制硬體]]                       |     |
+| [[#### 3. 遠端控制硬體可行性]]                        |     |
+| [[#### 4. 遠端控制硬體並回傳影像設計]]                    |     |
+| [[#### 5. 各硬體可控制選項細節]]                       |     |
+| [[#### 6. 遠端控制硬體的程式碼]]                       |     |
+| [[#### 7. 全功能 Client 端操控]]                   |     |
+| [[#### 8. 重新架構hardware class的server-clint ]] |     |
+| [[#### 9. 設定檔詳細解釋]]                          |     |
+|                                              |     |
 
 
 
@@ -1403,3 +1406,1227 @@ if __name__ == "__main__":
         
 
 這套代碼是工業級自動化的基礎框架，結構清晰且容易維護。
+
+
+
+
+
+#### 7. 全功能 Client 端操控
+```
+如果我的需求是無論是在遠端或在現場, 當在現場的已經執行python system_controller.py打開server後, 都可以在現場或遠端執行Client 端程式. 包括可以操控Zaber RST120, Zaber LRQ300, ITA81, ITA204, TICGR1000-D1-PS-US, Adam ADAM-6266-B來做到旋轉放watch的機台, 水平跟垂直移動ITA camera, 調整light source, take image or video等完整的功能, 也包括儲存camera拍攝的raw images到local. 請提供完整的Client 端程式(controller_client.py), 那原本的system_controller.py需要修改嗎
+```
+這是一個非常好的開發方向。為了達成您要求的「全功能 Client 端操控」，我們必須建立一套明確的**通訊協定 (Communication Protocol)**。
+
+簡單來說，Client 端發送 JSON 指令 (例如 `{"cmd": "move", "axis": "zaber_z", "dist": 10}`)，Server 端收到後解析並執行，同時不斷透過 WebSocket 推送壓縮影像。
+
+**回答您的問題：是的，原本的 `system_controller.py` 需要修改。** 之前的版本比較像是一個自動化腳本的示範，現在我們需要把它升級成一個**能夠回應各種即時指令的 Server**。
+
+以下我將提供兩份完整的程式碼：
+
+1. **Server 端 (升級版 `system_controller.py`)**：負責連接硬體、執行指令、儲存原始圖檔。
+    
+2. **Client 端 (全新 `controller_client.py`)**：提供圖形化介面 (GUI)，讓您按按鈕就能控制一切。
+    
+
+---
+
+### 第一部分：升級版 Server (`system_controller.py`)
+
+請將此程式碼放在**連接硬體的現場電腦**上執行。我已經加入了針對您所有硬體的控制邏輯（包含了 Mock 模擬模式，讓您在沒接硬體時也能測試軟體通訊）。
+
+**主要修改點：**
+
+- 增加了 `HardwareController` 類別，統一管理所有硬體。
+    
+- 強化了 WebSocket 的指令解析器 (`handle_command`)。
+    
+- 增加了「儲存高畫質原圖到本地」的功能。
+    
+
+Python
+
+```
+# system_controller.py (Server 端 - 運行於現場電腦)
+import asyncio
+import cv2
+import uvicorn
+import json
+import base64
+import os
+import time
+from typing import Dict
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from pydantic import BaseModel
+
+# --- 硬體函式庫 (模擬與真實切換) ---
+# 若有真實硬體，請取消註解以下 import
+# from zaber.motion import Library, Units, Measurement
+# from zaber.motion.ascii import Connection
+# from pypylon import pylon
+# from pymodbus.client import ModbusTcpClient
+# import serial
+
+# ==========================================
+# 1. 硬體控制核心 (Hardware Abstraction Layer)
+# ==========================================
+class HardwareController:
+    def __init__(self):
+        self.is_simulation = True  # 開發階段設為 True，避免報錯
+        self.save_folder = "./server_raw_images"
+        os.makedirs(self.save_folder, exist_ok=True)
+        
+        # 硬體狀態追蹤
+        self.light_intensity = 0
+        self.current_camera = "ITA81 (Wide)"
+        self.zaber_rot_pos = 0.0
+        self.zaber_lin_pos = 0.0
+        self.vacuum_on = False
+
+    def connect_all(self):
+        print("[Server] 正在連接硬體...")
+        if not self.is_simulation:
+            # 在這裡填入真實的連接代碼
+            # self.zaber_conn = Connection.open_serial_port("COM3")
+            # self.light_ser = serial.Serial("COM4", 9600)
+            pass
+        print("[Server] 硬體連接完成 (模擬模式: ON)")
+
+    # --- Zaber 控制 ---
+    def move_rotary(self, degrees):
+        # 控制 Zaber RST120
+        self.zaber_rot_pos += degrees
+        print(f"[HW] 旋轉台移動 {degrees} 度 -> 目前: {self.zaber_rot_pos}")
+        if not self.is_simulation:
+            # real_axis.move_relative(Measurement(degrees, Units.ANGLE_DEGREES))
+            pass
+
+    def move_linear(self, mm):
+        # 控制 Zaber LRQ300 (假設為垂直/對焦軸)
+        self.zaber_lin_pos += mm
+        print(f"[HW] 線性台移動 {mm} mm -> 目前: {self.zaber_lin_pos}")
+        if not self.is_simulation:
+            # real_axis.move_relative(Measurement(mm, Units.LENGTH_MILLIMETERS))
+            pass
+
+    # --- 光源控制 (TICGR1000) ---
+    def set_light(self, value):
+        self.light_intensity = value
+        print(f"[HW] 光源強度設為: {value}")
+        if not self.is_simulation:
+            # serial.write(f"CH1={value}\r\n".encode())
+            pass
+
+    # --- Adam IO 控制 ---
+    def set_vacuum(self, status: bool):
+        self.vacuum_on = status
+        print(f"[HW] 真空吸盤: {'ON' if status else 'OFF'}")
+        if not self.is_simulation:
+            # modbus_client.write_coil(0, status)
+            pass
+
+    # --- 相機控制 (ITA81 / ITA204) ---
+    def switch_camera(self, cam_name):
+        self.current_camera = cam_name
+        print(f"[HW] 切換相機至: {cam_name}")
+        # 實際邏輯：停止上一台 grab，開啟這一台 grab
+
+    def get_live_frame(self):
+        # 回傳給 Client 看的預覽圖 (壓縮過)
+        # 模擬產生一張有時間戳記的圖片
+        img = cv2.imread("demo.jpg") # 請確保資料夾有一張 demo.jpg，否則會黑屏
+        if img is None:
+            import numpy as np
+            img = np.zeros((480, 640, 3), dtype=np.uint8)
+            cv2.putText(img, "No Image", (50, 240), cv2.FONT_HERSHEY_SIMPLEX, 1, (255,255,255), 2)
+        
+        # 模擬繪製當前狀態
+        cv2.putText(img, f"Cam: {self.current_camera}", (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
+        cv2.putText(img, f"Light: {self.light_intensity}", (10, 60), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 255), 2)
+        cv2.putText(img, f"Pos: R{self.zaber_rot_pos:.1f} / L{self.zaber_lin_pos:.1f}", (10, 90), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
+        return img
+
+    def snap_and_save(self, filename_prefix="capture"):
+        # 拍攝高畫質 Raw Image 並存檔
+        print(f"[HW] 正在拍攝高畫質照片...")
+        
+        # 模擬：讀取圖片並存檔
+        img = self.get_live_frame() 
+        
+        timestamp = time.strftime("%Y%m%d_%H%M%S")
+        filename = f"{filename_prefix}_{timestamp}.png"
+        filepath = os.path.join(self.save_folder, filename)
+        
+        cv2.imwrite(filepath, img)
+        print(f"[HW] 照片已儲存至 Server: {filepath}")
+        return filepath
+
+# ==========================================
+# 2. FastAPI Server 設定
+# ==========================================
+app = FastAPI()
+hw = HardwareController()
+
+@app.on_event("startup")
+async def startup_event():
+    hw.connect_all()
+
+@app.websocket("/ws")
+async def websocket_endpoint(websocket: WebSocket):
+    await websocket.accept()
+    print("[WS] Client 已連線")
+    try:
+        while True:
+            # 1. 非阻塞接收指令 (Time slicing)
+            # 使用 wait_for 讓程式不會卡在這裡等指令，而是有空就傳影像
+            try:
+                data = await asyncio.wait_for(websocket.receive_text(), timeout=0.05)
+                cmd_data = json.loads(data)
+                
+                # --- 指令解析與分派 ---
+                cmd = cmd_data.get("cmd")
+                
+                if cmd == "move_rotary":
+                    hw.move_rotary(float(cmd_data["val"]))
+                
+                elif cmd == "move_linear":
+                    hw.move_linear(float(cmd_data["val"]))
+                
+                elif cmd == "set_light":
+                    hw.set_light(int(cmd_data["val"]))
+                
+                elif cmd == "switch_cam":
+                    hw.switch_camera(cmd_data["val"])
+                
+                elif cmd == "toggle_vacuum":
+                    hw.set_vacuum(bool(cmd_data["val"]))
+                    
+                elif cmd == "snap":
+                    saved_path = hw.snap_and_save()
+                    # 通知 Client 拍照成功
+                    await websocket.send_json({"type": "status", "msg": f"Saved: {os.path.basename(saved_path)}"})
+
+            except asyncio.TimeoutError:
+                pass # 沒收到指令，繼續執行下面傳影像
+
+            # 2. 傳送即時預覽影像
+            frame = hw.get_live_frame()
+            if frame is not None:
+                # 壓縮成 JPEG (降低頻寬需求)
+                frame_resized = cv2.resize(frame, (640, 480))
+                _, buffer = cv2.imencode('.jpg', frame_resized, [int(cv2.IMWRITE_JPEG_QUALITY), 60])
+                img_str = base64.b64encode(buffer).decode('utf-8')
+                
+                # 發送 JSON 包裹的影像數據
+                await websocket.send_json({"type": "video", "data": img_str})
+            
+            # 控制更新率 (FPS)
+            await asyncio.sleep(0.05) # 約 20 FPS
+
+    except WebSocketDisconnect:
+        print("[WS] Client 已斷線")
+    except Exception as e:
+        print(f"[WS Error] {e}")
+
+if __name__ == "__main__":
+    # 在現場電腦執行此檔案
+    uvicorn.run(app, host="0.0.0.0", port=8000)
+```
+
+---
+
+### 第二部分：全功能 Client 端 (`controller_client.py`)
+
+請將此程式碼放在**您的筆電 (遠端)** 或 **現場電腦**。 這個程式使用了 Python 內建的 `tkinter`，不需要安裝額外的 GUI 庫。它會開啟一個視窗，包含即時影像和所有的控制按鈕。
+
+**使用前請確保安裝:**
+
+Bash
+
+```
+pip install websocket-client pillow opencv-python
+```
+
+Python
+
+```
+# controller_client.py (Client 端 - 可在遠端或現場執行)
+import tkinter as tk
+from tkinter import ttk
+import cv2
+import base64
+import json
+import threading
+import numpy as np
+from PIL import Image, ImageTk
+from websocket import create_connection
+
+class RolexControllerApp:
+    def __init__(self, root):
+        self.root = root
+        self.root.title("Rolex Inspection Remote Controller")
+        self.root.geometry("1000x700")
+
+        # 連線設定
+        self.ws = None
+        self.is_connected = False
+        self.server_ip = "localhost" # 預設本地，遠端請改為現場電腦 IP (如 192.168.1.100)
+        self.server_port = "8000"
+
+        # 建立 UI
+        self._setup_ui()
+        
+    def _setup_ui(self):
+        # --- 左側: 影像顯示區 ---
+        self.frame_video = tk.Frame(self.root, bg="black", width=640, height=480)
+        self.frame_video.place(x=10, y=10)
+        
+        self.lbl_video = tk.Label(self.frame_video, text="Waiting for Connection...", fg="white", bg="black")
+        self.lbl_video.place(relx=0.5, rely=0.5, anchor="center")
+
+        # --- 右側: 控制面板 ---
+        self.panel = tk.Frame(self.root, width=300, height=680)
+        self.panel.place(x=660, y=10)
+
+        # 1. 連線區
+        lbl_conn = tk.Label(self.panel, text="Server Connection", font=("Arial", 12, "bold"))
+        lbl_conn.pack(pady=5)
+        
+        frame_ip = tk.Frame(self.panel)
+        frame_ip.pack()
+        tk.Label(frame_ip, text="IP:").pack(side=tk.LEFT)
+        self.entry_ip = tk.Entry(frame_ip, width=15)
+        self.entry_ip.insert(0, self.server_ip)
+        self.entry_ip.pack(side=tk.LEFT, padx=5)
+        
+        self.btn_connect = tk.Button(self.panel, text="Connect", bg="#ccffcc", command=self.toggle_connection)
+        self.btn_connect.pack(pady=5)
+
+        ttk.Separator(self.panel, orient='horizontal').pack(fill='x', pady=10)
+
+        # 2. 相機選擇
+        tk.Label(self.panel, text="Camera Selection", font=("Arial", 10, "bold")).pack()
+        self.var_cam = tk.StringVar(value="ITA81")
+        frame_cam = tk.Frame(self.panel)
+        frame_cam.pack()
+        tk.Radiobutton(frame_cam, text="ITA81 (Wide)", variable=self.var_cam, value="ITA81", command=self.send_cam_switch).pack(side=tk.LEFT)
+        tk.Radiobutton(frame_cam, text="ITA204 (Macro)", variable=self.var_cam, value="ITA204", command=self.send_cam_switch).pack(side=tk.LEFT)
+
+        ttk.Separator(self.panel, orient='horizontal').pack(fill='x', pady=10)
+
+        # 3. Zaber 運動控制
+        tk.Label(self.panel, text="Zaber Motion Control", font=("Arial", 10, "bold")).pack()
+        
+        # 旋轉台 (RST120)
+        tk.Label(self.panel, text="Rotary Stage (Deg):").pack()
+        frame_rot = tk.Frame(self.panel)
+        frame_rot.pack()
+        tk.Button(frame_rot, text="CCW -10", command=lambda: self.send_command("move_rotary", -10)).pack(side=tk.LEFT, padx=2)
+        tk.Button(frame_rot, text="CW +10", command=lambda: self.send_command("move_rotary", 10)).pack(side=tk.LEFT, padx=2)
+        
+        # 線性台 (LRQ300)
+        tk.Label(self.panel, text="Linear Stage (mm):").pack(pady=(5,0))
+        frame_lin = tk.Frame(self.panel)
+        frame_lin.pack()
+        tk.Button(frame_lin, text="Up/Left -5", command=lambda: self.send_command("move_linear", -5)).pack(side=tk.LEFT, padx=2)
+        tk.Button(frame_lin, text="Down/Right +5", command=lambda: self.send_command("move_linear", 5)).pack(side=tk.LEFT, padx=2)
+
+        ttk.Separator(self.panel, orient='horizontal').pack(fill='x', pady=10)
+
+        # 4. 光源與 IO
+        tk.Label(self.panel, text="Lighting & I/O", font=("Arial", 10, "bold")).pack()
+        
+        tk.Label(self.panel, text="Light Intensity:").pack()
+        self.scale_light = tk.Scale(self.panel, from_=0, to=255, orient=tk.HORIZONTAL, command=self.send_light_change)
+        self.scale_light.pack(fill='x', padx=20)
+        
+        self.btn_vacuum = tk.Button(self.panel, text="Vacuum: OFF", bg="#ffcccc", command=self.toggle_vacuum)
+        self.btn_vacuum.pack(pady=5)
+        self.vacuum_state = False
+
+        ttk.Separator(self.panel, orient='horizontal').pack(fill='x', pady=10)
+
+        # 5. 拍照存檔
+        self.btn_snap = tk.Button(self.panel, text="📸 SNAP & SAVE (Raw)", font=("Arial", 12), bg="#ccccff", height=2, command=self.snap_image)
+        self.btn_snap.pack(fill='x', padx=20, pady=10)
+        
+        self.lbl_status = tk.Label(self.panel, text="Status: Idle", fg="gray")
+        self.lbl_status.pack(side=tk.BOTTOM, pady=10)
+
+    # --- 邏輯處理 ---
+    def toggle_connection(self):
+        if not self.is_connected:
+            # 連線
+            ip = self.entry_ip.get()
+            url = f"ws://{ip}:{self.server_port}/ws"
+            try:
+                self.ws = create_connection(url)
+                self.is_connected = True
+                self.btn_connect.config(text="Disconnect", bg="#ffcccc")
+                
+                # 啟動接收執行緒
+                self.thread = threading.Thread(target=self.receive_loop)
+                self.thread.daemon = True
+                self.thread.start()
+                self.lbl_status.config(text="Connected")
+            except Exception as e:
+                self.lbl_status.config(text=f"Connection Failed: {e}")
+        else:
+            # 斷線
+            self.is_connected = False
+            if self.ws:
+                self.ws.close()
+            self.btn_connect.config(text="Connect", bg="#ccffcc")
+
+    def receive_loop(self):
+        """背景執行緒：專門接收影像與伺服器訊息"""
+        while self.is_connected:
+            try:
+                result = self.ws.recv()
+                data = json.loads(result)
+                
+                if data["type"] == "video":
+                    # 解碼影像並顯示
+                    img_bytes = base64.b64decode(data["data"])
+                    np_arr = np.frombuffer(img_bytes, dtype=np.uint8)
+                    frame = cv2.imdecode(np_arr, cv2.IMREAD_COLOR)
+                    
+                    # 轉換為 Tkinter 格式 (需在主線程更新 UI? Tkinter 有時允許直接更新 Image)
+                    frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+                    img = Image.fromarray(frame)
+                    imgtk = ImageTk.PhotoImage(image=img)
+                    
+                    # 更新 UI
+                    self.lbl_video.imgtk = imgtk # 保持引用防止被垃圾回收
+                    self.lbl_video.configure(image=imgtk)
+                
+                elif data["type"] == "status":
+                    self.lbl_status.config(text=data["msg"])
+
+            except Exception as e:
+                print("WS Error:", e)
+                break
+
+    # --- 發送指令 ---
+    def send_command(self, cmd, val=0):
+        if self.is_connected:
+            payload = json.dumps({"cmd": cmd, "val": val})
+            self.ws.send(payload)
+
+    def send_cam_switch(self):
+        cam = self.var_cam.get()
+        self.send_command("switch_cam", cam)
+
+    def send_light_change(self, val):
+        # 為了避免 slider 滑動時發送太多指令，實際應用可加 debounce，這裡簡化處理
+        self.send_command("set_light", val)
+
+    def toggle_vacuum(self):
+        self.vacuum_state = not self.vacuum_state
+        self.send_command("toggle_vacuum", self.vacuum_state)
+        if self.vacuum_state:
+            self.btn_vacuum.config(text="Vacuum: ON", bg="#ccffcc")
+        else:
+            self.btn_vacuum.config(text="Vacuum: OFF", bg="#ffcccc")
+
+    def snap_image(self):
+        self.send_command("snap")
+
+if __name__ == "__main__":
+    root = tk.Tk()
+    app = RolexControllerApp(root)
+    root.mainloop()
+```
+
+---
+
+### 如何使用這套系統？
+
+#### 1. 現場電腦 (Server 端)
+
+1. 確保 `system_controller.py` 在這台電腦上。
+    
+2. 確保有建立一個 `demo.jpg` (測試用) 或接好相機。
+    
+3. 執行 `python system_controller.py`。
+    
+4. 這時您會看到它顯示 `HardwareController` 正在模擬運行，並等待連線。
+    
+
+#### 2. 遠端/本地 控制端 (Client 端)
+
+1. 在您的筆電或同一台電腦上執行 `python controller_client.py`。
+    
+2. 會跳出一個視窗介面。
+    
+3. **IP 設定：**
+    
+    - 如果您在**同一台電腦**測試，保留 `localhost`。
+        
+    - 如果您在**另一台電腦**，輸入現場電腦的 IP (例如 `192.168.1.XX`)。
+        
+4. 點擊 **Connect**。
+    
+5. **開始操作：**
+    
+    - 您應該會立即看到左側出現影像畫面 (如果沒接相機，會顯示模擬畫面)。
+        
+    - 點擊 **CW +10**，Server 端終端機會顯示「旋轉台移動 10 度」，影像上的文字也會更新。
+        
+    - 拉動 **Light Intensity** 滑桿，Server 端會顯示光源數值變化。
+        
+    - 點擊 **SNAP & SAVE**，Server 端會把當下的高畫質原圖存到 `server_raw_images` 資料夾中。
+        
+
+這套架構將 **邏輯運算 (Server)** 與 **操作介面 (Client)** 完美分離，完全符合您的需求。
+
+
+
+
+
+#### 8. 重新架構hardware class的server-clint 
+```
+是否會建議還是使用class CameraManager, LightManager, ZaberManager, IOManager? 這樣也比較好管理不同的硬體也方便進行擴充功能. 如果同意請提供新的system_controler.py(現已經改成controller_server.py)跟controller_client.py. 那是否新的code還是可以使用inspection_plan.yaml去自動掃描不同位置, 如果不行請增加這個功能, 也可以有不同的inspection_plan.yaml對應不同的warch type. 另外關於controller_server.py跟controller_client.py, 也希望裡面設定的參數可以在外面yaml file進行設定譬如server_setting.yaml, client_setting.yaml. 最後也要對client跟server之間的傳輸有一定的保密. 請提供新的完整code
+```
+
+這是一個非常正確且專業的決定。
+
+**為什麼建議維持 Class 架構 (`CameraManager`, `LightManager`...)?**
+
+1. **關注點分離 (Separation of Concerns):** `ZaberManager` 只管馬達，`CameraManager` 只管拍照。如果未來換了馬達品牌，您只需要修改 `ZaberManager` 內部的 code，完全不會影響到其他部分。
+    
+2. **易於擴充 (Extensibility):** 如果未來要在系統中加入「條碼掃描器」，您只需新增一個 `ScannerManager` class，並在主控制器中實例化它即可。
+    
+3. **單元測試 (Unit Testing):** 您可以單獨測試 `LightManager` 是否能正確開關燈，而不需要啟動整台機器。
+    
+
+---
+
+以下是根據您的需求重新架構的完整系統。
+
+### 系統檔案結構建議
+
+請在您的專案資料夾中建立以下結構：
+
+```
+Project/
+├── server_config.yaml       # Server端設定 (IP, Port, COM Ports, API Key)
+├── client_config.yaml       # Client端設定 (預設連線IP, API Key)
+├── plans/                   # 存放各種手錶的檢測腳本
+│   └── rolex_submariner.yaml
+├── controller_server.py     # 運行在現場電腦
+└── controller_client.py     # 運行在遠端或現場電腦
+```
+
+---
+
+### 1. 設定檔 (Configuration Files)
+
+這是新增的部分，讓您不改 Code 就能設定參數。
+
+#### `server_config.yaml` (Server 端設定)
+
+YAML
+
+```
+network:
+  host: "0.0.0.0"
+  port: 8000
+  api_token: "SECRET_KEY_12345"  # 安全性驗證金鑰
+
+hardware:
+  simulation_mode: true          # 測試時設為 true，現場接硬體設為 false
+  zaber_port: "COM3"
+  light_port: "COM4"
+  io_ip: "192.168.1.50"
+  save_path: "./server_raw_images"
+
+cameras:
+  wide: "23456789"   # ITA81 Serial Number
+  macro: "87654321"  # ITA204 Serial Number
+```
+
+#### `client_config.yaml` (Client 端設定)
+
+YAML
+
+```
+connection:
+  default_ip: "127.0.0.1" # 如果是遠端，改成 Server 的 IP
+  default_port: 8000
+  api_token: "SECRET_KEY_12345" # 必須與 Server 一致才能連線
+```
+
+#### `plans/rolex_submariner.yaml` (檢測腳本範例)
+
+YAML
+
+```
+project_name: "Rolex_Submariner_Check"
+points:
+  - id: 1
+    name: "Bezel_Top"
+    camera: "macro"
+    position:
+      rotary: 0.0
+      linear: 50.0
+    light: 200
+    exposure: 5000
+  
+  - id: 2
+    name: "Crown_Logo"
+    camera: "macro"
+    position:
+      rotary: 90.0
+      linear: 52.0
+    light: 255
+    exposure: 2000
+```
+
+---
+
+### 2. Server 端程式碼 (`controller_server.py`)
+
+這個版本包含了完整的 Manager Class 架構、安全性驗證 (Token)，以及讀取 YAML 自動執行的功能。
+
+Python
+
+```
+import asyncio
+import cv2
+import uvicorn
+import json
+import base64
+import os
+import yaml
+import time
+from typing import Dict, Optional
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException, Depends, Security
+from fastapi.security.api_key import APIKeyHeader, APIKeyQuery
+from pydantic import BaseModel
+
+# --- 讀取 Server 設定 ---
+with open("server_config.yaml", "r") as f:
+    CONFIG = yaml.safe_load(f)
+
+# --- 安全性設定 (Security) ---
+API_KEY_NAME = "access_token"
+api_key_header = APIKeyHeader(name=API_KEY_NAME, auto_error=False)
+api_key_query = APIKeyQuery(name=API_KEY_NAME, auto_error=False)
+
+async def get_api_key(
+    api_key_query: str = Security(api_key_query),
+    api_key_header: str = Security(api_key_header),
+):
+    if api_key_query == CONFIG['network']['api_token']:
+        return api_key_query
+    if api_key_header == CONFIG['network']['api_token']:
+        return api_key_header
+    raise HTTPException(status_code=403, detail="Could not validate credentials")
+
+# ==========================================
+# 1. 硬體管理層 (Managers)
+# ==========================================
+
+class ZaberManager:
+    def __init__(self, port, is_sim):
+        self.is_sim = is_sim
+        self.rotary_pos = 0.0
+        self.linear_pos = 0.0
+        if not self.is_sim:
+            # from zaber.motion import Library ...
+            # self.conn = Connection.open_serial_port(port)
+            pass
+        print(f"[Zaber] Initialized (Sim: {self.is_sim})")
+
+    def move_rotary(self, angle):
+        self.rotary_pos += angle
+        print(f"[Zaber] Rotary move to {self.rotary_pos}")
+        if not self.is_sim:
+            pass # 實作硬體指令
+
+    def move_linear(self, mm):
+        self.linear_pos += mm
+        print(f"[Zaber] Linear move to {self.linear_pos}")
+
+    def move_absolute(self, rotary, linear):
+        self.rotary_pos = rotary
+        self.linear_pos = linear
+        print(f"[Zaber] Moved to R:{rotary}, L:{linear}")
+
+class LightManager:
+    def __init__(self, port, is_sim):
+        self.is_sim = is_sim
+        self.intensity = 0
+        print(f"[Light] Initialized (Sim: {self.is_sim})")
+
+    def set_brightness(self, val):
+        self.intensity = val
+        print(f"[Light] Set intensity: {val}")
+
+class CameraManager:
+    def __init__(self, cam_config, is_sim):
+        self.is_sim = is_sim
+        self.config = cam_config
+        self.current_cam = "wide"
+        print(f"[Camera] Initialized (Sim: {self.is_sim})")
+
+    def switch_camera(self, name):
+        if name in self.config:
+            self.current_cam = name
+            print(f"[Camera] Switched to {name} ({self.config[name]})")
+
+    def set_exposure(self, value):
+        print(f"[Camera] Set exposure: {value}")
+
+    def get_frame(self):
+        # 模擬產生影像
+        img = cv2.imread("demo.jpg")
+        if img is None:
+            import numpy as np
+            img = np.zeros((480, 640, 3), dtype=np.uint8)
+            cv2.putText(img, "No Signal", (50, 240), cv2.FONT_HERSHEY_SIMPLEX, 1, (255,255,255), 2)
+        
+        # 壓印狀態資訊
+        cv2.putText(img, f"CAM: {self.current_cam}", (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
+        return img
+
+    def capture_raw(self, save_path, filename):
+        img = self.get_frame() # 實際上應呼叫 SDK 抓 Raw Data
+        full_path = os.path.join(save_path, filename)
+        cv2.imwrite(full_path, img)
+        print(f"[Camera] Saved: {full_path}")
+        return full_path
+
+class SystemController:
+    """ 
+    Facade Pattern: 統一管理所有 Managers 
+    """
+    def __init__(self):
+        is_sim = CONFIG['hardware']['simulation_mode']
+        
+        self.zaber = ZaberManager(CONFIG['hardware']['zaber_port'], is_sim)
+        self.light = LightManager(CONFIG['hardware']['light_port'], is_sim)
+        self.camera = CameraManager(CONFIG['cameras'], is_sim)
+        
+        self.save_path = CONFIG['hardware']['save_path']
+        os.makedirs(self.save_path, exist_ok=True)
+        
+        self.is_automating = False
+
+    async def run_inspection_plan(self, plan_name: str, status_callback=None):
+        """ 執行自動檢測腳本 """
+        plan_file = os.path.join("plans", plan_name)
+        if not os.path.exists(plan_file):
+            raise FileNotFoundError(f"Plan {plan_name} not found")
+
+        with open(plan_file, "r") as f:
+            plan = yaml.safe_load(f)
+        
+        self.is_automating = True
+        project_folder = os.path.join(self.save_path, plan['project_name'])
+        os.makedirs(project_folder, exist_ok=True)
+
+        print(f"[Auto] Starting Plan: {plan['project_name']}")
+
+        for point in plan['points']:
+            if not self.is_automating: break # 允許中斷
+
+            msg = f"Processing: {point['name']}"
+            print(f"[Auto] {msg}")
+            if status_callback: await status_callback(msg)
+
+            # 1. 硬體動作
+            self.camera.switch_camera(point['camera'])
+            self.zaber.move_absolute(point['position']['rotary'], point['position']['linear'])
+            self.light.set_brightness(point['light'])
+            self.camera.set_exposure(point['exposure'])
+            
+            # 2. 等待穩定
+            await asyncio.sleep(0.5)
+
+            # 3. 拍照
+            fname = f"{point['id']}_{point['name']}.png"
+            self.camera.capture_raw(project_folder, fname)
+
+        self.is_automating = False
+        if status_callback: await status_callback("Inspection Completed")
+
+# ==========================================
+# 2. FastAPI 應用程式
+# ==========================================
+
+app = FastAPI()
+system = SystemController()
+
+# 定義 API 請求模型
+class AutoRequest(BaseModel):
+    plan_filename: str
+
+@app.post("/start_auto")
+async def start_auto(req: AutoRequest, api_key: str = Depends(get_api_key)):
+    """ REST API: 觸發自動檢測 """
+    if system.is_automating:
+        return {"status": "error", "msg": "System is busy"}
+    
+    # 在背景執行，不阻塞 HTTP 回應
+    asyncio.create_task(system.run_inspection_plan(req.plan_filename))
+    return {"status": "started", "plan": req.plan_filename}
+
+@app.websocket("/ws")
+async def websocket_endpoint(websocket: WebSocket):
+    """ WebSocket: 即時控制與影像 """
+    
+    # 1. 驗證 Token (在連線參數中: ws://IP:Port/ws?access_token=SECRET)
+    token = websocket.query_params.get("access_token")
+    if token != CONFIG['network']['api_token']:
+        print("[WS] 拒絕連線: Token 錯誤")
+        await websocket.close(code=1008)
+        return
+
+    await websocket.accept()
+    print("[WS] Client Connected")
+    
+    # 內部 Callback: 讓自動化流程可以透過 WS 發送進度給 Client
+    async def progress_notifier(msg):
+        await websocket.send_json({"type": "status", "msg": msg})
+
+    try:
+        while True:
+            # A. 處理指令 (使用 wait_for 避免阻塞影像傳輸)
+            try:
+                data = await asyncio.wait_for(websocket.receive_text(), timeout=0.05)
+                cmd_data = json.loads(data)
+                cmd = cmd_data.get("cmd")
+
+                if cmd == "manual_move":
+                    if cmd_data['axis'] == 'rotary':
+                        system.zaber.move_rotary(cmd_data['val'])
+                    elif cmd_data['axis'] == 'linear':
+                        system.zaber.move_linear(cmd_data['val'])
+                
+                elif cmd == "set_light":
+                    system.light.set_brightness(cmd_data['val'])
+                
+                elif cmd == "snap":
+                    # 手動拍照
+                    timestamp = time.strftime("%H%M%S")
+                    system.camera.capture_raw(system.save_path, f"manual_{timestamp}.png")
+                    await websocket.send_json({"type": "status", "msg": "Manual Snap Saved"})
+                
+                elif cmd == "start_plan":
+                    # 也可以透過 WS 觸發自動化
+                    if not system.is_automating:
+                        asyncio.create_task(system.run_inspection_plan(cmd_data['val'], progress_notifier))
+
+            except asyncio.TimeoutError:
+                pass
+
+            # B. 傳送影像串流
+            img = system.camera.get_frame()
+            if img is not None:
+                small_img = cv2.resize(img, (640, 480))
+                _, buffer = cv2.imencode('.jpg', small_img, [int(cv2.IMWRITE_JPEG_QUALITY), 50])
+                b64_str = base64.b64encode(buffer).decode('utf-8')
+                await websocket.send_json({"type": "video", "data": b64_str})
+            
+            await asyncio.sleep(0.05) # FPS Control
+
+    except WebSocketDisconnect:
+        print("[WS] Disconnected")
+
+if __name__ == "__main__":
+    uvicorn.run(app, host=CONFIG['network']['host'], port=CONFIG['network']['port'])
+```
+
+---
+
+### 3. Client 端程式碼 (`controller_client.py`)
+
+這個版本增加了「下拉選單」選擇不同手錶的檢測計畫，並在連線時自動帶入 `config` 中的 Token。
+
+Python
+
+```
+import tkinter as tk
+from tkinter import ttk, messagebox
+import cv2
+import base64
+import json
+import yaml
+import threading
+import numpy as np
+from PIL import Image, ImageTk
+from websocket import create_connection
+
+# --- 讀取 Client 設定 ---
+try:
+    with open("client_config.yaml", "r") as f:
+        CLIENT_CONFIG = yaml.safe_load(f)
+except FileNotFoundError:
+    # 預設值 (如果找不到檔案)
+    CLIENT_CONFIG = {"connection": {"default_ip": "127.0.0.1", "default_port": 8000, "api_token": "SECRET_KEY_12345"}}
+
+class RolexClient:
+    def __init__(self, root):
+        self.root = root
+        self.root.title("Rolex System Controller (Secure)")
+        self.root.geometry("1100x750")
+        
+        self.ws = None
+        self.is_connected = False
+        
+        self._setup_ui()
+
+    def _setup_ui(self):
+        # 1. 連線設定區
+        frame_conn = tk.Frame(self.root, pady=10)
+        frame_conn.pack(fill='x')
+        
+        tk.Label(frame_conn, text="Server IP:").pack(side=tk.LEFT, padx=5)
+        self.entry_ip = tk.Entry(frame_conn, width=15)
+        self.entry_ip.insert(0, CLIENT_CONFIG['connection']['default_ip'])
+        self.entry_ip.pack(side=tk.LEFT)
+
+        tk.Label(frame_conn, text="Token:").pack(side=tk.LEFT, padx=5)
+        self.entry_token = tk.Entry(frame_conn, width=15, show="*")
+        self.entry_token.insert(0, CLIENT_CONFIG['connection']['api_token'])
+        self.entry_token.pack(side=tk.LEFT)
+
+        self.btn_connect = tk.Button(frame_conn, text="Connect", bg="#ccffcc", command=self.toggle_connect)
+        self.btn_connect.pack(side=tk.LEFT, padx=10)
+
+        # 2. 主要區域 (左影像 / 右控制)
+        frame_main = tk.Frame(self.root)
+        frame_main.pack(fill='both', expand=True, padx=10)
+
+        # 左: 影像
+        self.lbl_video = tk.Label(frame_main, text="No Signal", bg="black", fg="white", width=80, height=25)
+        self.lbl_video.grid(row=0, column=0, rowspan=2, padx=10, sticky="ns")
+
+        # 右: 控制面板
+        frame_ctrl = tk.Frame(frame_main, width=300)
+        frame_ctrl.grid(row=0, column=1, sticky="n")
+
+        # --- 手動控制 ---
+        group_manual = tk.LabelFrame(frame_ctrl, text="Manual Control", padx=5, pady=5)
+        group_manual.pack(fill='x', pady=5)
+        
+        tk.Label(group_manual, text="Rotary Stage:").pack()
+        f_rot = tk.Frame(group_manual); f_rot.pack()
+        tk.Button(f_rot, text="<<", command=lambda: self.send_cmd("manual_move", {"axis": "rotary", "val": -10})).pack(side=tk.LEFT)
+        tk.Button(f_rot, text=">>", command=lambda: self.send_cmd("manual_move", {"axis": "rotary", "val": 10})).pack(side=tk.LEFT)
+
+        tk.Label(group_manual, text="Light Source:").pack(pady=(5,0))
+        self.scale_light = tk.Scale(group_manual, from_=0, to=255, orient=tk.HORIZONTAL, command=self.on_light_change)
+        self.scale_light.pack(fill='x')
+
+        tk.Button(group_manual, text="Snap Photo", bg="lightblue", command=lambda: self.send_cmd("snap", {})).pack(fill='x', pady=5)
+
+        # --- 自動化控制 ---
+        group_auto = tk.LabelFrame(frame_ctrl, text="Auto Inspection", padx=5, pady=5)
+        group_auto.pack(fill='x', pady=10)
+
+        tk.Label(group_auto, text="Plan File:").pack(anchor="w")
+        # 這裡可以做成自動掃描 plans 資料夾，目前先手動輸入範例
+        self.combo_plan = ttk.Combobox(group_auto, values=["rolex_submariner.yaml", "omega_speedmaster.yaml"])
+        self.combo_plan.current(0)
+        self.combo_plan.pack(fill='x')
+
+        tk.Button(group_auto, text="▶ Start Auto Inspection", bg="#ffcc99", command=self.start_auto).pack(fill='x', pady=5)
+
+        # 狀態列
+        self.lbl_status = tk.Label(self.root, text="Status: Disconnected", bd=1, relief=tk.SUNKEN, anchor=tk.W)
+        self.lbl_status.pack(side=tk.BOTTOM, fill=tk.X)
+
+    def toggle_connect(self):
+        if not self.is_connected:
+            ip = self.entry_ip.get()
+            token = self.entry_token.get()
+            port = CLIENT_CONFIG['connection']['default_port']
+            # 將 Token 帶入 URL
+            url = f"ws://{ip}:{port}/ws?access_token={token}"
+            
+            try:
+                self.ws = create_connection(url)
+                self.is_connected = True
+                self.btn_connect.config(text="Disconnect", bg="#ffcccc")
+                self.lbl_status.config(text="Connected")
+                
+                t = threading.Thread(target=self.rx_loop)
+                t.daemon = True
+                t.start()
+            except Exception as e:
+                messagebox.showerror("Connection Error", str(e))
+        else:
+            self.is_connected = False
+            if self.ws: self.ws.close()
+            self.btn_connect.config(text="Connect", bg="#ccffcc")
+            self.lbl_status.config(text="Disconnected")
+
+    def rx_loop(self):
+        while self.is_connected:
+            try:
+                data = self.ws.recv()
+                msg = json.loads(data)
+                
+                if msg['type'] == 'video':
+                    # 解碼圖片並顯示
+                    img_data = base64.b64decode(msg['data'])
+                    arr = np.frombuffer(img_data, np.uint8)
+                    img = cv2.imdecode(arr, cv2.IMREAD_COLOR)
+                    img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+                    im_pil = Image.fromarray(img)
+                    im_tk = ImageTk.PhotoImage(image=im_pil)
+                    
+                    self.lbl_video.config(image=im_tk)
+                    self.lbl_video.image = im_tk
+                
+                elif msg['type'] == 'status':
+                    self.lbl_status.config(text=f"Server: {msg['msg']}")
+
+            except:
+                break
+
+    def send_cmd(self, cmd, data_dict):
+        if self.is_connected:
+            payload = {"cmd": cmd}
+            payload.update(data_dict)
+            self.ws.send(json.dumps(payload))
+
+    def on_light_change(self, val):
+        self.send_cmd("set_light", {"val": int(val)})
+
+    def start_auto(self):
+        plan_name = self.combo_plan.get()
+        if not plan_name: return
+        self.send_cmd("start_plan", {"val": plan_name})
+
+if __name__ == "__main__":
+    root = tk.Tk()
+    app = RolexClient(root)
+    root.mainloop()
+```
+
+---
+
+### 主要改進總結
+
+1. **架構清晰化:** Server 端使用了 `SystemController` 類別 (Facade Pattern) 統一管理 `ZaberManager`, `LightManager`, `CameraManager`，符合您「好管理、易擴充」的需求。
+    
+2. **安全性 (Security):** 增加了 **Token 驗證機制**。Client 連線時必須攜帶正確的 `api_token`，否則 Server 會拒絕連線 (`code 1008`)。這在工業現場防止未授權接入是非常基本的保護。
+    
+3. **多腳本支援:** 在 `plans/` 資料夾中可以放多個 YAML 檔。Client 端的下拉選單可以選擇要跑哪一個腳本 (`rolex.yaml` 或 `omega.yaml`)，Server 會動態載入執行。
+    
+4. **設定分離:** 所有的 IP、Port、硬體參數都移到了 `server_config.yaml` 和 `client_config.yaml`，不需要修改 Python 程式碼就能適應不同環境。
+    
+
+這套系統現在具備了**自動化**、**遠端監控**、**參數配置化**以及**基礎安全性**，是一個非常完整的工業檢測軟體雛形。
+
+
+
+
+#### 9. 設定檔詳細解釋
+```
+請中文詳細解釋server_config.yaml跟client_config.yaml裡面的參數要如何設定, 以及client在遠端跟在local的參數要如何設定. 因為客戶可能對電腦設定都不了解, 譬如要解釋COM3 COM4是甚麼或者要去哪裡找IP. 或者有甚麼自動方法可以自動偵測?
+```
+
+這是一個非常實際的問題。對於終端客戶（End User）來說，叫他們去查「COM Port」或「IP Address」確實是最大的痛點。
+
+我將把回答分成三個部分：
+
+1. **設定檔詳解：** 一行一行解釋參數意義。
+    
+2. **傻瓜教學手冊：** 如何教客戶在 Windows 上找到這些數值。
+    
+3. **自動偵測方案 (Best Practice)：** 用程式碼自動解決這些問題，讓客戶根本不需要設定。
+    
+
+---
+
+### 第一部分：設定檔參數詳解 (針對非技術人員的解釋)
+
+#### 1. `server_config.yaml` (現場主機設定)
+
+這個檔案是給**連接硬體的那台電腦 (Edge PC)** 看的。
+
+YAML
+
+```
+network:
+  host: "0.0.0.0"       # 意義：允許誰連進來？
+                        # 設定 "0.0.0.0" 代表「對所有人開放」。
+                        # 如果只設 "127.0.0.1"，那只有這台電腦自己能連，遠端連不進來。
+                        # 【建議】：保持 "0.0.0.0" 不動。
+
+  port: 8000            # 意義：網路通訊的「門牌號碼」。
+                        # 只要不跟電腦裡其他軟體衝突即可。
+                        # 【建議】：保持 8000，如果有問題可改 8080 或 5000。
+
+  api_token: "12345"    # 意義：連線密碼。
+                        # 防止別的閒雜人等亂連進來操作機器。
+
+hardware:
+  simulation_mode: true # 意義：是否為「模擬模式」？
+                        # true = 沒接硬體也能跑 (會顯示假畫面)。
+                        # false = 真的要接硬體，沒接會報錯。
+                        # 【客戶現場】：一定要改成 false。
+
+  zaber_port: "COM3"    # 意義：Zaber 滑台插在哪個 USB 孔。
+  light_port: "COM4"    # 意義：光源控制器插在哪個 USB 孔。
+                        # (如何找？請看第二部分)
+
+  io_ip: "192.168.1.50" # 意義：Adam 模組的固定 IP。
+                        # 這通常在出廠時就設好固定值，直接貼上即可。
+
+  save_path: "./imgs"   # 意義：原始大圖要存在哪裡。
+```
+
+#### 2. `client_config.yaml` (操作端設定)
+
+這個檔案是給**您的筆電 (遠端)** 或 **現場螢幕的操作介面** 看的。
+
+YAML
+
+```
+connection:
+  default_ip: "192.168.1.100" # 意義：伺服器(現場電腦) 的 IP 是多少？
+                              # 這是最容易設錯的地方。(請看第三部分)
+
+  default_port: 8000          # 必須跟 server_config.yaml 的 port 一樣。
+  api_token: "12345"          # 必須跟 server_config.yaml 的 token 一樣。
+```
+
+---
+
+### 第二部分：如何教客戶找到這些數值？ (手動方法)
+
+如果客戶不懂電腦，您需要準備一份簡單的 PDF 圖文教學，步驟如下：
+
+#### 1. 如何找到 COM Port (COM3, COM4 是什麼？)
+
+解釋： 電腦把每一個 USB 裝置模擬成一個通訊埠，編號就是 COM x。
+
+操作步驟 (Windows 10/11)：
+
+1. 對著「開始」按鈕按 **右鍵**，選擇 **「裝置管理員 (Device Manager)」**。
+    
+2. 找到 **「連接埠 (COM 和 LPT)」** 點兩下展開。
+    
+3. **插拔測試法：**
+    
+    - 請客戶把 Zaber 的 USB 線拔掉 -> 看螢幕上哪個 COM 消失了。
+        
+    - 再插回去 -> 看哪個 COM 出現了 (例如出現 `USB Serial Device (COM3)` )。
+        
+    - 那 `COM3` 就是 Zaber 的 Port。
+        
+
+#### 2. 如何找到 Server IP (IP Address)
+
+解釋： 這是現場電腦在網路上的地址。
+
+操作步驟：
+
+1. 在現場電腦按 `Win + R` 鍵，輸入 `cmd` 按 Enter。
+    
+2. 在黑色視窗輸入 `ipconfig` 按 Enter。
+    
+3. 找到 **「IPv4 位址」** 這一行，後面的數字 (例如 `192.168.1.105`) 就是 IP。
+    
+
+---
+
+### 第三部分：Local vs. Remote 設定懶人包
+
+這通常是客戶最困惑的地方，請給他們這張表：
+
+|**情境**|**Server 電腦 (接硬體)**|**Client 電腦 (操作端)**|**Client Config 設定 (default_ip)**|
+|---|---|---|---|
+|**情境 A: 單機操作**<br><br>  <br><br>(只有一台電腦，既接硬體又顯示畫面)|執行 `server.py`|同一台執行 `client.py`|設定為 `"127.0.0.1"`<br><br>  <br><br>(代表「我自己」)|
+|**情境 B: 區網遠端**<br><br>  <br><br>(Server 在機台內，您在辦公室用筆電)|執行 `server.py`<br><br>  <br><br>並查 IP (如 192.168.1.100)|執行 `client.py`|設定為 `"192.168.1.100"`<br><br>  <br><br>(Server 的 IP)|
+
+---
+
+### 第四部分：自動化解決方案 (Best Practice)
+
+為了避免客戶一直打電話問您「為什麼連不上」，最強烈建議在程式裡加入**自動偵測功能**。
+
+#### 1. 自動偵測 COM Port (Python 程式碼)
+
+您可以寫一個 `detect_hardware.py` 輔助工具，利用 `pyserial` 的功能來掃描。
+
+Python
+
+```
+import serial.tools.list_ports
+
+def auto_detect_ports():
+    ports = serial.tools.list_ports.comports()
+    
+    zaber_port = None
+    light_port = None
+
+    print("正在掃描 USB 裝置...")
+    for p in ports:
+        print(f"發現裝置: {p.device} - {p.description} (VID: {p.vid}, PID: {p.pid})")
+        
+        # 方法 A: 透過名稱辨識 (如果不準確，建議用方法 B)
+        if "Zaber" in p.description:
+            zaber_port = p.device
+        elif "Prolific" in p.description or "USB Serial" in p.description: 
+            # 很多光源控制器用 Prolific 晶片
+            light_port = p.device
+            
+        # 方法 B (推薦): 透過硬體 ID (VID/PID) 辨識
+        # 您需要先在自己電腦上查好 Zaber 和 Opto-e 的 VID/PID
+        # if p.vid == 0x1234 and p.pid == 0x5678:
+        #     zaber_port = p.device
+
+    return zaber_port, light_port
+
+# 測試用
+z, l = auto_detect_ports()
+print(f"建議設定: zaber_port={z}, light_port={l}")
+```
+
+#### 2. 自動顯示 Server IP (在 Server 啟動時)
+
+在 `controller_server.py` 啟動時，直接印出「請在 Client 端輸入這個 IP」，讓客戶照抄即可。
+
+Python
+
+```
+import socket
+
+def get_local_ip():
+    try:
+        # 建立一個假連線來獲取真實 IP
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.connect(("8.8.8.8", 80))
+        ip = s.getsockname()[0]
+        s.close()
+        return ip
+    except:
+        return "127.0.0.1"
+
+# 在 Server 啟動時執行
+my_ip = get_local_ip()
+print("="*40)
+print(f"Server 已啟動！")
+print(f"請在 Client 端 (client_config.yaml) 輸入此 IP: {my_ip}")
+print("="*40)
+```
+
+#### 3. 終極解法：Client 端自動掃描 Server (UDP Broadcast)
+
+如果您希望客戶連 IP 都不用打，可以在 Server 端寫一個「廣播」功能，Client 端一打開就會大喊：「誰是 Server？」，Server 回答：「我在這裡！」。
+
+但這寫起來比較複雜，**現階段建議採用「方案 2」**：Server 啟動時大字顯示 IP，請客戶抄寫到 Client 設定檔或 UI 介面上即可。
+
+### 總結給客戶的交付建議
+
+1. **Server 端：** 寫好 `get_local_ip()` 功能，程式一跑起來就顯示大大的 IP。
+    
+2. **硬體端：** 盡量使用 `auto_detect_ports` 去猜 COM port，或者在 YAML 檔裡預設寫好 `COM3` (通常插同一個孔不會變)。
+    
+3. **UI 介面：** 在 Client 端的登入畫面，增加一個「搜尋」或「下拉選單」，紀錄上次成功連線的 IP，減少客戶重複輸入的困擾。
