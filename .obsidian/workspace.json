@@ -4,21 +4,17 @@
     "type": "split",
     "children": [
       {
-        "id": "fcb2c28111efa15b",
+        "id": "e8ef30040bbd8792",
         "type": "tabs",
         "children": [
           {
-            "id": "1c60644b77e22b56",
+            "id": "95238dae8ce7fa95",
             "type": "leaf",
             "state": {
-              "type": "markdown",
-              "state": {
-                "file": "Provenance Watch Hardware old code.md",
-                "mode": "source",
-                "source": false
-              },
+              "type": "empty",
+              "state": {},
               "icon": "lucide-file",
-              "title": "Provenance Watch Hardware old code"
+              "title": "New tab"
             }
           }
         ]
@@ -78,8 +74,7 @@
       }
     ],
     "direction": "horizontal",
-    "width": 274.5,
-    "collapsed": true
+    "width": 274.5
   },
   "right": {
     "id": "e8aa8d072fa51c07",
@@ -171,19 +166,21 @@
       "table-editor-obsidian:Advanced Tables Toolbar": false
     }
   },
-  "active": "1c60644b77e22b56",
+  "active": "d2d9a1473b2b477e",
   "lastOpenFiles": [
-    "Provenance Watch Hardware.md",
-    "Provenance Watch Hardware old code.md",
-    "Provenance Watch CAM and Light.md",
-    "Pasted image 20251210170006.png",
-    "Provenance Watch App.md",
+    "Interview - @@ AI projects/Project - Meta Seal.md",
+    "Pasted image 20251219234148.png",
+    "Work - Provenance Laboratories/Provenance Watch Hardware old code.md",
+    "Work - Provenance Laboratories/Provenance Watch Hardware.md",
+    "Work - Provenance Laboratories/Provenance Watch CAM and Light.md",
+    "materials/Pasted image 20251210170006.png",
+    "Work - Provenance Laboratories/Provenance Watch App.md",
     "Tool - others/Install office.md",
-    "Provenance second consulting projects.md",
-    "Python - UI.md",
+    "Work - Provenance Laboratories/Provenance second consulting projects.md",
+    "Code - Python/Python - UI.md",
     "Work - Provenance Laboratories/Provenance first consulting projects.md",
     "Work - Provenance Laboratories/Provenance first consulting projects - Github.md",
-    "Provenance - OCR compare.md",
+    "Work - Provenance Laboratories/Provenance - OCR compare.md",
     "DL - Environment/env command.md",
     "Code - Git/Git - pull and fetch.md",
     "Code - Git/Git - main dev working.md",
@@ -202,7 +199,6 @@
     "materials/Pasted image 20251111075202.png",
     "materials/Pasted image 20251111075037.png",
     "materials/Pasted image 20251111075008.png",
-    "materials/Pasted image 20251111074949.png",
     "Work - Provenance Laboratories",
     "Interview - @@ ongoing/GSK - Senior AIML Optimization Engineer.md",
     "Code - Python/@Interview - Python Advance.md",
@@ -210,7 +206,6 @@
     "Code - Python/Python library.md",
     "@@ Interview prepare.md",
     "DL - CNN/AI model Summary.md",
-    "CVML - ML/Machine learning matlab.md",
     "DL - Text recognition",
     "CVML - Image formation & quality",
     "CVML - Optics",
