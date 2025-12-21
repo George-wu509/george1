@@ -11,10 +11,14 @@
             "id": "95238dae8ce7fa95",
             "type": "leaf",
             "state": {
-              "type": "empty",
-              "state": {},
+              "type": "markdown",
+              "state": {
+                "file": "TRIVECTO new system design.md",
+                "mode": "source",
+                "source": false
+              },
               "icon": "lucide-file",
-              "title": "New tab"
+              "title": "TRIVECTO new system design"
             }
           }
         ]
@@ -74,7 +78,8 @@
       }
     ],
     "direction": "horizontal",
-    "width": 274.5
+    "width": 274.5,
+    "collapsed": true
   },
   "right": {
     "id": "e8aa8d072fa51c07",
@@ -166,15 +171,16 @@
       "table-editor-obsidian:Advanced Tables Toolbar": false
     }
   },
-  "active": "d2d9a1473b2b477e",
+  "active": "95238dae8ce7fa95",
   "lastOpenFiles": [
+    "TRIVECTO new system design.md",
+    "Work - Provenance Laboratories/Provenance Watch App.md",
     "Interview - @@ AI projects/Project - Meta Seal.md",
-    "Pasted image 20251219234148.png",
+    "materials/Pasted image 20251219234148.png",
     "Work - Provenance Laboratories/Provenance Watch Hardware old code.md",
     "Work - Provenance Laboratories/Provenance Watch Hardware.md",
     "Work - Provenance Laboratories/Provenance Watch CAM and Light.md",
     "materials/Pasted image 20251210170006.png",
-    "Work - Provenance Laboratories/Provenance Watch App.md",
     "Tool - others/Install office.md",
     "Work - Provenance Laboratories/Provenance second consulting projects.md",
     "Code - Python/Python - UI.md",
