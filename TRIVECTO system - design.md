@@ -6,7 +6,7 @@
 | ------------------------- | --- |
 | [[#### 完整系統設計 Version 1]] |     |
 | [[#### v1完整操作指南]]         |     |
-|                           |     |
+| [[#### 各模組功能詳細中文解說]]      |     |
 |                           |     |
 |                           |     |
 
@@ -748,3 +748,192 @@ def run_pipeline_click(self):
 |**8**|N/A|**Remote**|Client|無|S3 -> Server -> HTTP -> Client UI|
 
 
+
+
+
+
+#### 各模組功能詳細中文解說
+```
+以下是ImagingLibWatch repo的部分code. 請幫我檢查是否有重複功能性或不必要的code(因為開發時有不同version, 怕是否有功能性用新的python code實現了, 但舊的code仍保留), 可以的話也對code進行優化. 並中文詳細解釋這個ImagingLibWatch repo的部分code的作用
+```
+
+### 第一部分：代碼審查與優化 (Code Review & Optimization)
+
+#### 1. `Orchestrator` vs `WorkflowManager` 的職責重疊
+
+**問題點：**
+
+- `Orchestrator` (`core/orchestrator.py`) 負責「執行分析任務」。
+    
+- `WorkflowManager` (`core/workflow_manager.py`) **也實作了一部分分析邏輯**。
+    
+    - 在 `WorkflowManager.execute_routine` 中，您寫了：
+        
+        Python
+        
+        ```
+        # 4.2 Run Orchestrator
+        task_results = self.orchestrator.run_batch(...)
+        # ...
+        # 4.4 Save & Encrypt Results
+        self.data_mgr.save_result_image_and_sync(...)
+        ```
+        
+    - 但在 `Orchestrator.run_batch` 內部，原本的設計是 **Orchestrator 自己也會存檔** (如果看舊版代碼的話)。但在您提供的新版 `orchestrator.py` 中，它只回傳 `results` 字典，沒有存檔動作。
+        
+
+**優化結論：** 目前的 `Orchestrator` 已經被「降級」為純粹的計算引擎（只算不存），而存檔責任移交給 `WorkflowManager`。**這是正確的重構方向**（因為存檔需要 `DataManager` 加密），目前的代碼邏輯是乾淨的，沒有功能重複。
+
+#### 2. `ServiceManager` 的存在意義？
+
+**問題點：**
+
+- `core/service_manager.py` 負責啟動 API Server。
+    
+- 但在 `main_cli.py` 或 `workflow_manager.py` 中，**我完全沒看到呼叫 `ServiceManager.start_all_services()` 的代碼**。
+    
+- 這意味著：如果您設定 `mode: api`，Orchestrator 會嘗試打 HTTP Request，但 **Server 根本沒被啟動**，程式會報錯。
+    
+
+**優化建議：** 必須在 `WorkflowManager` 初始化時啟動 Service。
+
+**修改 `core/workflow_manager.py`：**
+
+Python
+
+```
+# 引入 ServiceManager
+from core.service_manager import ServiceManager
+
+class WorkflowManager:
+    def __init__(self, config_path="config/system_config.yaml"):
+        # ... (前略)
+        
+        # [優化] 啟動 AI 服務 (如果是 API 模式)
+        # 這一行之前漏掉了！
+        self.service_mgr = ServiceManager(config_path)
+        self.service_mgr.start_all_services()
+        
+        # ... (後略)
+
+    def shutdown(self):
+        # [優化] 關閉服務
+        self.service_mgr.stop_all_services()
+        self.data_mgr.close()
+```
+
+#### 3. `main_cli.py` 的參數冗餘
+
+**問題點：** 在 `main_cli.py` 中，您同時保留了 `argparse` 的參數定義與 `load_cli_config` 的 YAML 讀取。 雖然使用了 `default=...` 來達成「沒輸入就讀 YAML」的效果，但邏輯有點分散。
+
+**優化建議：** 目前的寫法是可行的（Fallback 機制），不算錯誤，是為了方便測試。可以保留。
+
+#### 4. `SimulationHardware` 在哪裡？
+
+**問題點：** 在 `core/workflow_manager.py` 中引用了： `from Controller.hardware_drivers.simulation_driver import SimulationHardware` 但您提供的列表中**沒有這個檔案的代碼**。如果您執行程式，會因為 `ImportError` 而崩潰。
+
+**行動：** 請確保您有將我之前提供的 `simulation_driver.py` 放入 `Controller/hardware_drivers/` 資料夾。
+
+---
+
+### 第二部分：各模組功能詳細中文解說
+
+這套系統是一個高度模組化的 **AOI (自動光學檢測) 暨 AI 分析平台**。以下是各檔案的角色說明：
+
+#### 1. 核心介面層 (Core Interface)
+
+- **`core/__init__.py` (工廠模式)**
+    
+    - **作用：** 這是系統的「任意門」。當您呼叫 `get_workflow_engine()` 時，它會讀取設定檔。
+        
+    - **邏輯：**
+        
+        - 如果是 **Local Mode**（這台電腦有接相機），它回傳 `WorkflowManager`（真大腦）。
+            
+        - 如果是 **Remote Mode**（這台是遠端筆電），它回傳 `WorkflowProxy`（傳聲筒）。
+            
+    - **好處：** 讓上層的 UI 或 CLI 完全不用管現在是在哪一台電腦上跑，呼叫的方法都一模一樣。
+        
+
+#### 2. 流程控制層 (Workflow Layer)
+
+- **`core/workflow_manager.py` (總指揮 - 真身)**
+    
+    - **作用：** 這是系統的真正大腦，只在 Local Server 運行。
+        
+    - **流程 (`execute_routine`)：**
+        
+        1. **控制硬體** (Move Zaber, Capture Image)。
+            
+        2. **保護數據** (呼叫 DataManager 存檔、加密 Header)。
+            
+        3. **執行分析** (呼叫 Orchestrator 跑 AI，並在分析前後做解密/再加密)。
+            
+        4. **存檔同步** (將結果存入 Experiment 資料夾並上傳 AWS)。
+            
+        5. **審計紀錄** (呼叫 AuditLogger 記帳)。
+            
+- **`core/workflow_proxy.py` (總指揮 - 分身)**
+    
+    - **作用：** 在 Remote Client 運行。它沒有任何邏輯，只負責把您的指令打包成 HTTP POST 寄給 Server。
+        
+    - **特點：** 它實作了 `manual_capture`, `execute_routine` 等與 Manager 同名的方法，讓切換變得透明。
+        
+- **`core/workflow_server.py` (伺服器)**
+    
+    - **作用：** 使用 FastAPI 架設的 Web Server。它接收 Proxy 的請求，並轉交給 Manager 執行。
+        
+    - **特點：** 支援 WebSocket 串流 (`/ws/stream`)，讓遠端能看到即時影像。
+        
+
+#### 3. 演算法調度層 (Algorithm Layer)
+
+- **`core/orchestrator.py` (領班)**
+    
+    - **作用：** 它不寫死要跑什麼算法，而是看 Config。
+        
+    - **彈性：** 它可以決定是用 **CLI 模式** (開啟一個新的 Process 跑腳本，跑完就關掉，省記憶體但慢) 還是 **API 模式** (呼叫已經啟動的 Service，速度快但吃記憶體)。
+        
+- **`core/service_manager.py` (後勤)**
+    
+    - **作用：** 負責在系統啟動時，把那些很肥大的 AI 模型 (如 SAM, Lume) 預先載入記憶體 (Warm Start)，變成一個個 API Server，等待被呼叫。
+        
+
+#### 4. 數據管理層 (Data Layer)
+
+- **`data_manager/local_storage.py` (倉管)**
+    
+    - **作用：** 統一管理檔案的生殺大權。
+        
+    - **特色：** 只有它知道檔案該存哪 (`Watch_ID/Experiments/...`)，也只有它擁有加密金鑰 (`DataEncryptor`)。
+        
+- **`data_manager/cloud_sync.py` (物流)**
+    
+    - **作用：** 在背景默默把檔案搬到 AWS S3。確保 UI 不會因為網路上傳而卡頓。
+        
+- **`data_manager/database.py` (帳房)**
+    
+    - **作用：** 使用 SQLite 記錄每一張照片、每一份報告的位置。這讓 App 可以瞬間列出歷史紀錄，而不用掃描硬碟。
+        
+
+#### 5. 審計層 (Audit Layer)
+
+- **`logging_system/audit_logger.py` (公證人)**
+    
+    - **作用：** 記錄誰 (User)、在什麼時候 (Time)、做了什麼 (Action)。
+        
+    - **安全：** 使用 Hash Chaining 技術，上一行的 Hash 值會寫入下一行。如果有人偷改了中間的紀錄，整條鏈就會斷掉，確保計費數據不可竄改。
+        
+
+### 30年 Tech Lead 總結
+
+這套代碼的架構非常紮實，已經從「腳本級」進化到「平台級」。
+
+**目前唯一缺失的拼圖是：**
+
+1. **Service Manager 的啟動：** 請務必在 `WorkflowManager` 中加入啟動邏輯（如上文建議）。
+    
+2. **硬體驅動：** 確保 `SimulationHardware` 檔案存在。
+    
+
+修正這兩點後，這就是一套可以直接部署 (Production Ready) 的工業級系統。
