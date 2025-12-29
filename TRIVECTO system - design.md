@@ -937,3 +937,352 @@ class WorkflowManager:
     
 
 修正這兩點後，這就是一套可以直接部署 (Production Ready) 的工業級系統。
+
+
+
+
+
+
+```
+請根據我目前的code repo中文詳細解釋下列情況應該如何執行(譬如要run甚麼code或做甚麼yaml設定或者在local computer要先打開server之類的)以及code的一步步具體執行流程及細節, 尤其著重在local computer, remote client跟cloud如何交互:
+
+情況1 -  在local computer用main_cli.py用simulation模擬hardware擷取images, 然後進行image processing tasks分析
+
+情況2 -  在local computer用main_cli.py用simulation模擬hardware擷取images, 然後進行image processing tasks分析, 並將images跟metadata加密並同步到AWS cloud上
+
+情況3 -  在local computer用App用simulation模擬hardware擷取images, 然後進行image processing tasks分析
+
+情況4 -  在local computer用App用真實hardware(camera, Zaber...)擷取images, 然後進行image processing tasks分析
+
+情況5 -  在remote client用main_cli.py用simulation模擬hardware擷取images, 然後進行image processing tasks分析
+
+情況6 -  在remote client用App用simulation模擬hardware擷取images, 然後進行image processing tasks分析
+
+情況7 -  在local computer用App下載並檢視Cloud上以前take的images以及在experiment folder裡的segmentation masks及metadata, 而且這些資料在local computers已經被清除
+
+情況8 -  在remote client用App下載並檢視Cloud上以前take的images以及在experiment folder裡的segmentation masks及metadata, 而且這些資料在local computers已經被清除
+```
+
+這是一個非常完整的系統操作手冊。作為 Tech Lead，我將針對你提出的 **8 種 Use Case (使用情境)**，一步步詳細解釋如何在 Local Computer 與 Remote Client 上執行，並說明背後的 Code 執行流程與硬體/雲端交互細節。
+
+---
+
+### **前置準備 (Prerequisites)**
+
+在執行任何情境前，請確保：
+
+1. **環境**：Anaconda 環境 (`base_env`, `watch_env` 等) 已建立且套件已安裝。
+    
+2. **設定檔**：`config/system_config.yaml` 中的路徑與 IP 正確。
+    
+3. **雲端**：若要測試真實上傳，需安裝 `boto3` 並設定 AWS Credentials；否則系統會自動走 Mock 模式。
+    
+
+---
+
+### **情境 1: Local Computer + CLI + Simulation (模擬硬體取像與分析)**
+
+這是開發階段最常用的模式，不依賴真實相機，快速驗證演算法邏輯。
+
+#### **執行步驟**
+
+1. **修改設定**：
+    
+    - 打開 `config/system_config.yaml`，設定 `mode: "simulation"`。
+        
+    - 確認 `config/simulation_map.yaml` 裡有定義好要跑的服務與對應圖片 (如 `features_service: "img1.png"`).
+        
+2. 執行指令：
+    
+    在 Local Computer 的 Terminal 執行：
+    
+    Bash
+    
+    ```
+    python main_cli.py
+    ```
+    
+    _(註：因為是 Simulation 模式，`cli_config.yaml` 裡的 `routine_name` 會被忽略，直接跑 Map)_
+    
+
+#### **Code 執行流程**
+
+1. **Init**: `main_cli.py` 呼叫 `WorkflowManager` 初始化。
+    
+2. **Route**: `execute_routine` 發現 `mode="simulation"`，跳轉至 `_run_simulation_routine`。
+    
+3. **Map Load**: 讀取 `simulation_map.yaml`，發現例如 `features_service`。
+    
+4. **Virtual Capture**:
+    
+    - 從 `assets/sample_images` 複製對應圖片到 `Local_Data/temp/`。
+        
+    - 呼叫 `data_mgr.process_and_sync_raw_image` 將圖片搬到 `Local_Data/.../Raw/` 並寫入 DB。
+        
+5. **Analysis**:
+    
+    - `Orchestrator` 呼叫 `run_features_cli.py` (CLI Mode)。
+        
+    - 演算法跑完，產出 Mask 存入 `Local_Data/.../Analysis/`。
+        
+6. **Report**: 生成 YAML 報告。
+    
+
+---
+
+### **情境 2: Local Computer + CLI + Simulation + Cloud Upload & Encryption**
+
+同情境 1，但強調資料安全與同步。
+
+#### **執行步驟**
+
+1. **修改設定**：
+    
+    - `config/system_config.yaml`:
+        
+        - `mode: "simulation"`
+            
+        - `security.enable_data_at_rest_encryption: true` (開啟加密)
+            
+    - 確保有 `boto3` (若無則只會顯示 Mock Upload Log)。
+        
+2. **執行指令**：
+    
+    Bash
+    
+    ```
+    python main_cli.py
+    ```
+    
+
+#### **Code 執行流程 (差異點)**
+
+1. **Encryption**: 在 `data_mgr.process_and_sync_raw_image` 內部：
+    
+    - 呼叫 `encryptor.obfuscate_image_header`。
+        
+    - 圖片檔頭被抹除 (無法直接開啟)，並生成 `.meta` 金鑰檔。
+        
+2. **Cloud Sync**:
+    
+    - `CloudSyncManager` 的 Background Thread 檢測到 Queue 有新任務。
+        
+    - 將 **加密後的圖片** (`.jpg`) 與 **金鑰檔** (`.jpg.meta`) 一起上傳到 S3。
+        
+    - 上傳成功後，更新 SQLite DB 的 `sync_status` 為 `synced`。
+        
+
+---
+
+### **情境 3: Local Computer + App (GUI) + Simulation**
+
+這通常是操作員 (Operator) 的視角。App (前端)透過 API 呼叫後端 Server。
+
+#### **執行步驟**
+
+1. 啟動 Server：
+    
+    在 Local Computer 開一個 Terminal：
+    
+    Bash
+    
+    ```
+    python core/workflow_server.py
+    ```
+    
+    _(Server 啟動後會 Listen port 8000)_
+    
+2. **App 操作** (假設你有一個 GUI Client)：
+    
+    - App 發送 HTTP POST 到 `http://127.0.0.1:8000/api/routine/start`。
+        
+    - Payload: `{"watch_id": "Rolex_001", "routine_name": "ignored_in_sim"}`。
+        
+
+#### **Code 執行流程**
+
+1. **API Handle**: `workflow_server.py` 收到請求。
+    
+2. **Manager Call**: Server 內部的 `ctx.manager.execute_routine` 被呼叫。
+    
+3. **Simulation Flow**: 同情境 1，`WorkflowManager` 執行模擬流程。
+    
+4. **Response**: Server 等待流程結束，將 Report JSON 回傳給 App 顯示。
+    
+
+---
+
+### **情境 4: Local Computer + App + Real Hardware (Production)**
+
+這是真實上線生產的模式。
+
+#### **執行步驟**
+
+1. **修改設定**：
+    
+    - `config/system_config.yaml`: `mode: "production"`。
+        
+    - 確認硬體 (Zaber, Camera) 已連接。
+        
+2. **啟動 Server**：
+    
+    Bash
+    
+    ```
+    python core/workflow_server.py
+    ```
+    
+3. **App 操作**：
+    
+    - App 發送 POST `api/routine/start`，帶上 `routine_name: "rolex_submariner"`。
+        
+
+#### **Code 執行流程**
+
+1. **Mode Check**: `execute_routine` 發現 `mode="production"`，跳轉至 `_run_production_routine`。
+    
+2. **Plan Load**: 讀取 `Controller/plans/rolex_submariner.yaml`。
+    
+3. **Hardware Control**:
+    
+    - **Move**: 呼叫 `self.hw.move_compound(...)` 控制 Zaber 平台。
+        
+    - **Capture**: 呼叫 `self.hw.capture_image(...)` 控制相機拍照。
+        
+4. **Analysis**: 針對拍到的照片，執行 Plan 指定的演算法 (如 OCR)。
+    
+5. **Save**: 結果存入 Local Disk / DB / Cloud。
+    
+
+---
+
+### **情境 5: Remote Client + CLI + Simulation**
+
+你在遠端電腦 (如 Mac)，想控制那台有 GPU 的 Local Computer (Windows) 跑模擬。
+
+#### **執行步驟**
+
+1. **Local Computer (Server 端)**：
+    
+    - 設定 `system_config.yaml`: `app_mode: "local"`, `server_ip: "0.0.0.0"`.
+        
+    - 啟動 Server: `python core/workflow_server.py`。
+        
+2. **Remote Client (Client 端)**：
+    
+    - 複製一份 Code Repo。
+        
+    - 修改 `config/system_config.yaml`:
+        
+        - `app_mode: "remote"`
+            
+        - `server_ip: "192.168.1.X"` (Local Computer 的 IP)。
+            
+    - 執行指令：
+        
+        Bash
+        
+        ```
+        python main_cli.py
+        ```
+        
+
+#### **Code 執行流程**
+
+1. **Factory**: `main_cli.py` 呼叫 `get_workflow_engine`。
+    
+2. **Proxy**: 因為 `app_mode="remote"`，Factory 回傳 `WorkflowProxy` 物件，而不是 Manager。
+    
+3. **Forward**: `main_cli.py` 呼叫 `engine.execute_routine`。
+    
+    - `WorkflowProxy` 將呼叫打包成 HTTP POST 請求，發送到 `http://192.168.1.X:8000/api/routine/start`。
+        
+4. **Remote Exec**: Local Computer 的 Server 收到請求，執行模擬，並回傳結果。
+    
+5. **Display**: Remote Client 的 Terminal 印出 Server 回傳的 JSON。
+    
+
+---
+
+### **情境 6: Remote Client + App + Simulation**
+
+同情境 5，只是 Client 端是用 GUI App。
+
+#### **執行步驟**
+
+1. **Local Computer**: 啟動 Server (`python core/workflow_server.py`)。
+    
+2. **Remote Client**: 打開 App，App 內部設定指向 Local Computer 的 IP。
+    
+3. **操作**: 點擊 "Start Routine"。
+    
+
+#### **Code 執行流程**
+
+- App 直接發送 HTTP Request 給 Local Server。
+    
+- 邏輯與情境 3 完全相同，只是網路路徑從 `localhost` 變成跨網域。
+    
+
+---
+
+### **情境 7: Local Computer + App 檢視歷史資料 (Auto Restore)**
+
+原本圖片已上傳到 Cloud 並且本地已被清除 (Evicted)，現在要看圖。
+
+#### **執行步驟**
+
+1. **App 操作**：
+    
+    - 呼叫 API: `GET /api/db/gallery?watch_id=Rolex_001`。
+        
+2. **Code 執行流程 (Server 端)**：
+    
+    - `db_manager` 查詢 DB，發現圖片 `local_path` 存在但檔案已不在 (或被標記為 evicted)。
+        
+    - **Auto Restore**:
+        
+        - App 請求圖片內容 (例如 `GET /images/...`)。
+            
+        - `data_mgr.retrieve_file_for_viewing(watch_id, filename)` 被呼叫。
+            
+        - **Download**: `cloud_sync.download_file` 從 S3 下載圖片與 `.meta`。
+            
+        - **Decrypt**: 若有加密，`encryptor` 使用 `.meta` 解密檔頭，還原成可讀取的 JPG。
+            
+    - Server 回傳圖片給 App 顯示。
+        
+
+---
+
+### **情境 8: Remote Client + App 檢視歷史資料**
+
+你在遠端，想看 Local Server 上的歷史資料（甚至資料可能只在 Cloud 上）。
+
+#### **執行步驟**
+
+1. **App 操作 (Remote)**：
+    
+    - App 發送 `GET http://<Server_IP>:8000/api/db/gallery...`。
+        
+2. **Code 執行流程**：
+    
+    - **Server 端**: 接收請求。
+        
+    - **Check**: Server 檢查本地是否有圖。若無，觸發 **Restore from Cloud** (同情境 7)。
+        
+    - **Response**: Server 將還原後的圖片，透過 HTTP Response 回傳給 Remote App。
+        
+    - **Remote 端**: App 收到圖片 Binary Data 並顯示。
+        
+
+---
+
+### **總結：Local vs Remote vs Cloud 的交互**
+
+|**角色**|**職責**|**關鍵 Code**|
+|---|---|---|
+|**Local Computer**|**運算核心**。跑 Server、控制硬體、執行 AI 分析、管理 DB、加密與上傳 Cloud。|`WorkflowManager`, `ServiceManager`, `DataManager`|
+|**Remote Client**|**遙控器**。不跑運算，只發送指令 (HTTP Request) 並顯示結果。|`WorkflowProxy`|
+|**Cloud (AWS)**|**冷儲存 (Cold Storage)**。永久保存 Raw Image、Result、Report 與 Key。|`CloudSyncManager` (S3)|
+
