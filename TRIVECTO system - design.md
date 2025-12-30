@@ -13,6 +13,11 @@
 
 #### 完整系統設計 Version 1
 
+```
+我現在開發這套系統自動化手錶光學檢測系統 (ImagingLibWatch)。它的架構非常完整，採用了模組化設計，涵蓋了從 CLI 指令入口及APP雙入口、local system跟remote client協同控制也可以遠方完全操控硬體跟分析以及看到即時影像. AI 服務調度核心業務邏輯跟AI 服務調度image processing pipeline(Orchestrator控制30多個subworker, 採用cli work mode跟api server混和模式)、資料管理(camera拍照後會加密存在local folder跟image processing pipeline的結果加密存在local experiment folder. 兩者都會由CloudSyncManager同步到AWS S3, 並有QueryEngine(SQLite)可以快速查詢local跟cloud data)、底層硬體控制(包括控制camera, light source, zaber等), 以及一個AuditLogger可以加密記錄logger, 以及後續advanced analysis跟statistics的全流程. 這套系統的核心目的是：控制硬體拍攝手錶影像 -> 進行加密與存儲 -> 呼叫 opencv跟AI 模型分析 -> 輸出檢測報告. 未來可能local computer連接會在LA, 或NY或甚至在德國. 而remote client會是在Ann Arbor或美國其他地方可以連進去local computer操控或維修. 
+```
+
+
 這是一個極具野心且高價值的工業級 AOI (Automated Optical Inspection) 與 AI 鑑識系統。作為一名資深軟體架構師，我將基於您現有的基礎，為 **完整系統 Version 1** 進行架構優化與設計。
 
 目前的架構已經具備了良好的模組化基礎（微服務化的演算法、Client-Server 的硬體控制）。Version 1 的核心挑戰在於**「整合性 (Integration)」、「數據安全性 (Data Security/Integrity)」與「可審計性 (Auditability)」**。

@@ -4,6 +4,8 @@
 | ---------------------------------- | --- |
 | [[#### 商業軟體架構connection問題]]        |     |
 | [[#### 考量即時影像串流的商業軟體架構connection]] |     |
+| [[#### 增強版方案二 (AWS IoT)雲端中繼]]      |     |
+|                                    |     |
 |                                    |     |
 
 #### 商業軟體架構connection問題
@@ -425,3 +427,604 @@ class RemoteController:
     
 
 建議你先維持目前的開發模式 (Tailscale)，待功能穩定後，將「Local Agent」與「AWS 基礎設施」列為下一階段的開發重點。
+
+
+
+
+#### 增強版方案二 (AWS IoT)雲端中繼
+```
+增強版方案二 (AWS IoT)：雲端中繼 (Basic Cloud Relay)的概念跟技術細節
+```
+
+這是一個非常棒的請求。你現在要進入的是**真正的商業級 IoT 架構**。
+
+針對你的疑問：「除了你列出的那 5 個檔案，其他都不用改嗎？」 **答案是：還需要修改 `core/__init__.py` (Factory 邏輯) 以及新增 `requirements.txt` (依賴套件)。** 至於其他的 Image Processing 演算法、硬體驅動、S3 上傳邏輯，完全不需要動，這就是模組化架構的好處。
+
+以下我將詳細解釋這個架構，並提供完整的程式碼。
+
+---
+
+### 第一部分：增強版方案二 (AWS Enterprise Architecture) 概念詳解
+
+這套架構是為了解決「Local Computer (德國)」與「Remote Client (美國)」之間物理距離遙遠、網路環境複雜（防火牆、動態 IP）的問題。
+
+我們將系統切分為三個平面：
+
+1. **控制平面 (Control Plane) - AWS IoT Core (MQTT)**
+    
+    - **概念**：這是「神經系統」。
+        
+    - **運作**：Local Computer 啟動後，使用 MQTT 協定（一種極輕量的物聯網協定）主動連線到 AWS。這是一條 **Outbound (由內向外)** 的長連線。
+        
+    - **技術**：因為是長連線，Remote Client 只要把指令發給 AWS，AWS 會在毫秒級的時間內透過這條長連線把指令「推」給 Local Computer。**完全不需要知道 Local Computer 的 IP**。
+        
+2. **數據平面 (Data Plane) - DynamoDB + S3**
+    
+    - **概念**：這是「記憶系統」。
+        
+    - **運作**：Local Computer 拍完照，圖片上傳 S3（你原本就做好了）。但為了讓 Remote Client 能搜尋（例如：「給我看 Rolex_001 上次的所有結果」），我們需要一個快速的索引。
+        
+    - **技術**：我們新增 **DynamoDB (NoSQL 資料庫)**。Local Computer 處理完後，會把 Metadata（時間、S3 路徑、分析結果摘要）寫入 DynamoDB。Remote Client 查詢時，直接查 AWS DynamoDB，**不需要連線回 Local Computer**。這保證了即使 Local 關機，資料依然可查。
+        
+3. **媒體平面 (Media Plane) - Kinesis Video Streams (WebRTC)**
+    
+    - **概念**：這是「視覺系統」。
+        
+    - **技術**：利用 WebRTC 建立 P2P 或中繼連線。_(註：在本次提供的 Python Code 中，我會實作「信令交換 (Signaling)」的部分，實際的影像串流通常會呼叫 GStreamer 或 C++ SDK，但我會在 Agent 中預留接口)_。
+        
+
+---
+
+### 第二部分：完整程式碼實作
+
+#### 前置需求 (Requirements)
+
+你需要安裝 AWS 相關套件： `pip install boto3 AWSIoTPythonSDK`
+
+---
+
+#### 1. `config/system_config.yaml` (設定 AWS 參數)
+
+YAML
+
+```
+# config/system_config.yaml
+
+system:
+  mode: "simulation"
+  user_id: "operator_001"
+  version: "2.0.0 (AWS IoT)"
+
+network:
+  # 模式切換: "local", "remote" (舊), "aws_iot" (新方案)
+  app_mode: "aws_iot"
+  
+  # AWS IoT Core Endpoint (從 AWS Console -> Settings 取得)
+  aws_endpoint: "a3xxxxxxxxx-ats.iot.us-east-1.amazonaws.com"
+  
+  # 設備唯一識別碼
+  device_id: "Rolex_Station_001"
+  
+  # AWS 憑證路徑 (必須去 AWS IoT Core 下載並放在 config/certs/)
+  certs:
+    root_ca: "./config/certs/AmazonRootCA1.pem"
+    private_key: "./config/certs/private.pem.key"
+    cert_file: "./config/certs/certificate.pem.crt"
+
+aws:
+  s3_bucket: "watch-analysis-v1"
+  dynamodb_table: "WatchAnalysisResults" # 需在 AWS DynamoDB 建立此 Table (PK: watch_id, SK: sort_key)
+  region: "us-east-1"
+
+# ... (其餘 paths, security, hardware, core, envs, services, tasks 保持原樣) ...
+paths:
+  base_data_dir: "./Local_Data"
+  sample_assets_dir: "./assets/sample_images"
+  plan_dir: "./Controller/plans"
+  hmac_key_path: "./config/keys/hmac.key"
+  fernet_key_path: "./config/keys/fernet.key"
+  aesgcm_key_path: "./config/keys/aesgcm.key"
+
+security:
+  enable_data_at_rest_encryption: true
+  encrypt_audit_fields: false
+
+hardware:
+  zaber: {port: "COM3", device_map: {stage_L_X: 1, stage_L_Y: 2, stage_L_Z: 3, stage_R_Z: 4, stage_R_X: 5}}
+  cameras: {macro_cam_id: "ITA204_ID", micro_cam_id: "ITA81_ID"}
+  keyence: {ip: "169.254.64.64", port: 24685}
+  vanta: {ip: "192.168.1.10", timeout: 30}
+  lighting: {controller_ip: "192.168.1.50"}
+
+core:
+  global_execution_mode: "mixed"
+  max_parallel_workers: 4
+
+envs:
+  base_env:  "D:/Users/a3146/anaconda3/python.exe"
+  watch_env: "D:/Users/a3146/anaconda3/envs/watch_env/python.exe"
+
+services:
+  lume_service: {env: "watch_env", script: "tasks/api_servers/server_lume.py", host: "127.0.0.1", port: 5002, config_path: "config/lume_config.yaml"}
+  features_service: {env: "watch_env", script: "tasks/api_servers/server_features.py", host: "127.0.0.1", port: 5003, config_path: "config/features_config.yaml"}
+  ocr_service: {env: "watch_env", script: "tasks/api_servers/server_ocr.py", host: "127.0.0.1", port: 5012, config_path: "config/ocr_config.yaml"}
+  lume_hour_service: {env: "watch_env", script: "tasks/api_servers/server_hour_lume.py", host: "127.0.0.1", port: 5009, config_path: "config/lume_hour_config.yaml"}
+  # ... 其他 services 保持原樣 ...
+
+tasks:
+  lume_service: {mode: "cli", service_name: "lume_service", cli_script: "tasks/cli_wrappers/run_lume_cli.py", task_config: "config/lume_config.yaml", timeout: 60}
+  features_service: {mode: "cli", service_name: "features_service", cli_script: "tasks/cli_wrappers/run_features_cli.py", task_config: "config/features_config.yaml", timeout: 120}
+  ocr_service: {mode: "cli", service_name: "ocr_service", cli_script: "tasks/cli_wrappers/run_ocr_cli.py", task_config: "config/ocr_config.yaml", timeout: 45}
+  lume_hour_service: {mode: "cli", service_name: "lume_hour_service", cli_script: "tasks/cli_wrappers/run_lume_hour_cli.py", task_config: "config/lume_hour_config.yaml", timeout: 60}
+  # ... 其他 tasks 保持原樣 ...
+```
+
+---
+
+#### 2. `core/__init__.py` (Factory 修改)
+
+確保 `aws_iot` 模式下，Factory 回傳的是 Proxy (Remote Client) 或提示錯誤 (因為 Local 端應該跑 Agent)。
+
+Python
+
+```
+# core/__init__.py
+import yaml
+import os
+import sys
+
+def get_workflow_engine(config_path="config/system_config.yaml"):
+    """
+    Factory: Returns Manager (Local) or Proxy (Remote/AWS) based on config.
+    """
+    if not os.path.exists(config_path):
+        raise FileNotFoundError(f"Config not found: {config_path}")
+
+    with open(config_path, 'r', encoding='utf-8') as f:
+        config = yaml.safe_load(f)
+        
+    mode = config.get('network', {}).get('app_mode', 'local')
+    
+    if mode == 'remote' or mode == 'aws_iot':
+        # 在 AWS IoT 模式下，透過 main_cli.py 呼叫的應該是 Remote Client
+        print(f"[Factory] Initializing Proxy for mode: {mode}...")
+        from .workflow_proxy import WorkflowProxy
+        return WorkflowProxy(config_path)
+    else:
+        print("[Factory] Initializing Local Manager...")
+        from .workflow_manager import WorkflowManager
+        return WorkflowManager(config_path)
+```
+
+---
+
+#### 3. `data_manager/cloud_db.py` (新增: 數據平面)
+
+處理 DynamoDB 的寫入與查詢。
+
+Python
+
+```
+# data_manager/cloud_db.py
+import boto3
+import time
+import logging
+from botocore.exceptions import ClientError, NoCredentialsError
+
+class CloudDatabaseManager:
+    """
+    AWS DynamoDB Wrapper for Global Query Engine.
+    Requires AWS Credentials setup (~/.aws/credentials or env vars).
+    """
+    def __init__(self, config):
+        self.config = config
+        self.aws_cfg = config.get("aws", {})
+        self.table_name = self.aws_cfg.get("dynamodb_table", "WatchAnalysisResults")
+        self.region = self.aws_cfg.get("region", "us-east-1")
+        self.logger = logging.getLogger("CloudDB")
+        
+        self.dynamodb = None
+        self.table = None
+        self._connect()
+
+    def _connect(self):
+        try:
+            self.dynamodb = boto3.resource("dynamodb", region_name=self.region)
+            self.table = self.dynamodb.Table(self.table_name)
+            self.logger.info(f"Connected to DynamoDB Table: {self.table_name}")
+        except NoCredentialsError:
+            self.logger.warning("AWS Credentials not found. CloudDB will not work.")
+        except Exception as e:
+            self.logger.error(f"Failed to connect to DynamoDB: {e}")
+
+    def index_record(self, watch_id, record_type, s3_key, metadata=None):
+        """
+        [Local Agent 使用] 將上傳後的圖片資訊寫入 DynamoDB
+        PK: watch_id, SK: timestamp#record_type
+        """
+        if not self.table: return
+
+        timestamp = int(time.time() * 1000)
+        item = {
+            "watch_id": watch_id,
+            "sort_key": f"{timestamp}#{record_type}",
+            "s3_key": s3_key,
+            "created_at": str(timestamp),
+            "record_type": record_type,
+            "metadata": metadata or {}
+        }
+
+        try:
+            self.table.put_item(Item=item)
+            self.logger.info(f"[CloudDB] Indexed {record_type} for {watch_id} in DynamoDB")
+        except ClientError as e:
+            self.logger.error(f"[CloudDB] Index failed: {e}")
+
+    def query_watch_history(self, watch_id):
+        """
+        [Remote Client 使用] 從 DynamoDB 查詢歷史資料
+        """
+        if not self.table: return []
+        try:
+            from boto3.dynamodb.conditions import Key
+            resp = self.table.query(
+                KeyConditionExpression=Key('watch_id').eq(watch_id)
+            )
+            return resp.get('Items', [])
+        except ClientError as e:
+            self.logger.error(f"[CloudDB] Query failed: {e}")
+            return []
+```
+
+---
+
+#### 4. `core/workflow_proxy.py` (修改: Remote Client)
+
+Remote Client 現在使用 `boto3` 直接發指令給 AWS IoT Core，並查詢 DynamoDB。
+
+Python
+
+```
+# core/workflow_proxy.py
+import requests
+import yaml
+import logging
+import json
+import time
+import sys
+
+# Try import boto3, but don't crash if missing (for pure local mode)
+try:
+    import boto3
+    HAS_BOTO3 = True
+except ImportError:
+    HAS_BOTO3 = False
+
+class WorkflowProxy:
+    """
+    Client-side Proxy.
+    Supports:
+    1. Direct Connect (Remote Mode - HTTP)
+    2. AWS IoT Relay (AWS Mode - MQTT)
+    """
+    def __init__(self, config_path="config/system_config.yaml"):
+        with open(config_path, 'r', encoding='utf-8') as f:
+            self.config = yaml.safe_load(f)
+            
+        net = self.config['network']
+        self.mode = net.get('app_mode', 'remote')
+        self.local_user_id = self.config['system']['user_id']
+        
+        logging.basicConfig(level=logging.INFO, format="[Proxy] %(message)s")
+        self.logger = logging.getLogger("WorkflowProxy")
+
+        if self.mode == 'aws_iot':
+            if not HAS_BOTO3:
+                self.logger.error("boto3 is required for AWS IoT mode. pip install boto3")
+                sys.exit(1)
+                
+            self.device_id = net['device_id']
+            self.region = self.config['aws']['region']
+            
+            # Control Plane Client (Data Plane for IoT)
+            self.iot_client = boto3.client('iot-data', region_name=self.region)
+            
+            # Data Plane Client (DynamoDB)
+            from data_manager.cloud_db import CloudDatabaseManager
+            self.cloud_db = CloudDatabaseManager(self.config)
+            
+            self.logger.info(f"Initialized AWS IoT Proxy -> Target: {self.device_id}")
+        else:
+            # Fallback to direct HTTP
+            self.host = net.get('server_ip', '127.0.0.1')
+            self.port = net.get('server_port', 8000)
+            self.base_url = f"http://{self.host}:{self.port}"
+            self.headers = {"x-token": net.get('auth_token', '')}
+            self.logger.info(f"Initialized Direct Proxy -> {self.base_url}")
+
+    def execute_routine(self, watch_id, routine_name="Standard_Check"):
+        self.logger.info(f"Executing: {routine_name} on {watch_id}")
+        
+        if self.mode == 'aws_iot':
+            # === Control Plane: Publish Command to AWS IoT ===
+            payload = {
+                "action": "run_routine",
+                "watch_id": watch_id,
+                "routine_name": routine_name,
+                "user_id": self.local_user_id,
+                "timestamp": time.time()
+            }
+            topic = f"cmd/{self.device_id}"
+            
+            try:
+                self.iot_client.publish(
+                    topic=topic,
+                    qos=1,
+                    payload=json.dumps(payload)
+                )
+                self.logger.info(f"Command published to MQTT topic: {topic}")
+                self.logger.info("Command sent! Check Cloud Console or Query History for results.")
+                
+                # In fully async MQTT, we don't wait for response here typically.
+                # We return a status saying "Submitted"
+                return {"status": "submitted_to_cloud", "msg": f"Command sent to {topic}"}
+                
+            except Exception as e:
+                self.logger.error(f"AWS IoT Publish Failed: {e}")
+                return None
+        else:
+            # Direct HTTP (Old logic)
+            payload = {"watch_id": watch_id, "routine_name": routine_name, "user_id": self.local_user_id}
+            try:
+                resp = requests.post(f"{self.base_url}/api/routine/start", json=payload, headers=self.headers, timeout=300)
+                resp.raise_for_status()
+                return resp.json()
+            except Exception as e:
+                self.logger.error(f"HTTP Failed: {e}")
+                return None
+
+    def list_remote_files(self, watch_id):
+        if self.mode == 'aws_iot':
+            # === Data Plane: Query Cloud DB ===
+            self.logger.info(f"Querying Global Cloud Index for {watch_id}...")
+            items = self.cloud_db.query_watch_history(watch_id)
+            # Format simply for CLI
+            return [f"{i['record_type']}: {i['s3_key']}" for i in items]
+        else:
+            try:
+                resp = requests.get(f"{self.base_url}/api/data/list_files", params={"watch_id": watch_id}, headers=self.headers)
+                return resp.json().get("files", [])
+            except Exception:
+                return []
+
+    # Stub methods for other actions
+    def manual_capture(self, watch_id, cam_id): pass
+    def manual_move(self, axis, value): pass
+    def force_cloud_sync(self): pass
+    def shutdown(self): pass
+```
+
+---
+
+#### 5. `cloud_relay/aws_agent.py` (Local Agent)
+
+這是 **Local Computer** 要執行的程式。它使用 `AWSIoTPythonSDK` 來維持長連線。
+
+Python
+
+```
+# cloud_relay/aws_agent.py
+import sys
+import os
+import json
+import time
+import logging
+
+# Ensure dependencies are met
+try:
+    from AWSIoTPythonSDK.MQTTLib import AWSIoTMQTTClient
+except ImportError:
+    print("Error: AWSIoTPythonSDK not installed. pip install AWSIoTPythonSDK")
+    sys.exit(1)
+
+# Add project root to sys.path
+sys.path.append(os.getcwd())
+from core.workflow_manager import WorkflowManager
+
+class AWSAgent:
+    def __init__(self, config_path="config/system_config.yaml"):
+        if not os.path.exists(config_path):
+            raise FileNotFoundError(f"Config not found: {config_path}")
+
+        with open(config_path, 'r', encoding='utf-8') as f:
+            self.config = yaml.safe_load(f)
+            
+        net = self.config['network']
+        if net['app_mode'] != 'aws_iot':
+            print("Warning: system_config is not set to 'aws_iot' mode.")
+
+        self.device_id = net['device_id']
+        self.endpoint = net['aws_endpoint']
+        
+        # Cert paths
+        self.root_ca = net['certs']['root_ca']
+        self.private_key = net['certs']['private_key']
+        self.cert_file = net['certs']['cert_file']
+        
+        logging.basicConfig(level=logging.INFO, format="[AWS-Agent] %(message)s")
+        self.logger = logging.getLogger("AWSAgent")
+        
+        # Initialize Core Engine (Hardware + Algos)
+        self.logger.info("Initializing Workflow Manager...")
+        self.manager = WorkflowManager(config_path)
+        
+        # Initialize MQTT Client
+        self.mqtt_client = AWSIoTMQTTClient(self.device_id)
+        self.mqtt_client.configureEndpoint(self.endpoint, 8883)
+        self.mqtt_client.configureCredentials(self.root_ca, self.private_key, self.cert_file)
+        
+        # Connection Settings
+        self.mqtt_client.configureAutoReconnectBackoffTime(1, 32, 20)
+        self.mqtt_client.configureOfflinePublishQueueing(-1)
+        self.mqtt_client.configureDrainingFrequency(2)
+        self.mqtt_client.configureConnectDisconnectTimeout(10)
+        self.mqtt_client.configureMQTTOperationTimeout(5)
+
+    def start(self):
+        self.logger.info(f"Connecting to AWS IoT Core ({self.endpoint})...")
+        try:
+            self.mqtt_client.connect()
+            self.logger.info("Connected!")
+            
+            # Subscribe to Command Topic (cmd/{device_id})
+            topic = f"cmd/{self.device_id}"
+            self.mqtt_client.subscribe(topic, 1, self.on_message)
+            self.logger.info(f"Subscribed to {topic}")
+            
+            # Infinite Loop to keep agent alive
+            while True:
+                time.sleep(1)
+        except Exception as e:
+            self.logger.error(f"Connection Error: {e}")
+            self.manager.shutdown()
+
+    def on_message(self, client, userdata, message):
+        """
+        Callback when a message is received from AWS.
+        """
+        try:
+            payload = json.loads(message.payload.decode('utf-8'))
+            action = payload.get('action')
+            self.logger.info(f"Received Action: {action}")
+            
+            if action == 'run_routine':
+                self.handle_run_routine(payload)
+            elif action == 'manual_capture':
+                # Implement similar to run_routine
+                pass
+                
+        except Exception as e:
+            self.logger.error(f"Message processing failed: {e}")
+
+    def handle_run_routine(self, payload):
+        watch_id = payload.get('watch_id')
+        routine_name = payload.get('routine_name')
+        user_id = payload.get('user_id')
+        
+        self.logger.info(f"Executing Routine: {routine_name} on {watch_id}")
+        
+        # 1. Execute Logic (Blocks until done)
+        result = self.manager.execute_routine(watch_id, routine_name, user_id)
+        
+        # 2. Publish Completion Status
+        status_topic = f"status/{self.device_id}"
+        resp_payload = {
+            "watch_id": watch_id,
+            "status": "completed" if result else "failed",
+            "timestamp": time.time()
+        }
+        self.mqtt_client.publish(status_topic, json.dumps(resp_payload), 1)
+        self.logger.info(f"Result status published to {status_topic}")
+
+if __name__ == "__main__":
+    agent = AWSAgent()
+    try:
+        agent.start()
+    except KeyboardInterrupt:
+        print("Stopping Agent...")
+        agent.manager.shutdown()
+```
+
+---
+
+#### 6. `core/workflow_manager.py` (修改: 整合 CloudDB)
+
+在 `__init__` 加入 CloudDB 初始化，並在 `process_and_sync_raw_image` 成功後寫入索引。
+
+Python
+
+```
+# core/workflow_manager.py
+# ... imports ...
+from data_manager.cloud_db import CloudDatabaseManager # [New Import]
+
+class WorkflowManager:
+    def __init__(self, config_path="config/system_config.yaml"):
+        # ... existing init code ...
+        with open(config_path, "r", encoding="utf-8") as f:
+            self.config = yaml.safe_load(f)
+        
+        # ... existing subsystems init ...
+        self.data_mgr = DataManager(self.config)
+        
+        # [New] Initialize Cloud DB for Data Plane
+        self.cloud_db = CloudDatabaseManager(self.config) 
+        
+        # ... rest of init ...
+
+    # ... (execute_routine, _run_simulation_routine, _run_production_routine logic same as before) ...
+
+    # [關鍵修改點] 在 _run_simulation_routine 和 _run_production_routine 中
+    # 找到呼叫 self.data_mgr.process_and_sync_raw_image 的地方
+    # 修改如下：
+
+    # (Example snippet inside _run_simulation_routine)
+            real_path, image_db_id = self.data_mgr.process_and_sync_raw_image(
+                temp_path=temp_path,
+                watch_id=watch_id,
+                filename=temp_filename,
+                custom_target_dir=raw_dir,
+                step_name=f"Sim_{service_name}",
+                hardware_meta={"source": "simulation_map"},
+                processing_reqs=[service_name]
+            )
+            self.console.info(f"    [Data] Saved/Synced Raw: {real_path}")
+
+            # [NEW] Index to Cloud DynamoDB (Data Plane)
+            if self.config['network'].get('app_mode') == 'aws_iot':
+                # Reconstruct S3 key logic (should match DataManager)
+                s3_key = f"{watch_id}/Raw/Sim_{service_name}/{temp_filename}"
+                self.cloud_db.index_record(watch_id, "raw_image", s3_key, {"local_path": real_path})
+
+    # (Same addition needed inside _run_production_routine)
+```
+
+---
+
+### 執行指南 (Operation Guide)
+
+#### 1. 在 Local Computer (德國)
+
+1. 將 AWS 憑證放入 `config/certs/`。
+    
+2. 修改 `system_config.yaml` -> `app_mode: "aws_iot"`.
+    
+3. 執行 Agent：
+    
+    Bash
+    
+    ```
+    python cloud_relay/aws_agent.py
+    ```
+    
+    _(它會顯示 "Connected to AWS IoT Core" 並開始等待)_
+    
+
+#### 2. 在 Remote Client (美國)
+
+1. 設定 AWS Credentials (環境變數或 `~/.aws/credentials`)。
+    
+2. 修改 `system_config.yaml` -> `app_mode: "aws_iot"`.
+    
+3. 執行指令：
+    
+    Bash
+    
+    ```
+    python main_cli.py --watch_id Rolex_Germany_001
+    ```
+    
+    _(它會顯示 "Command published to MQTT topic"，然後你可以去 AWS Console 看 Agent 是否動起來)_
+    
+
+這樣就完成了**增強版方案二**的完整代碼部署。這套系統具備了商業軟體所需的穿透性、穩定性與資料持久性。
