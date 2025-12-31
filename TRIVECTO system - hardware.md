@@ -6,7 +6,7 @@
 | [[#### 硬體驅動層（Hardware Driver Layer）]]          |     |
 | [[#### 硬體執行驅動層解釋]]                             |     |
 | [[#### Zaber API & Virtual Device Connection]] |     |
-|                                                |     |
+| [[#### APP UI連結Zaber 3D viewer]]               |     |
 |                                                |     |
 
 
@@ -1036,3 +1036,285 @@ class ZaberManager:
     - 你在 Ann Arbor 執行 `main_cli.py --command run_routine`。
         
     - 你的程式邏輯（對焦、HDR、流程）會正常跑，當跑到「移動平台」這一步時，你可以在瀏覽器上看到虛擬平台移動，確認你的座標計算邏輯是否正確（例如有沒有撞機、移動順序對不對）。
+
+
+
+
+#### APP UI連結Zaber 3D viewer
+```
+沒關係我可以不需要看到組裝後的樣子. 那我可以將在視窗上的5個device對應到我的系統裡開發的App? 我的App有個ui裡面有x direction的左右按鍵, y direction的上下按鍵, y direction的上升下降按鍵, 以及這些位移的長度(user輸入), 單位應該就是code裡面設定的. 還有兩個旋轉的按鍵就是控制兩個方向(以z-axis為軸旋轉跟以x-axis為軸旋轉)的旋轉(可以用按一次轉5degree(user可設定)). 如果要做到在ui上按鍵, 然後在網頁的5個device可以有相應的反應. 應該如何做呢
+```
+
+沒問題！這正是我們設計 **Client-Server 架構** 的核心價值。
+
+要達成你的需求：「在 UI 按下按鈕 $\rightarrow$ 透過 Python Code $\rightarrow$ 讓 Zaber 網頁上的虛擬裝置移動」，我們需要完成三個步驟。
+
+這就像是玩遙控車：
+
+1. **遙控車 (Controller Server)**：負責接收訊號並驅動馬達（這裡是驅動 Zaber Cloud）。
+    
+2. **遙控器 (UI App)**：負責發送指令（按一下 = 移動 5mm）。
+    
+3. **訊號 (Command)**：定義好「相對移動」的指令格式。
+    
+
+以下是具體實作步驟：
+
+---
+
+### 第一步：升級 `ZaberManager` (支援「相對移動」)
+
+你提到的「按一下移動 5mm」，這叫做 **相對移動 (Relative Move)**。我們原本的 `ZaberManager` 只支援「絕對移動」(移動到第 50mm 處)。我們需要在 `Controller/hardware_managers.py` 增加這個功能。
+
+**修改 `Controller/hardware_managers.py`：**
+
+Python
+
+```
+# ... (保留原本的 code)
+
+    def move_relative(self, axis_name, distance, wait=True):
+        """
+        [新增功能] 相對移動
+        axis_name: 'stage_L_X'
+        distance: 移動距離 (mm 或 degree), 負值代表反向
+        """
+        if axis_name not in self.mapping:
+            self.logger.error(f"Axis {axis_name} not found.")
+            return
+
+        device_idx = self.mapping[axis_name] - 1
+        if device_idx < len(self.device_list):
+            try:
+                device = self.device_list[device_idx]
+                axis = device.get_axis(1)
+                
+                self.logger.info(f"Moving {axis_name} relative by {distance}...")
+                # Zaber API 支援 move_relative
+                axis.move_relative(distance, Units.LENGTH_MILLIMETRES, wait_until_idle=wait)
+            except Exception as e:
+                self.logger.error(f"Relative Move Error: {e}")
+```
+
+---
+
+### 第二步：升級 `ControllerServer` (接收相對移動指令)
+
+接著，我們要讓 Server 看得懂 `'move_relative'` 這個新指令。
+
+**修改 `Controller/controller_server.py` 的 `process_command` 方法：**
+
+Python
+
+```
+# ... (保留前面的 code)
+
+    def process_command(self, cmd):
+        action = cmd.get('action')
+        # print(f"Executing: {action}") # Debug 用
+        
+        try:
+            # 1. 絕對移動 (原本的)
+            if action == 'move_stage':
+                self.zaber.move_axis(cmd['axis'], cmd['value'])
+                return {'status': 'ok'}
+
+            # 2. [新增] 相對移動 (UI 按鍵用)
+            elif action == 'move_relative':
+                # value 這裡是移動的增量 (例如 +5.0 或 -5.0)
+                self.zaber.move_relative(cmd['axis'], cmd['value'])
+                return {'status': 'ok'}
+
+            # ... (保留其他的 light, capture 等)
+```
+
+---
+
+### 第三步：開發 UI App (`app_ui.py`)
+
+為了讓你直接測試，我寫了一個簡單的 **GUI 控制面板** (使用 Python 內建的 `tkinter`，不需額外安裝)。這個 App 會模擬你未來的正式系統 UI。
+
+**建立檔案 `Controller/app_ui.py`：**
+
+Python
+
+```
+import tkinter as tk
+from tkinter import ttk
+import json
+import socket
+
+# --- 模擬 ControllerClient (簡化版) ---
+class SimpleClient:
+    def __init__(self, host='127.0.0.1', port=5000, token='SECRET_WATCH_2025'):
+        self.host = host
+        self.port = port
+        self.token = token
+
+    def send(self, command_dict):
+        """發送指令給 controller_server.py"""
+        command_dict['token'] = self.token
+        try:
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                s.settimeout(3) # 避免卡死
+                s.connect((self.host, self.port))
+                
+                data = json.dumps(command_dict).encode('utf-8')
+                # 簡單協議：先送 4 bytes 長度
+                s.sendall(len(data).to_bytes(4, 'big') + data)
+                
+                # 接收回應
+                header = s.recv(4)
+                if not header: return {}
+                resp_len = int.from_bytes(header, 'big')
+                resp_data = b""
+                while len(resp_data) < resp_len:
+                    packet = s.recv(resp_len - len(resp_data))
+                    if not packet: break
+                    resp_data += packet
+                return json.loads(resp_data.decode('utf-8'))
+        except Exception as e:
+            print(f"[Client Error] {e}")
+            return {'status': 'error', 'msg': str(e)}
+
+# --- UI 主程式 ---
+class ControlApp:
+    def __init__(self, root):
+        self.client = SimpleClient()
+        self.root = root
+        self.root.title("Rolex System Controller (IoT Simulation)")
+        
+        # 設定預設移動步長
+        self.linear_step = tk.DoubleVar(value=10.0)  # mm
+        self.angle_step = tk.DoubleVar(value=5.0)    # degree
+
+        self._build_ui()
+
+    def _build_ui(self):
+        # 1. 設定區域
+        setting_frame = ttk.LabelFrame(self.root, text="Settings")
+        setting_frame.pack(padx=10, pady=5, fill="x")
+        
+        ttk.Label(setting_frame, text="Linear Step (mm):").pack(side="left", padx=5)
+        ttk.Entry(setting_frame, textvariable=self.linear_step, width=5).pack(side="left")
+        
+        ttk.Label(setting_frame, text="Angle Step (deg):").pack(side="left", padx=5)
+        ttk.Entry(setting_frame, textvariable=self.angle_step, width=5).pack(side="left")
+
+        # 2. X/Y/Z 控制區 (Linear)
+        xyz_frame = ttk.LabelFrame(self.root, text="XYZ Stage Control")
+        xyz_frame.pack(padx=10, pady=5, fill="both")
+
+        # Grid layout for buttons
+        # Y Axis (Up/Down in real world, usually Y is Forward/Back or Left/Right depending on definition)
+        # 這裡假設: X=左右, Y=前後, Z=上下
+        
+        # Y Control
+        ttk.Button(xyz_frame, text="Y Back (-)", command=lambda: self.move("stage_L_Y", -1)).grid(row=0, column=1, pady=5)
+        ttk.Button(xyz_frame, text="Y Fwd (+)", command=lambda: self.move("stage_L_Y", 1)).grid(row=2, column=1, pady=5)
+        
+        # X Control
+        ttk.Button(xyz_frame, text="X Left (-)", command=lambda: self.move("stage_L_X", -1)).grid(row=1, column=0, padx=5)
+        ttk.Button(xyz_frame, text="X Right (+)", command=lambda: self.move("stage_L_X", 1)).grid(row=1, column=2, padx=5)
+
+        # Z Control (Separate column)
+        ttk.Separator(xyz_frame, orient='vertical').grid(row=0, column=3, rowspan=3, sticky='ns', padx=10)
+        ttk.Label(xyz_frame, text="Z-Axis").grid(row=0, column=4)
+        ttk.Button(xyz_frame, text="Z Up (+)", command=lambda: self.move("stage_L_Z", 1)).grid(row=1, column=4, pady=5)
+        ttk.Button(xyz_frame, text="Z Down (-)", command=lambda: self.move("stage_L_Z", -1)).grid(row=2, column=4, pady=5)
+
+        # 3. 旋轉控制區 (Rotation)
+        rot_frame = ttk.LabelFrame(self.root, text="Rotation Control")
+        rot_frame.pack(padx=10, pady=5, fill="both")
+
+        # Rotate Z
+        ttk.Label(rot_frame, text="Rot Z (Table):").grid(row=0, column=0, padx=5)
+        ttk.Button(rot_frame, text="CCW (-)", command=lambda: self.rotate("stage_R_Z", -1)).grid(row=0, column=1, padx=5)
+        ttk.Button(rot_frame, text="CW (+)", command=lambda: self.rotate("stage_R_Z", 1)).grid(row=0, column=2, padx=5)
+
+        # Rotate X
+        ttk.Label(rot_frame, text="Rot X (Arm):").grid(row=1, column=0, padx=5)
+        ttk.Button(rot_frame, text="Up (-)", command=lambda: self.rotate("stage_R_X", -1)).grid(row=1, column=1, padx=5, pady=5)
+        ttk.Button(rot_frame, text="Down (+)", command=lambda: self.rotate("stage_R_X", 1)).grid(row=1, column=2, padx=5, pady=5)
+
+    def move(self, axis, direction):
+        step = self.linear_step.get()
+        val = step * direction
+        print(f"UI: Move {axis} by {val} mm")
+        self.client.send({'action': 'move_relative', 'axis': axis, 'value': val})
+
+    def rotate(self, axis, direction):
+        step = self.angle_step.get()
+        val = step * direction
+        print(f"UI: Rotate {axis} by {val} deg")
+        self.client.send({'action': 'move_relative', 'axis': axis, 'value': val})
+
+if __name__ == "__main__":
+    root = tk.Tk()
+    app = ControlApp(root)
+    root.mainloop()
+```
+
+---
+
+### 第四步：如何執行與測試
+
+現在，這就是你的「模擬控制中心」。
+
+1. 啟動 Server (Backend)：
+    
+    打開一個終端機 (Terminal)，確認 system_config.yaml 裡面的 Zaber 是 iot 模式。
+    
+    Bash
+    
+    ```
+    python Controller/controller_server.py
+    ```
+    
+    _你會看到它顯示連接上 Zaber Cloud，並開始 Listening on port 5000。_
+    
+2. 啟動 UI App (Frontend)：
+    
+    打開另一個終端機。
+    
+    Bash
+    
+    ```
+    python Controller/app_ui.py
+    ```
+    
+    _你會看到一個視窗，上面有 X, Y, Z 和旋轉的按鈕。_
+    
+3. 打開 Zaber 網頁：
+    
+    將瀏覽器視窗和 UI 視窗並排。
+    
+4. **開始操作**：
+    
+    - 在 UI 上點擊 **"X Right (+)"**。
+        
+    - **觀察**：
+        
+        1. UI Terminal 顯示：`UI: Move stage_L_X by 10.0 mm`。
+            
+        2. Server Terminal 顯示：`Executing: move_relative`。
+            
+        3. **瀏覽器畫面**：Device 1 (X軸) 往右移動了！
+            
+    - 試著修改上面的 "Linear Step" 為 `50`，再按一次，它就會移動更長的距離。
+        
+    - 試著按 **"Rot Z CW (+)"**，你會看到 Device 4 開始旋轉。
+        
+
+### 這代表了什麼？
+
+你剛剛成功模擬了整個 **App $\leftrightarrow$ Server $\leftrightarrow$ Hardware** 的完整迴路。
+
+- **App**: 代表你未來開發的 User Interface。
+    
+- **Server**: 代表在 Local Computer 上運行的控制核心。
+    
+- **Browser**: 代表真實的硬體反應。
+    
+
+當未來你的真實硬體（Zaber）到貨時，你只需要把 `system_config.yaml` 改回 `serial` 模式，**這套 UI 和 Server 程式碼一行都不用改**，就能直接控制真實的機器手臂！
