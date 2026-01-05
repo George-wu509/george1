@@ -1,10 +1,10 @@
 
 
-|                      |     |
-| -------------------- | --- |
-| [[#### 新DynamoDB架構]] |     |
-|                      |     |
-|                      |     |
+|                                |     |
+| ------------------------------ | --- |
+| [[#### 新DynamoDB架構]]           |     |
+| [[#### 三個DynamoDB的files跟DB內容]] |     |
+|                                |     |
 
 
 #### 新DynamoDB架構
@@ -147,3 +147,314 @@
 #### 3. 新增 `TemplateManager` 的同步邏輯 (Sync Logic)
 
 你需要一個明確的同步機制。
+
+
+
+#### 三個DynamoDB的files跟DB內容
+```
+請中文詳細解釋這個system跟DynamoDB相關的所有files包括DB本身, 設定或相關python files, 並中文解釋每個file跟其中的class, functions的作用, 並詳細解釋他們之間是如何合作執行DynamoDB以及跟cloud的關係. 並具體舉例說明. 並詳細描述三個DynamoDB一筆資料的內容
+```
+
+這是一個非常宏大的系統架構問題。作為 Tech Lead，我將為你詳細解構這個 **「混合雲端架構 (Hybrid Cloud Architecture)」** 中，DynamoDB 如何作為核心神經系統運作。
+
+這個系統的設計哲學是：**「在地執行 (Local Execution)，雲端管理 (Cloud Management)，非同步同步 (Async Sync)」**。
+
+---
+
+### 第一部分：三個 DynamoDB Tables 的具體內容與結構
+
+在 AWS DynamoDB 中，我們建立了三個 Table，分別對應系統的三大支柱：**配置 (Configuration)**、**數據 (Data)**、**控制 (Control)**。
+
+#### 1. `WatchTemplates` (拍攝腳本庫)
+
+這是一本「食譜」，定義了每種手錶系列該如何拍攝。
+
+- **性質**：設定檔 (Configuration)。
+    
+- **讀寫模式**：雲端寫入 (管理員)，本地讀取 (機台)。
+    
+- **資料結構範例**：
+    
+    - **PK (Partition Key)**: `series_name` (e.g., `"Rolex_Submariner"`)
+        
+    - **SK (Sort Key)**: `version` (e.g., `"v1"`)
+        
+    - **Attributes (內容)**: 一個巨大的 JSON，包含 `views` (視角) -> `parts` (部位) -> `HardwareParameters` (馬達座標、曝光)。
+        
+    
+    JSON
+    
+    ```
+    {
+      "series_name": "Rolex_Submariner",
+      "version": "v1",
+      "Brand": "Rolex",
+      "views": {
+        "Front": {
+          "glasspoint": {
+            "X": 50.5, "Y": 100.2, "Z": 30.0,
+            "camused": "micro_cam_id",
+            "exptimes": [5000, 15000] // HDR
+          },
+          "crown": { "X": 10.0, ... }
+        }
+      }
+    }
+    ```
+    
+
+#### 2. `WatchAnalysisResults` (數位雙生資料庫)
+
+這是每支手錶的「履歷」，紀錄了它被拍攝的所有細節。採用 **Split-Key (分拆鍵)** 設計以避開 DynamoDB 400KB 限制。
+
+- **性質**：歷史紀錄 (Immutable Record)。
+    
+- **讀寫模式**：本地寫入 (緩衝)，背景上傳雲端。
+    
+- **資料結構範例 (一支手錶會有多筆資料)**：
+    
+    - **Item 1 (基本資料)**:
+        
+        - **PK**: `"Rolex_Sub_SN12345"` (WatchID)
+            
+        - **SK**: `"INFO"`
+            
+        - **Attr**: `{"Brand": "Rolex", "Authenticity": "Real", "EntryTime": 170000...}`
+            
+    - **Item 2 (正面-鏡面照片紀錄)**:
+        
+        - **PK**: `"Rolex_Sub_SN12345"`
+            
+        - **SK**: `"VIEW#Front"`
+            
+        - **Attr**:
+            
+            JSON
+            
+            ```
+            {
+              "glasspoint": {
+                "topID": "a1b2c3d4...", // 圖片的 Hex ID
+                "s3_key": "Rolex/Raw/Front/glass.jpg",
+                "X": 50.5, // 實際拍攝時的座標
+                "status": "captured"
+              }
+            }
+            ```
+            
+    - **Item 3 (材質分析)**:
+        
+        - **PK**: `"Rolex_Sub_SN12345"`
+            
+        - **SK**: `"MAT#Case-Body"`
+            
+        - **Attr**: `{"materialconcentration": [0.9, 0.05...], "alloytype": "904L"}`
+            
+
+#### 3. `WatchCommandLog` (指令中介站)
+
+這是遠端控制的「信箱」。
+
+- **性質**：指令佇列 (Command Queue)。
+    
+- **讀寫模式**：Remote Client 寫入，Local Agent 讀取並更新狀態。
+    
+- **資料結構範例**：
+    
+    - **PK**: `"Rolex_Station_001"` (DeviceID)
+        
+    - **SK**: `"cmd_uuid_5678"`
+        
+    - **Attributes**:
+        
+        - `action`: `"run_routine"`
+            
+        - `payload`: `{"watch_id": "Rolex_Sub_SN12345", "routine": "Rolex_Submariner"}`
+            
+        - `state`: `"submitted"` -> `"accepted"` -> `"completed"`
+            
+
+---
+
+### 第二部分：相關檔案與其職責詳解
+
+這些 Python 檔案共同構成了一個「資料管線 (Data Pipeline)」。
+
+#### 1. 設定層
+
+- **`config/system_config.yaml`**
+    
+    - **作用**：系統的總設定檔。
+        
+    - **DynamoDB 相關設定**：定義了上述三個 Table 的名稱 (`template_table`, `dynamodb_table`, `command_table`) 以及 AWS Region。這讓程式碼與特定 Table 解耦，方便測試環境與生產環境切換。
+        
+
+#### 2. 資料定義層 (Model Layer)
+
+- **`core/models/shared_structures.py`**
+    
+    - **Class `HardwareParameters`**: 定義了「硬體怎麼動」的標準格式 (X, Y, Z, Exposure)。Template 用它來下令，Result 用它來紀錄。
+        
+- **`core/models/template_structure.py`**
+    
+    - **Class `WatchTemplate`**: 定義 `WatchTemplates` DB 的資料結構。
+        
+- **`core/models/watch_structure.py`**
+    
+    - **Class `WatchRecord`**: 定義 `WatchAnalysisResults` DB 的資料結構 (數位雙生)，包含 View, Material 等巢狀結構。
+        
+
+#### 3. 雲端介面層 (Cloud Interface)
+
+- **`data_manager/cloud_db.py`**
+    
+    - **作用**：唯一有權限直接呼叫 AWS Boto3 SDK 連接 DynamoDB 的模組。
+        
+    - **關鍵 Functions**:
+        
+        - `scan_all_templates()`: 下載雲端所有腳本 (用於同步)。
+            
+        - `index_record(pk, sk, meta)`: 將一筆拍攝紀錄寫入 `WatchAnalysisResults`。
+            
+        - `put_command_state()`: 更新指令狀態 (例如從 submitted 變成 running)。
+            
+        - `put_item_split()`: 支援 Split-Key 寫入策略，把大物件拆成多筆 DynamoDB Items。
+            
+
+#### 4. 本地快取層 (Local Cache)
+
+- **`DB/db_manager.py`**
+    
+    - **作用**：本地的 SQLite 資料庫。它是雲端的「緩衝區 (Buffer)」與「快取 (Cache)」。
+        
+    - **關鍵 Functions**:
+        
+        - `insert_raw_image(synced=0)`: 拍照瞬間呼叫此函式。資料**秒存**入 SSD，標記為未同步。這讓相機不用等網路。
+            
+        - `get_pending_uploads()`: 撈出所有 `synced=0` 的資料，準備上傳。
+            
+        - `save_local_template()`: 將從雲端下載的 Template 存入 SQLite，供斷網時使用。
+            
+        - `get_local_template()`: 執行時只讀這裡，確保毫秒級回應。
+            
+
+#### 5. 同步層 (The Bridge)
+
+- **`data_manager/cloud_sync.py`**
+    
+    - **作用**：背景執行緒 (Background Thread)，負責將 Local 資料搬到 Cloud。
+        
+    - **關鍵 Logic (`_worker_loop`)**:
+        
+        1. 每隔幾秒呼叫 `db_manager.get_pending_uploads()`。
+            
+        2. 發現有未同步照片 -> 上傳 S3。
+            
+        3. 上傳成功 -> 呼叫 `cloud_db.index_record()` 寫入 DynamoDB。
+            
+        4. 寫入成功 -> 更新 Local DB `synced=1`。
+            
+
+#### 6. 業務邏輯層 (Business Logic)
+
+- **`core/template_manager.py`**
+    
+    - **作用**：管理腳本的「大腦」。
+        
+    - **關鍵 Functions**:
+        
+        - `sync_from_cloud()`: 呼叫 `cloud_db` 下載 -> 呼叫 `db_manager` 存入 SQLite。
+            
+        - `get_template()`: **只從** `db_manager` (Local) 讀取。
+            
+        - `create_from_history()`: 讀取 `cloud_db` 的歷史紀錄 -> 轉換為 Template -> 存回 Cloud。
+            
+- **`core/watch_record_manager.py`**
+    
+    - **作用**：管理數位雙生資料結構。
+        
+    - **關鍵 Functions**:
+        
+        - `update_imaging_part()`: 當 `WorkflowManager` 拍完一張照，呼叫此函式更新記憶體中的資料結構，並觸發 Local DB 寫入。
+            
+
+#### 7. 執行層 (Orchestrator)
+
+- **`core/workflow_manager.py`**
+    
+    - **作用**：總指揮。
+        
+    - **與 DB 的互動**:
+        
+        1. 初始化時，啟動 `cloud_sync`。
+            
+        2. 執行 `run_routine` 時，呼叫 `template_mgr` 拿腳本 (Local)。
+            
+        3. 每拍一張照 (`_perform_smart_step`)，呼叫 `data_mgr` 寫入 Local DB。
+            
+        4. 同時呼叫 `watch_rec_mgr` 更新數位雙生結構。
+            
+
+---
+
+### 第三部分：合作執行流程舉例
+
+讓我們用一個具體的例子：**「在德國機台執行 Rolex Submariner 的自動檢測」**。
+
+#### 階段 1: 同步 (Sync Phase) - 發生在早上開機時
+
+1. **Operator** 執行指令 `python main_cli.py --command sync_templates`。
+    
+2. **`WorkflowManager`** 呼叫 **`TemplateManager.sync_from_cloud()`**。
+    
+3. **`TemplateManager`** 呼叫 **`CloudDatabaseManager.scan_all_templates()`**。
+    
+4. **`CloudDatabaseManager`** 連線 AWS DynamoDB `WatchTemplates`，下載所有 JSON。
+    
+5. **`TemplateManager`** 將下載的 JSON 透過 **`DatabaseManager.save_local_template()`** 存入德國電腦的 SQLite。
+    
+    - _結果_：現在德國電腦裡有最新的 Rolex 腳本，就算網路斷了也能跑。
+        
+
+#### 階段 2: 執行與緩衝 (Execution Phase) - 發生在檢測時
+
+1. **Operator** 執行 `python main_cli.py --command run_routine ...`。
+    
+2. **`WorkflowManager`** 從 SQLite 讀取腳本。
+    
+3. **`WorkflowManager`** 控制 Zaber 馬達移動、相機拍照 (HDR)。
+    
+4. **`WorkflowManager`** 拿到照片 (Image) 與 參數 (Metadata)。
+    
+5. **`WorkflowManager`** 呼叫 **`DataManager.process_and_sync_raw_image()`**。
+    
+6. **`DataManager`** 呼叫 **`DatabaseManager.insert_raw_image(synced=0)`**。
+    
+    - _關鍵_：資料瞬間寫入 SSD 的 SQLite，程式立刻繼續拍下一張。**完全不與 AWS 溝通**。
+        
+
+#### 階段 3: 背景同步 (Async Sync Phase) - 持續在背景發生
+
+1. **`CloudSyncManager`** 的 `_worker_loop` 醒來，問 SQLite：「有沒傳的資料嗎？」
+    
+2. SQLite 回傳：「有，剛剛拍的那張 GlassPoint」。
+    
+3. **`CloudSyncManager`** 將照片上傳到 AWS S3。
+    
+4. 上傳成功後，**`CloudSyncManager`** 呼叫 **`CloudDatabaseManager.index_record()`**。
+    
+5. **`CloudDatabaseManager`** 將 Metadata (PK=WatchID, SK=VIEW#Front) 寫入 AWS DynamoDB `WatchAnalysisResults`。
+    
+6. 寫入成功後，**`CloudSyncManager`** 告訴 SQLite 把該筆資料標記為 `synced=1`。
+    
+
+#### 階段 4: 遠端查詢 (Remote Query Phase) - LA 的經理
+
+1. LA 的經理打開 Dashboard。
+    
+2. Dashboard 透過 API 查詢 AWS DynamoDB `WatchAnalysisResults`。
+    
+3. 因為德國的資料已經（幾秒延遲後）同步上來了，經理看到了最新的檢測結果。
+    
+
+這就是整個系統如何利用 **Local-First** 策略，達成高效、穩定且可全球協作的 DynamoDB 整合。
