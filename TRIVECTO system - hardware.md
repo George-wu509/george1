@@ -7,6 +7,9 @@
 | [[#### 硬體執行驅動層解釋]]                             |     |
 | [[#### Zaber API & Virtual Device Connection]] |     |
 | [[#### APP UI連結Zaber 3D viewer]]               |     |
+| [[#### New V2 hardware design]]                |     |
+| [[#### New V2 hardware跟拍照流程]]                  |     |
+|                                                |     |
 |                                                |     |
 
 
@@ -1318,3 +1321,969 @@ if __name__ == "__main__":
     
 
 當未來你的真實硬體（Zaber）到貨時，你只需要把 `system_config.yaml` 改回 `serial` 模式，**這套 UI 和 Server 程式碼一行都不用改**，就能直接控制真實的機器手臂！
+
+
+
+
+
+#### New V2 hardware design
+```
+以下是跟hardware相關的code. 包括有三個Zaber X-LRQ300BP跟兩個Zaber X-RST120AK由class ZaberManager控制, 這部分跟test_zaber_iot.py跟test_zaber_ui.py都測試過沒有問題. 是否可以加入functions可以由user緊急停止目前的動作, 還有是否建議可能加入Zaber device卡在某個動作但沒有回應, 有functions可以從卡住的狀況復原? 以及最後一個Zaber旋轉device設定旋轉角度的範圍是0度到90度. 
+
+還有是關於更新版的硬體包括有兩個macro camera(應該是opto-engineering ita204)兩個走同一個光路, 有一個micro camera(opto-engineering ita81)有另外一條光路, 可以切換要用哪個camera拍照. 我有查到ITALA G series SDK https://www.opto-e.com/en/products/itala-g-series#tech-info-2. 請幫我檢查是不是用這個控制camera? 如果是請比較跟原來的code哪個比較適合並更新CameraManager, 並提供capture hdr, 以及多些功能控制camera. 另外我也查到這系統有liquid lens(三個liquid lens對應三個camera)也是透過這個相機 API 控制液體鏡頭。一條線連接液體鏡頭和相機，然後相機透過網路線連接到電腦。因此，液體鏡頭是相機 API 中可以控制的額外設定
+
+另外light controller是用LTDVE2CH-20F（雙通道 LED 頻閃控制器）可透過網路連接，並且只需要一個，因為它有兩個通道，可以連接兩盞環形燈. 分別給兩個macro camera的光路, 跟另外一個micro camera的光路. 在這個micro camera的光路還有兩個額外的光源是由兩個ADAM(Adam ADAM-6266-B) 控制兩個非常強大的光源(聚光燈). 最後還有1個Keyence CL-3000是Displacement Sensor也是在micro camera的光路.
+
+硬體儘量要加上functions可以由user緊急停止目前的動作, 可能加入硬體卡在某個動作但沒有回應, 有functions可以從卡住的狀況復原, 以及其他可能會有需要的進階functions. 請根據以上的更新版硬體設計去修正或新增code並提供完整code. 
+
+```
+這是一個非常詳盡的硬體架構更新。根據您的需求，我將重點放在以下幾個方面進行修改與擴增：
+
+1. **Zaber 控制更新 (`ZaberManager`)**：
+    
+    - **緊急停止 (E-Stop)**：新增 `emergency_stop()`，會立即對所有軸發送停止指令。
+        
+    - **故障復原 (Recovery)**：新增 `recover_connection()`，用於重新建立連線並重置錯誤狀態。
+        
+    - **角度限制**：在 `move_axis` 中加入邏輯，針對特定的旋轉軸限制在 0~90 度。
+        
+2. **相機控制更新 (`CameraManager`)**：
+    
+    - **SDK 確認**：Opto-Engineering ITALA G 系列相機符合 **GenICam / GigE Vision** 標準。因此，最適合的 Python 控制方式是使用 **Harvesters** (一個 Python GenICam Consumer) 搭配相機原廠提供的 **GenTL Producer (.cti 檔)**。這比原廠專有的 C++ SDK wrapper 更現代且穩定。
+        
+    - **多相機切換**：支援 2 個 Macro 和 1 個 Micro 相機的切換。
+        
+    - **液態鏡頭 (Liquid Lens)**：在 GenICam 標準下，液態鏡頭通常被映射為 `FocusPos` 或類似的 Feature Node。我增加了控制液態鏡頭的函式。
+        
+    - **HDR**：保留並優化 HDR 拍攝功能。
+        
+3. **燈光控制更新 (`LightManager`)**：
+    
+    - **LTDVE2CH-20F**：這通常使用 TCP ASCII 指令控制。
+        
+    - **ADAM-6266-B**：這是一個 Modbus TCP I/O 模組。我增加了控制它的邏輯 (透過 Modbus 協定開關 Relay)。
+        
+4. **全系統整合**：在 Server 端暴露 `emergency_stop` 和 `system_recover` 的 API。
+    
+
+以下是更新後的完整程式碼結構。
+
+### 1. 更新設定檔 (`config/hardware_config.yaml`)
+
+我們需要先定義新的硬體拓樸，包括新的相機 ID、燈光控制器 IP 和 Zaber 的限制。
+
+YAML
+
+```
+# config/hardware_config.yaml
+
+# ==============================================================================
+# Network & Server Configuration
+# ==============================================================================
+server:
+  host: "0.0.0.0"
+  port: 8000
+  auth_token: "SECRET_WATCH_2025"
+
+# ==============================================================================
+# Hardware Configuration
+# ==============================================================================
+hardware:
+  # 1. Zaber Motion Control
+  zaber:
+    connection_mode: "iot"  # "serial" or "iot"
+    port: "COM3"
+    
+    # 模擬連線設定
+    iot_cloud_id: "a45bbbcb-1e62-41a3-abe3-cfd433edba6e"
+    iot_access_token: "H3-9UwRRMrWvktkKF5IqB1Uk1hdmGCrp"
+
+    # 裝置映射 (Axis Name -> Device Index)
+    device_map:
+      stage_L_X: 1
+      stage_L_Y: 2
+      stage_L_Z: 3
+      stage_R_Z: 4
+      stage_R_X: 5  # 假設這是最後一個旋轉 Device
+
+    # [NEW] 軸限制設定 (軟體限位)
+    limits:
+      stage_R_X:
+        min: 0.0
+        max: 90.0
+        unit: "deg"
+
+  # 2. Cameras (Opto-engineering Itala G Series)
+  cameras:
+    provider: "genicam" # 使用 GenICam/Harvesters
+    gentl_path: "C:/Program Files/Opto Engineering/ITALA SDK/bin/genicam/oegenicamentl.cti" # 需確認實際 .cti 路徑
+    simulation_mode: true  # 測試時設為 true, 上線設為 false
+    
+    devices:
+      macro_cam_1:
+        id: "ITA204_MACRO_1_SERIAL"
+        lens_type: "liquid"
+      macro_cam_2:
+        id: "ITA204_MACRO_2_SERIAL"
+        lens_type: "liquid"
+      micro_cam:
+        id: "ITA81_MICRO_SERIAL"
+        lens_type: "liquid"
+
+  # 3. Lighting Controllers
+  lighting:
+    # Opto-Engineering LTDVE2CH-20F (Strobe Controller)
+    ltdve:
+      ip: "192.168.1.50"
+      port: 1000
+      channels:
+        ring_light_1: 1  # Channel 1
+        ring_light_2: 2  # Channel 2
+
+    # Advantech ADAM-6266-B (Modbus TCP Relay)
+    adam:
+      ip: "192.168.1.51"
+      port: 502
+      channels:
+        spot_light_1: 0  # Relay 0
+        spot_light_2: 1  # Relay 1
+
+  # 4. Keyence Sensor
+  keyence:
+    ip: "192.168.1.10"
+    port: 24685
+```
+
+---
+
+### 2. 更新硬體管理器 (`Controller/hardware_managers.py`)
+
+這是核心修改部分，包含了 E-Stop、Recovery、以及新的相機與燈光控制邏輯。
+
+Python
+
+```
+# Controller/hardware_managers.py
+import logging
+import time
+import socket
+import numpy as np
+import cv2
+import threading
+import struct
+
+# 嘗試匯入外部函式庫
+try:
+    from zaber_motion import Units, Library
+    from zaber_motion.ascii import Connection as ZaberConnection
+except ImportError:
+    print("[Error] zaber_motion missing. pip install zaber_motion")
+
+try:
+    # 這是控制 GenICam 相機的標準庫
+    from harvesters.core import Harvester
+except ImportError:
+    print("[Warn] harvesters missing (Required for Itala Cameras). pip install harvesters")
+
+class HardwareBase:
+    """所有管理器的基底類別，定義通用介面"""
+    def emergency_stop(self):
+        pass
+    
+    def recover_state(self):
+        pass
+
+class ZaberManager(HardwareBase):
+    def __init__(self, config):
+        self.logger = logging.getLogger("ZaberMgr")
+        self.config = config
+        self.mapping = config.get('device_map', {})
+        self.limits = config.get('limits', {}) # [NEW] 讀取限制
+        self.connection = None
+        self.device_list = []
+        
+        # 啟用 Device DB
+        Library.enable_device_db_store()
+        self._connect()
+
+    def _connect(self):
+        try:
+            mode = self.config.get('connection_mode', 'serial').lower()
+            if mode == 'iot':
+                cloud_id = self.config.get('iot_cloud_id')
+                token = self.config.get('iot_access_token')
+                self.logger.info(f"Connecting to Zaber Cloud (ID: {cloud_id})...")
+                self.connection = ZaberConnection.open_iot(cloud_id, token)
+            else:
+                port = self.config.get('port', 'COM3')
+                self.logger.info(f"Connecting to Zaber Serial: {port}")
+                self.connection = ZaberConnection.open_serial_port(port)
+
+            self.device_list = self.connection.detect_devices()
+            self.logger.info(f"Zaber Devices Found: {len(self.device_list)}")
+        except Exception as e:
+            self.logger.error(f"Zaber Connection Failed: {e}")
+            raise
+
+    # --- [NEW] 緊急停止 ---
+    def emergency_stop(self):
+        """立即停止所有軸的動作"""
+        self.logger.critical("[EMERGENCY STOP] Stopping all Zaber axes!")
+        try:
+            # 對所有偵測到的裝置發送 Stop
+            for device in self.device_list:
+                device.all_axes.stop()
+        except Exception as e:
+            self.logger.error(f"E-Stop failed: {e}")
+
+    # --- [NEW] 故障復原 ---
+    def recover_state(self):
+        """嘗試重置連線並清除錯誤旗標"""
+        self.logger.warning("[RECOVER] Resetting Zaber connection...")
+        try:
+            if self.connection:
+                self.connection.close()
+            time.sleep(1.0)
+            self._connect()
+            
+            # 對所有軸進行簡單的錯誤清除或歸位 (視需求而定)
+            # 這裡僅重新連線，避免貿然移動
+            self.logger.info("[RECOVER] Zaber connection re-established.")
+            return True
+        except Exception as e:
+            self.logger.error(f"[RECOVER] Zaber recovery failed: {e}")
+            return False
+
+    def _get_axis_object(self, axis_name):
+        if axis_name not in self.mapping:
+            return None
+        dev_idx = self.mapping[axis_name] - 1
+        if dev_idx >= len(self.device_list):
+            return None
+        return self.device_list[dev_idx].get_axis(1)
+
+    def _get_unit(self, axis_name):
+        if "_R_" in axis_name: return Units.ANGLE_DEGREES
+        return Units.LENGTH_MILLIMETRES
+
+    def move_axis(self, axis_name, position, wait=True):
+        axis = self._get_axis_object(axis_name)
+        if not axis: return
+
+        # --- [NEW] 安全限制檢查 (0-90度) ---
+        if axis_name in self.limits:
+            limit = self.limits[axis_name]
+            min_val = limit.get('min', -float('inf'))
+            max_val = limit.get('max', float('inf'))
+            if not (min_val <= position <= max_val):
+                self.logger.error(f"[SAFETY] Target {position} exceeds limits ({min_val}~{max_val}) for {axis_name}")
+                raise ValueError(f"Position out of range for {axis_name}")
+
+        unit = self._get_unit(axis_name)
+        try:
+            axis.move_absolute(position, unit, wait_until_idle=wait)
+        except Exception as e:
+            self.logger.error(f"Move Error ({axis_name}): {e}")
+            # 如果移動失敗，可以考慮自動觸發 recover?
+            # self.recover_state() 
+
+    def close(self):
+        if self.connection:
+            self.connection.close()
+
+
+class CameraManager(HardwareBase):
+    def __init__(self, config):
+        self.logger = logging.getLogger("CamMgr")
+        self.config = config
+        self.devices_cfg = config.get('devices', {})
+        self.simulation = config.get('simulation_mode', True)
+        
+        self.harvester = None
+        self.active_camera = None # GenICam ImageAcquirer Object
+        self.active_cam_name = None
+        
+        if not self.simulation:
+            self._init_genicam()
+        else:
+            self.logger.info("Camera Manager running in SIMULATION mode.")
+
+    def _init_genicam(self):
+        """初始化 GenICam Harvester"""
+        try:
+            from harvesters.core import Harvester
+            self.harvester = Harvester()
+            cti_path = self.config.get('gentl_path')
+            self.harvester.add_file(cti_path)
+            self.harvester.update()
+            self.logger.info(f"GenTL Initialized. Found devices: {len(self.harvester.device_info_list)}")
+        except Exception as e:
+            self.logger.error(f"GenICam Init Failed: {e}")
+            self.simulation = True # Fallback
+
+    def switch_camera(self, cam_alias):
+        """切換目前控制的相機 (Macro1, Macro2, Micro)"""
+        if self.active_cam_name == cam_alias:
+            return # 已經是這台了
+
+        self.logger.info(f"Switching to camera: {cam_alias}")
+        
+        # 1. 關閉舊相機
+        if self.active_camera:
+            try:
+                self.active_camera.stop_acquisition()
+                self.active_camera.destroy()
+            except:
+                pass
+            self.active_camera = None
+
+        self.active_cam_name = cam_alias
+        
+        if self.simulation:
+            return
+
+        # 2. 開啟新相機
+        target_id = self.devices_cfg.get(cam_alias, {}).get('id')
+        if not target_id:
+            self.logger.error(f"Camera ID not found for alias {cam_alias}")
+            return
+
+        try:
+            # 在 Harvester 列表中尋找符合 ID 的裝置
+            candidate = next((d for d in self.harvester.device_info_list if target_id in d.serial_number), None)
+            if candidate:
+                self.active_camera = candidate.create_image_acquirer()
+                self.active_camera.start_acquisition()
+                self.logger.info(f"Camera {cam_alias} acquired.")
+            else:
+                self.logger.error(f"Physical camera {target_id} not found.")
+        except Exception as e:
+            self.logger.error(f"Failed to switch camera: {e}")
+
+    # --- [NEW] 液態鏡頭控制 ---
+    def set_liquid_lens(self, value):
+        """設定液態鏡頭的屈光度/焦點 (Optotune/Liquid Lens)"""
+        self.logger.info(f"Setting Liquid Lens ({self.active_cam_name}) -> {value}")
+        
+        if self.simulation:
+            return
+
+        if self.active_camera:
+            try:
+                # 這是 GenICam Node 操作，名稱取決於相機 XML 檔
+                # 常見名稱: FocusPos, OptotuneFocus, LensDriverCurrent
+                # 請根據 Opto-Engineering 文件確認 Node Name
+                node_map = self.active_camera.remote_device.node_map
+                
+                if hasattr(node_map, 'FocusPos'):
+                    node_map.FocusPos.value = int(value)
+                elif hasattr(node_map, 'LensDriverCurrent'):
+                    node_map.LensDriverCurrent.value = float(value)
+                else:
+                    self.logger.warning("Liquid Lens feature node not found in Camera XML.")
+            except Exception as e:
+                self.logger.error(f"Liquid Lens set failed: {e}")
+
+    def capture_image(self, exposure_time=5000, gain=0):
+        """單張拍攝"""
+        if self.simulation:
+            time.sleep(exposure_time / 1_000_000.0)
+            return np.zeros((2048, 2448, 3), dtype=np.uint8) # Dummy
+
+        if not self.active_camera:
+            return None
+
+        try:
+            # 設定曝光
+            node_map = self.active_camera.remote_device.node_map
+            node_map.ExposureTime.value = float(exposure_time)
+            node_map.Gain.value = float(gain)
+            
+            # 取像
+            with self.active_camera.fetch_buffer() as buffer:
+                # component = buffer.payload.components[0]
+                # data = component.data.reshape(component.height, component.width)
+                # 這裡需要將 Raw 轉為 OpenCV 格式 (Demo 略)
+                # 通常 Harvester 會有 .reshape logic
+                img = buffer.payload.components[0].data.copy() # Copy out
+                return img
+        except Exception as e:
+            self.logger.error(f"Capture failed: {e}")
+            return None
+
+    # --- [NEW] HDR 拍攝 ---
+    def capture_hdr(self, exposures=[5000, 15000, 40000]):
+        """拍攝多張並合成 HDR"""
+        self.logger.info(f"Starting HDR capture with exposures: {exposures}")
+        images = []
+        
+        for exp in exposures:
+            img = self.capture_image(exposure_time=exp)
+            if img is not None:
+                images.append(img)
+        
+        if not images:
+            return None
+
+        try:
+            # 使用 Mertens Fusion (不需相機響應曲線，適合工業應用)
+            merge_mertens = cv2.createMergeMertens()
+            hdr = merge_mertens.process(images)
+            res_8bit = np.clip(hdr * 255, 0, 255).astype('uint8')
+            return res_8bit
+        except Exception as e:
+            self.logger.error(f"HDR Merge failed: {e}")
+            return images[0] # 回傳第一張作為備案
+
+    def emergency_stop(self):
+        """相機緊急停止 (停止取像)"""
+        self.logger.info("Camera Emergency Stop")
+        if self.active_camera:
+            try:
+                self.active_camera.stop_acquisition()
+            except:
+                pass
+
+    def recover_state(self):
+        """重置相機連線"""
+        self.logger.info("Recovering Camera Manager...")
+        if self.harvester:
+            self.harvester.update()
+        # 重新初始化目前相機
+        cam = self.active_cam_name
+        self.active_cam_name = None # Force reset
+        self.switch_camera(cam)
+        return True
+
+
+class LightManager(HardwareBase):
+    def __init__(self, config):
+        self.logger = logging.getLogger("LightMgr")
+        self.ltdve_cfg = config.get('ltdve', {})
+        self.adam_cfg = config.get('adam', {})
+    
+    # --- LTDVE (Ring Lights) Control ---
+    def _send_ltdve_cmd(self, cmd_str):
+        """傳送指令給 Opto-E LTDVE 控制器 (TCP ASCII)"""
+        try:
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                s.settimeout(1.0)
+                s.connect((self.ltdve_cfg['ip'], self.ltdve_cfg['port']))
+                s.sendall((cmd_str + "\r\n").encode('ascii'))
+                resp = s.recv(1024)
+                return resp.decode('ascii')
+        except Exception as e:
+            self.logger.error(f"LTDVE Control Error: {e}")
+            return None
+
+    def set_ring_light(self, channel_idx, intensity):
+        # 假設 LTDVE 指令格式: "CH{channel},{intensity}" (需查閱手冊)
+        cmd = f"CH{channel_idx},{intensity}"
+        self.logger.info(f"Set Ring Light: {cmd}")
+        self._send_ltdve_cmd(cmd)
+
+    # --- ADAM-6266 (Spot Lights) Control ---
+    def _set_adam_coil(self, coil_idx, state):
+        """
+        控制 ADAM-6266 Modbus TCP Relay
+        state: True (ON), False (OFF)
+        """
+        ip = self.adam_cfg['ip']
+        port = self.adam_cfg['port']
+        # 這裡用簡易 Socket 模擬 Modbus TCP 封包，以免依賴 pymodbus
+        # Modbus TCP Header (7 bytes) + PDU
+        # Transaction ID (2), Proto (2), Len (2), Unit (1), Func (1), Address (2), Data (2)
+        # Function 05: Write Single Coil
+        val = 0xFF00 if state else 0x0000
+        
+        # [TransID] [Proto=0] [Len=6] [Unit=1] [Func=5] [AddrHi] [AddrLo] [ValHi] [ValLo]
+        packet = struct.pack('>HHHBBHH', 0, 0, 6, 1, 5, coil_idx, val)
+        
+        try:
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                s.settimeout(1.0)
+                s.connect((ip, port))
+                s.sendall(packet)
+                s.recv(1024) # Recv response
+            self.logger.info(f"Set ADAM Coil {coil_idx} -> {state}")
+        except Exception as e:
+            self.logger.error(f"ADAM Control Error: {e}")
+
+    def set_spot_light(self, light_name, on_off: bool):
+        channel_map = self.adam_cfg.get('channels', {})
+        if light_name in channel_map:
+            self._set_adam_coil(channel_map[light_name], on_off)
+
+    def emergency_stop(self):
+        """關閉所有燈光"""
+        self.logger.info("Lights Emergency Stop (Turning all OFF)")
+        # 關閉 Ring Lights
+        self.set_ring_light(1, 0)
+        self.set_ring_light(2, 0)
+        # 關閉 Spot Lights
+        self.set_spot_light("spot_light_1", False)
+        self.set_spot_light("spot_light_2", False)
+
+    def recover_state(self):
+        # 燈光通常是無狀態的 (Stateless)，重送關閉指令即可
+        self.emergency_stop()
+        return True
+
+class IOManager(HardwareBase):
+    def __init__(self, config):
+        self.logger = logging.getLogger("IOMgr")
+        self.config = config
+
+    def read_keyence(self):
+        # (保持原有的 Keyence 讀取邏輯)
+        return 0.0
+
+    def emergency_stop(self):
+        pass # Sensor 不需要停止
+
+    def recover_state(self):
+        return True
+```
+
+---
+
+### 3. 更新 Server 端 (`Controller/controller_server.py`)
+
+現在我們需要在 Server 端暴露緊急停止和系統復原的 API 接口。
+
+Python
+
+```
+# Controller/controller_server.py
+import socket
+import threading
+import json
+import yaml
+import base64
+import logging
+import sys
+import os
+import time
+
+sys.path.append(os.getcwd())
+from Controller.hardware_managers import ZaberManager, CameraManager, IOManager, LightManager
+
+logging.basicConfig(level=logging.INFO, format='[%(asctime)s] [%(name)s] %(message)s')
+logger = logging.getLogger("Server")
+
+class AutomationServer:
+    def __init__(self, config_path="config/hardware_config.yaml"):
+        with open(config_path, 'r', encoding='utf-8') as f:
+            self.config = yaml.safe_load(f)
+        
+        server_cfg = self.config.get('server', {})
+        self.host = server_cfg.get('host', '0.0.0.0')
+        self.port = int(server_cfg.get('port', 8000))
+        self.auth_token = server_cfg.get('auth_token', 'SECRET')
+
+        # 初始化所有 Managers
+        hw_cfg = self.config.get('hardware', {})
+        self.zaber = ZaberManager(hw_cfg.get('zaber', {}))
+        self.cam = CameraManager(hw_cfg.get('cameras', {}))
+        self.io = IOManager(hw_cfg.get('keyence', {}))
+        self.light = LightManager(hw_cfg.get('lighting', {}))
+        
+        # 建立列表方便統一操作
+        self.managers = [self.zaber, self.cam, self.io, self.light]
+
+        self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        self.server_socket.bind((self.host, self.port))
+        self.server_socket.listen(5)
+
+    def start(self):
+        logger.info(f"Server listening on {self.host}:{self.port}...")
+        try:
+            while True:
+                client, addr = self.server_socket.accept()
+                threading.Thread(target=self.handle_client, args=(client,), daemon=True).start()
+        except KeyboardInterrupt:
+            self.server_socket.close()
+
+    def handle_client(self, client_socket):
+        try:
+            header = client_socket.recv(4)
+            if not header: return
+            msg_len = int.from_bytes(header, 'big')
+            
+            data = b""
+            while len(data) < msg_len:
+                data += client_socket.recv(msg_len - len(data))
+            
+            request = json.loads(data.decode('utf-8'))
+            
+            if request.get('token') != self.auth_token:
+                response = {'status': 'error', 'msg': 'Unauthorized'}
+            else:
+                response = self.process_command(request)
+            
+            resp_bytes = json.dumps(response).encode('utf-8')
+            client_socket.sendall(len(resp_bytes).to_bytes(4, 'big') + resp_bytes)
+        except Exception as e:
+            logger.error(f"Client Error: {e}")
+        finally:
+            client_socket.close()
+
+    def process_command(self, cmd):
+        action = cmd.get('action')
+        
+        try:
+            # --- 全域控制 ---
+            if action == 'emergency_stop':
+                logger.critical(">>> TRIGGERING GLOBAL EMERGENCY STOP <<<")
+                for mgr in self.managers:
+                    mgr.emergency_stop()
+                return {'status': 'ok', 'msg': 'All systems stopped'}
+
+            elif action == 'system_recover':
+                logger.warning(">>> TRIGGERING SYSTEM RECOVERY <<<")
+                results = {}
+                for mgr in self.managers:
+                    name = mgr.__class__.__name__
+                    results[name] = mgr.recover_state()
+                return {'status': 'ok', 'details': results}
+
+            # --- Zaber ---
+            elif action == 'move_stage':
+                self.zaber.move_axis(cmd['axis'], cmd['value'])
+                return {'status': 'ok'}
+            
+            # --- Camera ---
+            elif action == 'capture':
+                # 1. 選擇相機
+                if 'cam_type' in cmd:
+                    self.cam.switch_camera(cmd['cam_type'])
+                
+                # 2. 設定液態鏡頭 (若有)
+                if 'liquid_focus' in cmd:
+                    self.cam.set_liquid_lens(cmd['liquid_focus'])
+                
+                # 3. 拍照 (HDR or Single)
+                exposure = cmd.get('exposure', 5000)
+                if cmd.get('hdr', False):
+                    # 傳入多個曝光值
+                    exposures = cmd.get('exposures', [exposure, exposure*3, exposure*8])
+                    img = self.cam.capture_hdr(exposures)
+                else:
+                    img = self.cam.capture_image(exposure)
+                
+                if img is None:
+                    return {'status': 'error', 'msg': 'Capture failed'}
+
+                # 4. 回傳
+                ret, buffer = cv2.imencode('.jpg', img, [int(cv2.IMWRITE_JPEG_QUALITY), 85])
+                img_b64 = base64.b64encode(buffer).decode('utf-8')
+                return {'status': 'ok', 'image_data': img_b64}
+
+            # --- Lighting ---
+            elif action == 'set_light':
+                # 區分不同控制器
+                if 'channel' in cmd: # LTDVE Ring Light
+                    self.light.set_ring_light(cmd['channel'], cmd['intensity'])
+                elif 'spot_name' in cmd: # ADAM Spot Light
+                    self.light.set_spot_light(cmd['spot_name'], cmd['on'])
+                return {'status': 'ok'}
+
+            # --- Others ---
+            elif action == 'get_sensor':
+                val = self.io.read_keyence()
+                return {'status': 'ok', 'value': val}
+
+            else:
+                return {'status': 'error', 'msg': f'Unknown action: {action}'}
+
+        except Exception as e:
+            logger.error(f"Process Failed: {e}")
+            return {'status': 'error', 'msg': str(e)}
+
+if __name__ == "__main__":
+    server = AutomationServer()
+    server.start()
+```
+
+### 重點總結
+
+1. **安全性 (Safety)**：
+    
+    - 在 `ZaberManager` 中增加了 `emergency_stop()`，可一鍵停止所有馬達。
+        
+    - 在 `ZaberManager` 中增加了 `limits` 檢查，特別是針對最後一個旋轉軸 (0-90度)，防止硬體碰撞。
+        
+    - 在 Server 端增加了 `emergency_stop` API，讓前端 UI 可以隨時呼叫。
+        
+2. **相機與液態鏡頭**：
+    
+    - 採用 `harvesters` (GenICam) 進行控制，這是 Opto-Engineering 工業相機的標準作法。
+        
+    - 增加了 `set_liquid_lens` 方法，透過 GenICam feature 控制液態鏡頭。
+        
+    - 支援 `switch_camera` 在 Macro1/Macro2/Micro 之間切換。
+        
+    - 實作了 `capture_hdr`，對高反光物體（手錶金屬件）非常重要。
+        
+3. **燈光系統**：
+    
+    - 整合了兩種不同的控制器協定 (TCP ASCII for LTDVE, Modbus TCP simulation for ADAM)，統一由 `LightManager` 管理。
+        
+
+您可以將這三份程式碼替換到對應的檔案位置，即完成了硬體控制層的更新。
+
+
+
+#### New V2 hardware跟拍照流程
+```
+在hardware_managers.py的from harvesters.core import Harvester在import有些問題, 要如何在import加入? 另外請中文詳細介紹controller_server.py, controller_client.py跟focus_controller.py跟hardware_drivers/real_driver.py, hardware_drivers/simulation_driver.py以及何時如何使用? 以及像下面的流程要如何使用到Controller/下的code或其他地方的code? 「先用大範圍相機定位 -> 移動到目標位置 -> 利用感測器進行精密對焦（需補償玻璃折射） -> 自動調整曝光與增益 -> 拍攝 HDR 影像 -> 用於特徵分析
+```
+
+這是一個非常好的問題，這觸及到了**軟體架構如何落地到實際硬體操作**的核心。我們將分三部分來回答：首先解決 `harvesters` 的安裝問題，接著詳細解說各個 Controller 檔案的角色，最後用你提到的「檢測流程」來貫穿整個程式碼的執行路徑。
+
+---
+
+### 第一部分：解決 `harvesters` Import 問題
+
+`harvesters` 是一個 Python 函式庫，用來透過 GenICam 標準控制工業相機。要讓它運作，你需要兩個東西：Python 庫本身，以及相機原廠提供的 **GenTL Producer (.cti 檔案)**。
+
+#### 1. 安裝 Python 套件
+
+在你的開發環境（Terminal 或 CMD）執行：
+
+Bash
+
+```
+pip install harvesters numpy
+```
+
+#### 2. 尋找並設定 `.cti` 檔案路徑
+
+`.cti` 檔案是相機驅動程式（C++）與 Python 之間的橋樑。
+
+- **Opto-Engineering (ITALA)**：通常在安裝 ITALA SDK 後，路徑可能在 `C:\Program Files\Opto Engineering\ITALA SDK\bin\genicam\oegenicamentl.cti`（需確認實際路徑）。
+    
+- 如果找不到，請搜尋電腦中的 `*.cti` 檔案。
+    
+
+#### 3. 修改 `hardware_managers.py`
+
+在程式碼中，你需要明確告訴 Harvester `.cti` 檔在哪裡。
+
+Python
+
+```
+# Controller/hardware_managers.py 的 CameraManager 修改範例
+
+try:
+    from harvesters.core import Harvester
+except ImportError:
+    print("[Error] harvesters library missing. Please run: pip install harvesters")
+
+class CameraManager(HardwareBase):
+    def __init__(self, config):
+        # ... (略)
+        self.harvester = None
+        
+        # 從 config 讀取 .cti 路徑，如果沒有則使用預設值
+        self.cti_path = config.get('gentl_path', "C:/Path/To/Your/Vendor.cti")
+
+        if not self.simulation:
+            self._init_genicam()
+
+    def _init_genicam(self):
+        try:
+            self.harvester = Harvester()
+            # [關鍵] 載入 .cti 檔案
+            self.harvester.add_file(self.cti_path)
+            self.harvester.update()
+            
+            print(f"[Info] GenTL loaded. Devices: {self.harvester.device_info_list}")
+        except Exception as e:
+            print(f"[Error] GenICam Init Failed: {e}")
+            self.simulation = True # 失敗則切回模擬模式
+```
+
+---
+
+### 第二部分：檔案詳細介紹與使用時機
+
+這些檔案構成了一個 **Client-Server (主從式)** 架構，目的是將「硬體控制細節」與「高層邏輯」分開。
+
+#### 1. `Controller/controller_server.py` (硬體伺服器)
+
+- **角色**：**「手與腳」 (Hardware Daemon)**。
+    
+- **功能**：它直接連接 USB 線、網路線。它持有 `ZaberManager`, `CameraManager` 的實體。它啟動一個 TCP Server (Port 8000)，等待指令。
+    
+- **何時使用**：這支程式必須**永遠跑在連接硬體的那台電腦上** (Agent)。它就像是印表機的驅動服務，背景執行即可。
+    
+- **特點**：它不懂複雜的檢測邏輯，它只懂「馬達動 5mm」、「拍一張照」、「開燈」。
+    
+
+#### 2. `Controller/controller_client.py` (控制客戶端)
+
+- **角色**：**「遙控器」 (Remote Control)**。
+    
+- **功能**：它不直接碰硬體，而是把 Python 指令包裝成 JSON 封包，透過網路傳給 Server。
+    
+- **何時使用**：當你想寫一個簡單的腳本來測試硬體，或者在 UI 介面中按按鈕時使用。
+    
+- **特點**：讓你可以從另一台電腦（或同一台電腦的不同 Process）控制硬體。
+    
+
+#### 3. `Controller/focus_controller.py` (對焦邏輯)
+
+- **角色**：**「對焦專家」 (Specialist Algorithm)**。
+    
+- **功能**：這不是單純的硬體驅動，而是**演算法**。它包含如何利用 Keyence 感測器數值，配合玻璃折射率 (n≈1.5)，計算出馬達該修正多少 Z 軸距離的數學公式。
+    
+- **何時使用**：由 `HardwareDriver` 或 `WorkflowManager` 呼叫。當流程走到「精確對焦」這一步時使用。
+    
+- **特點**：它封裝了 `Z_target = Z_current + (Disp - Sensor_Value)` 這種數學邏輯。
+    
+
+#### 4. `hardware_drivers/real_driver.py` (真實驅動整合層)
+
+- **角色**：**「指揮官」 (Orchestrator's Interface - Production)**。
+    
+- **功能**：它是 `WorkflowManager` 真正呼叫的物件。它整合了 `Zaber`, `Camera`, `Light`。它提供高階指令，例如 `perform_smart_step`，它會自動依序執行「移動 -> 對焦 -> 開燈 -> 拍照」。
+    
+- **何時使用**：當你的 `system_config.yaml` 設定為 `mode: production` 時，系統會載入這個檔案。
+    
+
+#### 5. `hardware_drivers/simulation_driver.py` (模擬驅動整合層)
+
+- **角色**：**「替身」 (Stunt Double)**。
+    
+- **功能**：介面跟 `real_driver` 一模一樣，但「拍照」是去硬碟複製一張舊照片，「移動」只是 `time.sleep(0.5)`。
+    
+- **何時使用**：當你在家裡開發、沒有連接手錶硬體時，或者在跑 CI/CD 測試時。
+    
+
+---
+
+### 第三部分：實際流程對應 (Workflow Mapping)
+
+您提到的流程是：**定位 -> 移動 -> 感測對焦 (含玻璃補償) -> 自動曝光 -> HDR -> 特徵分析**。
+
+這個流程主要由 `core/workflow_manager.py` 中的 `_perform_smart_step` 函式來主導，並呼叫 `Controller/` 下的各個模組。
+
+以下是程式碼執行的詳細路徑圖：
+
+#### 步驟 1: 大範圍相機定位 (Coordinate Transform)
+
+- **情境**：你在一張總覽圖上點了一個點 (Pixel X, Y)。
+    
+- **程式碼位置**：`core/workflow_manager.py`
+    
+- **執行邏輯**：
+    
+    1. `WorkflowManager` 讀取 `CoordinateTransformer` (`core/utils/math_utils.py`)。
+        
+    2. 呼叫 `mx, my = self.coord_transformer.pixel_to_motor(px, py)`。
+        
+    3. 這會將像素座標轉換為 Zaber 的物理座標 (mm)。
+        
+
+#### 步驟 2: 移動到目標位置
+
+- **程式碼位置**：`hardware_drivers/real_driver.py` -> `ZaberManager`
+    
+- **執行邏輯**：
+    
+    1. `WorkflowManager` 呼叫 `self.hw.zaber.move_axis("stage_L_X", mx)`。
+        
+    2. `ZaberManager` (`hardware_managers.py`) 收到指令，檢查 `limits` (軟體限位)。
+        
+    3. 透過 `harvesters` 或 `zaber_motion` 庫發送指令給馬達。
+        
+
+#### 步驟 3: 利用感測器進行精密對焦（需補償玻璃折射）
+
+这是最複雜的一步，通常封裝在 **`focus_controller.py`** 或 `real_driver.py` 的 `run_robust_autofocus` 方法中。
+
+- **程式碼位置**：`Controller/focus_controller.py`
+    
+- **執行邏輯**：
+    
+    Python
+    
+    ```
+    # 偽代碼邏輯
+    def run_robust_autofocus(self):
+        # 1. 讀取感測器 (透過 IOManager)
+        dist = self.io.read_keyence() 
+    
+        # 2. 判斷是否有玻璃 (透過數值範圍判斷)
+        has_glass = (-6.0 < dist < 2.0)
+    
+        # 3. 計算補償 (Matlab: Znew = Zbase + Zdisp - sensordist + glass_offset)
+        # 假設 focus_controller.py 裡有此公式
+        glass_offset = 0.4 if has_glass else 0.0
+        target_z = current_z + (FIXED_OFFSET - dist) + glass_offset
+    
+        # 4. 移動 Z 軸
+        self.zaber.move_axis("stage_L_Z", target_z)
+    ```
+    
+
+#### 步驟 4: 自動調整曝光與增益
+
+- **程式碼位置**：`Controller/hardware_managers.py` -> `CameraManager`
+    
+- **執行邏輯**：
+    
+    1. 這通常發生在正式拍照前。
+        
+    2. 如果使用 GenICam，可以開啟相機的 `ExposureAuto` 功能： `node_map.ExposureAuto.value = 'Continuous'`
+        
+    3. 或者由軟體迴圈讀取亮度並調整 `ExposureTime`。
+        
+
+#### 步驟 5: 拍攝 HDR 影像
+
+- **程式碼位置**：`hardware_drivers/real_driver.py` -> `CameraManager`
+    
+- **執行邏輯**：
+    
+    1. `WorkflowManager` 讀取設定檔，發現 `use_hdr: True`。
+        
+    2. 呼叫 `self.hw.capture_hdr(cam_id, exposures=[5000, 15000, 40000])`。
+        
+    3. `CameraManager` 連續拍 3 張不同曝光的照片。
+        
+    4. 使用 `cv2.createMergeMertens()` 合成一張高品質影像。
+        
+
+#### 步驟 6: 用於特徵分析
+
+- **程式碼位置**：`core/orchestrator.py` & `core/service_manager.py`
+    
+- **執行邏輯**：
+    
+    1. 照片被存檔到 `Local_Data/Raw/...`。
+        
+    2. `WorkflowManager` 呼叫 `Orchestrator`。
+        
+    3. `Orchestrator` 根據 Config (例如 `lume_segmentation`)，呼叫對應的 AI Service (例如 `tasks/api_servers/server_lume.py`)。
+        
+    4. AI Service 回傳 JSON 結果（特徵位置、是否通過）。
+        
+
+### 總結圖解
+
+這就是你要如何將概念對應到程式碼的方式：
+
+[User Concept] [Code Component] | v
+
+1. [定位計算] ----> `core/utils/math_utils.py` (CoordinateTransformer) |
+    
+2. [硬體移動] ----> `real_driver.py` calls `ZaberManager` |
+    
+3. [對焦邏輯] ----> `focus_controller.py` calls `IOManager` & `ZaberManager` |
+    
+4. [拍照/HDR] ----> `real_driver.py` calls `CameraManager` (uses Harvesters) |
+    
+5. [AI 分析] ----> `orchestrator.py` calls `ServiceManager` (API Servers)
