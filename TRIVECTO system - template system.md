@@ -587,7 +587,8 @@ JSON
 
 
 
-#### template system拆分成三個py files
+#### template system拆分成三個py files  
+Ref: [Trivecto new system design]-6 DB
 ```
 那在這系統的WatchTemplates DynamoDB, 每一筆資料代表對一個watch series控制camera拍照所有images的所有控制camera, zaber,light source等hardware流程. 而且WatchTemplates DynamoDB的所有Attributes都可以在WatchAnalysisResults DynamoDB找的到, 所以可以將一筆WatchAnalysisResults DynamoDB資料產生成一筆WatchTemplates DynamoDB資料只要刪除掉不必要的Attributes. 
 
@@ -965,7 +966,12 @@ class TemplateManager:
 
 
 
+
+
+
+
 #### 拆分之後完整修改code
+Ref: [Trivecto new system design]-6 DB
 ```
 所以新的WatchTemplates DynamoDB 只需要修改core/models裡的code, 不需要修改其他地方的code嗎
 ```

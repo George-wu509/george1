@@ -4,8 +4,8 @@
 | [[#### V2整體系統架構]]                                    |     |
 | [[#### 費用評估跟多Local system]]                          |     |
 | [[#### 具體操作分析- 用remote client操作local system拍照image]] |     |
-|                                                      |     |
-|                                                      |     |
+| [[#### 遠端更新Local system軟體]]                          |     |
+| [[#### System account system設定]]                     |     |
 |                                                      |     |
 
 
@@ -550,3 +550,197 @@ sequenceDiagram
 - **優點**：即使 AWS 網路斷線，Local System 依然可以一直拍照，數據會安全地堆積在 Local SQLite，直到網路恢復後自動消化 (Backpressure Handling)。
     
 - **交互核心**：`WorkflowManager` 負責發號施令，`DataManager` 負責記帳，`CloudSyncManager` 負責跑腿。
+
+
+
+
+#### 遠端更新Local system軟體
+```
+像這樣安裝在Germany有接上camera, hardware的local system, 我的軟體版本升級(修改了或升級某些python code), 有辦法從remote client控制對方也升級code成新版本嗎? 按照目前的系統架構? 是透過Cloud? 或者有甚麼辦法可以做得到?
+```
+這是一個非常實際且關鍵的維運（DevOps）問題。既然你的系統已經跨國部署（紐約 vs. 德國），**「遠端更新 (OTA, Over-The-Air Update)」** 機制是絕對必須的。你不能每次改一行 code 就買機票飛去德國。
+
+作為 Tech Lead，我的答案是：**是的，利用目前的 AWS IoT 架構，完全可以做到遠端更新。**
+
+你不需要額外的 VPN 或 TeamViewer，利用現有的 **AWS IoT MQTT Command Channel** 就能達成。
+
+以下我提供兩種方案，並強烈建議採用 **方案一**（最貼合你現有架構）或 **方案二**（AWS 原生解法）。
+
+---
+
+### 方案一：利用現有架構 (MQTT Command + Git) - 推薦
+
+**核心概念**： 把「軟體更新」當作一種特殊的「指令」。就像你傳送 `manual_capture` 叫相機拍照一樣，你傳送 `system_update` 叫系統去 GitHub 拉最新的 Code 並重啟。
+
+#### 1. 架構邏輯 (Architecture Flow)
+
+1. **Remote Client**：開發者 Push 新 Code 到 GitHub/GitLab。
+    
+2. **Remote Client**：透過 `WorkflowProxy` 發送 MQTT 指令：`{"action": "system_update", "branch": "main"}`。
+    
+3. **Local System (Germany)**：收到指令。
+    
+4. **Local System**：執行 Shell Script (`git pull`, `pip install`).
+    
+5. **Local System**：自我重啟 (Restart Service)。
+    
+
+#### 2. 需要修改的 Code (Implementation)
+
+**Step A: 修改 `core/workflow_proxy.py` (新增更新指令)**
+
+Python
+
+```
+    def trigger_system_update(self, branch: str = "main", wait: bool = False) -> Dict[str, Any]:
+        """
+        發送 OTA 更新指令給德國機台
+        """
+        if self.mode != "aws_iot":
+            self.logger.error("System update is only supported via AWS IoT.")
+            return None
+            
+        payload = {"branch": branch}
+        return self._submit_iot_command(
+            action="system_update",
+            payload=payload,
+            wait=wait,
+            wait_timeout_sec=300 # 更新可能需要幾分鐘
+        )
+```
+
+**Step B: 修改 `core/workflow_server.py` 或 `core/workflow_manager.py` (接收並執行)**
+
+這裡有個**關鍵技巧**：如果讓 `WorkflowManager` 更新自己，可能會因為檔案被鎖定或記憶體殘留而出錯。建議寫一個獨立的小腳本 `updater.py`，或在 `WorkflowManager` 裡呼叫外部 Shell 指令。
+
+在 `WorkflowManager` 中增加處理邏輯：
+
+Python
+
+```
+    # 在 _perform_smart_step 或 command handler 增加分支
+    def handle_system_update(self, branch="main"):
+        import subprocess
+        import sys
+        
+        self.console.info(f"!!! SYSTEM UPDATE TRIGGERED (Branch: {branch}) !!!")
+        
+        try:
+            # 1. Git Pull
+            self.console.info("Executing git pull...")
+            subprocess.check_call(["git", "fetch", "origin"])
+            subprocess.check_call(["git", "reset", "--hard", f"origin/{branch}"])
+            
+            # 2. Update Dependencies (如果 requirements.txt 有變)
+            self.console.info("Updating dependencies...")
+            subprocess.check_call([sys.executable, "-m", "pip", "install", "-r", "requirements.txt"])
+            
+            # 3. Restart Service
+            # 假設你在 Linux 上跑，並用 systemd 管理服務 (例如 watch_system.service)
+            self.console.info("Restarting service...")
+            # 注意：這行執行後，目前的 Python Process 會被殺掉，連線會斷開
+            subprocess.Popen(["sudo", "systemctl", "restart", "watch_system"])
+            
+            return {"status": "updating", "msg": "System is restarting with new code..."}
+            
+        except Exception as e:
+            self.console.error(f"Update Failed: {e}")
+            return {"status": "error", "msg": str(e)}
+```
+
+---
+
+### 方案二：使用 AWS Systems Manager (SSM) - 企業級解法
+
+如果你不想自己寫 `git pull` 的邏輯，或者擔心 Python 自己重啟自己會掛掉，可以使用 AWS 的標準服務。
+
+**核心概念**： AWS 提供一個叫 **SSM Agent** 的小程式，預裝在大多數 AWS EC2 上，但也支援 **On-Premise (地端) 伺服器**。
+
+#### 操作流程：
+
+1. **安裝**：在德國的電腦上安裝 AWS SSM Agent 並註冊 (Activation)。
+    
+2. **操作**：你在紐約的 AWS Console (網頁) 上，找到這台 "Managed Instance"。
+    
+3. **指令**：點選 "Run Command"，選擇 `AWS-RunShellScript`。
+    
+4. **輸入**：
+    
+    Bash
+    
+    ```
+    cd /home/operator/ImagingLibWatch
+    git pull
+    pip install -r requirements.txt
+    sudo systemctl restart watch_system
+    ```
+    
+5. **執行**：AWS 會幫你透過安全通道執行這些指令，並回傳 Log 給你。
+    
+
+**優點**：
+
+- **安全**：不需要在 Python code 裡開 `sudo` 權限。
+    
+- **穩定**：即使你的 Python 程式掛了（Crash），SSM Agent 通常還活著，你可以遠端重啟它或進行救援。
+    
+
+---
+
+### Tech Lead 的 30年經驗警告 (Critical Advice)
+
+要在跨國系統做遠端更新，最大的恐懼是 **「變磚 (Bricking)」** —— 更新後系統起不來，且因為網路連線依賴於該系統，導致你再也連不進去。
+
+為了避免這種災難，請務必實作以下 **「安全網 (Safety Net)」**：
+
+#### 1. 雙行程架構 (Watchdog Pattern)
+
+不要讓主程式 (`WorkflowManager`) 負責與 AWS IoT 的連線。
+
+- **Process A (Watchdog/Updater)**：一個極簡的 Python 腳本，**只負責** 連線 AWS IoT、接收更新指令、重啟 Process B。這個腳本幾乎不更新，極度穩定。
+    
+- **Process B (Main App)**：你的 `WorkflowManager`，負責複雜的相機控制。
+    
+- **運作**：Process A 收到更新指令 -> 殺掉 Process B -> Git Pull -> 啟動 Process B。如果 Process B 啟動失敗，Process A 回報錯誤給雲端。
+    
+
+#### 2. Rollback 機制
+
+在執行 `git pull` 之前，先記錄目前的 Commit Hash。
+
+Python
+
+```
+current_hash = subprocess.check_output(["git", "rev-parse", "HEAD"]).strip()
+try:
+    # update...
+except:
+    # 如果失敗，立刻還原
+    subprocess.check_call(["git", "reset", "--hard", current_hash])
+```
+
+#### 3. 設定檔保留
+
+確保你的 `config/system_config.yaml` 和 `config/keys/` 被列在 `.gitignore` 中，或者是透過環境變數注入。否則 `git pull` 可能會覆蓋掉德國當地的特定設定（例如 S3 Bucket 是 `eu-central-1`），導致更新後連不上網。
+
+### 總結建議
+
+1. **短期**：採用 **方案一 (MQTT + Git Pull)**。因為你已經有現成的 `WorkflowProxy` 和 AWS IoT 通道，這是開發成本最低的路徑。
+    
+2. **實作細節**：
+    
+    - 在德國電腦上設定 `systemd` 服務來跑你的 Python 程式 (確保掛掉會自動重啟)。
+        
+    - 給予執行 Python 的 User 足夠的權限去執行 `systemctl restart` (透過 `visudo`)。
+        
+3. **長期**：當機器超過 10 台時，轉用 **AWS SSM**，統一管理 fleet updates。
+    
+
+這樣你就可以坐在紐約喝咖啡，一行指令讓德國的系統升級到最新版了。
+
+
+
+#### System account system設定
+```
+那在這系統中如果要設定account system, 譬如如果account是一般的user則有最低的權限譬如硬體上無法修改或根本看不到camera設定只能移動, 無法decription taken images, 只能查看不能修改results. account是engineer則有較高的權限譬如硬體上可以改動所有hardware設定, 可以查看所有的taken images跟results. account是管理員則有最高的權限譬如硬體上可以改動所有hardware設定, 可以查看所有的taken images跟results. 可以修改更種密碼, token, 解壓code以及管理其他account. 如果要實作這個要如何實作? 或者只要在APP UI上設定? 之前的其他code應該要如何因應做修改請具體舉例說明
+```
