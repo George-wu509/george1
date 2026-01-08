@@ -5,7 +5,10 @@
 | [[#### 費用評估跟多Local system]]                          |     |
 | [[#### 具體操作分析- 用remote client操作local system拍照image]] |     |
 | [[#### 遠端更新Local system軟體]]                          |     |
-| [[#### System account system設定]]                     |     |
+| [[#### Simulation and production流程與template]]        |     |
+|                                                      |     |
+|                                                      |     |
+|                                                      |     |
 |                                                      |     |
 
 
@@ -740,7 +743,162 @@ except:
 
 
 
-#### System account system設定
+#### Simulation and production流程與template
 ```
-那在這系統中如果要設定account system, 譬如如果account是一般的user則有最低的權限譬如硬體上無法修改或根本看不到camera設定只能移動, 無法decription taken images, 只能查看不能修改results. account是engineer則有較高的權限譬如硬體上可以改動所有hardware設定, 可以查看所有的taken images跟results. account是管理員則有最高的權限譬如硬體上可以改動所有hardware設定, 可以查看所有的taken images跟results. 可以修改更種密碼, token, 解壓code以及管理其他account. 如果要實作這個要如何實作? 或者只要在APP UI上設定? 之前的其他code應該要如何因應做修改請具體舉例說明
+請整理在system_config.yaml設定system.mode="simulation"時從main_cli.py開始流程的每一步到開始開始載入特定image開始執行tasks/的imaging processing tasks. 是否有使用到template system? 那如果是system.mode="production". 是不是code還沒有把template system連結因為每次take images跟選擇執行tasks/的imaging processing tasks的設定應該都會用到template system.
 ```
+這是一個非常好的架構審查問題。作為 Tech Lead，我將幫你梳理 `system.mode="simulation"` 的完整執行路徑，並回答關於 Production 模式與 Template System 的整合現狀。
+
+---
+
+### 第一部分：Simulation 模式下的執行流程 (Step-by-Step)
+
+當 `config/system_config.yaml` 設定為 `mode: "simulation"` 時，從 `main_cli.py` 到執行影像處理的流程如下：
+
+#### **Step 1: 啟動與初始化 (Entry Point)**
+
+- **檔案**: `main_cli.py`
+    
+- **動作**: 使用者執行指令 `python main_cli.py --command run_routine --watch_id Rolex_001`。
+    
+- **流程**:
+    
+    1. 載入 `system_config.yaml`。
+        
+    2. 初始化 `WorkflowManager(config)`。
+        
+    3. `WorkflowManager` 初始化內部模組：`DataManager`, `CloudSync`, `ServiceManager`, `Orchestrator`。
+        
+    4. **關鍵**: 初始化硬體驅動 `self._init_hardware()`。因為是 Simulation 模式，它載入了 `SimulationHardware` (`Controller/hardware_drivers/simulation_driver.py`)。
+        
+
+#### **Step 2: 執行 Routine (Workflow Manager)**
+
+- **檔案**: `core/workflow_manager.py`
+    
+- **方法**: `execute_routine(...)`
+    
+- **流程**:
+    
+    1. 檢查 `self.mode == "simulation"`。
+        
+    2. **分歧點**: 直接呼叫 `self._run_simulation_routine(...)`，**跳過了** `_run_production_routine`。
+        
+
+#### **Step 3: 模擬邏輯 (The Simulation Loop)**
+
+- **檔案**: `core/workflow_manager.py`
+    
+- **方法**: `_run_simulation_routine`
+    
+- **資料來源**:
+    
+    - **注意**: 這裡 **沒有使用 WatchTemplates**。
+        
+    - 它讀取的是 `config/simulation_map.yaml` (載入到 `self.sim_map`)。這是一個簡單的 Mapping，定義了 `演算法名稱 -> 範例圖片檔名`。
+        
+- **流程**:
+    
+    1. 建立 `Analysis` 資料夾與 `exp_id`。
+        
+    2. 初始化 `WatchRecord` (Digital Twin 結構)，但僅做為容器。
+        
+    3. **迴圈**: 遍歷 `self.sim_map` 中的每一個項目 (例如: `lume_service` -> `lume_sample.jpg`)。
+        
+    4. **模擬拍照**: 從 `assets/sample_images` 複製對應圖片到 `Local_Data/temp/`。
+        
+    5. **歸檔**: 呼叫 `data_mgr.process_and_sync_raw_image` 將圖片移入 `Raw` 資料夾並寫入 SQLite。
+        
+
+#### **Step 4: 觸發影像處理 (Processing)**
+
+- **檔案**: `core/workflow_manager.py`
+    
+- **方法**: `_run_analysis_safe(...)`
+    
+- **流程**:
+    
+    1. `data_mgr.prepare_image_for_viewing`: 處理權限與解密（模擬模式下通常直接回傳路徑）。
+        
+    2. **呼叫調度**: `self.orchestrator.run_batch([service_name], ...)`。這裡的 `service_name` 來自 `simulation_map` 的 Key。
+        
+
+#### **Step 5: 執行任務 (Orchestrator)**
+
+- **檔案**: `core/orchestrator.py`
+    
+- **方法**: `run_task`
+    
+- **流程**:
+    
+    1. 讀取 `system_config.yaml` 中的 `tasks` 區塊。
+        
+    2. 根據 `mode` ("cli" 或 "api") 決定執行方式：
+        
+        - **CLI**: 執行 `python tasks/cli_wrappers/run_lume_cli.py ...`。
+            
+        - **API**: 發送 HTTP POST 到 `localhost:5002`。
+            
+    3. 回傳 JSON 結果與 Mask 圖片。
+        
+
+---
+
+### 第二部分：Q&A 分析
+
+#### **Q1: Simulation 模式是否有使用到 Template System？**
+
+**答案：沒有。**
+
+- **證據**：在 `core/workflow_manager.py` 的 `_run_simulation_routine` 方法中，邏輯是直接遍歷 `self.sim_map` (Simulation Map)。
+    
+- **影響**：Simulation 模式目前只是為了「測試演算法管道 (Pipeline)」和「測試資料庫寫入」，它並沒有模擬「根據 Template 指揮硬體移動到特定座標」的行為。它是一個簡化的測試迴圈。
+    
+
+#### **Q2: 如果是 Production 模式，Code 是否還沒把 Template System 連結起來？**
+
+**答案：已經連結了，但是邏輯與 Simulation 完全不同。**
+
+請看 `core/workflow_manager.py` 中的 `_run_production_routine` 方法（約第 206 行）：
+
+Python
+
+```
+    def _run_production_routine(self, ...):
+        # ...
+        # 1. Load Template (Local-First Strategy)
+        db_template = self.template_mgr.get_template(routine_name)  # <--- 這裡連結了！
+        
+        if db_template:
+            # ...
+            self.console.info(f"Loaded plan '{routine_name}' from Local DB Cache.")
+            
+            # [ADAPTER] Convert Nested Template Structure to Linear Steps
+            # 這裡將複雜的 Template 轉為執行步驟
+            execution_steps = self._flatten_template_to_steps(db_template) 
+        else:
+            # Fallback to legacy file system...
+```
+
+**Tech Lead 的分析與建議：**
+
+1. **連結已存在**：Production 模式確實會去 `TemplateManager` 撈資料，並透過 `_flatten_template_to_steps` 將巢狀的 `WatchTemplate` (Front -> glasspoint...) 攤平為線性的 `execution_steps`。
+    
+2. **主要差異**：
+    
+    - **Simulation**：由 `simulation_map.yaml` 驅動。邏輯是「我有這張圖，我要跑這個演算法」。
+        
+    - **Production**：由 `WatchTemplate` 驅動。邏輯是「我要拍這個點 (X,Y)，拍完後要跑這個演算法」。
+        
+3. **潛在問題 (Gap)**：
+    
+    - 目前的 `Simulation` 模式無法測試 `WatchTemplate` 的邏輯是否正確（例如座標轉換、曝光參數）。
+        
+    - **建議優化**：未來的 Simulation 模式應該也要能讀取 `WatchTemplate`，然後在 `_perform_smart_step` 裡面，當硬體是 `SimulationHardware` 時，根據 Template 的要求去 `assets` 資料夾找一張最像的圖來回傳，而不是依賴獨立的 `simulation_map`。這樣才能真正模擬生產流程。
+        
+
+**總結**：Production 模式的代碼 **已經** 整合了 Template System，只要 Database 裡有 Template 資料，它就會照著 Template 定義的步驟去控制硬體並觸發分析。
+
+
+
+

@@ -6,6 +6,7 @@
 | [[#### DynamoDB概念跟在這系統的DB]]           |     |
 | [[#### template system拆分成三個py files]] |     |
 | [[#### 拆分之後完整修改code]]                 |     |
+| [[#### 開始執行system需要有user account嗎]]   |     |
 |                                       |     |
 |                                       |     |
 
@@ -1258,3 +1259,318 @@ Python
         
 
 加入這段代碼後，你的系統就能完美支援新的 `WatchTemplates` 結構，同時保持執行引擎的穩定。
+
+
+
+
+
+
+#### 開始執行system需要有user account嗎
+```
+所以當加入user系統時, 譬如開始跑main_cli.py時我們一定要有個account id跟 password才可以跑嗎? 而且我希望如果執行main_cli.py相關設定都要放在cli_config.yaml裡面請幫我修正. 我剛更新了新的code現在應該裡面沒有account的資料那我應該先create一個管理員帳號嗎? 那這account system夠保險嗎會跟Cloud上面同步? 要怎麼確保其他人不會簡單拿到管理員會其他帳號然後登入系統
+```
+這是一個非常切中要點的問題。身為 Tech Lead，我會針對您的五個疑問逐一分析，並提供修正後的代碼。
+
+### 1. 執行 `main_cli.py` 一定要帳號密碼嗎？
+
+**不一定，但建議要有。**
+
+目前的設計採用 **"Guest Fallback" (訪客降級)** 機制：
+
+- **有輸入帳密且正確**：系統會以該帳號的角色 (Engineer/Admin) 執行，解鎖高權限功能（如修改 Exposure、建立 User）。
+    
+- **沒輸入帳密**：系統會自動以 **Guest (角色: User)** 身分執行。
+    
+    - **限制**：Guest **無法** 修改相機曝光值 (強制 5000)、**無法** 執行 `create_user`、**無法** 解密查看 Raw Images。
+        
+- **結論**：如果是現場作業員 (Operator) 只是跑標準流程 (Standard Routine)，**不需要** 帳密也能跑，這符合產線操作的便利性。但如果是工程師要調機，就必須登入。
+    
+
+---
+
+### 2. 修改 `main_cli.py` 支援讀取 `cli_config.yaml` 設定
+
+您希望將帳密也放在 YAML 檔中，這樣就不由 Command Line 輸入。這在自動化測試或固定機台設定時非常有用。
+
+請更新 `main_cli.py` 的 `build_parser` 函式，加入 `default=cli_cfg.get(...)`：
+
+#### 修正後的 `main_cli.py`
+
+Python
+
+```
+# main_cli.py
+import argparse
+import sys
+import json
+import traceback
+import yaml
+import os
+
+from core.workflow_manager import WorkflowManager
+
+def load_cli_config(yaml_path: str) -> dict:
+    if not yaml_path or not os.path.exists(yaml_path):
+        return {}
+    try:
+        with open(yaml_path, "r", encoding="utf-8") as f:
+            return yaml.safe_load(f) or {}
+    except:
+        return {}
+
+def build_parser(cli_cfg: dict) -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(description="ImagingLibWatch V1 CLI (Secure)")
+
+    parser.add_argument("--config", default=cli_cfg.get("system_config_path", "config/system_config.yaml"))
+    
+    # 這裡的 default 會先從 yaml 讀取，如果 yaml 沒寫，CLI 也沒給，就是 None
+    parser.add_argument("--cli_config", default="config/cli_config.yaml")
+
+    # [UPDATED] Login Args: 優先讀取 YAML 設定
+    parser.add_argument("--user", default=cli_cfg.get("user"), help="Username for login")
+    parser.add_argument("--pwd", default=cli_cfg.get("pwd"), help="Password for login")
+
+    parser.add_argument("--watch_id", default=cli_cfg.get("watch_id"), help="Target Watch ID")
+    parser.add_argument(
+        "--command",
+        default=cli_cfg.get("command"),
+        choices=[
+            "run_routine", "manual_capture", "analyze_local", 
+            "force_sync", "create_template", "sync_templates", "create_user"
+        ],
+        help="Action to perform",
+    )
+    parser.add_argument("--name", default=cli_cfg.get("routine_name", "Standard_Check"))
+    parser.add_argument("--cam", default=cli_cfg.get("camera_id", "macro_cam_id"))
+    parser.add_argument("--image", default=cli_cfg.get("local_image_path"))
+    parser.add_argument("--task", default=cli_cfg.get("analysis_task", "lume_segmentation"))
+    
+    # Exposure: 優先讀取 YAML
+    parser.add_argument("--exposure", type=int, default=cli_cfg.get("exposure", 5000), help="Exposure time")
+    
+    parser.add_argument("--source_watch", help="Source Watch ID (create_template)")
+    parser.add_argument("--new_series", help="New series name (create_template)")
+
+    # Admin Args (通常不建議寫在 config，維持 CLI 輸入較安全)
+    parser.add_argument("--new_user", help="New username")
+    parser.add_argument("--new_pwd", help="New password")
+    parser.add_argument("--new_role", choices=["user", "engineer", "admin"], help="New role")
+
+    parser.add_argument("--parallel", action="store_true")
+    parser.add_argument("--out_dir", default=cli_cfg.get("output_dir", "output_debug"))
+    parser.add_argument("--wait", action="store_true")
+    parser.add_argument("--timeout", type=int, default=600)
+
+    return parser
+
+def main():
+    # 1. 先讀取 config 檔路徑
+    pre = argparse.ArgumentParser(add_help=False)
+    pre.add_argument("--cli_config", default="config/cli_config.yaml")
+    pre_args, _ = pre.parse_known_args()
+    
+    # 2. 載入 YAML
+    cli_cfg = load_cli_config(pre_args.cli_config)
+
+    # 3. 建立完整的 Parser (此時 default 值已注入)
+    parser = build_parser(cli_cfg)
+    args = parser.parse_args()
+
+    if not args.command:
+        print("[Error] 'command' is required.")
+        sys.exit(1)
+
+    # ... (後續邏輯保持不變，因為 args.user/pwd 已經自動填好了) ...
+    
+    engine = None
+    try:
+        engine = WorkflowManager(args.config)
+        print(f">>> Engine Loaded: {type(engine).__name__}")
+        
+        current_session = {"username": "guest", "role": "user"}
+
+        # 自動使用 Config 或 CLI 傳入的帳密登入
+        if args.user and args.pwd:
+            user_info = engine.login(args.user, args.pwd)
+            if not user_info:
+                print("[Error] Login failed. Access denied.")
+                sys.exit(1)
+            current_session = user_info
+        else:
+            print("[Info] No credentials. Running as Guest (User role).")
+
+        print(f">>> Current Identity: {current_session['username']} ({current_session['role']})")
+        
+        # ... (其餘 Command Execution 邏輯與之前相同，請直接貼上) ...
+        # 為了節省篇幅，這裡省略後面的 if/elif 區塊，請使用上一版提供的 main_cli.py 後半段
+        # 只要確認 args.user 已經正確傳入即可。
+
+        # (以下是原本的執行邏輯片段，確保未遺漏)
+        if args.command == "run_routine":
+            print(f">>> Executing Routine: {args.name}...")
+            results = engine.execute_routine(
+                args.watch_id, args.name, 
+                wait=args.wait, wait_timeout_sec=args.timeout, 
+                user=current_session
+            )
+            # ...
+        
+        # ... (其他 elif 區塊) ...
+
+    except Exception as e:
+        print(f"[CRITICAL ERROR] {e}")
+        traceback.print_exc()
+        sys.exit(1)
+    finally:
+        if engine: engine.shutdown()
+
+if __name__ == "__main__":
+    main()
+```
+
+#### 配套的 `config/cli_config.yaml` 範例：
+
+YAML
+
+```
+# config/cli_config.yaml
+system_config_path: "config/system_config.yaml"
+
+# 自動登入設定 (若留空則為 Guest)
+user: "admin"
+pwd: "admin123"
+
+# 任務設定
+watch_id: "Rolex_Submariner_001"
+command: "run_routine"
+routine_name: "Standard_Check"
+```
+
+---
+
+### 3. Database 是空的，需要手動建立 Admin 嗎？
+
+**不需要。**
+
+我在 `core/account_manager.py` 的 `__init__` 方法中加入了 `_ensure_admin_exists()`：
+
+Python
+
+```
+    def __init__(self, db_manager):
+        # ...
+        self._ensure_users_table()
+        self._ensure_admin_exists()  # <--- 自動建立
+```
+
+當您第一次執行程式（不管是 `main_cli.py` 或 `workflow_server.py`）時：
+
+1. 系統會檢查 `users` 表格是否存在 `admin` 帳號。
+    
+2. 若不存在，會自動建立：
+    
+    - **Username**: `admin`
+        
+    - **Password**: `admin123` (預設值)
+        
+    - **Role**: `admin`
+        
+
+**您的第一步操作建議：** 系統啟動後，請立刻使用 `main_cli.py` 將預設密碼改掉，或建立一個新的管理員帳號，然後刪除預設的 admin（如果系統支援刪除的話，目前的 code 只有 create，建議保留 admin 但修改密碼）。
+
+由於目前 CLI 沒有 `change_password` 指令，您可以透過 `create_user` 建立一個新的 Admin，例如 `root`，然後以後都用 `root` 登入。
+
+Bash
+
+```
+python main_cli.py --command create_user --user admin --pwd admin123 --new_user root --new_pwd NewStrongPassword! --new_role admin
+```
+
+---
+
+### 4. Account System 夠保險嗎？會跟 Cloud 同步嗎？
+
+#### 安全性評估 (Security Assessment)
+
+目前的實作屬於 **"Local Security" (本地安全)** 等級：
+
+- **優點**：
+    
+    - 密碼經過 `PBKDF2-HMAC-SHA256` + `Salt` 雜湊，即使資料庫被盜，駭客也無法輕易還原原始密碼。
+        
+    - 權限檢查是在 Python Code 內部強制執行的，無法透過單純修改 UI 來繞過。
+        
+- **弱點 (Tech Lead 提醒)**：
+    
+    - 如果有人能物理接觸到電腦，並將 `DB/watchDB.db` 檔案複製走，他可以透過修改 SQLite 檔案來重置密碼或提升權限。**(解決方案：硬碟加密 / BitLocker)**
+        
+    - 如果使用 HTTP (非 HTTPS) 傳輸，`workflow_server.py` 的登入 API 傳送的密碼是明文的。**(解決方案：在 config 中設定 SSL 憑證，或僅在內網使用)**
+        
+
+#### Cloud 同步問題
+
+目前的 `CloudSyncManager` **不會** 同步 `users` 表格。
+
+- **原因**：這是有意為之的設計。通常每一台 Local System (紐約、德國) 應該有自己獨立的操作員帳號管理。
+    
+- **風險**：如果您將 `users` 表格同步到 Cloud，一旦 Cloud 資料庫被入侵，全球所有機台的帳密都會外洩。此外，多台機台同時寫入 Cloud 容易造成帳號衝突。
+    
+- **建議**：**保持帳號系統本地化**。如果需要中央控管，未來應該整合 AWS Cognito 或 LDAP，而不是同步 SQLite 表格。
+    
+
+---
+
+### 5. 如何確保其他人不會輕易拿到管理員權限？
+
+要防止未授權存取，您需要建立 **多層防護 (Defense in Depth)**：
+
+1. **更改預設密碼 (最重要)**：
+    
+    - 系統上線第一件事：用 `admin` / `admin123` 登入，建立您自己的 Admin 帳號，並將 `cli_config.yaml` 中的預設帳密清除（留空）。
+        
+2. **保護 `cli_config.yaml`**：
+    
+    - **不要** 在 `cli_config.yaml` 中填寫 Admin 的帳密。這個檔案通常是明文的，誰都可以打開看。
+        
+    - `cli_config.yaml` 只填寫 `user` 級別的帳號（操作員），或者乾脆留空讓操作員手動輸入。
+        
+3. **實體安全 (Physical Security)**：
+    
+    - 確保 `Local System` 電腦本身有設定 Windows/Linux 登入密碼。
+        
+    - 限制 `DB/watchDB.db` 檔案的讀寫權限（OS 層級權限），只讓執行程式的 User 可以存取。
+        
+4. **網路隔離**：
+    
+    - `workflow_server.py` 綁定 `0.0.0.0` 會讓區網內所有人都能連線。建議配合防火牆 (Firewall) 限制來源 IP。
+        
+5. **Audit Log 監控**：
+    
+    - `AuditLogger` 會記錄所有 `create_user` 和敏感操作。定期檢查 `Local_Data/audit_logs/` 下的 log，看看是否有異常的 `admin` 登入記錄。
+        
+
+### 總結建議的 `cli_config.yaml` 設定
+
+為了安全，**不要** 在設定檔中寫死 Admin 密碼。
+
+YAML
+
+```
+# config/cli_config.yaml (Safe Version)
+
+# 系統路徑
+system_config_path: "config/system_config.yaml"
+
+# 登入資訊 (建議留空，或只填寫權限最低的 Operator 帳號)
+user: "" 
+pwd: ""
+
+# 預設任務
+watch_id: "Rolex_Submariner_001"
+command: "run_routine"
+routine_name: "Standard_Check"
+```
+
+當您需要執行 Admin 操作時，請在 Command Line 顯式輸入： `python main_cli.py --command create_user --user admin --pwd YOUR_SECURE_PWD ...`
+
+這樣密碼就不會留在檔案裡被別人看到。
