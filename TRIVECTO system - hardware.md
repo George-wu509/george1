@@ -9,7 +9,8 @@
 | [[#### APP UI連結Zaber 3D viewer]]               |     |
 | [[#### New V2 hardware design]]                |     |
 | [[#### New V2 hardware跟拍照流程]]                  |     |
-|                                                |     |
+| [[#### liquid_lens的擴充functions]]               |     |
+| [[#### Light source等硬體擴充functions]]            |     |
 |                                                |     |
 
 
@@ -2287,3 +2288,718 @@ class CameraManager(HardwareBase):
 4. [拍照/HDR] ----> `real_driver.py` calls `CameraManager` (uses Harvesters) |
     
 5. [AI 分析] ----> `orchestrator.py` calls `ServiceManager` (API Servers)
+
+
+
+
+
+
+#### liquid_lens的擴充functions
+ref: [Trivecto new system design]-8 V2 hardware
+```
+我的意思是需要不要更多的function控制硬體, 譬如liquid_lens只有一個functions, 但是否要有更多更強力的functions才能很好的控制liquid_lens可以做更好的對焦?
+```
+
+您問得非常精準。作為一個 Tech Lead，我必須坦白說：**目前的 `set_liquid_lens(value)` 僅僅是「能動」的程度，距離「好用」或「精確」還差得很遠。**
+
+對於像 Optotune 這種液態鏡頭，單純設定電流值 (Current) 或焦點位置 (FocusPos) 是不夠的，因為液態鏡頭有兩個物理特性會嚴重影響精度：
+
+1. **熱漂移 (Thermal Drift)**：液體折射率會隨溫度改變，同樣的電流在 25°C 和 40°C 對焦距離不同。
+    
+2. **遲滯現象 (Hysteresis)**：雖然比傳統馬達小，但從 0 變到 100 和從 200 變到 100，結果可能會有些微差異。
+    
+
+為了達到工業級的**精密對焦 (Precision Autofocus)**，我們需要擴充 `CameraManager`，加入**溫度補償**、**電子自動對焦掃描**、以及**白平衡/ROI曝光**等進階功能。
+
+以下是針對 **`hardware_managers.py`** 的**擴充版本**與**詳細解說**。
+
+---
+
+### 主要擴充功能說明
+
+1. **液態鏡頭進階控制 (Advanced Liquid Lens)**
+    
+    - `get_lens_temperature()`: 讀取鏡頭溫度（這是修正焦點漂移的關鍵）。
+        
+    - `set_liquid_lens_diopter()`: (進階) 如果有校正數據，將電流轉換為屈光度 (Diopter)。
+        
+    - `sweep_liquid_lens()`: **[關鍵功能]** 不移動 Z 軸馬達，快速改變液態鏡頭焦點並連續拍照。這是液態鏡頭的最大優勢（速度極快）。
+        
+2. **相機畫質控制 (Image Quality)**
+    
+    - `set_white_balance_auto()`: 針對手錶金屬（黃金、玫瑰金、白金）的色準至關重要。
+        
+    - `set_roi_auto_exposure(roi)`: 告訴相機「只根據手錶本體調整亮度」，忽略黑色背景。
+        
+3. **混合式對焦邏輯 (Hybrid Autofocus - 在 Driver 層實作)**
+    
+    - 先用 Z 軸馬達做「粗調」。
+        
+    - 再用液態鏡頭做「微調 (Electronic Fine Tuning)」，這比馬達微步移動更準確且無震動。
+        
+
+---
+
+### 更新後的 `Controller/hardware_managers.py`
+
+請用此版本替換原本的 `CameraManager` 類別，並保留其他的 Managers。
+
+Python
+
+```
+# Controller/hardware_managers.py (Partial Update: CameraManager)
+
+import logging
+import time
+import numpy as np
+import cv2
+
+# ... (ZaberManager, HardwareBase 等保持不變) ...
+
+class CameraManager(HardwareBase):
+    def __init__(self, config):
+        self.logger = logging.getLogger("CamMgr")
+        self.config = config
+        self.devices_cfg = config.get('devices', {})
+        self.simulation = config.get('simulation_mode', True)
+        self.cti_path = config.get('gentl_path', "C:/Program Files/Opto Engineering/ITALA SDK/bin/genicam/oegenicamentl.cti")
+        
+        self.harvester = None
+        self.active_camera = None 
+        self.active_cam_name = None
+        
+        # 液態鏡頭校正參數 (範例：需根據實際鏡頭 datasheet 填入)
+        # 假設: Focal Power (dpt) = Slope * Current + Offset + Temp_Coeff * (T - 25)
+        self.lens_calib = {
+            "slope": 0.1, "offset": 0.0, "temp_coeff": 0.05
+        }
+
+        if not self.simulation:
+            self._init_genicam()
+        else:
+            self.logger.info("Camera Manager running in SIMULATION mode.")
+
+    def _init_genicam(self):
+        try:
+            from harvesters.core import Harvester
+            self.harvester = Harvester()
+            self.harvester.add_file(self.cti_path)
+            self.harvester.update()
+            self.logger.info(f"GenTL Initialized. Found devices: {len(self.harvester.device_info_list)}")
+        except Exception as e:
+            self.logger.error(f"GenICam Init Failed: {e} (Using Simulation)")
+            self.simulation = True
+
+    def switch_camera(self, cam_alias):
+        # ... (保持原有的切換邏輯) ...
+        if self.active_cam_name == cam_alias: return 
+        self.logger.info(f"Switching to camera: {cam_alias}")
+        
+        if self.active_camera:
+            try:
+                self.active_camera.stop_acquisition()
+                self.active_camera.destroy()
+            except: pass
+            self.active_camera = None
+
+        self.active_cam_name = cam_alias
+        if self.simulation: return
+
+        target_id = self.devices_cfg.get(cam_alias, {}).get('id')
+        try:
+            candidate = next((d for d in self.harvester.device_info_list if target_id in d.serial_number), None)
+            if candidate:
+                self.active_camera = candidate.create_image_acquirer()
+                self.active_camera.start_acquisition()
+                self.logger.info(f"Camera {cam_alias} acquired.")
+                
+                # [NEW] 切換後立即啟用基本設定
+                self._apply_default_settings()
+            else:
+                self.logger.error(f"Physical camera {target_id} not found.")
+        except Exception as e:
+            self.logger.error(f"Failed to switch camera: {e}")
+
+    def _apply_default_settings(self):
+        """套用預設設定，確保相機處於已知狀態"""
+        try:
+            node_map = self.active_camera.remote_device.node_map
+            # 關閉自動功能，改由軟體控制 (避免不可預測性)
+            if hasattr(node_map, 'ExposureAuto'):
+                node_map.ExposureAuto.value = 'Off'
+            if hasattr(node_map, 'GainAuto'):
+                node_map.GainAuto.value = 'Off'
+            if hasattr(node_map, 'BalanceWhiteAuto'):
+                node_map.BalanceWhiteAuto.value = 'Off'
+        except Exception as e:
+            self.logger.warning(f"Failed to apply default settings: {e}")
+
+    # ==========================================
+    # [NEW] 進階液態鏡頭控制
+    # ==========================================
+    
+    def get_lens_temperature(self):
+        """讀取液態鏡頭溫度 (用於補償熱漂移)"""
+        if self.simulation or not self.active_camera:
+            return 25.0 # 模擬溫度
+
+        try:
+            node_map = self.active_camera.remote_device.node_map
+            # Node 名稱需查閱 ITALA 手冊，通常是 DeviceTemperature 或特定 Lens node
+            if hasattr(node_map, 'OptotuneTemperature'):
+                return node_map.OptotuneTemperature.value
+            elif hasattr(node_map, 'DeviceTemperature'):
+                return node_map.DeviceTemperature.value
+        except Exception as e:
+            self.logger.warning(f"Could not read lens temp: {e}")
+        return 25.0
+
+    def set_liquid_lens_raw(self, value):
+        """設定原始控制值 (電流或 DAC)"""
+        if self.simulation:
+            self.logger.info(f"[Sim] Liquid Lens -> {value}")
+            return
+
+        if self.active_camera:
+            try:
+                node_map = self.active_camera.remote_device.node_map
+                # 嘗試常見的 Node 名稱
+                if hasattr(node_map, 'FocusPos'): # GenICam Standard
+                    node_map.FocusPos.value = int(value)
+                elif hasattr(node_map, 'LensDriverCurrent'): # Opto Specific
+                    node_map.LensDriverCurrent.value = float(value)
+                elif hasattr(node_map, 'OptotuneFocus'):
+                    node_map.OptotuneFocus.value = float(value)
+            except Exception as e:
+                self.logger.error(f"Liquid Lens set failed: {e}")
+
+    def set_liquid_lens_diopter(self, diopter):
+        """
+        [進階] 設定屈光度 (自動溫度補償)
+        這需要先做過校正，找出電流與屈光度的關係。
+        """
+        temp = self.get_lens_temperature()
+        
+        # 簡單的線性模型範例： Current = (Diopter - Offset - TempCoeff * dT) / Slope
+        # 實務上這會更複雜，通常由廠商 SDK 處理，若原廠有提供 'OpticalPower' Node 最好
+        current = (diopter - self.lens_calib['offset'] - 
+                   self.lens_calib['temp_coeff'] * (temp - 25.0)) / self.lens_calib['slope']
+        
+        self.logger.info(f"Setting Diopter {diopter} dpt (Temp {temp}C) -> Current {current:.2f} mA")
+        self.set_liquid_lens_raw(current)
+
+    def sweep_liquid_lens(self, start_val, end_val, steps=10):
+        """
+        [強力功能] 電子對焦掃描 (Electronic Focus Sweep)
+        快速改變焦點並連續拍照，回傳一組影像堆疊 (Image Stack)。
+        用於軟體計算最佳清晰度，比 Z 軸移動快得多。
+        """
+        self.logger.info(f"Starting Liquid Lens Sweep: {start_val} -> {end_val} ({steps} steps)")
+        image_stack = []
+        values = np.linspace(start_val, end_val, steps)
+
+        for v in values:
+            self.set_liquid_lens_raw(v)
+            # 液態鏡頭穩定時間極短 (約 15ms)
+            if not self.simulation:
+                time.sleep(0.02) 
+            
+            img = self.capture_image()
+            if img is not None:
+                image_stack.append({'focus_val': v, 'image': img})
+        
+        return image_stack
+
+    # ==========================================
+    # [NEW] 進階相機畫質控制
+    # ==========================================
+
+    def set_white_balance_roi(self, roi_rect=None):
+        """
+        自動白平衡 (可指定 ROI 避免受黑色背景影響)
+        roi_rect: (x, y, w, h)
+        """
+        if self.simulation or not self.active_camera: return
+
+        try:
+            node_map = self.active_camera.remote_device.node_map
+            
+            # 設定 ROI (若支援)
+            if roi_rect and hasattr(node_map, 'AutoWhitebalanceROI'):
+                # 這裡的設定通常比較複雜，視相機而定
+                pass 
+
+            # 觸發一次自動白平衡
+            if hasattr(node_map, 'BalanceWhiteAuto'):
+                node_map.BalanceWhiteAuto.value = 'Once'
+                self.logger.info("Triggered Auto White Balance")
+                
+                # 等待完成
+                for _ in range(10):
+                    time.sleep(0.2)
+                    if node_map.BalanceWhiteAuto.value == 'Off':
+                        break
+        except Exception as e:
+            self.logger.error(f"White Balance failed: {e}")
+
+    def capture_image(self, exposure_time=None, gain=None):
+        """(更新版) 支援參數為 None 時使用相機當前設定"""
+        if self.simulation:
+            # ... (Sim logic) ...
+            return np.zeros((2048, 2448, 3), dtype=np.uint8)
+
+        if not self.active_camera: return None
+
+        try:
+            node_map = self.active_camera.remote_device.node_map
+            
+            # 只有當參數有值時才寫入，否則保留當前狀態 (例如剛剛做完 Auto Exposure)
+            if exposure_time is not None and hasattr(node_map, 'ExposureTime'):
+                node_map.ExposureTime.value = float(exposure_time)
+            if gain is not None and hasattr(node_map, 'Gain'):
+                node_map.Gain.value = float(gain)
+            
+            with self.active_camera.fetch_buffer() as buffer:
+                # 處理 Payload
+                component = buffer.payload.components[0]
+                width = component.width
+                height = component.height
+                data_format = component.data_format
+
+                # 深層複製數據
+                img_data = component.data.copy()
+                
+                # 簡單 Reshape (假設是 Mono8 或 BayerRG8)
+                # 實務上這裡需要一個 debayering 的步驟轉成 RGB
+                # Harvesters 為了效能通常給 raw bayer data
+                img = img_data.reshape(height, width)
+                
+                # 若是 Bayer 格式，需轉 RGB (OpenCV)
+                # 這裡假設 ITALA 輸出是 BayerRG8 (需確認)
+                # img_rgb = cv2.cvtColor(img, cv2.COLOR_BayerRG2BGR)
+                
+                return img # 回傳 (H, W) 或 (H, W, 3)
+        except Exception as e:
+            self.logger.error(f"Capture failed: {e}")
+            return None
+
+    # ... (HDR, E-Stop, Recover 保持不變) ...
+```
+
+---
+
+### 如何使用這些新功能？ (在 `real_driver.py` 中實作)
+
+現在 `CameraManager` 變強大了，我們需要在 **`hardware_drivers/real_driver.py`** 中利用這些功能來實作**「精密混合對焦」**。
+
+請將以下函式加入 `RealHardwareDriver` 類別：
+
+Python
+
+```
+# Controller/hardware_drivers/real_driver.py
+
+    def run_hybrid_autofocus(self, center_z=30.0, range_mm=5.0):
+        """
+        [進階對焦流程]
+        1. Zaber 馬達：移動到雷射感測器建議的 '大概位置' (Coarse Focus)。
+        2. Liquid Lens：在該位置進行快速電子掃描 (Fine Focus)，找出最清晰的焦點。
+        """
+        self.logger.info("Starting Hybrid Autofocus...")
+
+        # 1. 粗調 (Coarse) - 使用雷射感測器
+        # 呼叫之前的 run_robust_autofocus 讓馬達移動到位
+        coarse_z, success = self.run_robust_autofocus(start_z=center_z)
+        if not success:
+            self.logger.warning("Coarse focus failed, trying fine sweep anyway.")
+
+        # 2. 微調 (Fine) - 使用液態鏡頭掃描
+        # 假設液態鏡頭控制範圍是 0 (遠) ~ 100 (近)
+        # 我們掃描中間這段，找出對比度最高的影像
+        self.logger.info("Performing Liquid Lens Sweep...")
+        
+        # 掃描 10 張圖，範圍 40~70 (電流值或 DAC)
+        stack = self.cam.sweep_liquid_lens(start_val=40, end_val=70, steps=10)
+        
+        best_score = -1
+        best_focus_val = 0
+        
+        for item in stack:
+            val = item['focus_val']
+            img = item['image']
+            
+            # 計算清晰度 (Laplacian Variance)
+            gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY) if len(img.shape)==3 else img
+            score = cv2.Laplacian(gray, cv2.CV_64F).var()
+            
+            if score > best_score:
+                best_score = score
+                best_focus_val = val
+        
+        self.logger.info(f"Best Focus Found: Liquid Lens Value = {best_focus_val} (Score: {best_score:.1f})")
+        
+        # 3. 鎖定最佳焦點
+        self.cam.set_liquid_lens_raw(best_focus_val)
+        
+        return coarse_z, best_focus_val
+```
+
+### 總結
+
+1. **為什麼要這樣改？**
+    
+    - 原本的 `set_liquid_lens` 只是送出指令，不知道結果好壞。
+        
+    - 新的 `sweep_liquid_lens` 利用液態鏡頭**沒有機械移動、速度極快**的特性，瞬間拍 10 張不同焦點的照片來找最清晰點，這才是液態鏡頭真正的用法。
+        
+    - 加入溫度讀取 `get_lens_temperature` 是為了未來能做更精確的物理模型補償。
+        
+2. **流程變更**：
+    
+    - 舊流程：馬達動 -> 拍照 -> 分析清晰度 -> 馬達動 (慢，且馬達有震動)。
+        
+    - 新流程：馬達動一次到位 -> 液態鏡頭快速掃描 (快，無震動) -> 鎖定最佳值 -> 拍照。
+        
+
+這才是符合 Tech Lead 標準的工業級控制方式。
+
+
+
+
+
+#### Light source等硬體擴充functions
+ref: [Trivecto new system design]-8 V2 hardware
+```
+那LightManager跟IOManager是否也有類似的擴充functions可以讓LTDVE2CH-20F, Adam ADAM-6266-B, Keyence CL-3000等有更好的控制根更好的畫質跟output?
+```
+這是一個非常專業且關鍵的提問。作為 Tech Lead，我必須強調：**工業級的自動光學檢測 (AOI) 系統，勝負往往取決於對光源和感測器的「細膩控制」。**
+
+目前的 `LightManager` 只有開/關/強度，`IOManager` 只有讀取單一數值。這在面對手錶這種**高反光、材質複雜（玻璃 vs 金屬 vs 皮革）**的物體時，絕對是不夠的。
+
+以下是針對這兩者的**深度擴充建議**與**完整程式碼**。
+
+---
+
+### 1. LightManager 擴充重點：不僅是「亮」，而是「精準曝光」
+
+#### 針對 Opto-Engineering LTDVE2CH-20F (Strobe Controller)
+
+這款控制器的強項在於 **Overdrive (超頻閃)**。
+
+- **現狀**：只把它當普通調光器用（Continuous Mode）。
+    
+- **擴充**：加入 **Strobe Mode (頻閃模式)**。
+    
+    - **優勢**：你可以用 300% 甚至 500% 的電流瞬間打光（例如 1ms），配合相機曝光。這能讓光圈縮得更小（景深更深），且大幅減少環境光干擾。
+        
+- **保護**：加入溫度與電流上限檢查，避免燒毀 LED。
+    
+
+#### 針對 Advantech ADAM-6266-B (Spot Lights)
+
+這通常是繼電器 (Relay) 輸出，但很多型號支援 **PWM (脈衝寬度調變)**。
+
+- **現狀**：只有開/關。聚光燈打在手錶錶圈上通常會過曝（死白）。
+    
+- **擴充**：實作 **PWM 調光**。
+    
+    - **優勢**：可以將強力聚光燈調暗至 10% 或 50%，這對拍攝高反光金屬至關重要。
+        
+
+### 2. IOManager 擴充重點：不僅是「讀數」，而是「穩定測量」
+
+#### 針對 Keyence CL-3000
+
+這是一款高精度的共焦位移計，單次讀數會有雜訊。
+
+- **現狀**：讀取單次值 (`MS,01`)。容易受到手錶表面微小紋理或震動影響。
+    
+- **擴充**：
+    
+    1. **統計採樣 (Statistical Sampling)**：連續讀取 10~50 次取**中位數 (Median)**，濾除雜訊與極端值。
+        
+    2. **程式切換 (Program Switching)**：CL-3000 支援多組設定 (Program)。測量「藍寶石玻璃」和測量「磨砂金屬錶帶」需要不同的感測器設定（例如採樣頻率、雷射強度）。我們需要在程式碼中動態切換。
+        
+
+---
+
+### 更新後的 `Controller/hardware_managers.py` (下半部)
+
+請將這部分的 `LightManager` 和 `IOManager` 替換進原本的檔案中。
+
+Python
+
+```
+# Controller/hardware_managers.py (Partial Update: LightManager & IOManager)
+
+# ... (前文的 imports, HardwareBase, ZaberManager, CameraManager 保持不變) ...
+
+class LightManager(HardwareBase):
+    def __init__(self, config):
+        self.logger = logging.getLogger("LightMgr")
+        self.ltdve_cfg = config.get('ltdve', {})
+        self.adam_cfg = config.get('adam', {})
+        
+        # 安全限制：避免燒毀 LED
+        self.max_current_continuous = 1000 # mA
+        self.max_current_strobe = 3000     # mA (Overdrive 允許更高電流)
+        self.max_strobe_duration = 5000    # microseconds
+
+    # --- LTDVE (Ring Lights) Advanced Control ---
+    def _send_ltdve_cmd(self, cmd_str):
+        try:
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                s.settimeout(1.0)
+                # 使用 Config IP 或預設值
+                s.connect((self.ltdve_cfg.get('ip', '192.168.1.50'), self.ltdve_cfg.get('port', 1000)))
+                s.sendall((cmd_str + "\r\n").encode('ascii'))
+                resp = s.recv(1024)
+                return resp.decode('ascii').strip()
+        except Exception as e:
+            self.logger.error(f"LTDVE Control Error ({cmd_str}): {e}")
+            return None
+
+    def set_ring_light_continuous(self, channel_idx, intensity_ma):
+        """
+        設定恆亮模式 (Continuous)
+        intensity_ma: 電流值 (mA)
+        """
+        # 安全檢查
+        if intensity_ma > self.max_current_continuous:
+            self.logger.warning(f"Intensity {intensity_ma}mA exceeds continuous limit! Clamping to {self.max_current_continuous}.")
+            intensity_ma = self.max_current_continuous
+
+        # LTDVE 指令: 設定通道模式為連續 (範例指令, 需查閱手冊)
+        # 假設: MOD{ch},C (Continuous) -> CUR{ch},{val}
+        self._send_ltdve_cmd(f"MOD{channel_idx},C") 
+        self._send_ltdve_cmd(f"CUR{channel_idx},{int(intensity_ma)}")
+        
+        # 開啟輸出
+        self._send_ltdve_cmd(f"EN{channel_idx},1")
+        self.logger.info(f"Ring Light Ch{channel_idx} ON (Continuous, {intensity_ma}mA)")
+
+    def set_ring_light_strobe(self, channel_idx, intensity_ma, duration_us):
+        """
+        [進階] 設定頻閃模式 (Strobe/Overdrive)
+        配合相機觸發訊號使用，可獲得超高亮度且不燒毀 LED。
+        """
+        if intensity_ma > self.max_current_strobe:
+            intensity_ma = self.max_current_strobe
+        if duration_us > self.max_strobe_duration:
+            duration_us = self.max_strobe_duration
+
+        # 設定模式為頻閃
+        self._send_ltdve_cmd(f"MOD{channel_idx},S")
+        # 設定脈衝寬度 (時間)
+        self._send_ltdve_cmd(f"PUL{channel_idx},{int(duration_us)}")
+        # 設定超頻電流
+        self._send_ltdve_cmd(f"CUR{channel_idx},{int(intensity_ma)}")
+        
+        self.logger.info(f"Ring Light Ch{channel_idx} STROBE ARMED ({intensity_ma}mA, {duration_us}us)")
+
+    # --- ADAM-6266 (Spot Lights) Advanced Control ---
+    def _send_adam_modbus(self, unit_id, func_code, reg_addr, data_val):
+        """
+        簡易 Modbus TCP 封包發送
+        """
+        ip = self.adam_cfg.get('ip', '192.168.1.51')
+        port = self.adam_cfg.get('port', 502)
+        
+        # Transaction ID, Protocol(0), Len(6), UnitID, Func, AddrHi, AddrLo, DataHi, DataLo
+        packet = struct.pack('>HHHBBHH', 0, 0, 6, unit_id, func_code, reg_addr, data_val)
+        
+        try:
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                s.settimeout(1.0)
+                s.connect((ip, port))
+                s.sendall(packet)
+                s.recv(1024)
+        except Exception as e:
+            self.logger.error(f"ADAM Control Error: {e}")
+
+    def set_spot_light_pwm(self, light_name, duty_cycle_percent):
+        """
+        [進階] 使用 PWM 控制聚光燈亮度 (Dimming)
+        duty_cycle_percent: 0 ~ 100
+        """
+        channel_map = self.adam_cfg.get('channels', {})
+        if light_name not in channel_map:
+            return
+
+        do_channel = channel_map[light_name]
+        
+        # ADAM-6266 PWM 設定 (需查閱 Modbus Address Map)
+        # 假設: PWM Enable 暫存器在 0x0010, Duty Cycle 在 0x0020 + ch
+        # 1. 啟用 PWM 模式 (若尚未啟用)
+        # self._send_adam_modbus(1, 5, 0x0010 + do_channel, 0xFF00) 
+        
+        # 2. 設定 Duty Cycle (通常是 0-1000 代表 0.0-100.0%)
+        duty_val = int(duty_cycle_percent * 10) # Scaling
+        # Function 6: Write Single Register
+        # register_address = BASE_PWM_DUTY_ADDR + do_channel
+        register_address = 100 + do_channel # 範例地址
+        
+        self._send_adam_modbus(1, 6, register_address, duty_val)
+        self.logger.info(f"Set Spot Light {light_name} PWM -> {duty_cycle_percent}%")
+
+    def emergency_stop(self):
+        self.logger.info("Lights Emergency Stop")
+        # 關閉所有輸出
+        self._send_ltdve_cmd("EN1,0")
+        self._send_ltdve_cmd("EN2,0")
+        # ADAM 全部 OFF
+        if 'channels' in self.adam_cfg:
+            for name, ch in self.adam_cfg['channels'].items():
+                self._send_adam_modbus(1, 5, ch, 0x0000) # Coil OFF
+
+    def recover_state(self):
+        self.emergency_stop()
+        return True
+
+
+class IOManager(HardwareBase):
+    def __init__(self, keyence_config):
+        self.logger = logging.getLogger("IOMgr")
+        self.ip = keyence_config.get('ip', '192.168.1.10')
+        self.port = int(keyence_config.get('port', 24685))
+        self.timeout = 2.0
+
+    def _send_recv(self, command):
+        """底層 Socket 通訊"""
+        try:
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                s.settimeout(self.timeout)
+                s.connect((self.ip, self.port))
+                s.sendall((command + "\r\n").encode('ascii'))
+                data = s.recv(1024).decode('ascii').strip()
+                return data
+        except Exception as e:
+            self.logger.warning(f"Keyence Comm Error: {e}")
+            return None
+
+    def switch_program(self, program_no):
+        """
+        [進階] 切換 Keyence 測量程式 (Context-Aware Sensing)
+        program_no: 0 ~ 15 (Keyence CL-3000 通常支援多組設定)
+        例如: Prog 0 針對金屬, Prog 1 針對玻璃 (多層模式)
+        """
+        self.logger.info(f"Switching Keyence Program to P{program_no}")
+        cmd = f"PW,{int(program_no):02d}" # Format: PW,01
+        resp = self._send_recv(cmd)
+        
+        # Keyence 回應通常是 "PW,01" 表示成功，或是 "ER,..."
+        if resp and "ER" not in resp:
+            time.sleep(0.2) # 切換程式需要一小段穩定時間
+            return True
+        else:
+            self.logger.error(f"Program Switch Failed: {resp}")
+            return False
+
+    def read_stable_value(self, samples=10, delay=0.01):
+        """
+        [強力功能] 統計讀取 (Statistical Reading)
+        連續讀取多次並取中位數，過濾掉表面的灰塵或雜訊干擾。
+        """
+        values = []
+        for _ in range(samples):
+            val = self.read_single_value()
+            # 濾除錯誤值 (Keyence 錯誤通常回傳 -999.999 或 FFFF)
+            if -99.0 < val < 99.0: 
+                values.append(val)
+            time.sleep(delay)
+        
+        if not values:
+            self.logger.warning("No valid sensor readings obtained.")
+            return -999.0
+        
+        # 取中位數 (Median) 最能抗雜訊
+        stable_val = np.median(values)
+        std_dev = np.std(values)
+        
+        self.logger.debug(f"Sensor Stable Read: {stable_val:.4f} (StdDev: {std_dev:.4f}, N={len(values)})")
+        return stable_val
+
+    def read_single_value(self):
+        """讀取單次數值"""
+        # "MS,01" 是讀取 Head 1 的測量值
+        resp = self._send_recv("MS,01") 
+        if resp:
+            # 格式範例: "MS,01,+012.3456"
+            parts = resp.split(',')
+            if len(parts) >= 3:
+                try:
+                    val_str = parts[-1]
+                    if "F" in val_str or "L" in val_str: # Error codes often contain letters
+                        return -999.0
+                    return float(val_str)
+                except ValueError:
+                    pass
+        return -999.0
+
+    def read_keyence(self):
+        """相容舊介面的 Wrapper"""
+        return self.read_stable_value(samples=5) # 預設改為讀取 5 次取平均
+
+    def emergency_stop(self):
+        pass 
+
+    def recover_state(self):
+        # 嘗試讀取一次以確認連線
+        return self.read_single_value() != -999.0
+```
+
+---
+
+### 如何使用這些新功能？ (Usage Example)
+
+這些擴充功能讓你的檢測流程可以根據「手錶材質」做最佳化調整。
+
+#### 情境：檢測藍寶石玻璃鏡面 (Glass Inspection)
+
+Python
+
+```
+# 在 Controller/hardware_drivers/real_driver.py 或 Workflow 中
+
+def inspect_glass_surface(self):
+    # 1. 切換 Keyence 到「玻璃模式」(假設是 Program 1)
+    # 玻璃模式可能開啟了「多層測量」功能，避免雷射直接穿透
+    self.io.switch_program(1)
+    
+    # 2. 移動 Z 軸並穩定讀取高度
+    # 使用 read_stable_value 避免玻璃表面反光造成的單點跳動
+    current_z = self.io.read_stable_value(samples=20) 
+    
+    # 3. 開啟環形燈 (Ring Light)，使用 PWM 頻閃模式
+    # 因為玻璃需要強光來檢查刮痕，但不能持續開以免過熱
+    # 設定 3000mA, 持續 2000us (2ms)
+    self.light.set_ring_light_strobe(channel_idx=1, intensity_ma=3000, duration_us=2000)
+    
+    # 4. 相機拍照 (需透過硬體觸發線同步，或軟體快速觸發)
+    # ...
+```
+
+#### 情境：檢測金屬錶殼 (Metal Case Inspection)
+
+Python
+
+```
+def inspect_metal_case(self):
+    # 1. 切換 Keyence 到「金屬模式」(假設是 Program 0)
+    self.io.switch_program(0)
+    
+    # 2. 開啟聚光燈 (Spot Light)，但調暗至 30%
+    # 金屬很容易過曝，全開會導致白成一片，PWM 調光至 30% 剛好
+    self.light.set_spot_light_pwm("spot_light_1", 30)
+    
+    # ...
+```
+
+### 總結
+
+1. **LightManager**: 從「開關」升級為 **「能量控制」** (Overdrive 瞬間強光 & PWM 細膩弱光)。
+    
+2. **IOManager**: 從「讀數」升級為 **「信號處理」** (統計濾波 & 情境模式切換)。
+    
+
+這些修改讓你的硬體控制層真正具備了應對複雜光學檢測的能力，這才是一個 30 萬隻手錶檢測量級系統該有的水準。
