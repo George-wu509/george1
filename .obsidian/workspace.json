@@ -13,12 +13,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "TRIVECTO system - template system.md",
+                "file": "TRIVECTO system - account system.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "TRIVECTO system - template system"
+              "title": "TRIVECTO system - account system"
             }
           }
         ]
@@ -78,8 +78,7 @@
       }
     ],
     "direction": "horizontal",
-    "width": 246.5,
-    "collapsed": true
+    "width": 246.5
   },
   "right": {
     "id": "e8aa8d072fa51c07",
@@ -173,6 +172,7 @@
   },
   "active": "e2a579902f579ef7",
   "lastOpenFiles": [
+    "TRIVECTO system - template system.md",
     "TRIVECTO system - V2 System.md",
     "TRIVECTO system - account system.md",
     "TRIVECTO system - hardware.md",
@@ -180,7 +180,6 @@
     "TRIVECTO system - update1.md",
     "TRIVECTO system - Data manager.md",
     "TRIVECTO system - Connection plan.md",
-    "TRIVECTO system - template system.md",
     "TRIVECTO system - DynamoDB.md",
     "@@ Daily practice.md",
     "TRIVECTO system - design.md",

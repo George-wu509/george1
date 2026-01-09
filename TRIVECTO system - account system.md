@@ -4,6 +4,8 @@
 | ----------------------------- | --- |
 | [[#### Build account system]] |     |
 | [[#### 檢查基於角色的存取控制]]          |     |
+| [[#### Account 搬到Cloud並修改權限]] |     |
+|                               |     |
 |                               |     |
 
 
@@ -594,3 +596,426 @@ Python
     
 
 這套系統現在已經具備了 **企業級 (Enterprise-Grade)** 的基礎架構雛形。可以放心進行整合測試。
+
+
+
+
+
+#### Account 搬到Cloud並修改權限
+ref [Trivecto new system design]-9 Account system
+```
+關於account system, 如果我想要帳戶系統放在cloud, 因為譬如我去germany or new york還是需要用我自己的帳號而不是到當地在註冊一個. 而且使用這軟體的人不多但需要很嚴格的風險保護帳號, 而且管理者帳號可以create account, setup password跟層級(包括管理者帳號, engineering account跟一般user account) 而engineering account跟一般user account都只能修改密碼. 也請預設有兩個管理者帳號包括: "trigeorge", 密碼是 "wu". 另一個帳號是 "trijosh", 密碼是"moser". 然後一個engineering account: "eng01", 密碼是 "moser". 然後一個engineering account: "user01", 密碼是 "1234". 也需要一些function之後是要用在App介面登入用
+```
+這是一個非常合理的架構升級。將帳號系統從 Local SQLite 遷移到 **Cloud DynamoDB** 是支援全球漫遊（Global Roaming）的最佳解法。這樣無論您身在紐約或德國，只要連上網路，就能使用同一組帳號登入，且權限與設定是統一管理的。
+
+為了達成您的需求（全球存取、特定預設帳號、角色分級、修改密碼功能），我們需要進行以下修改：
+
+1. **Config**: 新增 Users 表格設定。
+    
+2. **CloudDB**: 新增對 Users 表格的 CRUD 操作 (Create, Read, Update)。
+    
+3. **AccountManager**: **大幅重寫**。不再連線 SQLite，改為呼叫 CloudDB。加入預設帳號初始化邏輯與修改密碼功能。
+    
+4. **WorkflowServer**: 新增修改密碼的 API 供未來的 App 使用。
+    
+5. **WorkflowManager**: 修改初始化，傳遞 `cloud_db` 給 `AccountManager`。
+    
+
+---
+
+### 1. `config/system_config.yaml` (新增 Users Table)
+
+我們需要在 AWS 設定區塊增加一個專門存使用者的 DynamoDB 表格名稱。
+
+YAML
+
+```
+# config/system_config.yaml
+
+aws:
+  s3_bucket: "watch-analysis-v1"
+  region: "us-east-1"
+  
+  # Tables
+  dynamodb_table: "WatchAnalysisResults"   # Data Plane
+  command_table: "WatchCommandLog"         # Control Plane
+  template_table: "WatchTemplates"         # Config Plane
+  users_table: "WatchUsers"                # [NEW] Auth Plane (Global)
+  
+  # ... (其他設定保持不變)
+```
+
+---
+
+### 2. `data_manager/cloud_db.py` (新增 User 操作)
+
+我們需要在這裡實作對 `WatchUsers` 表格的讀寫。
+
+Python
+
+```
+# data_manager/cloud_db.py
+import time
+import logging
+from datetime import datetime, timedelta
+from typing import Any, Dict, List, Optional
+import boto3
+from botocore.exceptions import ClientError, NoCredentialsError
+
+class CloudDatabaseManager:
+    def __init__(self, config: dict):
+        self.config = config
+        self.aws_cfg = config.get("aws", {})
+        self.region = self.aws_cfg.get("region", "us-east-1")
+
+        # Table Names
+        self.results_table_name = self.aws_cfg.get("dynamodb_table", "WatchAnalysisResults")
+        self.command_table_name = self.aws_cfg.get("command_table", "WatchCommandLog")
+        self.template_table_name = self.aws_cfg.get("template_table", "WatchTemplates")
+        self.users_table_name = self.aws_cfg.get("users_table", "WatchUsers") # [NEW]
+
+        self.command_ttl_days = int(self.aws_cfg.get("command_ttl_days", 7))
+        self.logger = logging.getLogger("CloudDB")
+        
+        self.dynamodb = None
+        self.users_table = None # [NEW]
+        # ... (其他 table 變數)
+
+        self._connect()
+
+    def _connect(self) -> None:
+        try:
+            self.dynamodb = boto3.resource("dynamodb", region_name=self.region)
+            
+            self.results_table = self.dynamodb.Table(self.results_table_name)
+            self.command_table = self.dynamodb.Table(self.command_table_name)
+            self.template_table = self.dynamodb.Table(self.template_table_name)
+            self.users_table = self.dynamodb.Table(self.users_table_name) # [NEW]
+            
+            self.logger.info(f"Connected CloudDB Tables including Auth: {self.users_table_name}")
+        except Exception as e:
+            self.logger.error(f"Failed to connect to DynamoDB: {e}")
+
+    # ... (保留原有的 index_record, query_watch_history 等方法) ...
+
+    # =========================================================================
+    # 4. User Management (Global Auth) [NEW]
+    # =========================================================================
+    def get_user(self, username: str) -> Optional[Dict]:
+        """從雲端取得使用者資料 (含 Hash, Salt, Role)"""
+        if not self.users_table: return None
+        try:
+            resp = self.users_table.get_item(Key={'username': username})
+            return resp.get('Item')
+        except ClientError as e:
+            self.logger.error(f"Get User Failed: {e}")
+            return None
+
+    def put_user(self, username: str, p_hash: str, salt: str, role: str, created_by: str = "system") -> bool:
+        """建立或更新使用者 (Admin Use)"""
+        if not self.users_table: return False
+        item = {
+            'username': username,
+            'password_hash': p_hash,
+            'salt': salt,
+            'role': role,
+            'created_at': str(int(time.time())),
+            'updated_at': str(int(time.time())),
+            'created_by': created_by
+        }
+        try:
+            self.users_table.put_item(Item=item)
+            return True
+        except ClientError as e:
+            self.logger.error(f"Put User Failed: {e}")
+            return False
+
+    def update_user_password(self, username: str, new_hash: str, new_salt: str) -> bool:
+        """更新密碼 (User Use)"""
+        if not self.users_table: return False
+        try:
+            self.users_table.update_item(
+                Key={'username': username},
+                UpdateExpression="set password_hash=:h, salt=:s, updated_at=:t",
+                ExpressionAttributeValues={
+                    ':h': new_hash,
+                    ':s': new_salt,
+                    ':t': str(int(time.time()))
+                }
+            )
+            return True
+        except ClientError as e:
+            self.logger.error(f"Update Password Failed: {e}")
+            return False
+```
+
+---
+
+### 3. `core/account_manager.py` (完全重寫)
+
+這個版本將原本的 SQLite 操作全部替換為 `CloudDatabaseManager` 的呼叫，並加入了您指定的預設帳號初始化邏輯。
+
+Python
+
+```
+# core/account_manager.py
+import hashlib
+import os
+import time
+import logging
+from typing import Optional, Dict
+
+class AccountManager:
+    """
+    Cloud-Based Role-Based Access Control (RBAC) System.
+    Stores users in AWS DynamoDB for global access.
+    """
+    
+    # 權限定義 (保持不變)
+    PERMISSIONS = {
+        "user": {
+            "can_move_stage": True,
+            "can_config_hardware": False,
+            "can_view_raw_images": False,
+            "can_modify_results": False,
+            "can_manage_accounts": False,
+            "view_camera_settings": False
+        },
+        "engineer": {
+            "can_move_stage": True,
+            "can_config_hardware": True,
+            "can_view_raw_images": True,
+            "can_modify_results": False,
+            "can_manage_accounts": False,
+            "view_camera_settings": True
+        },
+        "admin": {
+            "can_move_stage": True,
+            "can_config_hardware": True,
+            "can_view_raw_images": True,
+            "can_modify_results": True,
+            "can_manage_accounts": True,
+            "view_camera_settings": True
+        }
+    }
+
+    # 您要求的預設帳號清單
+    DEFAULT_ACCOUNTS = [
+        {"user": "trigeorge", "pwd": "wu",    "role": "admin"},
+        {"user": "trijosh",   "pwd": "moser", "role": "admin"},
+        {"user": "eng01",     "pwd": "moser", "role": "engineer"},
+        {"user": "user01",    "pwd": "1234",  "role": "user"}
+    ]
+
+    def __init__(self, cloud_db_manager):
+        """
+        :param cloud_db_manager: Instance of data_manager.cloud_db.CloudDatabaseManager
+        """
+        self.cloud_db = cloud_db_manager
+        self.logger = logging.getLogger("AccountMgr")
+        
+        # 初始化時檢查並建立預設帳號
+        self._ensure_default_accounts()
+
+    def _hash_password(self, password: str, salt: bytes = None) -> (str, str):
+        """PBKDF2-HMAC-SHA256 (Strict Security)"""
+        if not salt:
+            salt = os.urandom(32) # Increased salt size for better security
+        # Iteration count: 600,000 for high security (NIST recommendation for HMAC-SHA256)
+        pwd_hash = hashlib.pbkdf2_hmac('sha256', password.encode('utf-8'), salt, 600000)
+        return pwd_hash.hex(), salt.hex()
+
+    def _ensure_default_accounts(self):
+        """
+        初始化預設帳號。
+        邏輯：只在帳號 '不存在' 時建立。若已存在(可能密碼已被修改)，則不覆蓋。
+        """
+        if not self.cloud_db:
+            self.logger.warning("CloudDB not connected. Cannot verify accounts.")
+            return
+
+        for acc in self.DEFAULT_ACCOUNTS:
+            username = acc["user"]
+            # 檢查 Cloud 是否已有此人
+            existing = self.cloud_db.get_user(username)
+            if not existing:
+                self.logger.info(f"Initializing default account: {username}")
+                p_hash, salt = self._hash_password(acc["pwd"])
+                self.cloud_db.put_user(username, p_hash, salt, acc["role"], created_by="system_init")
+            else:
+                # 帳號已存在，跳過 (避免重置使用者已修改的密碼)
+                pass
+
+    def login(self, username, password) -> Optional[Dict]:
+        """驗證帳密，從 Cloud 獲取資訊"""
+        if not self.cloud_db:
+            self.logger.error("Login failed: CloudDB unavailable.")
+            return None
+
+        user_record = self.cloud_db.get_user(username)
+        
+        if user_record:
+            stored_hash = user_record.get('password_hash')
+            stored_salt = user_record.get('salt')
+            role = user_record.get('role')
+
+            if stored_hash and stored_salt:
+                check_hash, _ = self._hash_password(password, bytes.fromhex(stored_salt))
+                if check_hash == stored_hash:
+                    return {"username": username, "role": role}
+        
+        return None
+
+    def check_permission(self, role: str, action: str) -> bool:
+        """本地快速檢查權限表"""
+        perms = self.PERMISSIONS.get(role, self.PERMISSIONS["user"])
+        return perms.get(action, False)
+
+    def create_user(self, admin_role: str, new_username, new_password, new_role):
+        """建立新使用者 (僅 Admin)"""
+        if not self.check_permission(admin_role, "can_manage_accounts"):
+            raise PermissionError("Access Denied: Requires Admin privileges.")
+        
+        if new_role not in self.PERMISSIONS:
+            raise ValueError(f"Invalid role: {new_role}")
+
+        p_hash, salt = self._hash_password(new_password)
+        
+        # 寫入 CloudDB
+        success = self.cloud_db.put_user(new_username, p_hash, salt, new_role, created_by=admin_role)
+        
+        if success:
+            self.logger.info(f"User '{new_username}' created as '{new_role}'")
+            return True
+        else:
+            self.logger.error("Failed to create user in CloudDB.")
+            return False
+
+    def change_password(self, username: str, old_password: str, new_password: str) -> bool:
+        """
+        修改密碼功能 (For App Interface)
+        任何使用者都可以修改自己的密碼，但必須提供舊密碼驗證。
+        """
+        # 1. 先驗證舊密碼
+        user_info = self.login(username, old_password)
+        if not user_info:
+            self.logger.warning(f"Change password failed for {username}: Old password incorrect.")
+            raise ValueError("Old password incorrect")
+
+        # 2. 生成新 Hash
+        new_hash, new_salt = self._hash_password(new_password)
+
+        # 3. 更新 CloudDB
+        success = self.cloud_db.update_user_password(username, new_hash, new_salt)
+        if success:
+            self.logger.info(f"Password updated for user: {username}")
+            return True
+        else:
+            return False
+    
+    def admin_reset_password(self, admin_role: str, target_username: str, new_password: str) -> bool:
+        """
+        管理員強制重置密碼 (不需要舊密碼)
+        """
+        if not self.check_permission(admin_role, "can_manage_accounts"):
+             raise PermissionError("Access Denied")
+
+        new_hash, new_salt = self._hash_password(new_password)
+        return self.cloud_db.update_user_password(target_username, new_hash, new_salt)
+```
+
+---
+
+### 4. `core/workflow_manager.py` (修正初始化)
+
+**修正重點**：將 `AccountManager` 的初始化參數從 `self.data_mgr.db` (Local SQLite) 改為 `self.cloud_db` (Cloud DynamoDB)。
+
+Python
+
+```
+# core/workflow_manager.py (Partial - __init__ method)
+
+    def __init__(self, config_path: str = "config/system_config.yaml"):
+        # ... (前段代碼不變) ...
+
+        # CloudDB is the bridge to AWS
+        self.cloud_db = CloudDatabaseManager(self.config)
+        if not hasattr(self.data_mgr, "cloud_db") or self.data_mgr.cloud_db is None:
+            self.data_mgr.cloud_db = self.cloud_db
+
+        self.audit = AuditLogger(self.config, cloud_sync_manager=getattr(self.data_mgr, "cloud_sync", None))
+        
+        # [Stateless Auth] Initialize AccountMgr with CloudDB
+        # [FIX] 傳遞 cloud_db 而不是 local db
+        self.account_mgr = AccountManager(self.cloud_db)
+        self.current_session = {"username": "guest", "role": "user"}
+
+        # ... (後段代碼不變) ...
+```
+
+---
+
+### 5. `core/workflow_server.py` (新增 API)
+
+為了支援 App 介面，我們新增 `change_password` 的 API。
+
+Python
+
+```
+# core/workflow_server.py (Partial Update)
+
+class ChangePasswordRequest(BaseModel):
+    old_password: str
+    new_password: str
+
+@app.post("/api/account/change_password")
+def change_password(
+    req: ChangePasswordRequest,
+    x_token: str = Header(...),
+    user: Dict = Depends(get_current_user) # 必須先登入取得 Session Token
+):
+    """
+    App 用戶修改自己的密碼
+    """
+    verify_token(x_token)
+    
+    # 檢查是否為 Guest
+    if user['username'] == 'guest':
+        raise HTTPException(status_code=401, detail="Please login first")
+
+    # 不需要硬體鎖，這是純 CloudDB 操作
+    try:
+        success = ctx.manager.account_mgr.change_password(
+            username=user['username'],
+            old_password=req.old_password,
+            new_password=req.new_password
+        )
+        if success:
+            return {"status": "ok", "msg": "Password updated"}
+        else:
+            raise HTTPException(status_code=500, detail="Database update failed")
+            
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e)) # 舊密碼錯誤
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+```
+
+### 總結
+
+現在您的系統架構如下：
+
+1. **Global Identity**: 所有的帳號 (User, Engineer, Admin) 都儲存在 AWS DynamoDB 的 `WatchUsers` 表格中。
+    
+2. **Strict Security**:
+    
+    - 密碼使用 `PBKDF2-HMAC-SHA256` 進行 600,000 次迭代雜湊加鹽。
+        
+    - 即使是預設帳號，也會在第一次執行時生成高強度的 Hash 存入雲端。
+        
+3. **Default Accounts**: 程式啟動時會自動檢查並建立您指定的 `trigeorge`, `trijosh` 等帳號。
+    
+4. **App Ready**: 提供了 `/api/login` (驗證) 和 `/api/account/change_password` (修改密碼) 接口。
+    
+5. **Role Hierarchy**: Admin 可以建立帳號，User 只能修改自己密碼，符合您的需求。
+
