@@ -1,16 +1,18 @@
 
 
-|                                            |     |
-| ------------------------------------------ | --- |
-| [[#### AWS S3 account setting]]            |     |
-| [[#### 完整AWS Cloud各種服務整理]]                 |     |
-| [[#### 設定AWS S3的每一流程步驟step-by-step]]       |     |
-| [[#### 如果保管AWS 金鑰]]                        |     |
-| [[#### 設定AWS DynamoDB的每一流程步驟step-by-step]] |     |
-| [[#### 設定AWS IoT Core的每一流程步驟step-by-step]] |     |
-|                                            |     |
-|                                            |     |
-|                                            |     |
+|                                             |     |
+| ------------------------------------------- | --- |
+| [[#### AWS S3 account setting]]             |     |
+| [[#### 完整AWS Cloud各種服務整理]]                  |     |
+| [[#### 設定AWS S3的每一流程步驟step-by-step]]        |     |
+| [[#### 如果保管AWS 金鑰]]                         |     |
+| [[#### 設定AWS DynamoDB的每一流程步驟step-by-step]]  |     |
+| [[#### 設定AWS IoT Core的每一流程步驟step-by-step]]  |     |
+| [[#### 下載憑證與金鑰畫面]]                          |     |
+| [[#### 執行aws_agent.py]]                     |     |
+| [[#### 設定Amazon Athena的每一流程步驟step-by-step]] |     |
+|                                             |     |
+|                                             |     |
 
 
 
@@ -1363,3 +1365,377 @@ python cloud_relay/aws_agent.py
     
 
 **恭喜！** 您已經成功建立了完整的 **AWS IoT 控制平面**。現在您可以透過雲端遙控位於世界任何角落的檢測機台了。
+
+
+
+
+#### 下載憑證與金鑰畫面
+```
+為什麼在第三步：【關鍵】下載憑證與金鑰畫面他有顯示you must download both Public key file and Private key file. 這裡的下載的Device certificate, Public key file, Private key file, RSA 2048 bit key: Amazon Root CA 1, ECC 256 bit key: Amazon Root CA 3各有甚麼作用? 為什麼你說Public key file跟ECC 256 bit key: Amazon Root CA 3不需要下載?
+```
+這是一個非常敏銳且深入的問題！您注意到了 AWS 介面上的提示與我的教學之間的差異。
+
+這牽涉到 **PKI（公開金鑰基礎建設）** 的運作原理。簡單來說，AWS IoT Core 使用的是 **雙向認證 (Mutual Auth)**：不只您的電腦要確認 AWS 是真的（Server Auth），AWS 也要確認您的電腦是真的（Client Auth）。
+
+以下我為您詳細拆解這 5 個檔案的用途，並解釋為什麼在實作上我們只需要其中 3 個。
+
+### 1. 檔案用途詳解
+
+|**檔案名稱**|**角色比喻**|**詳細技術用途**|
+|---|---|---|
+|**Private key file**<br><br>  <br><br>(私有金鑰)|**印章 (私章)**|**【最重要】** 這是存放在您電腦裡的最高機密。您的程式在連線時，會用這把鑰匙對數據進行「數位簽章」，證明「我真的是這台機器」。**絕對不能外流**。|
+|**Device certificate**<br><br>  <br><br>(裝置憑證)|**身分證**|這是公開的證件。它包含了您的「Device ID」以及您的「公鑰 (Public Key)」，並由 AWS 蓋章認證。連線時，您的程式會把這張證件出示給 AWS 看。|
+|**Public key file**<br><br>  <br><br>(公開金鑰)|**印鑑卡**|這是與私鑰配對的另一半。它的作用是用來「驗證」私鑰簽出的簽章。雖然介面說要下載，但**其實它已經被包含在「Device certificate」裡面了**。|
+|**Amazon Root CA 1**<br><br>  <br><br>(RSA 2048 bit)|**驗證機構 (RSA)**|這是用來**驗證 AWS 伺服器**是否合法的證書。當您的程式連線到 AWS 時，AWS 會出示它的證書，您的程式就用這個 Root CA 來檢查 AWS 有沒有說謊。這是最通用的標準 (RSA)。|
+|**Amazon Root CA 3**<br><br>  <br><br>(ECC 256 bit)|**驗證機構 (ECC)**|這是另一種加密演算法 (橢圓曲線 ECC) 的驗證證書。只有當您刻意選擇使用 ECC 加密連線時才需要用到。|
+
+---
+
+### 2. 為什麼我說「Public Key」不需要下載？
+
+AWS 介面建議您下載是為了**備份與完整性**（例如您未來想拿這個公鑰去做其他非 IoT 連線的加密用途）。
+
+但在 **AWS IoT Python SDK** 的程式實作中，我們**不需要**這個單獨的 `.key` 檔案，原因如下：
+
+1. **已經內含**：標準的 X.509 憑證 (`Device certificate`) 結構中，**已經包含了 Public Key**。
+    
+2. **程式不需要**：當程式發起 TLS 連線時，它只需要傳送「憑證 (Certificate)」給 AWS，並使用「私鑰 (Private Key)」進行運算。它不需要單獨讀取 Public Key 檔案。
+    
+
+**結論：** 下載下來備份是可以的，但在寫程式 (`config/system_config.yaml`) 時，我們完全用不到它，所以為了避免搞混，通常教學會建議忽略。
+
+### 3. 為什麼不需要「ECC 256 bit key: Amazon Root CA 3」？
+
+這是 **二選一** 的選擇題。
+
+- **RSA (Root CA 1)**：相容性最高，絕大多數電腦、伺服器都預設支援。
+    
+- **ECC (Root CA 3)**：運算較快、金鑰較短，適合極低功耗的微控制器 (MCU)。
+    
+
+由於您的 Local Computer 是執行 Python 的電腦（算力足夠），且我們在第一步選擇「Auto-generate」時，AWS 預設是產生 **RSA** 的憑證。因此，為了讓電腦能正確驗證 AWS 伺服器，我們必須下載對應的 **RSA Root CA 1**。
+
+如果您同時下載了 ECC 版本，程式反而會不知道該用哪一個去驗證伺服器，或者根本用不到。
+
+### 總結：您真正需要的「連線三寶」
+
+為了讓 Python 程式 (`AWSAgent`) 順利運作，它在設定檔中只會要求這三個路徑：
+
+1. **Private Key** (`private.pem.key`)：用來簽名，證明我是我。
+    
+2. **Certificate** (`certificate.pem.crt`)：用來出示身分，內含公鑰。
+    
+3. **Root CA** (`AmazonRootCA1.pem`)：用來驗證 AWS 是真的 AWS。
+    
+
+其他的檔案在目前的架構下都是多餘的。
+
+
+
+
+#### 執行aws_agent.py
+```
+執行python cloud_relay/aws_agent.py
+```
+
+這份 Log 是一個**巨大的成功**！恭喜您！
+
+這代表您剛剛做的修正（IAM 權限 + Config 網址去空白 + 程式碼修改）全部都生效了。您的系統現在已經成功連上 AWS 的所有服務。
+
+以下是詳細的 Log 解讀，證明系統已完全正常運作：
+
+### 1. ✅ S3 上傳成功 (不再是 AccessDenied)
+
+- **Log 證據**:
+    
+    > `[AWS-Agent] Sync Complete: aa3bb57994174663a301add5b2c82792.jpg` `[AWS-Agent] Sync Complete: 083430adccaa4a609e4756b96cb25a4d.jpg`
+    
+- **解讀**: 之前出現紅字的 `AccessDenied` 已經消失。系統正在努力「清庫存」，把之前因為權限不足而堆積在資料庫裡沒上傳成功的圖片，一張一張成功上傳到 S3 Bucket。
+    
+
+### 2. ✅ IoT Core 連線成功 (不再是 getaddrinfo failed)
+
+- **Log 證據**:
+    
+    > `Connecting to AWS IoT Core (asnu6fyes33ht-ats.iot.us-east-1.amazonaws.com)...` `[AWS-Agent] Connected!` `[AWS-Agent] Subscribed to cmd/Rolex_Station_001`
+    
+- **解讀**: 網址後面的空白鍵已經刪除，Python 成功解析 DNS 並連上 AWS IoT 主機。現在您的電腦已經「在線」，隨時準備接收來自雲端的指令。
+    
+
+### 3. ✅ 金鑰讀取成功
+
+- **Log 證據**:
+    
+    > `[AWS-Agent] Using AWS credentials from system_config.yaml` `[CloudDB] Using AWS credentials from config.`
+    
+- **解讀**: 您剛剛修改的 Python 代碼生效了。程式不再依賴 `.aws` 資料夾，而是直接讀取 `system_config.yaml` 裡的 Access Key。
+    
+
+### 4. 🟡 正常的資料清理 (File missing locally)
+
+- **Log 證據**:
+    
+    > `File missing locally: ... Marking synced to skip.`
+    
+- **解讀**: 這是系統的自我修復機制。因為這是開發環境，您可能手動刪除了一些圖片檔，但資料庫還留有紀錄。系統發現檔案真的不見了，為了避免卡住，它很聰明地把這些紀錄標記為「已處理」，這樣就不會一直報錯。這完全正常。
+    
+
+---
+
+### 下一步：雲端驗證 (親眼確認)
+
+雖然 Log 說成功了，但我們還是要親眼去 AWS Console 確認一下，才算真正驗收：
+
+1. **檢查 S3**:
+    
+    - 進入 **S3 Console** -> 點擊您的 Bucket (`watch-analysis-v1`)。
+        
+    - 您應該會看到 `Rolex_Submariner_002` 的資料夾，裡面有 `Raw` 和 `Analysis`，點進去應該能看到剛上傳的 `.jpg` 圖片。
+        
+2. **檢查 DynamoDB**:
+    
+    - 進入 **DynamoDB Console** -> **Explore items (探索項目)**。
+        
+    - 選擇 `WatchAnalysisResults` 表。
+        
+    - 您應該會看到很多筆資料，`s3_key` 欄位都有值。
+        
+3. **測試遠端指令 (IoT)**:
+    
+    - 保持這個 Python 視窗開著。
+        
+    - 去 AWS IoT Core -> **MQTT test client** -> **Publish**。
+        
+    - 發送 Topic: `cmd/Rolex_Station_001`，Payload: `{"action": "force_sync", "command_id": "test_02"}`。
+        
+    - 看您的 Python 視窗是否會跳出 `Received action=force_sync`。
+        
+
+**結論：您的 Hybrid Cloud 架構已經打通任督二脈，正式上線了！**
+
+
+
+
+#### 設定Amazon Athena的每一流程步驟step-by-step
+```
+我有AWS root user account現在在Console Home, 但我對AWS是初學者. 請一步步中文詳細解釋教我怎麼設定系統需要的所有Amazon Athena 實現 `AuditLogger` 會上傳 JSONL 到 S3。使用 Athena 可以直接用 SQL 查詢 S3 上的日誌, 以及如何和我的系統做連結及做相應的setting.
+```
+恭喜您！您的系統基礎架構已經非常穩固。現在我們要啟用最後一塊拼圖：**Amazon Athena**。
+
+這是一個非常強大的「Serverless 查詢服務」。這意味著您**不需要**建立任何資料庫伺服器（不像 MySQL 或 PostgreSQL），您可以直接用 SQL 語法去「撈」放在 S3 裡面的純文字檔（JSONL）。
+
+以下是完整的設定步驟，包含 IAM 權限、S3 準備、Athena 建表以及系統設定。
+
+---
+
+### 第一步：補足 IAM 權限
+
+您的程式需要透過 `WatchSystemAgent` 這個帳號來執行查詢。就像之前的 S3 和 DynamoDB 一樣，我們需要先給它權限。
+
+1. 登入 AWS Console -> **IAM** -> **Users**。
+    
+2. 點擊 **`WatchSystemAgent`**。
+    
+3. 點擊 **Add permissions** -> **Attach policies directly**。
+    
+4. 搜尋 **`Athena`**。
+    
+5. 勾選 **`AmazonAthenaFullAccess`**。
+    
+6. 點擊 **Next** -> **Add permissions**。
+    
+
+_(現在這個實習生擁有查詢分析報告的權限了)_
+
+---
+
+### 第二步：準備 S3 查詢結果存放區
+
+Athena 執行查詢後，會產生 CSV 格式的結果檔，我們需要告訴它這些結果要存在哪裡。建議直接放在同一個 Bucket 的專屬資料夾中。
+
+1. 進入 **S3 Console** -> 點擊您的 Bucket (**`watch-analysis-v1`**)。
+    
+2. 點擊 **Create folder (建立資料夾)**。
+    
+3. 資料夾名稱輸入：`athena-results`。
+    
+4. 點擊 **Create folder**。
+    
+
+_(現在您的 Bucket 結構應該有：`Rolex_...` (Raw Image), `Audit_Logs` (日誌), `athena-results` (查詢結果))_
+
+---
+
+### 第三步：設定 Athena 並建立資料庫
+
+我們現在要教 Athena 如何讀取您的日誌格式。
+
+1. 進入 **Athena Console** (上方搜尋 Athena)。
+    
+2. **設定查詢結果位置 (第一次進入必做)**：
+    
+    - 點擊上方或中間的提示 **"Manage"** 或 **"Settings"** (通常會看到 "Before you run your first query, you need to set up a query result location...")。
+        
+    - 點擊 **Manage**。
+        
+    - **Location of query result**: 輸入 `s3://watch-analysis-v1/athena-results/` (請確保結尾有斜線)。
+        
+    - 點擊 **Save**。
+        
+3. **建立資料庫**：
+    
+    - 回到 **Editor (編輯器)** 畫面。
+        
+    - 在 Query 視窗輸入以下指令：
+        
+        SQL
+        
+        ```
+        CREATE DATABASE IF NOT EXISTS watch_analytics;
+        ```
+        
+    - 點擊 **Run (執行)**。
+        
+    - 左側的 "Database" 下拉選單現在應該可以選擇 `watch_analytics` 了。請選取它。
+        
+
+---
+
+### 第四步：建立資料表 (Table) 定義結構
+
+這一步最關鍵。我們要告訴 Athena，S3 裡的 JSONL 檔案長什麼樣子。
+
+根據您的 `AuditLogger` 程式碼，日誌格式如下： `{"ts": 123.4, "uid": "...", "ip": "...", "act": "...", "dat": {...}, "sig": "..."}`
+
+請在 Athena Query 視窗貼上以下 SQL (請修改 Bucket 名稱)，然後點擊 **Run**：
+
+SQL
+
+```
+CREATE EXTERNAL TABLE IF NOT EXISTS watch_analytics.audit_logs (
+  ts DOUBLE,
+  uid STRING,
+  ip STRING,
+  act STRING,
+  dat STRING, 
+  prv STRING,
+  sig STRING
+)
+ROW FORMAT SERDE 'org.openx.data.jsonserde.JsonSerDe'
+WITH SERDEPROPERTIES (
+  'ignore.malformed.json' = 'TRUE'
+)
+LOCATION 's3://watch-analysis-v1/Audit_Logs/';
+```
+
+**架構師解說：**
+
+- `EXTERNAL TABLE`: 告訴 AWS 資料還是在 S3 上，我們只是建立一個目錄。
+    
+- `dat STRING`: 雖然您的程式碼中 `dat` 是一個字典 (JSON Object)，但在 Athena 中，為了避免因為不同動作的內容結構不同而報錯，我們將其定義為 `STRING`。之後查詢時可以用 `json_extract` 函數來解析內容。
+    
+- `LOCATION`: 指向您 `CloudSyncManager` 上傳日誌的根目錄。
+    
+
+---
+
+### 第五步：修改 `system_config.yaml` 連結系統
+
+現在 AWS 端準備好了，我們要讓 Python 系統知道如何連線。
+
+打開 `config/system_config.yaml`，找到 `aws` 區塊下的 `athena` 部分，修改如下：
+
+YAML
+
+```
+aws:
+  # ... (原本的 S3, DynamoDB 設定保持不變) ...
+  
+  # [修改這裡] Athena 設定
+  athena:
+    enabled: true  # 開啟功能
+    database: "watch_analytics"
+    # 設定查詢結果的輸出位置
+    output_s3: "s3://watch-analysis-v1/athena-results/"
+    workgroup: "primary"  # 預設工作群組
+```
+
+---
+
+### 第六步：測試連線與查詢
+
+我們寫一個小腳本來驗證系統是否能透過代碼進行 SQL 查詢。
+
+在專案根目錄下建立 `test_athena.py`：
+
+Python
+
+```
+import time
+import yaml
+import os
+import sys
+
+# 1. 載入設定與模組
+try:
+    from data_manager.athena_query import AthenaQueryEngine
+    # 為了能正確讀取 Config，我們手動載入
+    with open("config/system_config.yaml", "r", encoding="utf-8") as f:
+        config = yaml.safe_load(f)
+except ImportError:
+    print("❌ 請確保您在專案根目錄執行此腳本，且 data_manager 模組存在。")
+    sys.exit(1)
+
+print("正在初始化 Athena 引擎...")
+
+# 2. 確保使用了正確的金鑰 (透過前面的教學，我們已經修改了 athena_query.py 讀取 Config)
+athena = AthenaQueryEngine(config)
+
+# 3. 定義測試 SQL
+# 這個 SQL 會查詢最近的 10 筆操作紀錄
+sql = "SELECT * FROM audit_logs ORDER BY ts DESC LIMIT 10;"
+
+print(f"正在執行查詢: {sql}")
+
+try:
+    # 4. 執行查詢
+    results = athena.run_query(sql)
+    
+    print("-" * 30)
+    print(f"✅ 查詢成功！共找到 {len(results)} 筆紀錄：")
+    for row in results:
+        # 將時間戳記轉為可讀時間
+        ts = float(row.get('ts', 0))
+        time_str = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(ts))
+        print(f"[{time_str}] User: {row.get('uid')} | Action: {row.get('act')}")
+    print("-" * 30)
+    
+    if len(results) == 0:
+        print("⚠️ 查詢成功但沒有資料。")
+        print("請確認：")
+        print("1. 您的系統是否已經產生並上傳了 Audit Log 到 S3？")
+        print("   (可執行 aws_agent 跑幾次指令，並確認 Local_Data/audit_logs 有檔案)")
+        print("2. 檢查 S3 Bucket 的 Audit_Logs 資料夾下是否有 .jsonl 檔案")
+
+except Exception as e:
+    print(f"❌ 查詢失敗: {e}")
+```
+
+### 如何讓查詢有資料？
+
+如果這是全新的系統，S3 上可能還沒有 Log。您可以：
+
+1. 先執行 `python cloud_relay/aws_agent.py`。
+    
+2. 透過 AWS MQTT Test Client 發送幾個 `manual_capture` 或 `force_sync` 指令。
+    
+3. **重要：觸發上傳**。
+    
+    - `AuditLogger` 預設是每天輪替檔案才上傳。
+        
+    - 為了測試，您可以去修改 `logging_system/audit_logger.py`，暫時把 `_check_rotation` 裡的邏輯改成「只要檔案大於 1KB 就輪替」，或者直接手動把 `Local_Data/audit_logs/` 下的 `.jsonl` 檔案上傳到 S3 的 `Audit_Logs/` 資料夾下。
+        
+
+只要 S3 的 `Audit_Logs/` 路徑下有 `.jsonl` 檔案，`test_athena.py` 就能查出結果。
+
+這樣您就完成了一套 **Serverless 的大數據日誌分析系統**！未來無論有多少台機器產生多少日誌，Athena 都能快速撈出數據，且您完全不需要維護資料庫伺服器。
