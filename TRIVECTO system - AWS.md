@@ -1,12 +1,16 @@
 
 
-|                                 |     |
-| ------------------------------- | --- |
-| [[#### AWS S3 account setting]] |     |
-| [[#### 完整AWS Cloud各種服務整理]]      |     |
-| [[#### 設定AWS S3的每一部流程]]         |     |
-| [[#### 如果保管AWS 金鑰]]             |     |
-|                                 |     |
+|                                            |     |
+| ------------------------------------------ | --- |
+| [[#### AWS S3 account setting]]            |     |
+| [[#### 完整AWS Cloud各種服務整理]]                 |     |
+| [[#### 設定AWS S3的每一流程步驟step-by-step]]       |     |
+| [[#### 如果保管AWS 金鑰]]                        |     |
+| [[#### 設定AWS DynamoDB的每一流程步驟step-by-step]] |     |
+| [[#### 設定AWS IoT Core的每一流程步驟step-by-step]] |     |
+|                                            |     |
+|                                            |     |
+|                                            |     |
 
 
 
@@ -434,14 +438,14 @@ boto3/CLI 的設定方式屬於「configuration / credential provider chain」�
 
 #### 1. 核心服務選型與理由
 
-|**需求領域**|**建議 AWS 服務**|**架構師分析理由**|
-|---|---|---|
-|**IoT 連線與通訊**|**AWS IoT Core**|**必選。** 它是唯一能在大規模跨國部署中，安全穿越防火牆管理數千台設備的方案。提供 MQTT Broker、Device Shadow 與憑證管理 (X.509)。|
-|**資料庫 (NoSQL)**|**Amazon DynamoDB**|**必選。** 你的資料結構 (`WatchView`, `Points`) 是高度巢狀且變動的 JSON。RDBMS (如 RDS) 處理這種 Schema 變更很痛苦，且 DynamoDB 的 Global Tables 可在德國與美國 Region 間進行毫秒級同步。|
-|**物件儲存**|**Amazon S3**|**必選。** 儲存 Raw Image 和 Analysis Report。配合 Lifecycle Policy (如 30 天後轉 Glacier) 可大幅降低成本。|
-|**即時影像串流**|**Amazon Kinesis Video Streams (KVS) (WebRTC)**|**建議。** 目前代碼是用 `client_binary` 跑 WebRTC。AWS KVS 提供託管的 TURN/STUN 伺服器，解決複雜的 NAT 穿透問題，這在跨國企業網路中是剛需。|
-|**遠端軟體更新**|**AWS IoT Jobs** (配合 Systems Manager)|**關鍵建議。** 單靠 MQTT 指令做 `git pull` 很危險且難以追蹤進度。IoT Jobs 專門處理 OTA (Over-The-Air) 更新，支援版本控制、灰度發布 (Canary Rollout) 和失敗回滾。|
-|**稽核與分析**|**Amazon Athena**|你的 `AuditLogger` 會上傳 JSONL 到 S3。使用 Athena 可以直接用 SQL 查詢 S3 上的日誌，無需建立昂貴的 Log Server (如 ELK Stack)。|
+| **需求領域**        | **建議 AWS 服務**                                   | **架構師分析理由**                                                                                                                               |
+| --------------- | ----------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| **IoT 連線與通訊**   | **AWS IoT Core**                                | **必選。** 它是唯一能在大規模跨國部署中，安全穿越防火牆管理數千台設備的方案。提供 MQTT Broker、Device Shadow 與憑證管理 (X.509)。                                                      |
+| **資料庫 (NoSQL)** | **Amazon DynamoDB**                             | **必選。** 你的資料結構 (`WatchView`, `Points`) 是高度巢狀且變動的 JSON。RDBMS (如 RDS) 處理這種 Schema 變更很痛苦，且 DynamoDB 的 Global Tables 可在德國與美國 Region 間進行毫秒級同步。 |
+| **物件儲存**        | **Amazon S3**                                   | **必選。** 儲存 Raw Image 和 Analysis Report。配合 Lifecycle Policy (如 30 天後轉 Glacier) 可大幅降低成本。                                                    |
+| **即時影像串流**      | **Amazon Kinesis Video Streams (KVS) (WebRTC)** | **建議。** 目前代碼是用 `client_binary` 跑 WebRTC。AWS KVS 提供託管的 TURN/STUN 伺服器，解決複雜的 NAT 穿透問題，這在跨國企業網路中是剛需。                                          |
+| **遠端軟體更新**      | **AWS IoT Jobs** (配合 Systems Manager)           | **關鍵建議。** 單靠 MQTT 指令做 `git pull` 很危險且難以追蹤進度。IoT Jobs 專門處理 OTA (Over-The-Air) 更新，支援版本控制、灰度發布 (Canary Rollout) 和失敗回滾。                       |
+| **稽核與分析**       | **Amazon Athena**                               | 你的 `AuditLogger` 會上傳 JSONL 到 S3。使用 Athena 可以直接用 SQL 查詢 S3 上的日誌，無需建立昂貴的 Log Server (如 ELK Stack)。                                          |
 
 #### 2. 針對 "遠端軟體升級" (Software OTA) 的詳細設計
 
@@ -556,7 +560,7 @@ Plaintext
 
 
 
-#### 設定AWS S3的每一部流程
+#### 設定AWS S3的每一流程步驟step-by-step
 ```
 我有AWS root user account現在在Console Home, 但我對AWS是初學者. 請一步步中文詳細解釋教我怎麼設定系統需要的Amazon S3 儲存 Raw Image 和 Analysis Report, 以及如何和我的系統做連結可以開始上傳到Amazon S3.
 ```
@@ -929,3 +933,433 @@ if __name__ == "__main__":
         
 
 您可以先依照 **方案一** 修改您的代碼，這樣部署時只要把 `yaml` 檔丟過去就搞定了。
+
+
+
+
+#### 設定AWS DynamoDB的每一流程步驟step-by-step
+```
+我有AWS root user account現在在Console Home, 但我對AWS是初學者. 請一步步中文詳細解釋教我怎麼設定系統需要的所有Amazon DynamoDB 包括WatchTemplates, WatchAnalysisResults, WatchCommandLog和其他需要用到的地方, 以及如何和我的系統做連結並對這些DynamoDB做相應的setting.
+```
+好的，沒問題！繼 S3 之後，我們現在來設定系統的核心資料庫 **Amazon DynamoDB**。
+
+由於您的系統設計非常完整（包含了權限管理、指令控制、分析結果存檔），我們需要建立 **4 個 Table (資料表)**。
+
+請跟隨以下步驟，我會帶您在 AWS Console 上逐一建立，並講解每個設定的原因。
+
+---
+
+### 第一步：進入 DynamoDB 控制台
+
+1. 登入 AWS Console。
+    
+2. 在上方搜尋列輸入 **"DynamoDB"**，點擊進入。
+    
+3. 點擊左側選單的 **"Tables" (資料表)**。
+    
+4. 點擊橘色的 **"Create table" (建立資料表)** 按鈕。
+    
+
+---
+
+### 第二步：逐一建立 4 個資料表
+
+我們需要分別建立 `WatchAnalysisResults`, `WatchCommandLog`, `WatchTemplates`, `WatchUsers`。請依照下方表格的數值填寫：
+
+#### 1. 建立 `WatchAnalysisResults` (儲存分析結果與圖片索引)
+
+這是資料量最大的表，建議設定自動擴展。
+
+- **Table name (資料表名稱)**: `WatchAnalysisResults`
+    
+- **Partition key (分割區索引鍵)**: `watch_id` (String / 字串)
+    
+- **Sort key (排序索引鍵)**: `sort_key` (String / 字串)
+    
+- **Table settings (資料表設定)**: 選擇 **Customize settings (自訂設定)**
+    
+- **Capacity mode (容量模式)**: 選擇 **On-demand (隨需)**
+    
+    - _原因：隨需模式雖然單價稍高，但適合流量不穩定的 IoT 場景（例如半夜沒人檢測），且完全不用管理容量，對初學者最友善。_
+        
+- 點擊 **Create table**。
+    
+
+#### 2. 建立 `WatchCommandLog` (儲存遠端指令狀態)
+
+這是控制平面，需要設定 TTL (自動過期刪除) 以節省空間。
+
+- **Table name**: `WatchCommandLog`
+    
+- **Partition key**: `device_id` (String)
+    
+- **Sort key**: `command_id` (String)
+    
+- **Table settings**: 選擇 **Customize settings** -> **On-demand**
+    
+- 點擊 **Create table**。
+    
+
+**(建立後的重要步驟：設定 TTL)** 這張表會累積很多指令紀錄，我們希望系統自動刪除 7 天前的舊紀錄。
+
+1. 建立完成後，點擊列表中的 `WatchCommandLog` 進入詳細頁。
+    
+2. 點擊 **"Additional settings" (其他設定)** 分頁。
+    
+3. 找到 **"Time to Live (TTL)"** 區塊，點擊 **Turn on (開啟)**。
+    
+4. **TTL attribute name**: 輸入 `ttl`。
+    
+5. 點擊 **Turn on TTL**。
+    
+
+#### 3. 建立 `WatchTemplates` (儲存檢測模板)
+
+- **Table name**: `WatchTemplates`
+    
+- **Partition key**: `series_name` (String)
+    
+- **Sort key**: `seriesversion` (String)
+    
+    - _注意：這裡的 Sort key 名稱與其他表不同，請務必填寫 `seriesversion`。_
+        
+- **Table settings**: 選擇 **Customize settings** -> **On-demand**
+    
+- 點擊 **Create table**。
+    
+
+#### 4. 建立 `WatchUsers` (使用者帳號與權限)
+
+- **Table name**: `WatchUsers`
+    
+- **Partition key**: `username` (String)
+    
+- **Sort key**: (留空，不需要)
+    
+- **Table settings**: 選擇 **Customize settings** -> **On-demand**
+    
+- 點擊 **Create table**。
+    
+
+---
+
+### 第三步：連結系統與測試
+
+只要您之前在 **S3 設定步驟** 中已經完成了 `config/system_config.yaml` 的金鑰設定（填入了 `access_key_id` 和 `secret_access_key`），您的系統現在**已經自動連結**到這些 DynamoDB 了！
+
+這是因為您的 `data_manager/cloud_db.py` 程式碼已經寫好會自動去讀取那些設定。
+
+我們來做一個簡單的 Python 腳本測試，確認這 4 張表都能正常寫入。請在專案目錄下建立 `test_dynamo.py`：
+
+Python
+
+```
+import boto3
+import yaml
+import time
+
+# 1. 讀取設定
+with open("config/system_config.yaml", "r", encoding="utf-8") as f:
+    config = yaml.safe_load(f)
+
+aws_cfg = config.get("aws", {})
+region = aws_cfg.get("region", "us-east-1")
+ak = aws_cfg.get("access_key_id")
+sk = aws_cfg.get("secret_access_key")
+
+print(f"正在連線到 DynamoDB (Region: {region})...")
+
+try:
+    # 2. 建立連線
+    db = boto3.resource(
+        "dynamodb",
+        region_name=region,
+        aws_access_key_id=ak,
+        aws_secret_access_key=sk
+    )
+
+    # 3. 測試寫入 WatchUsers (最簡單的表)
+    table_users = db.Table("WatchUsers")
+    
+    print("正在寫入測試資料到 WatchUsers...")
+    table_users.put_item(Item={
+        "username": "test_admin",
+        "role": "admin",
+        "created_at": str(int(time.time())),
+        "note": "這是連線測試，可刪除"
+    })
+    
+    # 4. 測試讀取
+    resp = table_users.get_item(Key={"username": "test_admin"})
+    item = resp.get("Item")
+    
+    if item and item['username'] == 'test_admin':
+        print("✅ 成功！DynamoDB 讀寫功能正常。")
+        print(f"讀取到的資料: {item}")
+        
+        # 5. 清理測試資料
+        table_users.delete_item(Key={"username": "test_admin"})
+        print("測試資料已清理。")
+    else:
+        print("❌ 寫入似乎成功，但讀取失敗。")
+
+except Exception as e:
+    print("❌ 連線失敗。錯誤訊息：")
+    print(e)
+    print("\n請檢查：")
+    print("1. config/system_config.yaml 的 Table 名稱是否與 AWS 上一致")
+    print("2. IAM User 是否有 AmazonDynamoDBFullAccess 權限 (如果之前只給了 S3，需要再去 IAM 加開 DynamoDB 權限)")
+```
+
+### 常見問題：權限不足
+
+如果在執行測試時出現 `AccessDeniedException`，代表您之前建立的 IAM User (`WatchSystemAgent`) 只有 S3 的權限，沒有 DynamoDB 的權限。
+
+**解決方法：**
+
+1. 回到 AWS Console -> **IAM** -> **Users**。
+    
+2. 點擊 `WatchSystemAgent`。
+    
+3. 點擊 **Add permissions** -> **Attach policies directly**。
+    
+4. 搜尋 `DynamoDB`。
+    
+5. 勾選 **`AmazonDynamoDBFullAccess`**。
+    
+6. 點擊 **Next** -> **Add permissions**。
+    
+
+這樣您的系統就具備了完整的資料庫存取能力了！
+
+
+
+
+
+#### 設定AWS IoT Core的每一流程步驟step-by-step
+```
+我有AWS root user account現在在Console Home, 但我對AWS是初學者. 請一步步中文詳細解釋教我怎麼設定系統需要的所有AWS IoT Core能實現控制平面 (Control Plane) - AWS IoT & Command Log 以及如何和我的系統做連結對這些AWS IoT Core做相應的setting.
+```
+這是一個非常關鍵的步驟。**AWS IoT Core** 是您系統的中樞神經，它負責讓遠端（Remote Client）和本地端（Local Computer）進行即時的「對話」。
+
+不同於 S3 或 DynamoDB 只需要 Access Key，**IoT Core 需要「數位憑證 (Certificates)」**。這就像是給您的機器發一張「身分證」，只有持有這張身分證的機器才能連線。
+
+請跟隨以下 **5 個步驟**，完成設定並連結您的 Python 系統。
+
+---
+
+### 第一步：進入 IoT Core 並建立「物件 (Thing)」
+
+在 AWS 中，每一個連線的實體裝置（您的 Local Computer）都被稱為一個 **Thing**。
+
+1. **進入控制台**：
+    
+    - 在 AWS Console 搜尋列輸入 **"IoT Core"**，點擊進入。
+        
+2. **建立 Thing**：
+    
+    - 左側選單選擇 **Manage (管理)** -> **All devices (所有裝置)** -> **Things (物件)**。
+        
+    - 點擊橘色的 **Create things (建立物件)**。
+        
+3. **設定流程**：
+    
+    - 選擇 **Create single thing (建立單一物件)** -> **Next**。
+        
+    - **Thing name (物件名稱)**：請輸入 `Rolex_Station_001`。
+        
+        - _注意：這個名字必須跟您 `config/system_config.yaml` 裡的 `device_id` 完全一樣。_
+            
+    - 其餘保持預設 (No Shadow, etc.) -> **Next**。
+        
+4. **設定憑證**：
+    
+    - 選擇 **Auto-generate a new certificate (自動產生新憑證)** (這是最簡單的選項)。
+        
+    - 點擊 **Next**。
+        
+
+---
+
+### 第二步：建立並綁定「策略 (Policy)」
+
+有了身分證 (Certificate)，還需要權限 (Policy) 才能通行。我們現在要建立一個允許裝置「說話 (Publish)」和「聆聽 (Subscribe)」的規則。
+
+1. 在剛剛的畫面中，您會看到 **Policies (政策)** 的區塊。
+    
+2. 點擊右側的 **Create policy (建立政策)** 按鈕 (會開新分頁)。
+    
+3. **Policy properties**：
+    
+    - **Policy name**: 輸入 `WatchSystem_FullAccess`。
+        
+4. **Policy document (權限設定)**：
+    
+    - 選擇 **JSON** 模式 (比較快)，複製貼上以下內容：
+        
+    
+    JSON
+    
+    ```
+    {
+      "Version": "2012-10-17",
+      "Statement": [
+        {
+          "Effect": "Allow",
+          "Action": "iot:*",
+          "Resource": "*"
+        }
+      ]
+    }
+    ```
+    
+    - _註：這是給開發用的全開權限。生產環境我們會限制它只能訂閱特定的 Topic。_
+        
+5. 點擊 **Create (建立)**。
+    
+6. **回到上一個分頁 (建立 Thing 的精靈)**：
+    
+    - 勾選剛剛建立的 `WatchSystem_FullAccess`。
+        
+    - 點擊 **Create thing (建立物件)**。
+        
+
+---
+
+### 第三步：【關鍵】下載憑證與金鑰
+
+這是最重要的一步！AWS 會彈出一個視窗讓您下載憑證。**這些檔案只會出現這一次，關掉就沒了。**
+
+請在您的專案資料夾中，建立一個路徑：`專案目錄/config/certs/`。然後下載以下檔案並改名放入：
+
+1. **Device certificate (裝置憑證)**：
+    
+    - 下載畫面上的 `xxxxxx-certificate.pem.crt`。
+        
+    - **改名存為**：`certificate.pem.crt` -> 放入 `config/certs/`。
+        
+2. **Private key (私有金鑰)**：
+    
+    - 下載畫面上的 `xxxxxx-private.pem.key`。
+        
+    - **改名存為**：`private.pem.key` -> 放入 `config/certs/`。
+        
+3. **Root CA certificates (根憑證)**：
+    
+    - 點擊 "RSA 2048 bit key: Amazon Root CA 1" 的下載連結。
+        
+    - **改名存為**：`AmazonRootCA1.pem` -> 放入 `config/certs/`。
+        
+4. (Public key 不需要下載)。
+    
+
+完成後，點擊 **Done**。
+
+---
+
+### 第四步：取得連線網址 (Endpoint)
+
+您的 Python 程式需要知道要連線到哪個伺服器。
+
+1. 在 AWS IoT Core 左側選單，點擊最下方的 **Settings (設定)**。
+    
+2. 在 **Device data endpoint (裝置資料端點)** 區塊。
+    
+3. 複製那個網址，看起來像：`xxxxxxxxxxxxx-ats.iot.us-east-1.amazonaws.com`。
+    
+
+---
+
+### 第五步：修改系統設定並連結
+
+現在回到您的程式碼，修改 `config/system_config.yaml` 讓 `AWSAgent` 讀取正確的憑證。
+
+1. 打開 `config/system_config.yaml`。
+    
+2. 找到 `network` 區塊，修改如下：
+    
+
+YAML
+
+```
+network:
+  app_mode: "aws_iot"  # 確保模式是 aws_iot
+  role: "agent"        # 如果是在 Local Computer 執行，這裡是 agent
+  
+  # [填入第四步取得的網址]
+  aws_endpoint: "xxxxxxxxxxxxx-ats.iot.us-east-1.amazonaws.com"
+  
+  # [填入第一步設定的名稱]
+  device_id: "Rolex_Station_001" 
+
+  # 憑證路徑 (確保檔案名稱跟第三步下載改名的一致)
+  certs:
+    root_ca: "config/certs/AmazonRootCA1.pem"
+    private_key: "config/certs/private.pem.key"
+    cert_file: "config/certs/certificate.pem.crt"
+  
+  # Topic 設定 (保持預設即可，這些是我們在代碼裡定義好的通訊頻道)
+  topics:
+    command: "cmd/{device_id}"
+    status: "status/{device_id}"
+    shadow_update: "$aws/things/{device_id}/shadow/update"
+```
+
+---
+
+### 最終測試：驗證「控制平面」
+
+我們現在要模擬「從雲端發送指令」，看您的電腦是否收得到。
+
+**1. 啟動您的 Agent 程式** 在終端機執行：
+
+Bash
+
+```
+python cloud_relay/aws_agent.py
+```
+
+如果成功，您應該會看到類似 `Connecting to AWS IoT Core... Connected!` 的訊息。
+
+**2. 使用 AWS MQTT Test Client 監聽狀態**
+
+1. 回到 AWS IoT Core 控制台。
+    
+2. 左側選單點擊 **MQTT test client (MQTT 測試用戶端)**。
+    
+3. 在 "Subscribe to a topic" 分頁，輸入 `status/Rolex_Station_001`。
+    
+4. 點擊 **Subscribe (訂閱)**。
+    
+    - _這時如果您重啟 Python 程式，您應該會在這裡看到一條 JSON 訊息顯示 `status: idle`，代表連線成功！_
+        
+
+**3. 發送測試指令**
+
+1. 點擊 **"Publish to a topic" (發布至主題)** 分頁。
+    
+2. **Topic name**: 輸入 `cmd/Rolex_Station_001`。
+    
+3. **Message payload**: 輸入以下測試指令 (模擬 force_sync)：
+    
+    JSON
+    
+    ```
+    {
+      "command_id": "test_cmd_001",
+      "action": "force_sync",
+      "requester": "console_admin"
+    }
+    ```
+    
+4. 點擊 **Publish**。
+    
+
+**4. 觀察結果**
+
+- **在您的終端機 (Python)**：應該會看到 `Received action=force_sync, command_id=test_cmd_001`，並且開始執行同步。
+    
+- **在 AWS Console (Subscribe 分頁)**：應該會收到 `status` 回報，顯示 `state: running` 然後變為 `completed`。
+    
+
+**恭喜！** 您已經成功建立了完整的 **AWS IoT 控制平面**。現在您可以透過雲端遙控位於世界任何角落的檢測機台了。
