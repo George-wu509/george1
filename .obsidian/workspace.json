@@ -13,12 +13,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "TRIVECTO system - account system.md",
+                "file": "TRIVECTO system - AWS.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "TRIVECTO system - account system"
+              "title": "TRIVECTO system - AWS"
             }
           }
         ]
@@ -78,7 +78,8 @@
       }
     ],
     "direction": "horizontal",
-    "width": 246.5
+    "width": 246.5,
+    "collapsed": true
   },
   "right": {
     "id": "e8aa8d072fa51c07",
@@ -172,9 +173,9 @@
   },
   "active": "e2a579902f579ef7",
   "lastOpenFiles": [
+    "TRIVECTO system - account system.md",
     "TRIVECTO system - template system.md",
     "TRIVECTO system - V2 System.md",
-    "TRIVECTO system - account system.md",
     "TRIVECTO system - hardware.md",
     "TRIVECTO system - remote code update.md",
     "TRIVECTO system - update1.md",
