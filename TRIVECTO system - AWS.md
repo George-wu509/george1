@@ -1,18 +1,19 @@
 
 
-|                                             |     |
-| ------------------------------------------- | --- |
-| [[#### AWS S3 account setting]]             |     |
-| [[#### 完整AWS Cloud各種服務整理]]                  |     |
-| [[#### 設定AWS S3的每一流程步驟step-by-step]]        |     |
-| [[#### 如果保管AWS 金鑰]]                         |     |
-| [[#### 設定AWS DynamoDB的每一流程步驟step-by-step]]  |     |
-| [[#### 設定AWS IoT Core的每一流程步驟step-by-step]]  |     |
-| [[#### 下載憑證與金鑰畫面]]                          |     |
-| [[#### 執行aws_agent.py]]                     |     |
-| [[#### 設定Amazon Athena的每一流程步驟step-by-step]] |     |
-|                                             |     |
-|                                             |     |
+|                                                                        |     |
+| ---------------------------------------------------------------------- | --- |
+| [[#### AWS S3 account setting]]                                        |     |
+| [[#### 完整AWS Cloud各種服務整理]]                                             |     |
+| [[#### 設定AWS S3的每一流程步驟step-by-step]]                                   |     |
+| [[#### 如果保管AWS 金鑰]]                                                    |     |
+| [[#### 設定AWS DynamoDB的每一流程步驟step-by-step]]                             |     |
+| [[#### 設定AWS IoT Core的每一流程步驟step-by-step]]                             |     |
+| [[#### 下載憑證與金鑰畫面]]                                                     |     |
+| [[#### 執行aws_agent.py]]                                                |     |
+| [[#### 設定Amazon Athena的每一流程步驟step-by-step]]                            |     |
+| [[#### 設定Amazon IoT Jobs的每一流程步驟step-by-step]]                          |     |
+| [[#### 完整的測試AWS S3, DynamoDB, AWS IoT Core, AWS Athena, AWS IoT Jobs]] |     |
+|                                                                        |     |
 
 
 
@@ -1739,3 +1740,605 @@ except Exception as e:
 只要 S3 的 `Audit_Logs/` 路徑下有 `.jsonl` 檔案，`test_athena.py` 就能查出結果。
 
 這樣您就完成了一套 **Serverless 的大數據日誌分析系統**！未來無論有多少台機器產生多少日誌，Athena 都能快速撈出數據，且您完全不需要維護資料庫伺服器。
+
+
+
+
+#### 設定Amazon IoT Jobs的每一流程步驟step-by-step
+```
+我有AWS root user account現在在Console Home, 但我對AWS是初學者. 請一步步中文詳細解釋教我怎麼設定系統需要的所有AWS IoT Jobs 實現遠端軟體更新以及如何和我的系統做連結及做相應的setting.
+```
+這是一個非常進階且實用的功能！**AWS IoT Jobs** 是專門為了「軟體更新 (OTA - Over-The-Air)」設計的。
+
+它的運作邏輯跟之前的 MQTT 指令不同：
+
+- **MQTT 指令 (之前的)**：像是在對話框喊話「現在拍照！」。如果機器沒開機，這句話就消失了。
+    
+- **IoT Jobs (現在要做的)**：像是貼一張「待辦事項 (To-Do List)」在冰箱上。機器一開機看到便利貼，就知道「喔！我有個軟體要更新」，做完後會在便利貼上打勾。
+    
+
+我們要實現的流程如下：
+
+1. **S3**: 存放新的軟體包 (例如 `update_v1.2.zip`)。
+    
+2. **IoT Jobs**: 建立一個任務，告訴機器去下載那個 zip 檔。
+    
+3. **Python Agent**: 收到任務 -> 下載檔案 -> 解壓縮/安裝 -> 回報「任務完成」。
+    
+
+請依照以下 **4 個階段** 完成設定。
+
+---
+
+### 第一階段：準備 S3 軟體倉庫
+
+我們需要一個地方放軟體更新檔。
+
+1. **進入 S3 Console** -> 點擊您的 Bucket (`watch-analysis-v1`)。
+    
+2. 建立資料夾：`software_updates`。
+    
+3. **製作一個測試更新包**：
+    
+    - 在您的電腦桌面建立一個文字檔 `version.txt`，內容寫 `v1.2.0 - New Feature`。
+        
+    - 將它壓縮成 `update_package.zip`。
+        
+4. 將 `update_package.zip` 上傳到 S3 的 `software_updates/` 資料夾內。
+    
+
+---
+
+### 第二階段：升級 `aws_agent.py` (加入 Jobs 處理能力)
+
+我們需要教導您的 Agent 如何「看懂」Job 的指令。由於這是比較大的功能，我將新增一段 **Job 處理邏輯** 到您的 `cloud_relay/aws_agent.py`。
+
+請將您的 `aws_agent.py` 中，**`start` 方法** 和 **新增的 Job 處理方法** 修改如下 (您可以直接替換或對照修改)：
+
+_(註：為了簡化，這裡演示「下載並驗證」，不直接覆蓋執行中的程式碼，避免 Windows 檔案鎖定問題)_
+
+Python
+
+```
+# 在 cloud_relay/aws_agent.py 內
+
+    # ... (前面的 __init__ 保持不變) ...
+
+    # [新增] 1. 處理 Job 的邏輯
+    def process_iot_job(self, job_doc, job_id, execution_number):
+        self.logger.info(f"🚀 [Job] 收到更新任務: {job_id}")
+        
+        try:
+            # 1. 解析 Job 內容
+            operation = job_doc.get("operation")
+            s3_key = job_doc.get("s3_key")
+            version = job_doc.get("version")
+
+            if operation != "software_update":
+                self.logger.warning(f"[Job] 未知操作: {operation}")
+                return
+
+            self.update_shadow("busy", f"Updating to {version}...")
+            
+            # 2. 開始更新 (回報 IN_PROGRESS)
+            self.report_job_status(job_id, "IN_PROGRESS", execution_number, "Downloading...")
+
+            # 3. 下載檔案
+            local_zip = os.path.join("Local_Data", "temp_update.zip")
+            self.logger.info(f"[Job] 下載 S3: {s3_key} -> {local_zip}")
+            
+            if self.s3_client:
+                self.s3_client.download_file(self.s3_bucket, s3_key, local_zip)
+            else:
+                raise RuntimeError("S3 Client not available")
+
+            # 4. 模擬安裝 (解壓縮或替換檔案)
+            import zipfile
+            extract_path = os.path.join("Local_Data", "updates", version)
+            os.makedirs(extract_path, exist_ok=True)
+            with zipfile.ZipFile(local_zip, 'r') as zip_ref:
+                zip_ref.extractall(extract_path)
+            
+            self.logger.info(f"[Job] ✅ 更新包已解壓至: {extract_path}")
+            
+            # 5. 清理
+            os.remove(local_zip)
+
+            # 6. 回報成功 (SUCCEEDED)
+            self.report_job_status(job_id, "SUCCEEDED", execution_number, "Update complete")
+            self.update_shadow("idle", f"Updated to {version}")
+
+        except Exception as e:
+            self.logger.error(f"[Job] ❌ 更新失敗: {e}")
+            self.report_job_status(job_id, "FAILED", execution_number, str(e))
+            self.update_shadow("idle", "Update failed")
+
+    # [新增] 2. 回報 Job 狀態給 AWS
+    def report_job_status(self, job_id, status, execution_number, msg=""):
+        topic = f"$aws/things/{self.device_id}/jobs/{job_id}/update"
+        payload = {
+            "status": status,
+            "statusDetails": {"message": msg},
+            "executionNumber": execution_number
+        }
+        self.mqtt_client.publish(topic, json.dumps(payload), 1)
+
+    # [新增] 3. 接收 Job 通知的 Callback
+    def on_job_message(self, client, userdata, message):
+        try:
+            payload = json.loads(message.payload.decode("utf-8"))
+            # 這是 Job 通知的標準格式
+            if "jobs" in payload and len(payload["jobs"]) > 0:
+                # 這是 get-pending 的回應
+                job = list(payload["jobs"].keys())[0] # 取第一個任務
+                job_info = payload["jobs"][job]
+            elif "execution" in payload:
+                # 這是 next-job 通知
+                job_info = payload["execution"]
+            else:
+                return
+
+            job_id = job_info.get("jobId")
+            job_doc = job_info.get("jobDocument")
+            exec_num = job_info.get("executionNumber")
+
+            if job_doc:
+                threading.Thread(target=self.process_iot_job, args=(job_doc, job_id, exec_num), daemon=True).start()
+                
+        except Exception as e:
+            self.logger.error(f"[Job] 解析訊息錯誤: {e}")
+
+    # [修改] 4. Start 方法：增加 Job 訂閱
+    def start(self):
+        self.logger.info(f"Connecting to AWS IoT Core ({self.endpoint})...")
+        try:
+            self.mqtt_client.connect()
+            self.logger.info("Connected!")
+
+            # --- 原有的 Command 訂閱 ---
+            self.mqtt_client.subscribe(self.cmd_topic, 1, self.on_message)
+            
+            # --- [新增] Job 訂閱 ---
+            # 1. 訂閱「有新任務通知我」
+            notify_topic = f"$aws/things/{self.device_id}/jobs/notify-next"
+            self.mqtt_client.subscribe(notify_topic, 1, self.on_job_message)
+            
+            # 2. 主動詢問「我關機時有沒有錯過什麼任務？」(Get Pending)
+            get_pending_topic = f"$aws/things/{self.device_id}/jobs/get"
+            get_pending_resp = f"$aws/things/{self.device_id}/jobs/get/accepted"
+            self.mqtt_client.subscribe(get_pending_resp, 1, self.on_job_message)
+            
+            # 發出詢問
+            time.sleep(1)
+            self.mqtt_client.publish(get_pending_topic, json.dumps({"clientToken": "startup_check"}), 1)
+            self.logger.info("📡 已啟動 OTA 更新監聽服務...")
+            # -----------------------
+
+            while True:
+                time.sleep(1)
+
+        # ... (後面的 except/finally 保持不變) ...
+```
+
+---
+
+### 第三階段：在 AWS Console 建立「更新任務」
+
+現在程式碼準備好了，我們要去雲端發佈命令。
+
+1. **進入 IoT Core 控制台**。
+    
+2. 左側選單選擇 **Manage (管理)** -> **Remote actions (遠端動作)** -> **Jobs (工作)**。
+    
+3. 點擊橘色的 **Create job (建立工作)**。
+    
+4. **Job type**: 選擇 **Create custom job (建立自訂工作)** -> **Next**。
+    
+5. **Job properties**:
+    
+    - **Job ID**: 輸入 `update-rolex-v1-2` (名稱不能有空格)。
+        
+    - **Target selection (目標選擇)**: 選擇 **Specific things (特定物件)**，然後選取您的 `Rolex_Station_001`。
+        
+    - **Next**。
+        
+6. **Job document (工作文件)**:
+    
+    - 這是最關鍵的一步。我們要傳 JSON 給 Python 程式。
+        
+    - 選擇 **JSON** 編輯器模式。
+        
+    - 貼上以下內容 (請確認 `s3_key` 是您第一階段上傳的檔案路徑)：
+        
+    
+    JSON
+    
+    ```
+    {
+      "operation": "software_update",
+      "version": "v1.2.0",
+      "s3_key": "software_updates/update_package.zip"
+    }
+    ```
+    
+    - 點擊 **Next**。
+        
+7. **Job runner** (執行設定):
+    
+    - **Snapshot**: 選擇 "No snapshot"。
+        
+    - **Rollout type**: 選擇 "Constant rate" (因為只有一台機器，沒差)。
+        
+    - 點擊 **Create job (建立工作)**。
+        
+
+---
+
+### 第四階段：見證奇蹟 (驗收)
+
+1. **啟動您的 Agent**: 在終端機執行 `python cloud_relay/aws_agent.py`。
+    
+2. **觀察終端機**: 您應該會在 3~5 秒內看到以下畫面：
+    
+    - `Connected!`
+        
+    - `📡 已啟動 OTA 更新監聽服務...`
+        
+    - `🚀 [Job] 收到更新任務: update-rolex-v1-2`
+        
+    - `[Job] 下載 S3: ...`
+        
+    - `[Job] ✅ 更新包已解壓至: Local_Data\updates\v1.2.0`
+        
+3. **觀察 AWS Console**: 回到剛才建立 Job 的頁面，重新整理。您會看到 `Rolex_Station_001` 的狀態從 **Queued** 變成 **In progress**，最後變成綠色的 **Succeeded**。
+    
+4. **檢查檔案**: 去您的 `Local_Data/updates/v1.2.0/` 資料夾看，應該會看到那個 `version.txt` 檔案。
+    
+
+---
+
+### 架構師的補充建議
+
+這套系統現在具備了：
+
+1. **即時指令** (MQTT Command) -> 用於拍照、移動。
+    
+2. **非同步任務** (IoT Jobs) -> 用於軟體更新、大型檔案傳輸。
+    
+
+**未來的進階優化 (Production Ready)**: 在真正的產品中，`process_iot_job` 裡面的第 4 步 (模擬安裝) 會被替換成： `subprocess.call(["bash", "install.sh"])`。這個腳本會負責停止 Python 服務、備份舊代碼、覆蓋新代碼、然後重新啟動服務 (`systemctl restart watch-agent`)。
+
+現在，您已經掌握了 AWS IoT 最核心也最強大的功能了！
+
+
+
+
+
+#### 完整的測試AWS S3, DynamoDB, AWS IoT Core, AWS Athena, AWS IoT Jobs
+```
+目前我已經在AWS建立並開啟AWS S3, DynamoDB, AWS IoT Core, AWS Athena, AWS IoT Jobs. 請幫我在DB/DB_test/下寫一個類似test_AWS.py 可以全面且詳細的test上面這幾個服務設定,以及我的相關code都是正確的, 如果AWS設定出問題也可以提供詳細的information. 這樣我只要跑test_AWS.py就知道狀況
+```
+這是一個非常好的想法！作為系統上線前的最後一道防線，一個整合性的「系統健康檢查 (System Health Check)」腳本是必要的。
+
+這個 `test_AWS.py` 將會扮演 **「全科醫生」** 的角色，它會讀取您的 `system_config.yaml`，然後依序對 S3、DynamoDB、IoT Core、Athena 和 IoT Jobs 進行 **連線、寫入、讀取、清理** 的完整測試。
+
+請在 `DB/DB_test/` 資料夾下建立 `test_AWS.py`，並貼上以下代碼：
+
+### 完整的 `DB/DB_test/test_AWS.py`
+
+Python
+
+```
+import boto3
+import yaml
+import os
+import sys
+import time
+import json
+import uuid
+from datetime import datetime
+from botocore.exceptions import ClientError, EndpointConnectionError
+
+# ==========================================
+# 0. 環境準備與設定讀取
+# ==========================================
+# 自動抓取專案根目錄
+current_script_dir = os.path.dirname(os.path.abspath(__file__))
+project_root = os.path.dirname(os.path.dirname(current_script_dir))
+sys.path.append(project_root)
+config_path = os.path.join(project_root, "config", "system_config.yaml")
+
+# 顏色代碼 (讓輸出更好讀)
+class Colors:
+    HEADER = '\033[95m'
+    OKBLUE = '\033[94m'
+    OKGREEN = '\033[92m'
+    WARNING = '\033[93m'
+    FAIL = '\033[91m'
+    ENDC = '\033[0m'
+    BOLD = '\033[1m'
+
+def print_pass(msg):
+    print(f"{Colors.OKGREEN}[PASS] {msg}{Colors.ENDC}")
+
+def print_fail(msg, error=None):
+    print(f"{Colors.FAIL}[FAIL] {msg}{Colors.ENDC}")
+    if error:
+        print(f"{Colors.WARNING}   詳細錯誤: {error}{Colors.ENDC}")
+
+def print_header(msg):
+    print(f"\n{Colors.HEADER}{Colors.BOLD}=== {msg} ==={Colors.ENDC}")
+
+# 讀取設定
+if not os.path.exists(config_path):
+    print_fail(f"找不到設定檔: {config_path}")
+    sys.exit(1)
+
+with open(config_path, "r", encoding="utf-8") as f:
+    config = yaml.safe_load(f)
+
+aws_cfg = config.get("aws", {})
+net_cfg = config.get("network", {})
+ak = aws_cfg.get("access_key_id")
+sk = aws_cfg.get("secret_access_key")
+region = aws_cfg.get("region", "us-east-1")
+
+print(f"專案路徑: {project_root}")
+print(f"測試區域: {region}")
+
+# 建立 Session
+try:
+    if ak and sk:
+        session = boto3.Session(aws_access_key_id=ak, aws_secret_access_key=sk, region_name=region)
+        print("憑證來源: Config 檔案")
+    else:
+        session = boto3.Session(region_name=region)
+        print("憑證來源: 本機 .aws/credentials")
+    
+    # 測試基本身分
+    sts = session.client("sts")
+    identity = sts.get_caller_identity()
+    print(f"測試身分: {identity['Arn']}")
+except Exception as e:
+    print_fail("AWS 憑證無效，無法開始測試。", e)
+    sys.exit(1)
+
+# ==========================================
+# 1. 測試 S3 (Storage)
+# ==========================================
+def test_s3():
+    print_header("1. Amazon S3 測試")
+    bucket_name = aws_cfg.get("s3_bucket")
+    if not bucket_name:
+        print_fail("Config 中未設定 s3_bucket")
+        return
+
+    s3 = session.client("s3")
+    test_file_name = "System_Health_Check.txt"
+    test_key = f"Test/{test_file_name}"
+
+    try:
+        # A. 檢查 Bucket 是否存在
+        s3.head_bucket(Bucket=bucket_name)
+        print_pass(f"Bucket '{bucket_name}' 存在且可存取")
+
+        # B. 上傳測試
+        with open(test_file_name, "w") as f: f.write(f"Health check at {time.time()}")
+        s3.upload_file(test_file_name, bucket_name, test_key)
+        print_pass("上傳檔案測試成功")
+        os.remove(test_file_name)
+
+        # C. 清理測試
+        s3.delete_object(Bucket=bucket_name, Key=test_key)
+        print_pass("清理測試檔案成功")
+
+    except ClientError as e:
+        err_code = e.response['Error']['Code']
+        if err_code == "403":
+            print_fail("權限不足 (AccessDenied)", "請檢查 IAM User 是否有 AmazonS3FullAccess")
+        elif err_code == "404":
+            print_fail(f"Bucket '{bucket_name}' 不存在", "請檢查名稱是否正確")
+        else:
+            print_fail("S3 測試失敗", e)
+
+# ==========================================
+# 2. 測試 DynamoDB (Database)
+# ==========================================
+def test_dynamodb():
+    print_header("2. Amazon DynamoDB 測試")
+    # 我們測試 WatchCommandLog，因為它有 TTL 設定，且測試寫入比較無害
+    table_name = aws_cfg.get("command_table", "WatchCommandLog")
+    db = session.resource("dynamodb")
+    table = db.Table(table_name)
+    
+    test_item = {
+        "device_id": "HEALTH_CHECKER",
+        "command_id": f"test_{uuid.uuid4().hex[:8]}",
+        "state": "testing",
+        "timestamp": str(int(time.time()))
+    }
+
+    try:
+        # A. 寫入測試
+        table.put_item(Item=test_item)
+        print_pass(f"寫入測試資料到 '{table_name}' 成功")
+
+        # B. 讀取測試
+        resp = table.get_item(Key={"device_id": test_item["device_id"], "command_id": test_item["command_id"]})
+        if "Item" in resp and resp["Item"]["state"] == "testing":
+            print_pass("讀取測試資料成功")
+        else:
+            print_fail("讀取資料失敗 (Item not found)")
+
+        # C. 刪除測試
+        table.delete_item(Key={"device_id": test_item["device_id"], "command_id": test_item["command_id"]})
+        print_pass("清理測試資料成功")
+
+    except ClientError as e:
+        print_fail("DynamoDB 測試失敗", e)
+        if "AccessDenied" in str(e):
+            print(f"{Colors.WARNING}提示: 請檢查 IAM 是否有 AmazonDynamoDBFullAccess{Colors.ENDC}")
+
+# ==========================================
+# 3. 測試 IoT Core (Connectivity)
+# ==========================================
+def test_iot_core():
+    print_header("3. AWS IoT Core 測試")
+    iot = session.client("iot")
+    thing_name = net_cfg.get("device_id")
+    endpoint_url = net_cfg.get("aws_endpoint")
+
+    try:
+        # A. 檢查 Thing 是否存在
+        iot.describe_thing(thingName=thing_name)
+        print_pass(f"IoT Thing '{thing_name}' 確認存在")
+
+        # B. 檢查 Endpoint 是否正確
+        resp = iot.describe_endpoint(endpointType='iot:Data-ATS')
+        real_endpoint = resp['endpointAddress']
+        if endpoint_url == real_endpoint:
+            print_pass(f"Config 中的 Endpoint 正確")
+        else:
+            print_fail(f"Endpoint 不匹配!", f"Config: {endpoint_url}\n   AWS:    {real_endpoint}")
+
+        # C. 測試 MQTT 發布 (Data Plane)
+        # 使用 boto3 iot-data 模擬發送，確認權限與連線
+        iot_data = session.client("iot-data", endpoint_url=f"https://{real_endpoint}")
+        iot_data.publish(
+            topic=f"status/{thing_name}",
+            qos=1,
+            payload=json.dumps({"source": "HealthCheck", "status": "OK"})
+        )
+        print_pass("MQTT 模擬發布 (Publish) 成功")
+
+    except ClientError as e:
+        print_fail("IoT Core 測試失敗", e)
+
+# ==========================================
+# 4. 測試 Athena (Analytics)
+# ==========================================
+def test_athena():
+    print_header("4. Amazon Athena 測試")
+    athena = session.client("athena")
+    
+    db_name = aws_cfg.get("athena", {}).get("database", "watch_analytics")
+    output_loc = aws_cfg.get("athena", {}).get("output_s3")
+
+    if not output_loc:
+        print_fail("Config 未設定 athena.output_s3")
+        return
+
+    try:
+        # A. 執行簡單查詢 (SHOW TABLES)
+        query = f"SHOW TABLES IN {db_name}"
+        print(f"   執行查詢: {query}")
+        
+        start_resp = athena.start_query_execution(
+            QueryString=query,
+            ResultConfiguration={'OutputLocation': output_loc}
+        )
+        qid = start_resp['QueryExecutionId']
+
+        # 等待結果
+        while True:
+            status = athena.get_query_execution(QueryExecutionId=qid)
+            state = status['QueryExecution']['Status']['State']
+            if state in ['SUCCEEDED', 'FAILED', 'CANCELLED']:
+                break
+            time.sleep(0.5)
+
+        if state == 'SUCCEEDED':
+            results = athena.get_query_results(QueryExecutionId=qid)
+            tables = [row['Data'][0]['VarCharValue'] for row in results['ResultSet']['Rows']]
+            
+            if "audit_logs" in tables:
+                print_pass(f"成功連線資料庫 '{db_name}' 並找到表 'audit_logs'")
+            else:
+                print_fail(f"資料庫連線成功，但未找到 'audit_logs' 表", f"目前列表: {tables}")
+        else:
+            reason = status['QueryExecution']['Status'].get('StateChangeReason', 'Unknown')
+            print_fail("Athena 查詢失敗", reason)
+
+    except ClientError as e:
+        print_fail("Athena 測試失敗", e)
+
+# ==========================================
+# 5. 測試 IoT Jobs (Remote Update)
+# ==========================================
+def test_iot_jobs():
+    print_header("5. AWS IoT Jobs 測試")
+    iot = session.client("iot")
+    thing_arn = f"arn:aws:iot:{region}:{sts.get_caller_identity()['Account']}:thing/{net_cfg.get('device_id')}"
+    job_id = f"health-check-job-{uuid.uuid4().hex[:8]}"
+
+    try:
+        # A. 建立一個虛擬 Job (不含 Document，單純測試權限與建立流程)
+        # 注意：為了不讓 Agent 真的執行，我們這裡建立一個空的測試任務，或者建立後馬上取消
+        iot.create_job(
+            jobId=job_id,
+            targets=[thing_arn],
+            document=json.dumps({"operation": "health_check"}),
+            description="System Integrity Test Job"
+        )
+        print_pass(f"成功建立 IoT Job: {job_id}")
+
+        # B. 檢查 Job 狀態
+        desc = iot.describe_job(jobId=job_id)
+        status = desc['job']['status']
+        print_pass(f"Job 狀態讀取成功: {status}")
+
+        # C. 刪除 Job (清理)
+        iot.delete_job(jobId=job_id, force=True)
+        print_pass("清理測試 Job 成功")
+
+    except ClientError as e:
+        print_fail("IoT Jobs 測試失敗", e)
+        if "AccessDenied" in str(e):
+            print(f"{Colors.WARNING}提示: 請檢查 IAM User 是否有 iot:CreateJob, iot:DeleteJob 權限{Colors.ENDC}")
+
+# ==========================================
+# 主程式
+# ==========================================
+if __name__ == "__main__":
+    print(f"\n{Colors.BOLD}開始執行 AWS 系統全面健康檢查...{Colors.ENDC}")
+    print("=" * 40)
+    
+    test_s3()
+    test_dynamodb()
+    test_iot_core()
+    test_athena()
+    test_iot_jobs()
+
+    print("\n" + "=" * 40)
+    print(f"{Colors.BOLD}檢查結束。如果全部顯示 [PASS]，代表您的 AWS 環境設定完美！{Colors.ENDC}")
+```
+
+### 如何使用這個腳本？
+
+1. **儲存檔案**：將上述代碼儲存為 `DB/DB_test/test_AWS.py`。
+    
+2. **執行**：在終端機（專案根目錄下）執行：
+    
+    Bash
+    
+    ```
+    python DB/DB_test/test_AWS.py
+    ```
+    
+
+### 這個腳本會告訴您什麼？
+
+它會依序檢查 5 大項目，並給出非常詳細的結果：
+
+- **S3**: 檢查 Bucket 權限，實際上傳檔案再刪除。
+    
+- **DynamoDB**: 實際寫入一筆 Log 再刪除，驗證讀寫權限。
+    
+- **IoT Core**: 檢查 Thing 是否存在、Endpoint 是否打錯字、是否能發送 MQTT。
+    
+- **Athena**: 實際發送 SQL 查詢，確認資料庫和表都看得到。
+    
+- **IoT Jobs**: 實際建立一個任務再刪除，驗證 OTA 更新的權限。
+    
+
+**如果看到全綠色的 `[PASS]`，您的系統就無敵了！**
