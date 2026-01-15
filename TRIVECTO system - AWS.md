@@ -13,7 +13,7 @@
 | [[#### 設定Amazon Athena的每一流程步驟step-by-step]]                            |     |
 | [[#### 設定Amazon IoT Jobs的每一流程步驟step-by-step]]                          |     |
 | [[#### 完整的測試AWS S3, DynamoDB, AWS IoT Core, AWS Athena, AWS IoT Jobs]] |     |
-|                                                                        |     |
+| [[#### 執行test_AWS.py all pass]]                                        |     |
 
 
 
@@ -2342,3 +2342,40 @@ if __name__ == "__main__":
     
 
 **如果看到全綠色的 `[PASS]`，您的系統就無敵了！**
+
+
+
+
+#### 執行test_AWS.py all pass
+```
+修改之後再執行一次這是output: 專案路徑: d:\Provenance Laboratories projects\ImagingLibWatch
+
+測試區域: us-east-1
+憑證來源: Config 檔案
+測試身分: arn:aws:iam::063557504555:user/WatchSystemAgent
+
+開始執行 AWS 系統全面健康檢查...
+========================================
+
+=== 1. Amazon S3 測試 ===
+[PASS] Bucket 'watch-analysis-v1' 存在且可存取
+[PASS] 上傳檔案測試成功
+[PASS] 清理測試檔案成功
+
+=== 2. Amazon DynamoDB 測試 ===
+[PASS] 寫入測試資料到 'WatchCommandLog' 成功
+[PASS] 讀取測試資料成功
+[PASS] 清理測試資料成功
+
+=== 3. AWS IoT Core 測試 ===
+[PASS] IoT Thing 'Rolex_Station_001' 確認存在
+[PASS] Config 中的 Endpoint 正確
+[PASS] MQTT 模擬發布 (Publish) 成功
+
+=== 4. Amazon Athena 測試 ===
+   執行查詢: SHOW TABLES IN watch_analytics
+[PASS] 成功連線資料庫 'watch_analytics' 並找到表 'audit_logs'
+
+=== 5. AWS IoT Jobs 測試 ===
+[PASS] 成功建立 IoT Job: health-check-job-21f7e302
+```
