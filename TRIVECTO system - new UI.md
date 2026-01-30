@@ -1,13 +1,13 @@
 
 
-|                             |     |
-| --------------------------- | --- |
-| [[#### PyDracula Github解釋]] |     |
-| [[#### ui1-4介面的流程設定]]       |     |
-|                             |     |
-|                             |     |
-|                             |     |
-|                             |     |
+|                                                     |     |
+| --------------------------------------------------- | --- |
+| [[#### PyDracula Github解釋]]                         |     |
+| [[#### ui1-4介面的流程設定]]                               |     |
+| [[#### IOT取得連線網址 (Endpoint)跟IOT create Access Key]] |     |
+|                                                     |     |
+|                                                     |     |
+|                                                     |     |
 
 
 #### PyDracula Github解釋
@@ -553,3 +553,112 @@ PyDracula README 有給指令： `pyside6-uic main.ui > ui_main.py`
     
 - sidebar toggle 應該動畫哪個 frame（避免你 animate 到錯的容器導致 layout 崩掉）
 
+
+
+
+
+
+#### IOT取得連線網址 (Endpoint)跟IOT create Access Key
+```
+我現在在建立AWS IOT thing, 已經建立policy並下載certificate and key. 那我要怎麼取得連線網址 (Endpoint)? 有人說是在 AWS IoT Core 左側選單，點擊最下方的Settings (設定)在 Device data endpoint (裝置資料端點)區塊可以看到. 但我的settings 只有Enhanced encryption, Event-based messages, Auto update device shadows from jobs, Fleet indexing, Greengrass service role找不到Device data endpoint區塊? 那要怎麼取得連線網址 (Endpoint)?
+
+另外我發覺我的IAM account好像沒有權限可以create Access Key ID + Secret Access Key那無法測試我的軟體. 那我是否要跟AWS root user也就是上司請他開權限我才能create? 上司對AWS完全不熟請一步步指導他怎麼開放或進行設定?
+```
+這是一個很實際的卡關狀況。不用擔心，我們分兩部分來解決：先解決找不到 Endpoint 的問題，再處理最重要的 IAM 權限問題（包含給老闆的操作指南）。
+
+---
+
+### 第一部分：為什麼找不到 IoT Endpoint？
+
+你描述的設定頁面內容（Enhanced encryption, Event-based messages...）確實是在 **Settings** 裡面沒錯。
+
+**Endpoint 消失最有可能的三個原因：**
+
+1. **視覺盲點（最常見）：** Device data endpoint 通常位於該頁面的 **「最頂端」**。你列出的那些選項（Enhanced encryption 等）都是在頁面中下方的。請試著**把網頁捲軸拉到最上面**，標題應該是「Device data endpoint (裝置資料端點)」，下面有一串像 `xxxxxxxx-ats.iot.us-east-1.amazonaws.com` 的網址。
+    
+2. **瀏覽器快取或顯示問題：** 試著重新整理網頁，或者用「Ctrl + F」搜尋 "endpoint" 字眼。
+    
+3. **權限不足（Permission Denied）：** 雖然你這頁看得到其他設定，但如果你的 IAM User 缺少 `iot:DescribeEndpoint` 的權限，AWS 有時候會直接「隱藏」該區塊，而不是顯示錯誤訊息。
+    
+
+**解決方案：** 既然你現在沒有 Access Key 無法用指令查詢，且可能權限受限，**請將此步驟合併到下面的「找上司」環節**。請上司用 Root 帳號登入去看，一定看得到。
+
+---
+
+### 第二部分：如何請上司開通 Access Key (給上司的指南)
+
+你目前的 IAM User 權限不足，無法自己建立 Access Key。 因為上司對 AWS 不熟，要他去調整複雜的 IAM Policy（策略）來「允許你自己建 Key」會非常困難且容易出錯（甚至不小心給你過大權限導致資安風險）。
+
+**最簡單、安全且快速的方法**是：**請上司直接用他的帳號幫你建立 Key，然後把檔案傳給你。**
+
+請複製以下這段 **「給上司的操作指南」** 傳給他，這流程不用寫程式，純滑鼠點擊即可：
+
+---
+
+### 📋 給上司的 AWS 操作指南：建立開發所需的 Access Key
+
+**目的：** 您的工程師需要一組「Access Key (存取金鑰)」才能讓開發中的軟體連線到 AWS 進行測試。這需要由您（管理員）產生並提供給他。
+
+**操作步驟 (約 3 分鐘)：**
+
+1. **登入 AWS Console**
+    
+    - 使用您的 Root Account (或管理員帳號) 登入 AWS 網頁。
+        
+2. **進入 IAM (帳號管理介面)**
+    
+    - 在上方搜尋欄輸入 **`IAM`**，點擊搜尋結果中的 **IAM** 服務。
+        
+3. **找到工程師的帳號**
+    
+    - 點擊左側選單的 **Users (使用者)**。
+        
+    - 在使用者列表中，點擊該位工程師的帳號名稱 (例如: `developer_name`)。
+        
+4. **建立金鑰**
+    
+    - 進入該使用者頁面後，點擊中間的分頁標籤 **Security credentials (安全憑證)**。
+        
+    - 往下滑找到 **Access keys (存取金鑰)** 區塊。
+        
+    - 點擊右邊的橘色按鈕 **Create access key (建立存取金鑰)**。
+        
+5. **選擇用途 (依 AWS 新介面)**
+    
+    - 系統會問用途，請選擇 **Local code (本機代碼)**。
+        
+    - 勾選下方的確認方塊 (I understand...)，然後點擊 **Next**。
+        
+    - (Optional) Description tag 可以留空，直接點 **Create access key**。
+        
+6. **⚠️ 最重要的一步：下載金鑰檔案**
+    
+    - 畫面會顯示 `Access key ID` 和 `Secret access key`。
+        
+    - **請務必點擊 "Download .csv file" 按鈕**。
+        
+    - _注意：這個畫面關閉後，Secret key 就永遠看不到了，沒存到就只能刪掉重來。_
+        
+7. **交付檔案**
+    
+    - 請將下載下來的 **.csv 檔案** 安全地傳給您的工程師。
+        
+
+---
+
+### 💡 順便請上司幫忙看 IoT Endpoint
+
+當上司還在登入狀態時，請他順便幫你查一下那個你找不到的網址：
+
+1. 請他在上方搜尋欄輸入 **`IoT Core`** 並進入。
+    
+2. 確認右上角的 **Region (區域)** 是你們選定的區域 (例如 N. Virginia `us-east-1`)。
+    
+3. 點擊左下角的 **Settings (設定)**。
+    
+4. 請他看頁面 **最上方** 是否有一行網址 (例如 `xxx-ats.iot.us-east-1.amazonaws.com`)。
+    
+5. 請他把那串網址複製給你。
+    
+
+這樣一來，你就同時擁有了 **Access Key** 和 **Endpoint**，就可以開始寫程式測試了！
