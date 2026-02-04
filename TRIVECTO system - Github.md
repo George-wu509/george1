@@ -1,10 +1,12 @@
 
-|                                                 |     |
-| ----------------------------------------------- | --- |
-| [[#### Github公司帳號跟權限]]                          |     |
-| [[#### Merge github dev branch to main branch]] |     |
-|                                                 |     |
-|                                                 |     |
+|                                                      |     |
+| ---------------------------------------------------- | --- |
+| [[#### Github公司帳號跟權限]]                               |     |
+| [[#### Merge github dev branch to main branch]]      |     |
+| [[#### Create Trivecto ImagingLibWatch github repo]] |     |
+| [[#### 標準的 PR 描述模板 (Template)]]                      |     |
+|                                                      |     |
+|                                                      |     |
 
 
 #### Github公司帳號跟權限
@@ -433,3 +435,160 @@
     
 
 **接下來這一步我可以為您做：** 您提到現在有很多 new commits，如果您想嘗試用 **GitHub PR 的方式**進行，我可以為您提供一份**標準的 PR 描述模板 (Template)**，幫助您整理這次合併的更動內容，方便未來回顧或給協作者看。需要嗎？
+
+
+
+
+#### Create Trivecto ImagingLibWatch github repo
+```
+echo "# ImagingLibWatch" >> README.md
+git init
+git add README.md
+git commit -m "first commit"
+git branch -M main
+git remote add origin https://github.com/Trivecto/ImagingLibWatch.git
+git push -u origin main
+
+
+### …or push an existing repository from the command line
+
+git remote add origin https://github.com/Trivecto/ImagingLibWatch.git
+git branch -M main
+git push -u origin main
+```
+
+
+
+
+
+#### 標準的 PR 描述模板 (Template)
+```
+提供一份標準的 PR 描述模板 (Template)，幫助您整理這次合併的更動內容，方便未來回顧或給協作者看. 另外我的目前dev branch還不是Release version. 進度大概是prototype product剛完成v2版本的interface, PR標題應該怎麼下? 並幫我整理常用的PR標題或不同階段, 有release, 還有甚麼
+```
+這是一份非常實用的資源整理。針對您的 **Prototype V2 Interface** 剛完成的情況，以及 **Private Repo** 的管理需求，我為您準備了以下三個部分的建議：
+
+### 1. 針對您目前進度的 PR 標題建議
+
+由於您提到這還不是正式的 Release Version，但完成了 Prototype V2 的介面，這屬於 **「里程碑式的可交付成果 (Milestone Deliverable)」**。合併到 `main` 代表這是一個相對穩定的階段性版本。
+
+建議使用以下幾種格式（依推薦程度排序）：
+
+- **選項 A（推薦 - 語意化且清晰）：** `feat(ui): Complete Prototype V2 Interface Implementation` _(解釋：`feat` 代表新功能，`(ui)` 標註範圍，後面清楚說明完成了 V2 介面實作)_
+    
+- **選項 B（強調版本推進）：** `Milestone: Prototype V2 Interface Update (Pre-release)` _(解釋：強調這是一個里程碑，並括號註明這是預發布版本)_
+    
+- **選項 C（簡單直白）：** `Merge dev: V2 Interface & New Features`
+    
+
+---
+
+### 2. 標準 Pull Request (PR) 描述模板
+
+這份模板使用了 Markdown 語法，您可以直接複製貼上到 GitHub 的 PR 描述框中。對於包含 UI 變更的專案（如您的 V2 介面），**截圖 (Screenshots)** 區塊特別重要。
+
+Markdown
+
+```
+## 📝 變更摘要 (Summary)
+本 PR 將 `dev` 分支合併至 `main`，主要完成了 Prototype V2 版本的介面重構，並整合了新的開發功能。
+
+## 🚀 主要變更內容 (Changes)
+- [New] 實作 V2 使用者介面 (包含新的配色與佈局)
+- [New] 新增功能 A (例如：圖片上傳功能)
+- [Update] 優化了資料庫連線邏輯
+- [Fix] 修正了舊版 V1 介面在手機版跑版的問題
+
+## 📸 截圖或錄影 (Screenshots / Demo)
+| 修改前 (Before) | 修改後 (After - V2) |
+| :---: | :---: |
+| (貼上舊版截圖) | (貼上新版截圖) |
+
+## 🧪 測試說明 (Testing)
+- [ ] 已在本地環境 (Localhost) 執行並且編譯成功
+- [ ] 測試了 V2 介面的主要按鈕與跳轉流程
+- [ ] 確認沒有破壞現有的 API 功能
+
+## ⚠️ 注意事項 (Notes)
+- 合併後請執行 `pip install -r requirements.txt` 安裝新依賴。
+- 此版本尚未包含金流功能，預計在 V2.1 加入。
+```
+
+---
+
+### 3. 常用的 PR 標題前綴與階段分類
+
+在軟體工程中，我們通常會使用 **Conventional Commits** (約定式提交) 的規範來命名 PR，這樣一眼就能看出這個 PR 的「性質」。除了 `Release` 之外，常見的還有以下幾種：
+
+#### A. 開發階段 (Development Phase)
+
+這是最常出現的類別，用於日常開發：
+
+- **`feat: ...` (Feature / 新功能)**
+    
+    - 用途：新增功能。
+        
+    - 範例：`feat: add user login page` (新增使用者登入頁)
+        
+- **`fix: ...` (Bug Fix / 修復)**
+    
+    - 用途：修正錯誤。
+        
+    - 範例：`fix: resolve navigation bar alignment issue` (修復導覽列對齊問題)
+        
+- **`refactor: ...` (Refactoring / 重構)**
+    
+    - 用途：修改程式碼結構但不改變功能（例如優化效能、整理雜亂的程式碼）。
+        
+    - 範例：`refactor: optimize image processing algorithm` (優化影像處理演算法)
+        
+- **`style: ...` (Style / 格式)**
+    
+    - 用途：不影響程式邏輯的變更（改縮排、改變數命名、分號）。
+        
+    - 範例：`style: formatting code with pylint`
+        
+
+#### B. 維運與雜項 (Operations & Chores)
+
+- **`chore: ...` (Chore / 雜務)**
+    
+    - 用途：不更動原始碼的修改（更新依賴套件、修改 `.gitignore`、設定檔）。
+        
+    - 範例：`chore: update numpy version to 1.21`
+        
+- **`docs: ...` (Documentation / 文件)**
+    
+    - 用途：只修改了文件（README, Wiki）。
+        
+    - 範例：`docs: update installation guide in README`
+        
+
+#### C. 特殊緊急情況
+
+- **`hotfix: ...` (Hotfix / 緊急修復)**
+    
+    - 用途：通常指已經在 `main` 或生產環境上發現嚴重 Bug，需要立即修復並插隊合併。
+        
+    - 範例：`hotfix: fix critical crash on startup`
+        
+
+#### D. 發布階段 (Release Phase)
+
+當累積了一定程度的 `feat` 和 `fix` 後，就會進行 Release。
+
+- **`release: ...`**
+    
+    - 範例：`release: v1.0.0` (正式發布)
+        
+    - 範例：`release: v0.2.0-beta` (測試版發布)
+        
+- **`build: ...`**
+    
+    - 用途：影響建置系統或外部依賴的更動。
+        
+    - 範例：`build: upgrade docker image version`
+        
+
+### 總結您的情況
+
+既然您的 `main` 目前累積了許多來自 `dev` 的更動，且包含介面更新，我建議您的 PR 標題使用： **`feat(ui): Prototype V2 Interface update and core features merge`** 這樣既專業，又能清楚交代這次合併的重點。
