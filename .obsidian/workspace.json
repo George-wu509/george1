@@ -13,15 +13,30 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "TRIVECTO system - Website.md",
+                "file": "TRIVECTO system - AWS.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "TRIVECTO system - Website"
+              "title": "TRIVECTO system - AWS"
+            }
+          },
+          {
+            "id": "4590a50433e76641",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "TRIVECTO system - System Computer build.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "TRIVECTO system - System Computer build"
             }
           }
-        ]
+        ],
+        "currentTab": 1
       }
     ],
     "direction": "vertical"
@@ -171,34 +186,34 @@
       "table-editor-obsidian:Advanced Tables Toolbar": false
     }
   },
-  "active": "90872313e30b6f0c",
+  "active": "4590a50433e76641",
   "lastOpenFiles": [
-    "TRIVECTO system - Website.md",
-    "TRIVECTO system - new UI.md",
     "TRIVECTO system - AWS.md",
-    "TRIVECTO system - Github.md",
+    "TRIVECTO system - System Computer build.md",
     "TRIVECTO system - V2 System.md",
-    "TRIVECTO system - tasks (lume).md",
-    "TRIVECTO system - run plans.md",
-    "TRIVECTO system - new UI color style.md",
-    "Work - Provenance Laboratories/Provenance second consulting projects.md",
-    "Work - Provenance Laboratories/Provenance Watch App.md",
-    "Work - Provenance Laboratories/Provenance Watch CAM and Light.md",
-    "Work - Provenance Laboratories/Provenance Watch Hardware.md",
-    "Work - Provenance Laboratories/Provenance Watch Hardware old code.md",
-    "Work - Provenance Laboratories/TRIVECTO system - account system.md",
-    "Work - Provenance Laboratories/TRIVECTO system - AuditLogger.md",
-    "Work - Provenance Laboratories/TRIVECTO system - Connection plan.md",
-    "Work - Provenance Laboratories/TRIVECTO system - Data manager.md",
-    "Work - Provenance Laboratories/TRIVECTO system - design.md",
-    "Work - Provenance Laboratories/TRIVECTO system - DynamoDB.md",
-    "Work - Provenance Laboratories/TRIVECTO system - hardware.md",
-    "Work - Provenance Laboratories/TRIVECTO system - IoT new design.md",
-    "Work - Provenance Laboratories/TRIVECTO system - matlab convert.md",
-    "Work - Provenance Laboratories/TRIVECTO system - Remote client.md",
-    "Work - Provenance Laboratories/TRIVECTO system - remote code update.md",
-    "Work - Provenance Laboratories/TRIVECTO system - template system.md",
-    "Work - Provenance Laboratories/TRIVECTO system - update1.md",
+    "Work - TRIVECTO Laboratories/TRIVECTO system - Data manager.md",
+    "Work - TRIVECTO Laboratories/TRIVECTO system - Connection plan.md",
+    "Work - TRIVECTO Laboratories/TRIVECTO system - AuditLogger.md",
+    "Work - TRIVECTO Laboratories/TRIVECTO system - account system.md",
+    "Work - TRIVECTO Laboratories/Provenance Watch Hardware old code.md",
+    "Work - TRIVECTO Laboratories/Provenance Watch Hardware.md",
+    "Work - TRIVECTO Laboratories/Provenance Watch CAM and Light.md",
+    "Work - TRIVECTO Laboratories/Provenance Watch App.md",
+    "Work - TRIVECTO Laboratories/Provenance second consulting projects.md",
+    "Work - TRIVECTO Laboratories/Provenance first consulting projects - Github.md",
+    "Work - TRIVECTO Laboratories/Provenance first consulting projects.md",
+    "Work - TRIVECTO Laboratories/Provenance - OCR compare.md",
+    "Work - TRIVECTO Laboratories/TRIVECTO system - hardware.md",
+    "@@ Data Structure QA - simple.md",
+    "Work - TRIVECTO Laboratories/TRIVECTO system - IoT new design.md",
+    "Work - TRIVECTO Laboratories/TRIVECTO system - matlab convert.md",
+    "Work - TRIVECTO Laboratories/TRIVECTO system - Remote client.md",
+    "Work - TRIVECTO Laboratories/TRIVECTO system - remote code update.md",
+    "Work - TRIVECTO Laboratories/TRIVECTO system - template system.md",
+    "Work - TRIVECTO Laboratories/TRIVECTO system - update1.md",
+    "TRIVECTO system - create AWS from IAM.md",
+    "TRIVECTO system - Github.md",
+    "TRIVECTO system - new UI.md",
     "materials/Pasted image 20251219234148.png",
     "materials/Pasted image 20251210170006.png",
     "materials/Pasted image 20251114103236.png",
@@ -211,7 +226,7 @@
     "materials/Pasted image 20251111075202.png",
     "materials/Pasted image 20251111075037.png",
     "materials/Pasted image 20251111075008.png",
-    "Work - Provenance Laboratories",
+    "Work - TRIVECTO Laboratories",
     "DL - Text recognition",
     "CVML - Image formation & quality",
     "CVML - Optics",
