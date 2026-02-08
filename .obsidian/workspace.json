@@ -4,39 +4,24 @@
     "type": "split",
     "children": [
       {
-        "id": "cba3a789fecbb676",
+        "id": "dc77a876ee6995d5",
         "type": "tabs",
         "children": [
           {
-            "id": "90872313e30b6f0c",
+            "id": "2a7c2e074b2b0369",
             "type": "leaf",
             "state": {
               "type": "markdown",
               "state": {
-                "file": "TRIVECTO system - AWS.md",
+                "file": "Work - TRIVECTO Laboratories/TRIVECTO system - template system.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "TRIVECTO system - AWS"
-            }
-          },
-          {
-            "id": "4590a50433e76641",
-            "type": "leaf",
-            "state": {
-              "type": "markdown",
-              "state": {
-                "file": "TRIVECTO system - System Computer build.md",
-                "mode": "source",
-                "source": false
-              },
-              "icon": "lucide-file",
-              "title": "TRIVECTO system - System Computer build"
+              "title": "TRIVECTO system - template system"
             }
           }
-        ],
-        "currentTab": 1
+        ]
       }
     ],
     "direction": "vertical"
@@ -93,7 +78,7 @@
       }
     ],
     "direction": "horizontal",
-    "width": 243.5,
+    "width": 288.5,
     "collapsed": true
   },
   "right": {
@@ -186,7 +171,7 @@
       "table-editor-obsidian:Advanced Tables Toolbar": false
     }
   },
-  "active": "4590a50433e76641",
+  "active": "2a7c2e074b2b0369",
   "lastOpenFiles": [
     "TRIVECTO system - AWS.md",
     "TRIVECTO system - System Computer build.md",
