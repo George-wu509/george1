@@ -5,7 +5,8 @@
 | [[#### Merge github dev branch to main branch]]      |     |
 | [[#### Create Trivecto ImagingLibWatch github repo]] |     |
 | [[#### 標準的 PR 描述模板 (Template)]]                      |     |
-|                                                      |     |
+| [[#### 將個人github push到公司Github]]                     |     |
+| [[#### 將個人github transfer到公司Github]]                 |     |
 |                                                      |     |
 
 
@@ -592,3 +593,346 @@ Markdown
 ### 總結您的情況
 
 既然您的 `main` 目前累積了許多來自 `dev` 的更動，且包含介面更新，我建議您的 PR 標題使用： **`feat(ui): Prototype V2 Interface update and core features merge`** 這樣既專業，又能清楚交代這次合併的重點。
+
+
+
+
+
+#### 將個人github push到公司Github
+```
+我要將我的個人GitHub private repo ImagingLibWatch轉到公司新開的GitHub. 公司新開的GitHub目前沒有任何repo. 我不是GitHub owner但CEO有把權限開給我. 請幫我中文詳細解釋每一步驟並確保公司的GitHub裡面新的repo跟我的個人GitHub private repo ImagingLibWatch一模一樣
+```
+這是一個非常專業且關鍵的操作。為了確保您的個人 GitHub Private Repo (`ImagingLibWatch`) 能夠**完整且一模一樣**（包含所有的 Branch 分支、Tag 標籤、Commit 提交歷史）地轉移到公司的新 GitHub Organization，最標準且安全的做法是使用 **「Git Mirror（鏡像複製）」** 技術。
+
+這種方法不會影響您原本的個人 Repo，而是會在公司那邊建立一個完美的複本。
+
+以下是詳細的中文步驟說明：
+
+### 核心概念：為什麼使用 Mirror？
+
+一般的 `git clone` 預設只會下載 `main` 或 `master` 分支。但使用 `mirror` 指令，我們可以把所有的歷史紀錄、隱藏的參照（refs）、所有的分支一次性打包，確保新舊 Repo 毫無差別。
+
+---
+
+### 第一階段：準備工作 (在 GitHub 網頁上操作)
+
+#### 1. 確認權限
+
+既然 CEO 已經開權限給您，請先登入您的 GitHub 帳號，進入公司的 Organization 頁面（例如 `github.com/CompanyName`）。
+
+- 確認您是否看得到右上角的 **"New repository" (新增儲存庫)** 按鈕。如果看得到，代表您有權限建立新 Repo。
+    
+
+#### 2. 在公司 GitHub 建立「空的」目的地 Repo
+
+這是最重要的一步，請務必小心操作：
+
+- 在公司 Organization 頁面點擊 **"New repository"**。
+    
+- **Repository name**: 輸入 `ImagingLibWatch` (建議保持同名)。
+    
+- **Visibility**: 選擇 **Private** (因為您的來源是 Private，公司代碼通常也需要保密)。
+    
+- **關鍵設定**: **請「不要」勾選** 任何初始化的選項：
+    
+    - [ ] Add a README file (**不要勾**)
+        
+    - [ ] Add .gitignore (**不要勾**)
+        
+    - [ ] Choose a license (**不要勾**)
+        
+- 點擊 **Create repository**。
+    
+- 建立後，您會看到一個空的頁面，請複製這個新 Repo 的 **HTTPS 或 SSH 網址**（例如：`https://github.com/CompanyOrg/ImagingLibWatch.git`），我們待會稱為 `[公司Repo網址]`。
+    
+
+---
+
+### 第二階段：執行轉移 (在您的電腦終端機/Terminal 操作)
+
+請打開您的終端機（Terminal 或 Git Bash），依序執行以下指令。
+
+#### 1. 下載「裸」版本 (Bare Clone)
+
+我們不是要下載來寫程式的，而是要下載「資料庫」，所以要加上 `--bare` 參數。這會下載一個沒有程式碼檔案，只有 `.git` 紀錄的資料夾。
+
+請將 `[您個人Repo網址]` 換成您原本的 GitHub 網址：
+
+Bash
+
+```
+# 下載您個人的 Private Repo 的純資料庫版本
+git clone --bare https://github.com/您的帳號/ImagingLibWatch.git
+```
+
+- _系統可能會要求您輸入個人 GitHub 的帳號密碼（或 Token）以驗證讀取權限。_
+    
+
+#### 2. 進入資料夾
+
+下載完成後，您會看到一個名為 `ImagingLibWatch.git` 的資料夾（注意結尾有 .git）。
+
+Bash
+
+```
+cd ImagingLibWatch.git
+```
+
+#### 3. 鏡像推送到公司 GitHub (Mirror Push)
+
+這是最神奇的一步，這行指令會把所有的分支、標籤、歷史紀錄強行推送到公司的新 Repo。
+
+請將 `[公司Repo網址]` 換成您剛剛在**第一階段**複製的那個網址：
+
+Bash
+
+```
+# 使用 mirror 參數推送到公司的新 Repo
+git push --mirror https://github.com/CompanyOrg/ImagingLibWatch.git
+```
+
+- _系統這時會要求您輸入權限，確認您有寫入公司 Repo 的資格。_
+    
+
+#### 4. 清理電腦上的暫存檔
+
+推送成功後，您電腦上的這個 `ImagingLibWatch.git` 資料夾就沒用了，可以刪除。
+
+Bash
+
+```
+cd ..
+rm -rf ImagingLibWatch.git
+```
+
+---
+
+### 第三階段：驗證與後續 (很重要)
+
+1. **檢查完整性**：
+    
+    - 回到公司 GitHub 的 `ImagingLibWatch` 網頁重新整理。
+        
+    - 確認 **Commits** 數量是否與個人 Repo 一致。
+        
+    - 點擊 **Branches** (分支) 下拉選單，確認是否所有的 Feature branch 都在。
+        
+    - 點擊 **Tags** (如果有 Release)，確認標籤都在。
+        
+2. **更換本地開發的 Remote (如果您要直接開始工作)**： 如果您電腦裡原本就有正在開發中的 `ImagingLibWatch` 專案資料夾，您需要把它的「上傳目標」從個人帳號改成公司帳號：
+    
+    Bash
+    
+    ```
+    # 進入您原本平常在寫程式的資料夾
+    cd path/to/your/project/ImagingLibWatch
+    
+    # 修改 origin 的網址
+    git remote set-url origin https://github.com/CompanyOrg/ImagingLibWatch.git
+    
+    # 確認修改成功
+    git remote -v
+    ```
+    
+
+### 特別提醒：關於 Issues 和 Pull Requests
+
+上述的 `git push --mirror` 方法只能轉移 **「Git 代碼與歷史紀錄」**。 它**無法**轉移 GitHub 平台特有的資料，例如：
+
+- Issues (議題討論)
+    
+- Pull Requests (PR 紀錄)
+    
+- Wiki
+    
+- Projects (專案看板)
+    
+
+如果您的個人 Repo 裡有非常重要的 Issues 需要保留，那麼不能用上述方法，而必須使用 GitHub 網頁版 Settings 裡的 **"Transfer ownership"** 功能。但那會導致您的「個人 Repo」直接消失並移動到公司底下（而非複製）。考慮到您說要「轉到」且通常希望保留備份，上述的 **Mirror (複製)** 方法是業界最標準的做法。
+
+**下一步：** 您現在可以先試著在公司 GitHub 建立那個空的 Repo，如果發現沒有 "Create repository" 的按鈕，那就代表 CEO 給的權限不足（可能只給了 Member 卻沒開 Create Repo 權限），那時請再告訴我，我教您怎麼請他調整設定。
+
+
+
+
+#### 將個人github transfer到公司Github
+```
+請評估方式用之前你提供的方法(在公司 GitHub 建立「空的」目的地 Repo), 以及用transfer的方法哪個是最安全最完整的流程, 也詳細提供用mirror將我的個人github的私人repo (ImagingLibWatch)在local建立備份, 並用"Transfer ownership" 功能搬到公司的 GitHub, 並確保他是private github且只有自己跟CEO看的到, 並之後用我備份的github repo在我的個人github恢復成原來一樣
+```
+這是一個非常謹慎且周全的計畫。既然您希望做到「最完整（保留所有 Issues/PR）」且「最安全（有備份）」，同時最後要恢復原本的個人 Repo，我為您重新設計了一套 **「混合式轉移流程」**。
+
+首先回答您的評估問題：
+
+### 比較評估：哪種方法最安全、最完整？
+
+1. **Git Mirror (前一次的方法):**
+    
+    - **優點**: 安全，個人 Repo 完全不動。
+        
+    - **缺點**: **不完整**。它只能複製「程式碼和提交紀錄」。所有的 GitHub 平台專屬資料（Issues, Pull Requests, Wiki, Action logs）都會遺失。
+        
+2. **Transfer Ownership (轉移擁有權):**
+    
+    - **優點**: **最完整**。它會連同 Issues, PRs, Stars, Wiki 全部原封不動搬過去。網址會自動轉址。
+        
+    - **缺點**: 它是「搬家」不是「複製」。搬完後，您個人帳號下的 Repo 會消失。
+        
+
+### 結論與建議策略
+
+**「Transfer Ownership」是最完整的流程**。為了補足它「個人 Repo 會消失」的缺點，並確保安全性，我們採用以下 **三階段混合策略**：
+
+1. **先備份**: 在本地端做鏡像備份（確保萬無一失）。
+    
+2. **後轉移**: 使用 GitHub 功能將 Repo 搬去公司（確保資料最完整）。
+    
+3. **再恢復**: 利用備份檔，重新在個人 GitHub 建立一個一樣的 Repo。
+    
+
+---
+
+### 詳細執行步驟
+
+#### 第一階段：在本地建立完整備份 (Safety First)
+
+這一步確保無論發生什麼事，您電腦裡都有一份完整的程式碼與歷史紀錄。
+
+1. 打開終端機 (Terminal)。
+    
+2. 輸入以下指令，將您個人的 Private Repo 下載為鏡像檔： _(請將 `YourUsername` 換成您的 GitHub 帳號)_
+    
+    Bash
+    
+    ```
+    git clone --mirror https://github.com/YourUsername/ImagingLibWatch.git
+    ```
+    
+3. 這會在您電腦產生一個 `ImagingLibWatch.git` 資料夾。**請暫時不要動它**，這是我們的救命丹和復原種子。
+    
+
+---
+
+#### 第二階段：使用 "Transfer Ownership" 搬移到公司 (Completeness)
+
+這一步會將您線上的 Repo 連同 Issue/PR 搬到公司。
+
+1. **進入設定**: 登入您的 GitHub，進入 `ImagingLibWatch` 的主頁面，點擊 **Settings**。
+    
+2. **進入危險區**: 捲動到最底部的 **Danger Zone**。
+    
+3. **選擇轉移**: 點擊 **"Transfer ownership"**。
+    
+4. **填寫資訊**:
+    
+    - **New owner**: 輸入公司的 Organization 名稱。
+        
+    - **Repository name**: 輸入 `ImagingLibWatch` (確認名稱)。
+        
+    - 系統會要求您輸入一句確認文字（通常是 `YourUsername/ImagingLibWatch`）。
+        
+5. **執行轉移**: 點擊按鈕確認。
+    
+    - _注意：如果您的公司權限不足以直接轉入，系統會發送一封「請求轉移」的 Email 給公司 Owner (CEO)，請 CEO 點擊信中連結批准即可。_
+        
+
+---
+
+#### 第三階段：設定公司 Repo 權限 (Privacy & Security)
+
+在恢復個人 Repo 之前，我們先確保公司那邊的設定是安全的。
+
+1. **前往公司 Repo**: 轉移成功後，瀏覽器通常會自動跳轉到公司的新網址 `https://github.com/CompanyOrg/ImagingLibWatch`。
+    
+2. **檢查隱私狀態**: 確認標題旁是否顯示 **Private**。如果不是，請去 Settings -> Danger Zone -> Change visibility 改為 Private。
+    
+3. **鎖定權限 (關鍵步驟)**:
+    
+    - 點擊 **Settings** -> 左側選單 **Collaborators and teams** (或 Manage access)。
+        
+    - GitHub Organization 預設可能會給 "All Members" 讀取權限。請檢查列表中是否有 **"Member privileges"** 或類似 **"All members"** 的團隊。
+        
+    - **移除閒雜人等**: 如果看到除了您和 CEO 以外的人（或 Team），請將其移除。
+        
+    - **加入 CEO**: 點擊 **Add people**，輸入 CEO 的帳號，權限建議設為 **Admin** 或 **Write**。
+        
+    - **加入自己**: 因為您發起了轉移，您通常會自動擁有 Admin 權限，確認您自己在列表上。
+        
+    - **最終檢查**: 列表中應該只有：您 (Admin/Write) 和 CEO (Admin/Write)。
+        
+
+---
+
+#### 第四階段：恢復個人 GitHub Repo (Restoration)
+
+現在公司那邊搞定了，但您個人的 Repo 因為「轉移」而消失了。我們用第一階段的備份把它「推」回去。
+
+1. **在個人 GitHub 建立新殼**:
+    
+    - 回到您個人的 GitHub 首頁。
+        
+    - 點擊右上角 **+** -> **New repository**。
+        
+    - Repository name: `ImagingLibWatch` (跟原來一樣)。
+        
+    - Visibility: **Private**。
+        
+    - **不要勾選** Initialize (README, .gitignore 等)，建立一個全空的 Repo。
+        
+2. **將備份推回去**:
+    
+    - 回到您的終端機 (Terminal)。
+        
+    - 進入第一階段備份的資料夾：
+        
+        Bash
+        
+        ```
+        cd ImagingLibWatch.git
+        ```
+        
+    - 執行鏡像推送 (將備份推送到您剛建立的個人新 Repo)： _(請將 `YourUsername` 換成您的個人帳號)_
+        
+        Bash
+        
+        ```
+        git push --mirror https://github.com/YourUsername/ImagingLibWatch.git
+        ```
+        
+3. **清理電腦**: 推送完成後，您可以刪除電腦上的 `ImagingLibWatch.git` 資料夾：
+    
+    Bash
+    
+    ```
+    cd ..
+    rm -rf ImagingLibWatch.git
+    ```
+    
+
+---
+
+### 最終結果總結
+
+完成以上四步後，狀況如下：
+
+1. **公司的 GitHub (`CompanyOrg/ImagingLibWatch`)**:
+    
+    - 擁有**最完整**的資料（包含歷史代碼、分支、Tags、**以及 Issues 和 Pull Requests**）。
+        
+    - 狀態為 **Private**。
+        
+    - 權限嚴格控制，只有**您和 CEO** 能看到。
+        
+2. **您的個人 GitHub (`YourUsername/ImagingLibWatch`)**:
+    
+    - 已經恢復原狀。
+        
+    - 擁有完整的歷史代碼、分支和 Tags。
+        
+    - _注意：因為這是「重新推送」的，原本舊的 Issues 和 Pull Requests 不會出現在這裡（它們跟著轉移去公司了），但純程式碼開發紀錄是一模一樣的。_
+        
+
+這是目前技術上能做到最嚴謹、保留最多資訊且符合您所有要求的標準作業流程。
+
+
+
+
