@@ -111,15 +111,15 @@
 
 根據之前的對話紀錄，目前的 Python 架構 (`WorkflowManager`, `HardwareManager`) 整合狀態如下：
 
-|**MATLAB 功能**|**對應 Python 檔案**|**狀態評估 (30-year Tech Lead View)**|
-|---|---|---|
-|**Zaber 移動**|`Controller/hardware_managers.py` (ZaberManager)|**已完成**。基礎移動功能已具備。|
-|**相機擷取**|`Controller/hardware_managers.py` (CameraManager)|**部分完成**。目前只有單張擷取 (`capture_image`)，**缺 HDR 邏輯**。|
-|**UUID 生成**|`uuid` (Python 內建庫)|**已完成**。Python 直接用 `uuid.uuid4()` 取代。|
-|**流程控制** (`collect`)|`Controller/plans/*.yaml` + `WorkflowManager`|**架構已完成**。用 YAML/DB 定義步驟取代了 MATLAB 的寫死腳本。|
-|**自動對焦** (`findsurface`)|`Controller/controller_server.py` (`run_auto_focus`)|**過於簡化**。目前的 Python 版只是簡單的 `Z_base + dist`，**缺少 MATLAB 版的 Retry 機制與玻璃修正**。|
-|**影像對位** (`watchshift`)|`tasks/api_servers/server_features.py` (推測)|**待確認**。Python 生態系有強大的 OpenCV，通常用 `cv2.findHomography` 或 `ORB` 取代。|
-|**座標轉換** (`tele2detail`)|**缺失**|目前沒看到 Python 版有實作「廣角像素 -> 馬達座標」的校正矩陣邏輯。|
+| **MATLAB 功能**            | **對應 Python 檔案**                                     | **狀態評估 (30-year Tech Lead View)**                                          |
+| ------------------------ | ---------------------------------------------------- | -------------------------------------------------------------------------- |
+| **Zaber 移動**             | `Controller/hardware_managers.py` (ZaberManager)     | **已完成**。基礎移動功能已具備。                                                         |
+| **相機擷取**                 | `Controller/hardware_managers.py` (CameraManager)    | **部分完成**。目前只有單張擷取 (`capture_image`)，**缺 HDR 邏輯**。                          |
+| **UUID 生成**              | `uuid` (Python 內建庫)                                  | **已完成**。Python 直接用 `uuid.uuid4()` 取代。                                      |
+| **流程控制** (`collect`)     | `Controller/plans/*.yaml` + `WorkflowManager`        | **架構已完成**。用 YAML/DB 定義步驟取代了 MATLAB 的寫死腳本。                                  |
+| **自動對焦** (`findsurface`) | `Controller/controller_server.py` (`run_auto_focus`) | **過於簡化**。目前的 Python 版只是簡單的 `Z_base + dist`，**缺少 MATLAB 版的 Retry 機制與玻璃修正**。 |
+| **影像對位** (`watchshift`)  | `tasks/api_servers/server_features.py` (推測)          | **待確認**。Python 生態系有強大的 OpenCV，通常用 `cv2.findHomography` 或 `ORB` 取代。         |
+| **座標轉換** (`tele2detail`) | **缺失**                                               | 目前沒看到 Python 版有實作「廣角像素 -> 馬達座標」的校正矩陣邏輯。                                    |
 
 ---
 
