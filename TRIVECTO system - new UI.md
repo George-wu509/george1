@@ -5,7 +5,7 @@
 | [[#### PyDracula Github解釋]]                         |     |
 | [[#### ui1-4介面的流程設定]]                               |     |
 | [[#### IOT取得連線網址 (Endpoint)跟IOT create Access Key]] |     |
-|                                                     |     |
+| [[#### UI的lineEdit調整框線]]                            |     |
 |                                                     |     |
 |                                                     |     |
 
@@ -662,3 +662,260 @@ PyDracula README 有給指令： `pyside6-uic main.ui > ui_main.py`
     
 
 這樣一來，你就同時擁有了 **Access Key** 和 **Endpoint**，就可以開始寫程式測試了！
+
+
+
+
+#### UI的lineEdit調整框線
+```
+請幫我解釋我的UI的lineEdit, frame, comboBox的框線顏色跟粗細是在那裡控制的? comboBox下拉menu的顏色要如何控制? 請具體舉例如果我要把lineEdit的框線顏色變成顯眼白色且變粗兩倍要如何改? comboBox下拉menu的顏色變成不透明要如何改變? comboBox下拉menu的顏色變成淡藍色不透明要如何改變? 我在qss裡面改了怎麼完全沒有變化, 請幫我詳細分析我的code看為何qss會不起作用
+
+pushButton在整個ui縮放大小時似乎不會隨著ui大小等比例縮放, 請深入分析如何針對按鈕size(水平垂直)能跟著ui做調整:
+```
+
+這是一個非常好的問題。你在開發 PySide6/Qt 應用程式時遇到的「樣式無效」與「縮放問題」是兩個經典的痛點。
+
+這通常是因為 **「Python 代碼中的手動樣式覆蓋」** 與 **「自定義縮放管理器 (ProportionalManager) 的邏輯限制」** 造成的。
+
+以下我將針對你的問題一一拆解並提供具體解決方案。
+
+---
+
+### 第一部分：UI 樣式控制 (QSS 無效的原因與解法)
+
+#### 1. 為什麼你在 QSS 改了卻沒有變化？ (詳細分析)
+
+經過分析你的 `App/ui/ui_main.py` 和 `App/main.py`，你的 QSS 不起作用的主要原因有兩點：
+
+1. **優先級衝突 (The Cascading Conflict)：**
+    
+    - 在 `App/ui/ui_main.py` 的 `setupUi` 方法中，你設定了 `self.styleSheet.setStyleSheet(...)`。這是一個非常巨大的字串，裡面已經寫死了 `QLineEdit`, `QComboBox` 的顏色和邊框。
+        
+    - 而在 `App/main.py` 的 `apply_theme()` 中，你又對 `self` (MainWindow) 設定了 `rolex_aqua_v1.qss`。
+        
+    - **Qt 規則：** 直接設定在子物件 (`self.styleSheet` Widget) 上的樣式表，優先級**高於**從父物件 (`MainWindow`) 繼承下來的樣式表。因此，你在 QSS 寫的樣式被 `ui_main.py` 裡面的設定擋住了。
+        
+2. **Python 代碼強制覆蓋：**
+    
+    - 在 `App/main.py` 中有一個函式 `_apply_top_nav_styling(self)`。
+        
+    - 這個函式會遍歷按鈕並執行 `btn.setStyleSheet(...)`。
+        
+    - **Qt 規則：** 針對個別 Widget 使用 `setStyleSheet` (Inline Style) 的優先級是最高的。這就是為什麼你的按鈕完全不聽 QSS 指揮的原因。
+        
+
+#### 2. 如何解決？ (QLineEdit 與 ComboBox 樣式)
+
+要讓外部 QSS 生效，最強制的方法是**使用 ID 選擇器** (因為 ID 權重高)，或者在程式初始化時清空 UI 檔案自帶的樣式。
+
+以下是針對你需求的具體修改方式，請修改 `App/themes/rolex_aqua_v1.qss`：
+
+**A. 修改 LineEdit 框線 (顯眼白色 + 變粗兩倍)**
+
+在 QSS 中找到 `QLineEdit` 區塊，修改如下：
+
+CSS
+
+```
+/* 將原本的 border 設定覆蓋掉 */
+QLineEdit {
+    background-color: rgba(40, 160, 210, 0.20); 
+    color: white;
+    padding: 5px 10px;
+    border-radius: 5px;
+    
+    /* [重點] 設定顯眼白色且變粗 (假設原本是1px, 這裡設2px或3px) */
+    border: 3px solid #FFFFFF; 
+    border-style: solid;
+}
+
+/* 當滑鼠移過去或輸入時，可以變色提示 */
+QLineEdit:hover, QLineEdit:focus {
+    border: 3px solid #00FFFF; /* 亮青色 */
+}
+```
+
+**B. 修改 ComboBox 下拉選單 (不透明 + 淡藍色)**
+
+控制下拉選單的關鍵字是 `QComboBox QAbstractItemView`。你需要強制設定背景色並移除透明度。
+
+CSS
+
+```
+/* 1. 主體框線設定 */
+QComboBox {
+    border-radius: 5px;
+    padding: 5px 10px;
+    color: white;
+    background-color: rgba(40, 160, 210, 0.40);
+    
+    /* [重點] 白色粗框 */
+    border: 2px solid #FFFFFF;
+}
+
+/* 2. 下拉選單容器 (這裡控制彈出視窗的顏色) */
+QComboBox QAbstractItemView {
+    /* [重點] 淡藍色且不透明 (Hex: #ADD8E6 是淡藍色) */
+    background-color: #ADD8E6; 
+    
+    /* 文字顏色改為黑色或深色，因為背景是淡色 */
+    color: #000000;
+    
+    /* 選單的外框 */
+    border: 2px solid #FFFFFF;
+    
+    /* 移除點擊時的虛線 */
+    outline: none;
+    
+    /* 確保選單項目不擁擠 */
+    padding: 5px;
+}
+
+/* 3. 下拉選單中的個別選項 */
+QComboBox QAbstractItemView::item {
+    background-color: transparent; /* 跟隨父容器 */
+    color: #000000;
+    min-height: 30px; /* 增加高度好點選 */
+}
+
+/* 4. 滑鼠滑過選項時的顏色 */
+QComboBox QAbstractItemView::item:hover, 
+QComboBox QAbstractItemView::item:selected {
+    background-color: #0078D7; /* 深藍色高亮 */
+    color: #FFFFFF; /* 白色文字 */
+}
+```
+
+#### 3. 讓 QSS 生效的關鍵一步 (修改 main.py)
+
+為了防止 `ui_main.py` 擋住你的設定，請在 `App/main.py` 的 `__init__` 方法中，加入一行代碼來清空自動生成的樣式：
+
+Python
+
+```
+# 在 App/main.py 的 MainWindow class __init__ 裡面
+class MainWindow(QMainWindow):
+    def __init__(self):
+        super().__init__()
+        self.ui = Ui_MainWindow()
+        self.ui.setupUi(self)
+        
+        # [新增這行] 清除 UI 檔案自帶的樣式，讓外部 QSS 完全接管
+        self.ui.styleSheet.setStyleSheet("") 
+        
+        global widgets
+        widgets = self.ui
+        # ... (其餘代碼不變)
+```
+
+---
+
+### 第二部分：PushButton 縮放問題 (ProportionalManager 分析)
+
+你提到 `pushButton` 不會隨著 UI 大小等比例縮放。這是因為你的 `ProportionalManager` 邏輯傾向於「保持長寬比 (Aspect Ratio)」，而不是單純的「拉伸」。
+
+#### 深入分析你的 Code：
+
+在 `App/main.py` 的 `ProportionalManager` 類別中，有這段邏輯：
+
+Python
+
+```
+    def apply_scaling(self, current_width, current_height):
+        # ... (省略)
+        ratio_x = current_width / self.design_width
+        ratio_y = current_height / self.design_height
+        
+        # [關鍵點 1] 這裡取了 x 和 y 縮放比例中較小的那個，為了保持字體和形狀不變形
+        scale_uniform = min(ratio_x, ratio_y) 
+
+        for w, data in self.widget_cache.items():
+            # ...
+            
+            # [關鍵點 2] 只有在名單內的 frame 才會水平拉伸 (ratio_x)
+            if name in self.horizontal_stretch_widgets:
+                new_w = int(orig_w * ratio_x)
+            else:
+                # 其他所有元件 (包含按鈕) 都使用 scale_uniform
+                new_w = int(orig_w * scale_uniform)
+            
+            # 高度統一使用 scale_uniform
+            new_h = int(orig_h * scale_uniform)
+            
+            w.setGeometry(new_x, new_y, new_w, new_h)
+```
+
+**問題所在：** 按鈕 (PushButton) 不在 `horizontal_stretch_widgets` 名單中。所以當你把視窗橫向拉寬時，`ratio_x` 變大，但 `ratio_y` 沒變，`scale_uniform` (取最小值) 就會保持不變。導致視窗變寬了，但按鈕還是維持原本的大小，看起來就像沒縮放。
+
+#### 解決方案：
+
+你有兩種選擇，視你希望按鈕如何表現而定。
+
+**方法 A：讓按鈕跟隨視窗「完全變形」 (水平跟隨水平，垂直跟隨垂直)** 這會導致按鈕在視窗很寬時變得很扁長。
+
+修改 `ProportionalManager` 的 `apply_scaling` 方法：
+
+Python
+
+```
+    def apply_scaling(self, current_width, current_height):
+        if not self.initialized: return
+        ratio_x = current_width / self.design_width
+        ratio_y = current_height / self.design_height
+        # scale_uniform = min(ratio_x, ratio_y) # 這一行不需要了，或者僅用於字體
+
+        for w, data in self.widget_cache.items():
+            try:
+                # ... (前略) ...
+                name = data.get("name", "")
+                
+                # 計算新位置
+                new_x = int(orig_x * ratio_x)
+                new_y = int(orig_y * ratio_y)
+                
+                # [修改] 針對 QPushButton 強制使用各自的比例
+                if isinstance(w, QPushButton):
+                    new_w = int(orig_w * ratio_x)
+                    new_h = int(orig_h * ratio_y)
+                elif name in self.horizontal_stretch_widgets:
+                    new_w = int(orig_w * ratio_x)
+                    new_h = int(orig_h * min(ratio_x, ratio_y))
+                else:
+                    new_w = int(orig_w * min(ratio_x, ratio_y))
+                    new_h = int(orig_h * min(ratio_x, ratio_y))
+                
+                w.setGeometry(new_x, new_y, new_w, new_h)
+                
+                # 字體還是建議保持等比，不然會很醜
+                new_font_size = data["font_size"] * min(ratio_x, ratio_y) * self.font_scale_factor
+                # ... (後略) ...
+```
+
+**方法 B：將特定按鈕加入「水平拉伸白名單」 (推薦)** 如果你希望按鈕的高度保持正常（不要變形太嚴重），但寬度要隨著視窗變寬（填滿空間），你應該把它們的名字加入 `horizontal_stretch_widgets`。
+
+在 `App/main.py` 的 `ProportionalManager.__init__` 中：
+
+Python
+
+```
+        self.horizontal_stretch_widgets = {
+            "frame", "frame_2", "frame_3", "frame_4", "frame_5", "frame_6", 
+            # ... 原有的 frame ...
+            
+            # [新增] 把你希望跟著變寬的按鈕名字加進來
+            "pushButton_Temprun_Front", 
+            "pushButton_Temprun_OpenBack",
+            "pushButton_Temprun_OpenbackCrown",
+            "pushButton_TemplateRun_43", 
+            "pushButton_TemplateRun_42",
+            # ... 依此類推加入所有頂部導航按鈕 ...
+        }
+```
+
+### 總結步驟
+
+1. **main.py**: 在 `Ui_MainWindow.setupUi(self)` 之後加入 `self.ui.styleSheet.setStyleSheet("")` 以清除干擾。
+    
+2. **rolex_aqua_v1.qss**: 加上我提供的 `QLineEdit` 和 `QComboBox QAbstractItemView` 樣式代碼。
+    
+3. **main.py**: 修改 `ProportionalManager`，將特定的 `QPushButton` 名稱加入 `self.horizontal_stretch_widgets` 集合中，或者修改 `apply_scaling` 邏輯讓所有 Button 都分別參考 X/Y 比例。

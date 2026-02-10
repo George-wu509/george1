@@ -13,12 +13,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "Work - TRIVECTO Laboratories/TRIVECTO system - matlab convert.md",
+                "file": "TRIVECTO system - new UI.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "TRIVECTO system - matlab convert"
+              "title": "TRIVECTO system - new UI"
             }
           }
         ]
@@ -173,6 +173,7 @@
   },
   "active": "6b3f3dc761326e55",
   "lastOpenFiles": [
+    "Work - TRIVECTO Laboratories/TRIVECTO system - matlab convert.md",
     "Work - TRIVECTO Laboratories/TRIVECTO system - template system.md",
     "TRIVECTO system - Github.md",
     "TRIVECTO system - AWS.md",
