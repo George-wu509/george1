@@ -35,7 +35,8 @@
               "title": "TRIVECTO system - Control hardware"
             }
           }
-        ]
+        ],
+        "currentTab": 1
       }
     ],
     "direction": "vertical"
@@ -185,7 +186,7 @@
       "table-editor-obsidian:Advanced Tables Toolbar": false
     }
   },
-  "active": "6470921850dbbf4b",
+  "active": "ea226246c4364f0f",
   "lastOpenFiles": [
     "TRIVECTO system - Control hardware.md",
     "Work - TRIVECTO Laboratories/TRIVECTO system - matlab convert.md",
