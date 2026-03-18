@@ -4,35 +4,35 @@
     "type": "split",
     "children": [
       {
-        "id": "7fb508efb28b2291",
+        "id": "05843b8b5333e0f0",
         "type": "tabs",
         "children": [
           {
-            "id": "6470921850dbbf4b",
+            "id": "9f67da34730ae2d2",
             "type": "leaf",
             "state": {
               "type": "markdown",
               "state": {
-                "file": "Work - TRIVECTO Laboratories/TRIVECTO system - matlab convert.md",
+                "file": "TRIVECTO system - Camera pipeline.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "TRIVECTO system - matlab convert"
+              "title": "TRIVECTO system - Camera pipeline"
             }
           },
           {
-            "id": "ea226246c4364f0f",
+            "id": "b88a37adc86d32ef",
             "type": "leaf",
             "state": {
               "type": "markdown",
               "state": {
-                "file": "TRIVECTO system - Control hardware.md",
+                "file": "Git - Command.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "TRIVECTO system - Control hardware"
+              "title": "Git - Command"
             }
           }
         ],
@@ -93,8 +93,7 @@
       }
     ],
     "direction": "horizontal",
-    "width": 300,
-    "collapsed": true
+    "width": 300
   },
   "right": {
     "id": "90395f031a5e0b3c",
@@ -186,10 +185,12 @@
       "table-editor-obsidian:Advanced Tables Toolbar": false
     }
   },
-  "active": "ea226246c4364f0f",
+  "active": "b88a37adc86d32ef",
   "lastOpenFiles": [
-    "TRIVECTO system - Control hardware.md",
+    "TRIVECTO system - Camera pipeline.md",
+    "Git - Command.md",
     "Work - TRIVECTO Laboratories/TRIVECTO system - matlab convert.md",
+    "TRIVECTO system - Control hardware.md",
     "Work - TRIVECTO Laboratories/TRIVECTO system - run plans.md",
     "Work - TRIVECTO Laboratories/TRIVECTO system - UDM-SE.md",
     "Work - TRIVECTO Laboratories/TRIVECTO system - tasks (lume).md",
