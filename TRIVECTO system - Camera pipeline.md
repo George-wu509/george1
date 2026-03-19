@@ -2,7 +2,7 @@
 
 | [[#### Camera pipeline (focus on autofocus)]] |     |
 | --------------------------------------------- | --- |
-|                                               |     |
+| [[#### Camera pipeline (focus on Dataflow)]]  |     |
 |                                               |     |
 | [[#### stress test檢測內容跟硬體Code做的修正]]           |     |
 | [[#### 那我修改的硬體code運作機制解答]]                    |     |
@@ -110,6 +110,138 @@ Plaintext
     - **Option 2 & 3:** 呼叫 `_af_vision_method()`。
         
     - _(注意：此函數完全沒有實作 Option 4 的邏輯)_
+
+
+
+
+
+#### Camera pipeline (focus on Dataflow)
+```
+請幫我中文詳細解釋執行App main.py的流程, 著重資料流程. 如何用template info到控制拍照, camera taken image存到哪裡, 如何把image跟computer vision task services連結作分析, 結果要放到哪裡? 那些會上傳到AWS S3怎麼控制, 那些傳入local DB, 以及跟AWS DB同步. 也要指出跟哪個python file的哪個function相關, 並畫詳細流程樹狀圖
+```
+這是一個非常經典且架構嚴謹的邊緣到雲端 (Edge-to-Cloud) AI 檢測系統。系統採用了**非同步處理 (Asynchronous)**、**本地寫入緩衝 (Write Buffer)** 以及**背景同步 (Background Polling Sync)** 的設計模式。
+
+以下我將為你詳細拆解 `main.py` 啟動後的資料流與生命週期，並特別針對你關注的五大核心問題進行解說，最後附上完整的呼叫流程樹狀圖。
+
+---
+
+### 核心資料流解析
+
+#### 1. 從 Template Info 到控制拍照 (Template -> Hardware Capture)
+
+當使用者在 UI 選擇一個手錶型號 (Template) 並按下執行時，資料是這樣流動的：
+
+- **載入 Template：** 在 `main.py` 中，`_load_template_to_memory()` 會從 Local DB 讀取預設的 Template JSON，轉為記憶體中的 `WatchTemplate` 物件。接著透過 `_create_new_watchentry()` 產生這次檢測的唯一實體 `watchentry` 物件，並賦予專屬的 `WatchID` 與各點位的 UUID。
+    
+- **觸發拍照：** 使用者點擊執行後，會呼叫 `main.py` 的 `_run_view_sequence()`，這會啟動背景執行緒 `CaptureRoutineWorker`，避免卡死 UI。
+    
+- **解析參數並呼叫硬體：** 核心邏輯在 `main.py` 的 `_capture_images_routine_internal()`。它會遍歷 Template 中的 `watchView`，將 X, Y, Z 座標、相機選擇 (`cam_id`)、曝光時間 (`exptimes`) 提取出來，打包成 `step_config` 字典。
+    
+- **交給 Workflow 執行：** 將 `step_config` 傳遞給 `core/workflow_manager.py` 的 `_perform_smart_step()`，該函數會呼叫硬體驅動 `self.hw.execute_template_point(hw_cfg)` 真正驅動馬達與相機拍下照片。
+    
+
+#### 2. 相機拍下的 Image 存到哪裡？ (Raw Image Storage)
+
+相機回傳 OpenCV 影像矩陣後，資料落地流程如下：
+
+- **暫存區：** `workflow_manager.py` 會先將影像存入 `Local_Data/temp/` 加上 UUID 的暫存檔。
+    
+- **正式歸檔：** 呼叫 `data_manager/local_storage.py` 的 `process_and_sync_raw_image()`。
+    
+    - 檔案會被移動到：`Local_Data/{WatchID}/Raw/{UUID}.jpg`。
+        
+    - **加密 (可選)：** 如果開啟加密，會呼叫 `encryption.py` 對檔案 Header 進行混淆，並產生 `.meta` 備份檔。
+        
+- **寫入 Local DB：** 呼叫 `DB/db_manager.py` 的 `insert_raw_image()`，將本機路徑、預計的 S3 Key 寫入 SQLite 表格 `raw_images` 中，並將 `synced` 欄位標記為 `0` (尚未同步)。
+    
+
+#### 3. 如何將 Image 與 Computer Vision Task 連結並分析？
+
+- **綁定關聯 (Mapping)：** 在系統啟動時，`WorkflowManager._build_service_lookup_map()` 會讀取 `system_config.yaml`，建立「視角點位」對應「CV 演算法」的映射表 (例如 `front.glasspoint1` 對應 `['ocr_service']`)。
+    
+- **觸發分析：** 拍完照取得本機路徑後，在 `main.py` 裡會接著呼叫 `_trigger_manual_analysis()`。
+    
+- **安全解密與派發：** 轉交給 `workflow_manager.py` 的 `_run_analysis_safe()`。因為影像可能被加密了，它會先呼叫 `data_manager.prepare_image_for_viewing()` 解密出一個暫存圖，然後呼叫 `core.orchestrator.run_batch()` 將影像路徑與演算法清單派發給微服務架構 (ServiceManager/ZeroMQ 或 HTTP) 進行推論。
+    
+
+#### 4. CV 分析結果放到哪裡？ (Analysis Results)
+
+- **推論結果回傳：** Orchestrator 拿到 AI 回傳的 Mask 影像與 JSON 數據 (Metrics)。
+    
+- **資料夾存放：** 檔案會統一存放在專屬分析目錄：`Local_Data/{WatchID}/Analysis/{ExpID}/` 下。
+    
+- **紀錄結果：** 呼叫 `workflow_manager.py` 的 `_process_step_results()`，它會調用 `local_storage.py`，將 Mask 影像路徑與 JSON 結果寫入 Local DB 的 `experiment_results` 表格中，同樣標記 `synced=0`。
+    
+
+#### 5. 上傳 AWS S3 的控制機制與 Local/Cloud DB 同步
+
+這個系統採用了非常穩健的**非同步寫入緩衝 (Write-Behind Buffer)** 策略，UI 不會因為網路延遲而卡頓。
+
+- **加入佇列 (Queueing)：** 當 `local_storage.py` 完成寫入 SQLite 後，會呼叫 `cloud_sync.add_to_queue(local_path, s3_key)`，但這其實只是一個喚醒信號。
+    
+- **背景輪詢 (Polling)：** 真正的推手是 `data_manager/cloud_sync.py` 裡面的背景執行緒 `_worker_loop()`。它會不斷向 Local DB (`db_manager.py`) 請求 `get_pending_uploads()`，撈出所有 `synced=0` 的紀錄。
+    
+- **上傳 S3：** 若檔案存在，`cloud_sync.py` 使用 `boto3` 將檔案直接上傳至 `s3://{bucket_name}/{s3_key}`。
+    
+- **同步 AWS DynamoDB：** S3 上傳成功後，`cloud_sync.py` 會立刻呼叫 `data_manager/cloud_db.py` 的 `index_record()`，將 metadata、時間戳與 S3 Key 寫入雲端的 DynamoDB `WatchAnalysisResults` 表中。
+    
+- **標記完成 (Ack)：** 雲端寫入成功後，回頭呼叫 Local DB 的 `mark_as_synced()`，將 SQLite 的該筆紀錄標記為 `synced=1`，完成整個閉環。
+    
+
+---
+
+### 詳細執行流程樹狀圖 (Flowchart Tree)
+
+這裡為你梳理從使用者點擊執行，到最終資料上傳 AWS 的完整函數呼叫鏈：
+
+Plaintext
+
+```
+[UI] main.py : 使用者點擊 "執行" 某個視角 (例如 Front)
+ ├── _run_view_sequence("front")
+ │    ├── load_camimgs("front")
+ │    │    └── CaptureRoutineWorker(QThread).start()  -> 進入背景執行緒
+ │
+ [Background Thread] main.py : CaptureRoutineWorker.run()
+  └── _capture_images_routine_internal()
+       │
+       ├── [擷取 Template 參數]
+       │    └── 從 self.current_template 取出 X, Y, Z, 曝光時間, 相機 ID
+       │
+       ├── [1. 觸發拍照與儲存]
+       │    └── workflow_manager.py : _perform_smart_step()
+       │         ├── hardware_drivers.cam.capture_image()  -> OpenCV 影像
+       │         ├── 存入 Local_Data/temp/{uuid}.jpg
+       │         └── local_storage.py : process_and_sync_raw_image()
+       │              ├── _safe_move() -> 移至 Local_Data/{WatchID}/Raw/{uuid}.jpg
+       │              ├── encryption.py : obfuscate_image_header_to_bytes()  [可選：檔案加密]
+       │              ├── db_manager.py : insert_raw_image()  [寫入 Local SQLite, synced=0]
+       │              └── cloud_sync.py : add_to_queue()  [發送喚醒訊號]
+       │
+       ├── [2. 觸發 CV 演算法]
+       │    └── main.py : _trigger_manual_analysis()
+       │         └── workflow_manager.py : _run_analysis_safe()
+       │              ├── local_storage.py : prepare_image_for_viewing() [解密為暫存檔]
+       │              └── orchestrator.py : run_batch(tasks, image_path) [派發給 AI 服務]
+       │
+       └── [3. 處理 CV 結果]
+            └── workflow_manager.py : _process_step_results()
+                 ├── 儲存至 Local_Data/{WatchID}/Analysis/{ExpID}/
+                 ├── db_manager.py : insert_experiment_result() [寫入 SQLite, synced=0]
+                 └── cloud_sync.py : add_to_queue()
+
+========================================================================================
+[獨立的非同步守護執行緒 - 負責雲端同步]
+data_manager/cloud_sync.py : _worker_loop()
+ ├── db_manager.py : get_pending_uploads()  [撈出 SQLite 中 synced=0 的檔案]
+ │
+ ├── [For 每一筆待傳資料]
+ │    ├── boto3.client('s3').upload_file(...)  [上傳圖片或 JSON 到 AWS S3]
+ │    │
+ │    ├── 成功後 -> cloud_db.py : index_record() [寫入 AWS DynamoDB 建立關聯索引]
+ │    │
+ │    └── db_manager.py : mark_as_synced()     [更新 Local SQLite, synced=1, 避免重複上傳]
+```
 
 
 
