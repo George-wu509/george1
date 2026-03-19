@@ -20,23 +20,8 @@
               "icon": "lucide-file",
               "title": "TRIVECTO system - Camera pipeline"
             }
-          },
-          {
-            "id": "b88a37adc86d32ef",
-            "type": "leaf",
-            "state": {
-              "type": "markdown",
-              "state": {
-                "file": "Git - Command.md",
-                "mode": "source",
-                "source": false
-              },
-              "icon": "lucide-file",
-              "title": "Git - Command"
-            }
           }
-        ],
-        "currentTab": 1
+        ]
       }
     ],
     "direction": "vertical"
@@ -93,7 +78,8 @@
       }
     ],
     "direction": "horizontal",
-    "width": 300
+    "width": 300,
+    "collapsed": true
   },
   "right": {
     "id": "90395f031a5e0b3c",
@@ -185,8 +171,10 @@
       "table-editor-obsidian:Advanced Tables Toolbar": false
     }
   },
-  "active": "b88a37adc86d32ef",
+  "active": "9f67da34730ae2d2",
   "lastOpenFiles": [
+    "TRIVECTO system - Vanta Element XRF Analyzer.md",
+    "TRIVECTO system - AWS.md",
     "TRIVECTO system - Camera pipeline.md",
     "Git - Command.md",
     "Work - TRIVECTO Laboratories/TRIVECTO system - matlab convert.md",
@@ -207,7 +195,6 @@
     "Work - TRIVECTO Laboratories/TRIVECTO system - UI process.md",
     "Work - TRIVECTO Laboratories/TRIVECTO system - new UI.md",
     "Work - TRIVECTO Laboratories/TRIVECTO system - template system.md",
-    "TRIVECTO system - AWS.md",
     "TRIVECTO system - create AWS from IAM.md"
   ]
 }
