@@ -4,21 +4,21 @@
     "type": "split",
     "children": [
       {
-        "id": "05843b8b5333e0f0",
+        "id": "c9a30c1264abbbe4",
         "type": "tabs",
         "children": [
           {
-            "id": "9f67da34730ae2d2",
+            "id": "62e7e7ce8599fbc7",
             "type": "leaf",
             "state": {
               "type": "markdown",
               "state": {
-                "file": "TRIVECTO system - Camera pipeline.md",
+                "file": "TRIVECTO system - Control hardware.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "TRIVECTO system - Camera pipeline"
+              "title": "TRIVECTO system - Control hardware"
             }
           }
         ]
@@ -78,8 +78,7 @@
       }
     ],
     "direction": "horizontal",
-    "width": 300,
-    "collapsed": true
+    "width": 300
   },
   "right": {
     "id": "90395f031a5e0b3c",
@@ -171,13 +170,13 @@
       "table-editor-obsidian:Advanced Tables Toolbar": false
     }
   },
-  "active": "9f67da34730ae2d2",
+  "active": "62e7e7ce8599fbc7",
   "lastOpenFiles": [
-    "TRIVECTO system - Zaber.md",
     "TRIVECTO system - Camera pipeline.md",
+    "Git - Command.md",
+    "TRIVECTO system - Zaber.md",
     "TRIVECTO system - Vanta Element XRF Analyzer.md",
     "TRIVECTO system - AWS.md",
-    "Git - Command.md",
     "Work - TRIVECTO Laboratories/TRIVECTO system - matlab convert.md",
     "TRIVECTO system - Control hardware.md",
     "Work - TRIVECTO Laboratories/TRIVECTO system - run plans.md",
