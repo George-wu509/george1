@@ -27,12 +27,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "TRIVECTO system - Vanta Element XRF Analyzer.md",
+                "file": "Git - Command.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "TRIVECTO system - Vanta Element XRF Analyzer"
+              "title": "Git - Command"
             }
           }
         ],
@@ -93,7 +93,8 @@
       }
     ],
     "direction": "horizontal",
-    "width": 300
+    "width": 300,
+    "collapsed": true
   },
   "right": {
     "id": "90395f031a5e0b3c",
@@ -187,12 +188,12 @@
   },
   "active": "bba355caab4ea3a7",
   "lastOpenFiles": [
+    "TRIVECTO system - Vanta Element XRF Analyzer.md",
     "TRIVECTO system - New templates.md",
     "TRIVECTO system - Camera pipeline.md",
     "TRIVECTO system - AWS.md",
     "TRIVECTO system - Zaber.md",
     "TRIVECTO system - Vanta XRF.md",
-    "TRIVECTO system - Vanta Element XRF Analyzer.md",
     "TRIVECTO system - V2 System.md",
     "TRIVECTO system - System Computer build.md",
     "TRIVECTO system - RAM using in AI models.md",
