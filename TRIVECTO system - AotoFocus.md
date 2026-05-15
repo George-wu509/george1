@@ -5,7 +5,7 @@
 | -------------------------------------------------- | --- |
 | [[#### 三個相機 (Cameras) 的對焦計畫]]                      |     |
 | [[#### hardware_config的參數autofocus_camera方案(0-4)]] |     |
-|                                                    |     |
+| [[#### 「粗對焦 (Coarse Focus)」與「細對焦 (Fine Focus)」]]   |     |
 |                                                    |     |
 |                                                    |     |
 |                                                    |     |
@@ -20,11 +20,11 @@
 請幫我整理目前三個camera所使用的focus planu以及中文詳細其細節, 甚麼時候會用到auto focus?
 ```
 
-根據您系統中的設定檔 (`[hardware_config.yaml](code-assist-path:d:\Provenance%20Project\ImagingLibWatch\config\hardware_config.yaml "d:\Provenance Project\ImagingLibWatch\config\hardware_config.yaml")`) 與驅動程式 (`UnifiedHardwareDriver`, `CameraManager`) 的原始碼，我為您整理了三個相機目前的對焦計畫 (Focus Plan)，以及各種對焦技術的詳細運作細節與觸發時機。
+根據您系統中的設定檔 ([hardware_config.yaml](code-assist-path:d:\Provenance%20Project\ImagingLibWatch\config\hardware_config.yaml "d:\Provenance Project\ImagingLibWatch\config\<mark style="background: #FFF3A3A6;">hardware_config.yaml</mark>")) 與驅動程式 (`UnifiedHardwareDriver`, `CameraManager`) 的原始碼，我為您整理了三個相機目前的對焦計畫 (Focus Plan)，以及各種對焦技術的詳細運作細節與觸發時機。
 
 ### 一、 三個相機 (Cameras) 的對焦計畫
 
-系統透過 `[hardware_config.yaml](code-assist-path:d:\Provenance%20Project\ImagingLibWatch\config\hardware_config.yaml "d:\Provenance Project\ImagingLibWatch\config\hardware_config.yaml")` 中的 `autofocus_camera` 與 `devices` 區塊，為不同的相機指派了不同的預設對焦行為：
+系統透過 hardware_config.yaml中的 `autofocus_camera` 與 `devices` 區塊，為不同的相機指派了不同的預設對焦行為：
 
 1. **`macro_cam_1` (微距頂部相機)**
     
@@ -79,14 +79,14 @@
 
 在系統的運行生命週期中，自動對焦主要在以下幾個時機被觸發：
 
-1. **常規自動化檢測流程 (Routine Execution)：** 當系統透過 `WorkflowManager.execute_routine` 執行一連串的檢測點位時，針對每一個點位 (`CaptureCondition`)，只要設定檔中的 **`use_autofocus: 1`** (預設通常為 1)，系統在移動馬達到達該 (X, Y) 座標後、正式拍照之前，就會強制呼叫 `run_robust_autofocus`。
+1. **常規自動化檢測流程 (Routine Execution)：** 當系統透過 WorkflowManager.<mark style="background: #ABF7F7A6;">execute_routine</mark> 執行一連串的檢測點位時，針對每一個點位 (`CaptureCondition`)，只要設定檔中的 **`use_autofocus: 1`** (預設通常為 1)，系統在移動馬達到達該 (X, Y) 座標後、正式拍照之前，就會強制呼叫 <mark style="background: #ABF7F7A6;">run_robust_autofocus</mark>。
     
     - _註：如果只是同一個位置連拍三張不同曝光做 HDR，或者切換打光，只要 X, Y 沒動，就不會重複對焦。_
-2. **UI 介面手動檢測與調校 (Template Testing)：** 在工程師使用的 `[test_template_ui.py](code-assist-path:d:\Provenance%20Project\ImagingLibWatch\Controller\test_hardware\test_template_ui.py "d:\Provenance Project\ImagingLibWatch\Controller\test_hardware\test_template_ui.py")` 中：
+2. **UI 介面手動檢測與調校 (Template Testing)：** 在工程師使用的 <mark style="background: #FFF3A3A6;">test_template_ui.py</mark> 中：
     
     - 當點擊 **"EXECUTE SEQUENCE & VERIFY"** 或 **"TEST APP PIPELINE"** 時，會走標準流程，依照勾選的狀態執行雷射與液態鏡頭對焦。
     - 當獨立點擊 **"Test FPGA Liquid Lens AF"** 按鈕時，會不移動 Z 軸，純粹命令 `micro_cam` 進行一次液態鏡頭硬體對焦。
-3. **系統校正模式 (Calibration)：** 在 `[test_keyence_optimize_ui.py](code-assist-path:d:\Provenance%20Project\ImagingLibWatch\Controller\test_hardware\test_keyence_optimize_ui.py "d:\Provenance Project\ImagingLibWatch\Controller\test_hardware\test_keyence_optimize_ui.py")` 或自動校正腳本中，為了找尋基準常數 `Z_ref`，系統會主動使用 **Vision AF (Option 2)** 去尋找「光學真理 (絕對清晰的物理平面)」，然後再拿這個平面與 Keyence 的雷射讀數做數學反解校正。
+3. **系統校正模式 (Calibration)：** 在 <mark style="background: #FFF3A3A6;">test_keyence_optimize_ui.py</mark> 或自動校正腳本中，為了找尋基準常數 `Z_ref`，系統會主動使用 **Vision AF (Option 2)** 去尋找「光學真理 (絕對清晰的物理平面)」，然後再拿這個平面與 Keyence 的雷射讀數做數學反解校正。
     
 4. **建立或匯入檢測範本 (Template Authoring)：** 當使用者教導一個新手錶點位並存入 JSON 時，會將當下對焦好的最佳 Z 軸與液態鏡頭電流 (`cammag`) 記錄下來。如果未來將該點位的 `use_autofocus` 設為 0，系統就會**不執行**自動對焦，直接盲飛到這個記憶的焦點進行拍攝。
 
@@ -137,3 +137,142 @@
 - **如果設為 `4` (目前設定)**： 第一階段 Z 軸馬達利用雷射算式快速飛到正確高度（粗調） -> 接著馬達靜止，第二階段 FPGA 瞬間改變電流，精準鎖定焦平面（極微調） -> 拍照。
 - **如果設為 `0`**： Z 軸馬達直接盲飛到定點不做對焦 -> 馬達靜止，依賴 FPGA 液態鏡頭靠改變電流把焦點「拉」回來 -> 拍照。（前提是誤差不能超出液態鏡頭的變形極限）。
 - **如果設為 `2` 或 `3` (視覺對焦)**： 系統會**先強制將液態鏡頭的電流設為 0.0mA (鎖死鏡頭)** -> 進行 Z 軸馬達的上下影像掃描，找出最佳物理高度 -> 馬達靜止，再啟動 FPGA 液態鏡頭做最後的電流微調掃描 -> 拍照。
+
+
+
+#### 「粗對焦 (Coarse Focus)」與「細對焦 (Fine Focus)」
+
+```
+目前在run_robust_autofocus，實作了多種對焦策略: 
+	Option 0: 不進行auto focus
+	Option 1: Keyence Closed-Loop (迴圈逼近式)
+	Option 2: Vision (Laplacian)
+	Option 3: Vision (Tenengrad)
+	Option 4: Keyence Absolute Calculation
+
+所以這些不同策略是個有專屬的function嗎? 如果不是應該封裝成個別的functions比較好管理?
+
+然後還有liquid lens的autodocus, 握們可以把camera pipeline的autofocus分成兩階段(粗對焦跟細對焦)之前run_robust_autofocus的策略都歸於粗對焦, 而liquid lens的autodocus就是細對焦. liquid lens的autodocus包含特殊情況 (XYZ 擴展搜尋)是否有封裝成一個function? 在目前的code structure, liquid lens的autodocus function是否可接在不同的run_robust_autofocus的Option 0-4後面? 
+
+以及目前micro_cam (顯微液態鏡頭相機)兩階段混合對焦 (Option 4 + FPGA Liquid Lens AF)是寫在同個functions裡面嗎? 還是是結合兩個functon執行?
+```
+
+這是一個非常好的架構問題！您對「粗對焦 (Coarse Focus)」與「細對焦 (Fine Focus)」的拆分觀念，完全符合現代高精度光學檢測設備（尤其是搭配液態鏡頭的微距系統）的設計模式。
+
+在目前的 codebase  中，這個兩階段對焦的架構**已經被完美解耦且封裝成獨立的 functions**。以下為您詳細拆解目前的程式碼結構：
+
+### 1. 粗對焦策略 (Option 0-4) 是否有專屬 function？
+
+**是的，已經完全封裝。** `run_robust_autofocus` 實際上只是一個 **「路由/分發器 (Router/Hub)」**，負責根據相機設定與使用者選擇的 `af_option` 來決定呼叫哪一個底層的專屬 function。
+
+在 \Controller\hardware_drivers\ <mark style="background: #FFF3A3A6;">unified_driver.py </mark>中，各策略對應的專屬函數如下：
+
+- **Option 1 (Keyence Closed-Loop):** 封裝在<mark style="background: #FFF3A3A6;">unified_driver.py </mark>中 <mark style="background: #ABF7F7A6;">_af_keyence_closed_loop</mark>(...)
+- **Option 2 & 3 (Vision Laplacian/Tenengrad):** 封裝在<mark style="background: #FFF3A3A6;">unified_driver.py </mark>中 self.<mark style="background: #ABF7F7A6;">_af_vision_method</mark>(...)
+- **Option 4 (Keyence Absolute):** 封裝在<mark style="background: #FFF3A3A6;">unified_driver.py </mark>中 self._<mark style="background: #ABF7F7A6;">af_keyence_absolute</mark>(...)
+- **Option 0 (Disable):** 直接在 Router 內攔截並回傳原 Z 軸座標。
+
+這種設計非常容易管理，未來如果要新增 Option 5（例如基於 AI 的 Z 軸預測），只需新增一個 `_af_ai_predict(...)` 函數並在 Hub 中加入一個 `elif` 即可。
+
+### 2. 液態鏡頭細對焦 (Liquid Lens AF) 的封裝與通用性
+
+**有獨立封裝，且完全可以接在 Option 0-4 任何一個粗對焦之後。**
+
+液態鏡頭的對焦邏輯（包含您提到的 XYZ 邊界擴展搜尋、硬體容錯、連續 N 次取最佳值等複雜情境），都被完整封裝在以下兩個專屬函數中：
+
+- **硬體 (FPGA) 驅動：** 在<mark style="background: #FFF3A3A6;">unified_driver.py </mark>中 self.<mark style="background: #ABF7F7A6;">trigger_liquid_lens_hardware_autofocus</mark>(...)
+- **軟體 (Software Sweep) 驅動：**在<mark style="background: #FFF3A3A6;">unified_driver.py </mark>中 self.<mark style="background: #ABF7F7A6;">trigger_liquid_lens_software_autofocus</mark>(...)
+
+**為何能接在任何粗對焦之後？** 因為這兩個函數**「不依賴」**前面的 Z 軸是怎麼走到目標位置的。只要 Z 軸（粗對焦）停在一個合理範圍內，呼叫這個函數時，它就會在當下的物理 Z 軸基礎上，進行液態鏡頭的微調電流對焦。這保證了極高的模組化與重用性。
+
+### 3. `micro_cam` 兩階段混合對焦是寫在同一個 function 嗎？
+
+**不是，它們是「組合兩個 function」來執行，統一交由上層的 Pipeline 函數進行編排 (Orchestration)。**
+
+在系統中，有兩個主要的地方展示了這種完美的結合：
+
+**情境 A：UI 手動交互式拍攝 (`execute_interactive_micro_capture`)** 在這個函數中，您可以看到非常明顯的兩階段分離寫法：
+
+```
+`# Step 4: 呼叫粗對焦 (Keyence Z-Sweep 等) rough_z, success, _ = self.run_robust_autofocus(...)  # Step 5: 馬達移動到粗對焦高度 self.move_compound({"stage_L_X": ..., "stage_L_Y": ..., "stage_L_Z": rough_z})  # Step 8: 呼叫細對焦 (FPGA Liquid Lens) af_success, locked_current = self.trigger_liquid_lens_hardware_autofocus(...)`
+```
+
+
+**情境 B：App 全自動量產流程 (`execute_template_point`)** 這個函數是系統的核心大腦，它將整個流程拆分為不同 Phase：
+```
+- **Phase 2:** 機械位移與實體 Z 軸粗對焦 (Safety Planner + Mechanical Z-AF)
+    - 這裡會根據 Template 設定，呼叫對應的粗對焦專屬函數 (`_af_keyence_absolute` 等)。
+- **Phase 3:** 相機與光源整備。
+- **Phase 4:** Liquid Lens AF (細對焦)。
+    - 在這裡會呼叫 `trigger_liquid_lens_hardware_autofocus`。
+```
+
+### 總結
+
+目前的結構不僅清晰，且極度彈性。
+
+- **解耦 (Decoupling)：** 機械 Z 軸 (Zaber) 與光學 Z 軸 (Opto Engineering Liquid Lens) 各自有獨立的驅動函數與驗證邏輯。
+- **組合 (Composition)：** 上層的 Pipeline 函數 (`execute_template_point`) 像積木一樣，根據 Template 傳入的設定 (`z_af_option`, `liquidlens_autofocus` 開關)，自由排列組合要先用哪種粗對焦，再決定是否疊加細對焦。
+
+您不需要將它們寫成同一個巨大的函數，目前的這種「各司其職，由上層編排」的設計正是大型自動化設備軟體最佳的設計模式。
+
+
+
+
+
+
+
+```
+目前的兩階段混合對焦 (Option 4 + FPGA Liquid Lens AF)只適用於micro_cam, 那如果我想要micro_cam 在粗對焦階段能很容易切換不同粗對焦策略(option0-4), 而且容易通過hardware_config開啟細對焦 liquid lens的autodocus. 然後micro_cam, macro_cam_1, macro_cam_2都可以有同樣的auto focus流程, 三個cameras的autofocus的設定也都同樣可以由hardware_config控制. 請建議如何實作, 或這樣修改是否更好
+```
+
+這樣修改 **絕對是更好且最標準的作法**！這在軟體工程中稱為 **「設定驅動架構 (Config-Driven Architecture)」**。
+
+將所有 Camera 的對焦邏輯統一，把「要不要粗對焦 (Option 0-4)」、「要不要細對焦 (Liquid Lens)」的決定權完全交還給 `[hardware_config.yaml](code-assist-path:d:\Provenance%20Laboratories%20projects\ImagingLibWatch\config\hardware_config.yaml "d:\Provenance Laboratories projects\ImagingLibWatch\config\hardware_config.yaml")`，能帶來極大的好處：
+
+1. **程式碼高度重用**：`macro_cam_1`, `macro_cam_2`, `micro_cam` 呼叫同一支 API，不再需要為不同相機寫 hardcode。
+2. **未來擴充性極強**：如果某天為 `macro_cam` 加裝了液態鏡頭，您完全不需要改 Python 程式碼，只要去 YAML 把 `liquidlens_autofocus` 改成 `true`，流程就會自動啟動細對焦。
+
+### 建議的實作方式
+
+我們可以將這個邏輯封裝成一支獨立的通用 API：`perform_two_stage_autofocus`。這支 API 會動態讀取 YAML，自動判斷該相機目前需要執行哪些對焦階段。
+
+#### 1. YAML 設定檔的對應方式
+
+未來您的 hardware_config.yaml就可以這樣優雅地控制：
+
+```
+# 1. 控制「粗對焦 (Coarse AF)」的策略 (Option 0-4)
+autofocus:
+  autofocus_camera:
+    macro_cam_1: 4  # 使用 Option 4 (Keyence Absolute)
+    macro_cam_2: 0  # 使用 Option 0 (Disabled)
+    micro_cam: 4    # 使用 Option 4 (Keyence Absolute)
+
+# 2. 控制「細對焦 (Fine AF)」的開關
+cameras:
+  devices:
+    macro_cam_1:
+      lens_type: "fixed"
+      liquidlens_autofocus: false  # 不觸發細對焦
+    micro_cam:
+      lens_type: "liquid_tcel350"
+      liquidlens_autofocus: true   # 觸發細對焦
+
+```
+
+#### 2. 程式碼實作 (Unified Driver)
+
+我為您在 unified_driver.py函數。它會完美地串接粗對焦與細對焦，並自動處理 Z 軸的位移與 Parfocal (齊焦) 補償。
+
+以下是針對 unified_driver.py 的程式碼修改：
+###### 這樣修改帶來的好處
+
+加入 `perform_two_stage_autofocus` 後，原本在 UI 測試中冗長且被 Hardcode 的 `execute_interactive_micro_capture`，現在可以重構成非常乾淨的邏輯（您甚至可以把它改名為 `execute_interactive_capture` 給所有鏡頭用）：**總結來說：** 您這個想法非常精準，將這兩段對焦統一封裝並用 Config 控管，是大型設備軟體邁向成熟的關鍵一步。目前的 `run_robust_autofocus` 和 `trigger_liquid_lens_hardware_autofocus` 的解耦狀態非常良好，用這層 Wrapper (包裝函數) 把他們串起來，是最優雅的解法！
+
+
+
+
+```
+請幫我把hardware_config.yaml裡面原本放在cameras關於autofocus的部分統一放在autofocus之下, 而在autofocus之下先寫跟對所有cameras(譬如autofocus_point....)的設定, 之後再分別分成三個cameraszz放各自專屬的設定. 也註定三個camera都要有完整的粗對焦跟細對焦的個別的parameters. 另外如果hardware_config.yaml 對focus parameters做了修正, 也要對相對應的code/functions作相對應的修正
+```
