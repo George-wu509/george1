@@ -1,15 +1,15 @@
 
 
 
-|                                                    |     |
-| -------------------------------------------------- | --- |
-| [[#### 三個相機 (Cameras) 的對焦計畫]]                      |     |
-| [[#### hardware_config的參數autofocus_camera方案(0-4)]] |     |
-| [[#### 「粗對焦 (Coarse Focus)」與「細對焦 (Fine Focus)」]]   |     |
-|                                                    |     |
-|                                                    |     |
-|                                                    |     |
-|                                                    |     |
+|                                                     |     |
+| --------------------------------------------------- | --- |
+| [[#### 三個相機 (Cameras) 的對焦計畫]]                       |     |
+| [[#### hardware_config的參數autofocus_camera方案(0-4)]]  |     |
+| [[#### 「粗對焦 (Coarse Focus)」與「細對焦 (Fine Focus)」]]    |     |
+| [[#### 封裝成一支獨立的通用 API：perform_two_stage_autofocus]] |     |
+| [[#### 重新reorganize hardware_config.yaml]]          |     |
+|                                                     |     |
+|                                                     |     |
 
 
 #### 三個相機 (Cameras) 的對焦計畫
@@ -221,7 +221,7 @@
 
 
 
-
+#### 封裝成一支獨立的通用 API：perform_two_stage_autofocus
 ```
 目前的兩階段混合對焦 (Option 4 + FPGA Liquid Lens AF)只適用於micro_cam, 那如果我想要micro_cam 在粗對焦階段能很容易切換不同粗對焦策略(option0-4), 而且容易通過hardware_config開啟細對焦 liquid lens的autodocus. 然後micro_cam, macro_cam_1, macro_cam_2都可以有同樣的auto focus流程, 三個cameras的autofocus的設定也都同樣可以由hardware_config控制. 請建議如何實作, 或這樣修改是否更好
 ```
@@ -272,7 +272,26 @@ cameras:
 
 
 
-
+#### 重新reorganize hardware_config.yaml
 ```
 請幫我把hardware_config.yaml裡面原本放在cameras關於autofocus的部分統一放在autofocus之下, 而在autofocus之下先寫跟對所有cameras(譬如autofocus_point....)的設定, 之後再分別分成三個cameraszz放各自專屬的設定. 也註定三個camera都要有完整的粗對焦跟細對焦的個別的parameters. 另外如果hardware_config.yaml 對focus parameters做了修正, 也要對相對應的code/functions作相對應的修正
 ```
+
+
+
+
+
+```
+**
+Claude code 3 stage prompt
+
+我上傳的hardware_config.yaml是前一代的版本, 但我檢查過最新git pull後的最新版本似乎把很多我在hardware_config.yaml裡的autofocus的相關parameters都刪除了, 譬如在hardware.cameras.devices的macro_cam_1, macro_cam_2, micro_cam裡面liquidlens_autofocus跟liquid_af下面的parameters本來應該放到後面autofocus下面但都消失了. 
+
+這是我上一次git pull的主要需求: "請幫我把hardware_config.yaml裡面原本放在cameras關於autofocus的部分統一放在autofocus之下, 而在autofocus之下先寫跟對所有cameras(譬如autofocus_point....)的設定, 之後再分別分成三個cameraszz放各自專屬的設定. 也註定三個camera都要有完整的粗對焦跟細對焦的個別的parameters. 另外如果hardware_config.yaml 對focus parameters做了修正, 也要對相對應的code/functions作相對應的修正"
+
+請幫我比對我目前的hardware_config.yaml跟前一版本hardware_config.yaml重新edit, 並確保使用到這些parameters的functions都有正確修改, 也並檢查perform_two_stage_autofocus function是否有正確做到三個cameras的autofocus在粗對焦階段能很容易切換不同粗對焦策略(option0-4), 而且容易通過hardware_config開啟細對焦 liquid lens的autodocus. 然後micro_cam, macro_cam_1, macro_cam_2都可以有同樣的auto focus流程, 三個cameras的autofocus的設定也都同樣可以由hardware_config控制
+
+**
+```
+
+
