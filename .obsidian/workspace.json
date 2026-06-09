@@ -4,35 +4,35 @@
     "type": "split",
     "children": [
       {
-        "id": "6727c149a2d7cbdc",
+        "id": "ea2cbe09c2af378f",
         "type": "tabs",
         "children": [
           {
-            "id": "fe16841ff166801f",
+            "id": "207b53e883c8ad0e",
             "type": "leaf",
             "state": {
               "type": "markdown",
               "state": {
-                "file": "TRIVECTO system - matlab convert.md",
+                "file": "Work - TRIVECTO Laboratories/TRIVECTO system - run plans.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "TRIVECTO system - matlab convert"
+              "title": "TRIVECTO system - run plans"
             }
           },
           {
-            "id": "5e0d64bba84062f0",
+            "id": "4cc3678ade867bae",
             "type": "leaf",
             "state": {
               "type": "markdown",
               "state": {
-                "file": "TRIVECTO system - template.md",
+                "file": "TRIVECTO system - OCR and DOCR.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "TRIVECTO system - template"
+              "title": "TRIVECTO system - OCR and DOCR"
             }
           }
         ],
@@ -186,14 +186,20 @@
       "table-editor-obsidian:Advanced Tables Toolbar": false
     }
   },
-  "active": "5e0d64bba84062f0",
+  "active": "4cc3678ade867bae",
   "lastOpenFiles": [
+    "Work - TRIVECTO Laboratories/TRIVECTO system - Ethernet.md",
+    "TRIVECTO system - OCR and DOCR.md",
+    "Work - TRIVECTO Laboratories/TRIVECTO system - run plans.md",
+    "Work - TRIVECTO Laboratories/TRIVECTO system - DynamoDB.md",
+    "Work - TRIVECTO Laboratories/TRIVECTO system - design.md",
+    "Work - TRIVECTO Laboratories/Provenance - OCR compare.md",
     "TRIVECTO system - matlab convert.md",
+    "TRIVECTO system - template.md",
     "TRIVECTO system - keyence output.md",
     "TRIVECTO SYSTEM - Color pipeline in Moonlight system.md",
     "TRIVECTO system - AotoFocus.md",
     "@@ Daily practice.md",
-    "TRIVECTO system - template.md",
     "Work - TRIVECTO Laboratories/TRIVECTO system - hardware test code.md",
     "Work - TRIVECTO Laboratories/TRIVECTO system - New templates.md",
     "Work - TRIVECTO Laboratories/TRIVECTO system - Puget Systems.md",
@@ -203,16 +209,10 @@
     "Work - TRIVECTO Laboratories/TRIVECTO system - Vanta Element XRF Analyzer.md",
     "Work - TRIVECTO Laboratories/TRIVECTO system - Vanta XRF.md",
     "Work - TRIVECTO Laboratories/TRIVECTO system - Zaber.md",
-    "Work - TRIVECTO Laboratories/TRIVECTO system - Ethernet.md",
     "Work - TRIVECTO Laboratories/TRIVECTO system - create AWS from IAM.md",
     "Work - TRIVECTO Laboratories/TRIVECTO system - Control hardware.md",
     "TRIVECTO system - Camera pipeline.md",
     "Work - TRIVECTO Laboratories/TRIVECTO system - AWS.md",
-    "work - TRIVECTO meeting/TRIVECTO meeting - 2026 02 10.md",
-    "Git - Command.md",
-    "Work - TRIVECTO Laboratories/TRIVECTO system - run plans.md",
-    "Work - TRIVECTO Laboratories/TRIVECTO system - UDM-SE.md",
-    "Work - TRIVECTO Laboratories/TRIVECTO system - tasks (lume).md",
-    "Work - TRIVECTO Laboratories/TRIVECTO system - Website.md"
+    "work - TRIVECTO meeting/TRIVECTO meeting - 2026 02 10.md"
   ]
 }
