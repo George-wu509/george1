@@ -67,3 +67,52 @@ doctr_algo.py 則是比較傳統、偏 side image preprocessing 的 pipeline。�
     
 
 總結：doctr_algo.py 已經有 OCR + char shape analysis 的大部分骨架，但要讓它可靠處理這張 side engraving image，最重要是「ROI + 不縮小 + per-char polarity + 背景 flattening + SAM 或 hybrid mask」。最小安全改法是先調 config 和加入 raw mask 輸出；效果若仍不穩，再把 ocr_algo.py 的 SAM char-mask 路線移植進 doctr_algo.py。
+
+
+
+
+
+```
+我想做個小更改就是按下open image processing algorithms按鈕, 目前會跳出來非常長的sub menu, 請幫我分成兩排變成長度減半但比較寬的sub menu, 而且把確認鍵放到最上面. 另外我付上目前sidepoint1跟sidepoint2的segmentation結果, 大部分字都有正確定位以及有seg mask. 還有甚麼調整參數的建議可以讓結果更好抓到所有的字? 最後Blend overlap ratio似乎對stitch 結果敏感, 所以這個參數的意義是甚麼, 能不能修改成即使這個value沒那麼準確也可以有好的stitch結果
+```
+
+已更新 test_sidestitch_ui.py。
+
+改了兩件事：
+
+1. Open Image Processing Algorithms 視窗現在變成左右兩欄，寬一點、高度約減半，OK / Cancel 放在最上面。
+2. Blend overlap ratio 旁邊新增：
+    - Auto refine overlap
+    - Overlap search range
+
+現在 Blend overlap ratio 會變成 initial guess，不需要非常準。打開 Auto refine overlap 後，程式會在這個值附近搜尋相鄰 ROI patch 最匹配的 overlap width，再做 blend。建議先用：
+
+text
+
+`Blend overlap ratio: 0.10 - 0.30 Auto refine overlap: on Overlap search range: 0.18 Registration: Phase Correlation Vertical Only`
+
+我也跑了檢查：
+
+powershell
+
+`conda run -n watch_env python -m py_compile Controller\test_hardware\test_sidestitch_ui.py`
+
+關於你附的 segmentation 結果，現在其實已經很接近可用。要讓更多字被抓到，我會優先調這幾個：
+
+text
+
+`Text response percentile: 80 - 86 Text mask dilate: 2 - 3 Min text component area: 80 - 140 Max streak aspect: 5 - 7 SAM score threshold: 0.20 - 0.30 Char box overlap: 1.0 - 1.2 Char box Y pad: 0.20 - 0.30`
+
+如果背景雜訊被抓太多：
+
+text
+
+`Text response percentile 往上調，例如 88 - 92 Min text component area 往上調，例如 180 - 300 Text mask dilate 降到 0 - 1`
+
+如果字缺筆畫、某些字沒 mask：
+
+text
+
+`Text response percentile 往下調，例如 78 - 82 Text dark gain 提高到 2.2 - 2.8 Char box overlap 提高到 1.2 SAM score threshold 降到 0.15 - 0.25`
+
+Blend overlap ratio 的意義是：相鄰兩張 ROI 拼接時，假設它們有多少比例是重疊內容。以前如果這個值不準，就會出現重複字、少字、或接縫錯位。現在加了 auto refine 後，它只是初始猜測，應該會比較不敏感。
