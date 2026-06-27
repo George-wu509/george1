@@ -20,8 +20,23 @@
               "icon": "lucide-file",
               "title": "TRIVECTO system - AotoFocus"
             }
+          },
+          {
+            "id": "83ab4abfe940a7ec",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "TRIVECTO system - HDR images auto.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "TRIVECTO system - HDR images auto"
+            }
           }
-        ]
+        ],
+        "currentTab": 1
       }
     ],
     "direction": "vertical"
@@ -78,8 +93,7 @@
       }
     ],
     "direction": "horizontal",
-    "width": 300,
-    "collapsed": true
+    "width": 300
   },
   "right": {
     "id": "90395f031a5e0b3c",
@@ -171,8 +185,11 @@
       "table-editor-obsidian:Advanced Tables Toolbar": false
     }
   },
-  "active": "1fd503a8c4378e10",
+  "active": "83ab4abfe940a7ec",
   "lastOpenFiles": [
+    "@@ Interview prepare.md",
+    "TRIVECTO system - HDR images auto.md",
+    "TRIVECTO system - AotoFocus.md",
     "Work - TRIVECTO Laboratories/TRIVECTO system - run plans.md",
     "Work - TRIVECTO Laboratories/TRIVECTO system - WatchQwen.md",
     "TRIVECTO system - test_LLM.md",
@@ -186,7 +203,6 @@
     "TRIVECTO system - template.md",
     "TRIVECTO system - keyence output.md",
     "TRIVECTO SYSTEM - Color pipeline in Moonlight system.md",
-    "TRIVECTO system - AotoFocus.md",
     "@@ Daily practice.md",
     "Work - TRIVECTO Laboratories/TRIVECTO system - hardware test code.md",
     "Work - TRIVECTO Laboratories/TRIVECTO system - New templates.md",
@@ -196,8 +212,6 @@
     "Work - TRIVECTO Laboratories/TRIVECTO system - V2 System.md",
     "Work - TRIVECTO Laboratories/TRIVECTO system - Vanta Element XRF Analyzer.md",
     "Work - TRIVECTO Laboratories/TRIVECTO system - Vanta XRF.md",
-    "Work - TRIVECTO Laboratories/TRIVECTO system - Zaber.md",
-    "Work - TRIVECTO Laboratories/TRIVECTO system - create AWS from IAM.md",
-    "Work - TRIVECTO Laboratories/TRIVECTO system - Control hardware.md"
+    "Work - TRIVECTO Laboratories/TRIVECTO system - Zaber.md"
   ]
 }
