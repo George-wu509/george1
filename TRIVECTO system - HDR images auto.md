@@ -230,3 +230,7 @@ UI 上建議概念改成：
 
 **Residual Risks**  
 尚未做實機硬體拍攝驗證。建議下一步用一個 front micropoint 實拍，確認 DB `image_assets` 有多張 `raw_bracket` 和一張 `hdr_fused`，並確認 texture/bump_wrapper 用的是 `hdr_fused`。另外，legacy App/report path 仍以 primary image 為主，會使用 fused HDR，不會完整展示每張 bracket。
+
+
+
+
