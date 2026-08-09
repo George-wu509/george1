@@ -4,53 +4,11 @@
     "type": "split",
     "children": [
       {
-        "id": "827810bec041eb3f",
+        "id": "ef02899420a55ed4",
         "type": "tabs",
         "children": [
           {
-            "id": "1fd503a8c4378e10",
-            "type": "leaf",
-            "state": {
-              "type": "markdown",
-              "state": {
-                "file": "TRIVECTO system - AotoFocus.md",
-                "mode": "source",
-                "source": false
-              },
-              "icon": "lucide-file",
-              "title": "TRIVECTO system - AotoFocus"
-            }
-          },
-          {
-            "id": "83ab4abfe940a7ec",
-            "type": "leaf",
-            "state": {
-              "type": "markdown",
-              "state": {
-                "file": "TRIVECTO system - HDR images auto.md",
-                "mode": "source",
-                "source": false
-              },
-              "icon": "lucide-file",
-              "title": "TRIVECTO system - HDR images auto"
-            }
-          },
-          {
-            "id": "255979bff16d8f1b",
-            "type": "leaf",
-            "state": {
-              "type": "markdown",
-              "state": {
-                "file": "TRIVECTO system - af mode.md",
-                "mode": "source",
-                "source": false
-              },
-              "icon": "lucide-file",
-              "title": "TRIVECTO system - af mode"
-            }
-          },
-          {
-            "id": "c5aaef2754ec054b",
+            "id": "4b4e4c70eba2ab62",
             "type": "leaf",
             "state": {
               "type": "markdown",
@@ -63,8 +21,7 @@
               "title": "TRIVECTO system - file system"
             }
           }
-        ],
-        "currentTab": 1
+        ]
       }
     ],
     "direction": "vertical"
@@ -215,33 +172,33 @@
       "table-editor-obsidian:Advanced Tables Toolbar": false
     }
   },
-  "active": "83ab4abfe940a7ec",
+  "active": "4b4e4c70eba2ab62",
   "lastOpenFiles": [
-    "TRIVECTO system - af mode.md",
+    "TRIVECTO system - collision avoidance.md",
+    "Work - TRIVECTO Laboratories/TRIVECTO system - internalnum_config.md",
+    "Work - TRIVECTO Laboratories/TRIVECTO system - template.md",
     "TRIVECTO system - file system.md",
+    "Work - TRIVECTO Laboratories/TRIVECTO system - AotoFocus.md",
+    "Work - TRIVECTO Laboratories/TRIVECTO system - HDR images auto.md",
+    "TRIVECTO system - af mode.md",
     "@@ Data Structure QA - simple.md",
     "@@ Interview prepare.md",
-    "TRIVECTO system - AotoFocus.md",
-    "TRIVECTO system - internalnum_config.md",
-    "TRIVECTO system - HDR images auto.md",
-    "TRIVECTO SYSTEM - Color pipeline in Moonlight system.md",
-    "TRIVECTO system - Camera pipeline.md",
-    "TRIVECTO system - App template creation.md",
+    "Work - TRIVECTO Laboratories/TRIVECTO SYSTEM - Color pipeline in Moonlight system.md",
+    "Work - TRIVECTO Laboratories/TRIVECTO system - Camera pipeline.md",
+    "Work - TRIVECTO Laboratories/TRIVECTO system - App template creation.md",
     "Work - TRIVECTO Laboratories/TRIVECTO system - OCR and DOCR.md",
-    "TRIVECTO system - template.md",
     "Work - TRIVECTO Laboratories/TRIVECTO system - template picker.md",
     "Work - TRIVECTO Laboratories/TRIVECTO system - test_LLM.md",
-    "TRIVECTO system - New template.md",
-    "TRIVECTO system - keyence output.md",
+    "Work - TRIVECTO Laboratories/TRIVECTO system - New template.md",
+    "Work - TRIVECTO Laboratories/TRIVECTO system - keyence output.md",
     "Work - TRIVECTO Laboratories/TRIVECTO system - run plans.md",
     "Work - TRIVECTO Laboratories/TRIVECTO system - WatchQwen.md",
     "Work - TRIVECTO Laboratories/TRIVECTO system - Ethernet.md",
     "Work - TRIVECTO Laboratories/TRIVECTO system - DynamoDB.md",
     "Work - TRIVECTO Laboratories/TRIVECTO system - design.md",
     "Work - TRIVECTO Laboratories/Provenance - OCR compare.md",
-    "TRIVECTO system - matlab convert.md",
+    "Work - TRIVECTO Laboratories/TRIVECTO system - matlab convert.md",
     "@@ Daily practice.md",
-    "Work - TRIVECTO Laboratories/TRIVECTO system - hardware test code.md",
-    "Work - TRIVECTO Laboratories/TRIVECTO system - New templates.md"
+    "Work - TRIVECTO Laboratories/TRIVECTO system - hardware test code.md"
   ]
 }
