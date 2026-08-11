@@ -1,11 +1,11 @@
 
 
-|                        |     |
-| ---------------------- | --- |
-| [[主要防撞路徑]]             |     |
-| [[#### 完整防撞路徑及現有保護機制]] |     |
-|                        |     |
-|                        |     |
+|                                          |     |
+| ---------------------------------------- | --- |
+| [[主要防撞路徑]]                               |     |
+| [[#### 完整防撞路徑及現有保護機制]]                   |     |
+| [[#### move_compound function analysis]] |     |
+|                                          |     |
 
 目前的主要防撞路徑是 `UnifiedHardwareDriver.move_compound()`：先檢查門禁鎖定、預測目標碰撞，再把移動拆成「Z 退避 → XY/旋轉 → Z 接近」的安全段落。
 
@@ -364,3 +364,394 @@ Strap 執行時會在 `DB/strap_motion_logs` 記錄：
 6. 明確區分「latched emergency stop」與「shutdown stop」，避免 UI 呼叫錯誤 API。
 
 變更檔案：無。實體設備仍需要空治具、低速、最長 Strap、門禁斷線及實體 E-stop 的 HIL 驗證。
+
+
+
+
+#### move_compound function analysis
+```
+所以在執行App main.py的每個有移動跟轉動的job都是使用move_compound function去控制? 還是有拍照task的有移動跟轉動的job都是使用move_compound function去控制? 那在App裡面的create template的拍照流程跟App裡面的watchentry的拍照流程是否也都使用move_compound function? 或像移動到home or center or 要放置watch的是否也使用move_compound function?
+
+也請介紹以下列出的move_compound完整步驟是否正確  
+flowchart TD  
+A["App / Keyence / Exit cleanup"] --> B["move_compound"]  
+B --> C["check_safety_lock"]  
+C --> D["讀取目前 5 軸位置"]  
+D --> E["可選運動學補償"]  
+E --> F["DigitalTwinGuard 檢查最終目標"]  
+F --> G["_plan_motion_segments"]  
+G --> H["依優先序產生 staging segments"]  
+H --> I["Strap 旋轉前 Y/Z 與 R_X readback 驗證"]  
+I --> J["ZaberManager move_axis / move_axes_absolute"]  
+J --> K["軟體 clamp + firmware soft limits"]  
+並介紹每個步驟A,B,C....  
+以及各跟那些functions and config有關
+```
+
+結論：**不是所有 App 移動，也不是所有拍照移動，都會呼叫 `move_compound()`。**
+
+更精確地說，目前有三種運動路徑：
+
+1. 直接呼叫 `move_compound()`。
+2. 不呼叫 `move_compound()`，但直接使用同一個 `_plan_motion_segments()` planner。
+3. 直接呼叫 `zaber.move_axis()`／`move_axes_absolute()`，完全繞過 planner 與 Digital Twin。
+
+## 各 App 流程實際走法
+
+| App 功能                         | 是否呼叫 `move_compound()` | 實際路徑                                                                                  |
+| ------------------------------ | ---------------------- | ------------------------------------------------------------------------------------- |
+| A. Create Template pre-capture | 否                      | `execute_template_point()` → `_plan_motion_segments()` → Zaber                        |
+| B. Create Template 點選後正式拍照     | 通常否                    | `execute_template_point()` → planner → AF → final approach                            |
+| C. WatchEntry 正式拍照             | 否                      | `_capture_images_routine_internal()` → `execute_template_point()` → planner           |
+| D. Standard/HDR capture        | 否                      | 都進 `execute_template_point()`；HDR 同點可能略過重複 XYZ                                        |
+| E. Control panel 手動五軸移動        | 是                      | `_move_control_pose()` → `move_compound()`                                            |
+| F. Control panel Go Home       | 是                      | `_resolve_control_home_pose()` → `_move_control_pose()` → `move_compound()`           |
+| G. 移到 holder／放錶位置              | 是，production driver 下  | `_move_zaber_to_start_pos()` → `_move_zaber_to_safe_strap_pose()` → `move_compound()` |
+| H. 移到 watch center             | 是                      | `_move_zaber_to_center_pos()` → safe strap pose → `move_compound()`                   |
+| I. App Exit 最終回 Home           | 部分                     | 先用直接 `move_axis()` 做 Strap safe retract，再用 `move_compound()` 回 Home                   |
+| J. Keyence probe 移動            | 否                      | `_execute_keyence_planned_pose()` 直接做 Digital Twin + planner + Zaber                  |
+| K. Final focus approach        | 否                      | `_do_final_approach()` 直接呼叫 Zaber                                                     |
+| L. 某些 AF 掃描／Keyence XY 掃描      | 混合                     | 有些 Y scan 用 `move_compound()`；有些直接 `move_axis()`                                      |
+| M. simulation `move_compound`  | 名稱相同但不是安全路徑            | 只有 sleep，沒有 planner 或碰撞檢查                                                             |
+
+主要依據：
+
+- Create Template pre-capture 呼叫 [`execute_template_point()` (line 1640)](/D:/Provenance Project/ImagingLibWatch/App/main.py:1640)
+- Create Template prepared capture 呼叫 [`execute_template_point()` (line 8788)](/D:/Provenance Project/ImagingLibWatch/App/main.py:8788)
+- WatchEntry capture routine 呼叫 [`execute_template_point()` (line 32043)](/D:/Provenance Project/ImagingLibWatch/App/main.py:32043)
+- `execute_template_point()` 直接呼叫 planner，而非 `move_compound()`：[unified_driver.py (line 9420)](/D:/Provenance Project/ImagingLibWatch/Controller/hardware_drivers/unified_driver.py:9420)
+- Control panel 移動呼叫 `move_compound()`：[main.py (line 26483)](/D:/Provenance Project/ImagingLibWatch/App/main.py:26483)
+- Holder/Center 共用 safe pose：[main.py (line 9325)](/D:/Provenance Project/ImagingLibWatch/App/main.py:9325)
+- Exit cleanup：[main.py (line 3545)](/D:/Provenance Project/ImagingLibWatch/App/main.py:3545)、[main.py (line 3657)](/D:/Provenance Project/ImagingLibWatch/App/main.py:3657)
+
+所以「拍照 task 有移動與轉動」並不能直接推導成「一定呼叫 `move_compound()`」。正式拍照通常只是**共用它的 planner**。
+
+---
+
+## 你的 A–K 流程是否正確
+
+整體方向接近，但 A、I、K 需要修正，而且漏掉 `move_compound()` 的參數正規化及錯誤處理。
+
+````
+```mermaid
+flowchart TD
+    A["呼叫來源：App control / Home / Holder / Exit final leg / 部分 AF"] --> B["move_compound"]
+    B --> C["清除 last error + check_safety_lock"]
+    C --> D["解析 dict/kwargs，讀取目前五軸位置"]
+    D --> E{"auto_compensate=True？"}
+    E -->|是| F["CoordinateMapper 運動學補償 XYZ"]
+    E -->|否| G["保持要求的 XYZ"]
+    F --> G
+    G --> H["DigitalTwinGuard 檢查最終目標"]
+    H --> I["_plan_motion_segments"]
+    I --> J["依優先序產生安全 segments"]
+    J --> K{"Strap 且 segment 有標記的實際旋轉？"}
+    K -->|是| L["驗證 Y/Z staging；R_Z 前驗證 R_X fold"]
+    K -->|否| M["執行 segment"]
+    L --> M
+    M --> N["Zaber move_axis / move_axes_absolute"]
+    N --> O["每個 move_axis 先做軟體 clamp"]
+    O --> P["Zaber firmware soft limits 最後保護"]
+    P --> Q["成功 True；例外則記錄 last_move_error 並回傳 False"]
+```
+````
+
+### A：App / Keyence / Exit cleanup
+
+你的：
+
+> App / Keyence / Exit cleanup → move_compound
+
+只對一部分來源成立。
+
+- App control、Go Home、holder、center：會進 `move_compound()`。
+- Exit：safe retract 是直接 `move_axis()`；safe retract 成功後，最後回 Home 才進 `move_compound()`。
+- Keyence：主要走 `_execute_keyence_planned_pose()`，它直接呼叫 Digital Twin、planner 和 Zaber，不會經過 `move_compound()`。
+- Create Template／WatchEntry 拍照：主要走 `execute_template_point()`，同樣直接使用 planner。
+
+### B：`move_compound`
+
+定義位於 [unified_driver.py (line 475)](/D:/Provenance Project/ImagingLibWatch/Controller/hardware_drivers/unified_driver.py:475)。
+
+接受：
+
+- `target_x/y/z`
+- `target_rx/rz`
+- 或傳入 `{"stage_L_X": ..., ...}` dict
+- `auto_compensate`
+- `cam_alias`
+- `wait`
+- `semantic_target`
+
+未指定的軸會使用目前位置，而不是歸零。
+
+### C：`check_safety_lock`
+
+位於 [unified_driver.py (line 4560)](/D:/Provenance Project/ImagingLibWatch/Controller/hardware_drivers/unified_driver.py:4560)。
+
+它只檢查 `_system_locked`。Door-open／SafetyManager 觸發 `trigger_emergency_stop()` 後會：
+
+- 停止 Zaber
+- 關閉燈光
+- 停止相機
+- 將系統保持 locked
+
+必須透過 `manual_safety_reset()` 完成硬體 recovery 後才解除。
+
+這不是幾何碰撞檢查；它是「系統是否已被安全事件鎖住」。
+
+### D：讀取目前五軸位置
+
+讀取：
+
+- `stage_L_X`
+- `stage_L_Y`
+- `stage_L_Z`
+- `stage_R_X`
+- `stage_R_Z`
+
+其中 R_Z 是 continuous rotation axis，所以會先用 `canonical_angle_deg()` 正規化成等價的 0–360° 角度，規劃與比較才不會把例如 23760° 認為需要轉很多圈。
+
+Zaber 真正送命令時又會用 `_nearest_equivalent_angle()` 選擇離目前位置最近的等價角度。
+
+### E：可選運動學補償
+
+方向正確，但它只在：
+
+```
+auto_compensate=True
+```
+
+且 R_X/R_Z 發生改變時執行。
+
+相關 function：
+
+- `CoordinateMapper.calculate_full_eccentric_compensation()`
+- `move_compound()` 內將 `dX/dY/dZ` 加到 requested XYZ
+
+相關 config：
+
+- `hardware.zaber.kinematics`
+- `pivot_z_L1`
+- `camera_arm_L2_macro`
+- `camera_arm_L2_micro`
+- rotation pivot 等參數
+
+重要現況：App 中找到的 production `move_compound()` callers 幾乎都明確傳入 `auto_compensate=False`，目前沒有非測試 caller 明確使用 `True`。
+
+另外，`execute_template_point()` 有另一套不同的 `_apply_angle_pose_compensation()`，受以下設定控制：
+
+- `hardware.autofocus.keyence_autofocus.angle_aware`
+- `pose_compensation`
+- `angle_pose_compensation`
+
+這套不能和 `move_compound(auto_compensate=True)` 當成同一件事。
+
+### F：DigitalTwinGuard 檢查最終目標
+
+正確，但只檢查**最終 target pose**：
+
+```
+predict_collision(x, y, z, rx, rz, cam_alias)
+```
+
+相關程式：
+
+- [digital_twin_guard.py (line 6)](/D:/Provenance Project/ImagingLibWatch/Controller/kinematics/digital_twin_guard.py:6)
+- `DigitalTwinGuard.predict_collision()`
+- `_get_aabb()`
+- `_check_overlap()`
+
+相關 config：
+
+- `hardware.zaber.kinematics`
+- `hardware.zaber.safe_zone.platform_box`
+- `macro_box`
+- `micro_box`
+
+目前 config 中這些 box 尺寸全部是 `0.0`：
+
+```
+platform_box: {width: 0.0, depth: 0.0, height: 0.0}
+macro_box: {width: 0.0, length: 0.0}
+micro_box: {width: 0.0, length: 0.0}
+```
+
+見 [hardware_config.yaml (line 110)](/D:/Provenance Project/ImagingLibWatch/config/hardware_config.yaml:110)。
+
+因此目前 Digital Twin 無法代表真實平台、錶與鏡頭體積，實際幾何保護能力非常有限。現有安全主要依靠 `_plan_motion_segments()` 的規則式 interlocks。
+
+另一個限制是：`move_compound()` 並沒有對 planner 產生的每一個中間 segment 再逐段做 Digital Twin 檢查。
+
+### G、H：`_plan_motion_segments` 與 staging priority
+
+定義位於 [unified_driver.py (line 606)](/D:/Provenance Project/ImagingLibWatch/Controller/hardware_drivers/unified_driver.py:606)。
+
+規劃大致依下列優先序：
+
+1. Strap 特殊 internalnum whitelist：
+    
+    - 4029–4032
+    - 驗證 internalnum 和完整五軸 target 必須吻合
+    - 經 Y=160、Z=70 staging
+2. 離開 Strap 特殊點：
+    
+    - 先退出到 safe Y/Z
+    - 再遞迴規劃後續目的地
+3. Strap Keyence transition：
+    
+    - 強制經特殊 staging
+4. Strap wall envelope：
+    
+    - 根據 Y、R_Z、strap half-length 計算靠牆端點 clearance
+    - 不足時直接 reject，不產生 motion
+5. Large R_X transition：
+    
+    - Y safe
+    - Z safe
+    - 必要時 fold R_X
+    - R_Z
+    - restore R_X
+    - final X
+    - final Z
+    - final Y
+6. Strap high-risk interlock：
+    
+    - 特別處理 R_X 高角度且 R_Z 接近 90°／270° 的情況
+    - 可能要求 `allow_high_risk_final_approach`
+7. 一般 fixture rotation interlock：
+    
+    - retract Z
+    - fold R_X
+    - rotate R_Z + XY
+    - restore R_X
+    - final Z
+8. `REHAUT_VIEW`／`CROWN_VIEW`／`SIDE_VIEW`：
+    
+    - Z retract
+    - 高度安全時移動 XY/RX/RZ
+    - Z descend
+9. Front／Back 一般路徑：
+    
+    - 依 target Z 相對 current Z 決定先 Z 還是先 XY/rotation
+
+相關 config 集中在 [hardware_config.yaml (line 147)](/D:/Provenance Project/ImagingLibWatch/config/hardware_config.yaml:147)：
+
+- `fixture.active_profile`
+- `motion_interlock_mode`
+- `safe_retract_z`
+- `rotation_interlock`
+- `large_rx_transition`
+- `strap_special_staging`
+- `strap_wall_envelope`
+- `strap_high_risk_interlock`
+- `strap_x_only_keep_rx_at_rz_0_180`
+
+### I：Strap 旋轉前 readback 驗證
+
+你的描述需要加上「條件式」。
+
+在 `move_compound()` 中，只有同時符合以下條件才驗證：
+
+- segment 是 `COMPOUND`
+- 包含 R_X 或 R_Z
+- semantic target 被辨識為 Strap
+- segment 有 `strap_rotation_staging_required=True`
+- readback 顯示真的有 rotation delta
+
+相關 functions：
+
+- `_is_strap_semantic_target()`
+- `_strap_segment_has_rotation_delta()`
+- `_verify_strap_rotation_staging()`：驗證 Y/Z
+- `_verify_strap_rz_fold_readback()`：R_Z 前驗證 R_X 已 fold
+
+它不是所有 rotation segment 都無條件執行。
+
+另外，`execute_template_point()` 在 [unified_driver.py (line 9434)](/D:/Provenance Project/ImagingLibWatch/Controller/hardware_drivers/unified_driver.py:9434) 自己執行 planner segments 時，沒有走 `move_compound()` 裡這段相同的 Strap rotation readback wrapper。Keyence 的 `_execute_keyence_planned_pose()` 則有自己的 readback 驗證。
+
+### J：ZaberManager 執行
+
+Planner 只產生兩種主要 segment：
+
+- `Z_ONLY` → `zaber.move_axis("stage_L_Z", ...)`
+- `COMPOUND` → `zaber.move_axes_absolute({...})`
+
+`move_axes_absolute()` 的預設命令順序為：
+
+1. Z
+2. R_X
+3. R_Z
+4. X
+5. Y
+
+但實際 segment 通常只包含其中幾軸；planner 已經事先將安全順序拆成多個 segment。
+
+相關程式：[hardware_managers.py (line 458)](/D:/Provenance Project/ImagingLibWatch/Controller/hardware_managers.py:458)、[hardware_managers.py (line 500)](/D:/Provenance Project/ImagingLibWatch/Controller/hardware_managers.py:500)。
+
+### K：軟體 clamp + firmware soft limits
+
+概念正確，但它不是在 Zaber 命令完成後才做，而是在 J 裡面分成兩層：
+
+1. 軟體 clamp  
+    `ZaberManager.move_axis()` 送命令前根據 `self.limits` clamp。
+    
+2. Firmware limits  
+    Zaber 連線時 `_apply_hardware_limits()` 將同一組 limits 寫入：
+    
+    - `limit.min`
+    - `limit.max`
+
+相關 config 位於 [hardware_config.yaml (line 296)](/D:/Provenance Project/ImagingLibWatch/config/hardware_config.yaml:296)：
+
+- X：0–435 mm
+- Y：0–292 mm
+- Z：0–150 mm
+- R_X：0–90°
+- R_Z：空 list，代表 continuous rotation
+
+這一層只限制各軸 travel range，無法判斷多軸組合是否會碰撞。
+
+## 最重要的架構判讀
+
+目前不是：
+
+```
+所有移動 → move_compound → 安全
+```
+
+而是：
+
+```
+App Home/Holder/Control
+    → move_compound
+    → Digital Twin final target
+    → planner
+    → Zaber
+
+Create Template / WatchEntry capture
+    → execute_template_point
+    → angle-aware compensation
+    → planner
+    → Keyence/AF
+    → direct final approach
+    → capture
+
+Keyence planned probe
+    → Keyence-specific preflight
+    → Digital Twin
+    → planner
+    → Strap readback verification
+    → Zaber
+
+其他 AF / cleanup / compatibility paths
+    → 可能直接 Zaber
+```
+
+因此，`move_compound()` 是重要的安全入口，但目前還不是全 App 唯一的五軸運動入口。最值得注意的殘餘風險是：
+
+- Digital Twin box 尺寸目前為零。
+- `execute_template_point()` 複用 planner，但不複用完整 `move_compound()` wrapper。
+- `_do_final_approach()` 直接走 Zaber。
+- 仍存在直接 `move_axis()` 的 AF、safe retract、compatibility 路徑。
+- `move_compound()` 捕捉例外後回傳 `False`，caller 必須檢查；而且它目前沒有檢查每個 Zaber segment 的 boolean 回傳值。
