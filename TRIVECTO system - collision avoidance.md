@@ -1,11 +1,11 @@
 
 
-|     |     |
-| --- | --- |
-|     |     |
-|     |     |
-|     |     |
-|     |     |
+|                        |     |
+| ---------------------- | --- |
+| [[主要防撞路徑]]             |     |
+| [[#### 完整防撞路徑及現有保護機制]] |     |
+|                        |     |
+|                        |     |
 
 目前的主要防撞路徑是 `UnifiedHardwareDriver.move_compound()`：先檢查門禁鎖定、預測目標碰撞，再把移動拆成「Z 退避 → XY/旋轉 → Z 接近」的安全段落。
 
@@ -20,18 +20,18 @@
 
 ### 現有保護機制
 
-|層級|定義與作用|
-|---|---|
-|軸行程限制|X `0–435 mm`、Y `0–292 mm`、Z `0–150 mm`、R_X `0–90°`。程式會 clamp，連線後也會寫入 Zaber 韌體 `limit.min/max`。|
-|R_Z 轉動|`rotate_z_limit: []` 表示連續軸；程式會選擇最短等效角度旋轉，避免不必要多圈，但沒有機械纜線扭轉/圈數上限。|
-|運動平滑|linear/rotation motion profiles 限制速度、加減速與 S-curve，降低慣性撞擊，但本身不是碰撞偵測。|
-|一般安全路徑|Side/Crown 等路徑先移到 `safe_retract_z`（watch 為 20 mm；box 為 10 mm），再平移/旋轉，最後回目標 Z。|
-|R_X/R_Z interlock|觸發條件包含大角度 R_X、R_Z 穿越危險角、XY 大位移等；會先退 Z、把 R_X 收至 `0°`、完成 R_Z/XY、再恢復 R_X。|
-|Strap 高風險|R_X ≥ 30° 且 R_Z 接近/穿越 90° 或 270° 時，強制至 Y=160、Z=70 的已驗證避讓姿態；先折回 R_X=0°，再轉 R_Z，最後才接近目標。|
-|Strap 白名單|`4029–4032` 必須同時匹配完整五軸姿態才允許，並經由 Y=160/Z=70 進出。|
-|Strap 牆面包絡|以 200 mm Strap、Y=0 牆面、30 mm 最小淨空估算；在 R_X > 30° 時拒絕端點會進入危險區的目標。|
-|讀回確認|Strap 每個涉及旋轉的 segment 前，都會讀回 Y/Z；R_Z 旋轉前還會確認 R_X 已折回安全角度。|
-|門禁 E-stop|MQTT 收到 `DI0 = 0` 時，鎖定系統、停止所有 Zaber 軸、關燈、停相機；必須手動 reset 才可恢復。|
+| 層級                | 定義與作用                                                                                          |
+| ----------------- | ---------------------------------------------------------------------------------------------- |
+| 軸行程限制             | X `0–435 mm`、Y `0–292 mm`、Z `0–150 mm`、R_X `0–90°`。程式會 clamp，連線後也會寫入 Zaber 韌體 `limit.min/max`。 |
+| R_Z 轉動            | `rotate_z_limit: []` 表示連續軸；程式會選擇最短等效角度旋轉，避免不必要多圈，但沒有機械纜線扭轉/圈數上限。                               |
+| 運動平滑              | linear/rotation motion profiles 限制速度、加減速與 S-curve，降低慣性撞擊，但本身不是碰撞偵測。                            |
+| 一般安全路徑            | Side/Crown 等路徑先移到 `safe_retract_z`（watch 為 20 mm；box 為 10 mm），再平移/旋轉，最後回目標 Z。                  |
+| R_X/R_Z interlock | 觸發條件包含大角度 R_X、R_Z 穿越危險角、XY 大位移等；會先退 Z、把 R_X 收至 `0°`、完成 R_Z/XY、再恢復 R_X。                         |
+| Strap 高風險         | R_X ≥ 30° 且 R_Z 接近/穿越 90° 或 270° 時，強制至 Y=160、Z=70 的已驗證避讓姿態；先折回 R_X=0°，再轉 R_Z，最後才接近目標。          |
+| Strap 白名單         | `4029–4032` 必須同時匹配完整五軸姿態才允許，並經由 Y=160/Z=70 進出。                                                 |
+| Strap 牆面包絡        | 以 200 mm Strap、Y=0 牆面、30 mm 最小淨空估算；在 R_X > 30° 時拒絕端點會進入危險區的目標。                                 |
+| 讀回確認              | Strap 每個涉及旋轉的 segment 前，都會讀回 Y/Z；R_Z 旋轉前還會確認 R_X 已折回安全角度。                                      |
+| 門禁 E-stop         | MQTT 收到 `DI0 = 0` 時，鎖定系統、停止所有 Zaber 軸、關燈、停相機；必須手動 reset 才可恢復。                                  |
 
 Strap 的路徑規劃與高風險判斷集中在 [_plan_motion_segments](D:/Provenance Project/ImagingLibWatch/Controller/hardware_drivers/unified_driver.py)，讀回保護在 [這兩個檢查](D:/Provenance Project/ImagingLibWatch/Controller/hardware_drivers/unified_driver.py)。
 
@@ -64,3 +64,303 @@ Strap 的路徑規劃與高風險判斷集中在 [_plan_motion_segments](D:/Prov
     
 
 已存在相當多路徑規劃測試，例如 [test_unified_motion_planning.py](D:/Provenance Project/ImagingLibWatch/tests/test_unified_motion_planning.py)。我嘗試執行，但目前 Python 環境缺少 `pytest` 與 `PyYAML`，所以沒有做出可執行的測試驗證。此次沒有修改檔案。
+
+
+
+
+
+#### 完整防撞路徑及現有保護機制
+```
+請幫我整理目前的完整防撞路徑及現有保護機制, 程式與設定位置包括code在哪裡, config在哪裡?, 以及似乎有很多是很類似的請整理
+```
+以下是依目前工作樹程式碼做的完整防撞盤點；本次只分析，沒有修改檔案。
+
+## 一頁結論
+
+目前有四層保護：
+
+1. Zaber 軸範圍與韌體 soft limit。
+2. `UnifiedHardwareDriver` 規則式安全路徑規劃。
+3. `DigitalTwinGuard` 幾何碰撞預測。
+4. 門禁 MQTT → 急停 → 軟體鎖定。
+
+但現況有三個重要缺口：
+
+- `hardware.zaber.safe_zone` 的碰撞盒尺寸全部是 `0`，Digital Twin 退化成零體積幾何，幾乎沒有有效碰撞保護。
+- `strap_macro_cam1_scan.yaml` 又設定 `require_nonzero_collision_envelopes: false`，所以 production preflight 不會因零尺寸而拒絕。
+- 手動移動、舊 controller server、部分 autofocus 與 `execute_template_point` 內部路徑會繞過部分保護。
+
+此外目前 [system_config.yaml (line 1)](D:/Provenance Laboratories projects/ImagingLibWatch/config/system_config.yaml:1) 是 `mode: simulation`，因此從標準 Workflow 啟動時不會控制實體硬體，門禁 MQTT 也不會啟用。
+
+---
+
+## 完整正式移動路徑
+
+### A. 最完整路徑：`move_compound`
+
+````
+```mermaid
+flowchart TD
+    A["App / Keyence / Exit cleanup"] --> B["move_compound"]
+    B --> C["check_safety_lock"]
+    C --> D["讀取目前 5 軸位置"]
+    D --> E["可選運動學補償"]
+    E --> F["DigitalTwinGuard 檢查最終目標"]
+    F --> G["_plan_motion_segments"]
+    G --> H["依優先序產生 staging segments"]
+    H --> I["Strap 旋轉前 Y/Z 與 R_X readback 驗證"]
+    I --> J["ZaberManager move_axis / move_axes_absolute"]
+    J --> K["軟體 clamp + firmware soft limits"]
+```
+````
+
+主入口在 [unified_driver.py (line 475)](D:/Provenance Laboratories projects/ImagingLibWatch/Controller/hardware_drivers/unified_driver.py:475)：
+
+- 先檢查門禁鎖。
+- 讀取目前五軸座標。
+- 可選擇套用旋轉偏心補償。
+- Digital Twin 檢查「最終位置」。
+- 呼叫路徑規劃器。
+- 旋轉 segment 前驗證 Strap staging readback。
+- 最後交給 ZaberManager 執行。
+
+注意：Digital Twin 只檢查最終目標，不會沿每個中間 segment 連續取樣檢查碰撞。
+
+### B. 一般 Template capture 路徑
+
+`execute_template_point()` 在 [unified_driver.py (line 8591)](D:/Provenance Laboratories projects/ImagingLibWatch/Controller/hardware_drivers/unified_driver.py:8591)：
+
+- 有執行 `check_safety_lock()`。
+- 有呼叫 `_plan_motion_segments()`。
+- 但沒有經過 `move_compound()`。
+- 因此沒有一般目標的 Digital Twin 檢查。
+- 執行 segment 時也沒有 `move_compound` 那組 Strap rotation staging readback 驗證。
+
+也就是說，目前「正式拍攝路徑」有規則式 dog-leg/interlock，但保護程度弱於直接使用 `move_compound()`。
+
+### C. Strap macro_cam_1 掃描
+
+這是目前最保守的一條路徑：
+
+1. 驗證整份 scan config。
+2. 驗證每個 pose 的軸範圍及最低 Y。
+3. 建立 Y → Z → fold R_X → rotate R_Z → restore R_X → X → Y → Z 的外層 waypoint。
+4. 每個 waypoint 再送入 `move_compound()`。
+5. 每個 waypoint 完成後核對五軸 readback。
+
+主要位置：
+
+- Config preflight：[App/main.py (line 34250)](D:/Provenance Laboratories projects/ImagingLibWatch/App/main.py:34250)
+- Pose 限位：[App/main.py (line 34489)](D:/Provenance Laboratories projects/ImagingLibWatch/App/main.py:34489)
+- 安全 compound wrapper：[App/main.py (line 34525)](D:/Provenance Laboratories projects/ImagingLibWatch/App/main.py:34525)
+- View transition/readback：[App/main.py (line 34593)](D:/Provenance Laboratories projects/ImagingLibWatch/App/main.py:34593)
+- Waypoint 產生器：[strap_macro1_scan.py (line 1151)](D:/Provenance Laboratories projects/ImagingLibWatch/core/strap_macro1_scan.py:1151)
+
+### D. Strap Keyence 探針
+
+Keyence 專用路徑在 [unified_driver.py (line 3296)](D:/Provenance Laboratories projects/ImagingLibWatch/Controller/hardware_drivers/unified_driver.py:3296)：
+
+- 先拒絕非數值、非有限值及超過軸限位的目標。
+- Strap 先退到固定 staging。
+- 檢查 safety lock。
+- 執行 Digital Twin。
+- 執行 `_plan_motion_segments()`。
+- 旋轉前核對 staging 與 R_X fold。
+- 完成後核對五軸 readback。
+
+這條路徑和 macro_cam_1 scan 是目前保護最完整的兩條。
+
+---
+
+## `_plan_motion_segments` 實際優先序
+
+核心位於 [unified_driver.py (line 606)](D:/Provenance Laboratories projects/ImagingLibWatch/Controller/hardware_drivers/unified_driver.py:606)。它是 first-match-return，實際順序為：
+
+1. `strap_special_staging`
+    
+    特定 `internalnum1` 必須同時匹配白名單中的完整五軸位置；進入、離開都經 Y=160、Z=70。白名單是 `4029–4032`。
+    
+2. Strap Keyence staging
+    
+    探針移動使用同一套 special staging contract。
+    
+3. Strap wall envelope
+    
+    依公式檢查：
+    
+    `clearance = Y - wall_y - half_length × abs(sin(R_Z))`
+    
+4. Large R_X transition
+    
+    大幅 R_X 變化時，使用：
+    
+    `Y safe → Z safe → fold R_X → R_Z → restore R_X → X → Z → Y`
+    
+5. Strap high-risk interlock
+    
+    R_X ≥ 30° 且 R_Z 路徑接近 90°/270°時觸發；小 Y 的最終位置必須有明確 semantic whitelist。
+    
+6. Generic fixture rotation interlock
+    
+    `Z retract → fold R_X → R_Z+XY → restore R_X → target Z`
+    
+7. View-mode dog-leg
+    
+    `REHAUT/CROWN/SIDE/LEFT_HAND_CROWN` 一律先 retract Z；其他 view 依 Z 移動方向決定先後。
+    
+
+---
+
+## 設定位置
+
+主要設定集中在 [hardware_config.yaml (line 78)](D:/Provenance Laboratories projects/ImagingLibWatch/config/hardware_config.yaml:78)：
+
+|設定|位置|目前值/作用|
+|---|---|---|
+|門禁 MQTT|78–82|localhost:1883、DI0|
+|運動學 pivot/arm|104–108|Digital Twin 幾何來源|
+|Digital Twin boxes|110–113|全部為 `0.0`|
+|Generic safe retract|115|Z=20|
+|Home poses|116–146|watch/strap/box|
+|舊 Strap interlock|147–157|fallback/重複設定|
+|Fixture profile|159–166|active=`watch`、mode=`4`|
+|Watch motion safety|168–239|large-RX、special、wall、high-risk|
+|Box motion safety|240–259|box 專用角度窗口|
+|Zaber 軸限位|296–301|X/Y/Z/RX 有界，RZ 為連續軸|
+
+Strap macro_cam_1 的額外設定在 [strap_macro_cam1_scan.yaml (line 267)](D:/Provenance Laboratories projects/ImagingLibWatch/config/strap_macro_cam1_scan.yaml:267)：
+
+- `calibration_confirmed: true`
+- `require_hardware_safety_planner: true`
+- `require_nonzero_collision_envelopes: false`
+- Strap 全長 240 mm
+- 最低牆面間隙 30 mm
+- staging Y=160、Z=70
+- 額外 stage limits
+- 強制 view transition staging
+- readback tolerance
+
+---
+
+## 相似或重複機制整理
+
+### 1. 兩套幾何碰撞引擎
+
+- 正式引用的是 [DigitalTwinGuard (line 6)](D:/Provenance Laboratories projects/ImagingLibWatch/Controller/kinematics/digital_twin_guard.py:6)。
+- [SafeZoneManager (line 11)](D:/Provenance Laboratories projects/ImagingLibWatch/Controller/hardware_drivers/safe_zone_manager.py:11) 是另一套 AABB、另一套 config 格式及 pivot 定義。
+- 全 repo 沒有找到 `SafeZoneManager` 的實際呼叫者，目前可視為未接線/遺留實作。
+
+兩者不應被誤認為雙重保護；現況只有 Digital Twin 接在部分正式路徑上。
+
+### 2. 三套相似的安全路徑
+
+- Unified driver 的通用 `_plan_motion_segments`。
+- Strap scan 的外層 `build_safe_transition_waypoints`。
+- App 關閉/換頁的 `_move_zaber_to_strap_safe_retract`。
+
+後兩者不是完全重複：它們增加 waypoint readback 或 shutdown staging，但固定數值和移動順序高度相似。
+
+### 3. 安全常數重複
+
+- Y=160：large-RX、special staging、high-risk、scan transit。
+- Z=70：large-RX、special staging、high-risk、scan retract。
+- Wall clearance=30：hardware wall envelope 與 scan safety。
+- Strap half-length：
+    - hardware legacy envelope：100 mm
+    - motion recorder legacy：100 mm
+    - macro_cam_1 scan：120 mm
+
+macro_cam_1 會透過 semantic metadata 把 driver 的 100 mm 加嚴至 120 mm，因此不是單純衝突；但目前來源分散，容易日後漂移。
+
+### 4. 軸限位重複
+
+- Hardware 真正限位在 `hardware_config.yaml`。
+- macro_cam_1 scan 又有一份 `safety.stage_limits`。
+
+兩份目前數值相同，但沒有單一來源自動同步。
+
+### 5. 兩種 emergency stop
+
+- `trigger_emergency_stop()`：停止硬體並把 `_system_locked=True`，必須人工 reset。
+- `emergency_stop()`：只停止 Zaber/light/camera，不會 latch `_system_locked`。
+
+因此不同 UI/呼叫者使用不同 API 時，停止後的鎖定行為並不一致。
+
+---
+
+## 現有底層保護
+
+ZaberManager 在 [hardware_managers.py (line 249)](D:/Provenance Laboratories projects/ImagingLibWatch/Controller/hardware_managers.py:249) 提供：
+
+- 啟動時將 YAML limits 寫入 Zaber firmware。
+- 每次 `move_axis` 再做軟體 clamp。
+- `RLock` 避免多執行緒同時發送移動。
+- compound move 固定命令順序為 Z、R_X、R_Z、X、Y。
+- R_Z 空陣列表示連續旋轉；韌體限位被擴成極大值。
+- 急停呼叫所有裝置的 `all_axes.stop()`。
+
+但低階移動超界時是「clamp 後繼續」，不是 fail-closed 拒絕；上層若沒有 readback 驗證，可能誤以為已到達原始目標。
+
+---
+
+## 門禁與急停
+
+實作在：
+
+- [SafetyManager (line 4261)](D:/Provenance Laboratories projects/ImagingLibWatch/Controller/hardware_managers.py:4261)
+- [trigger_emergency_stop (line 4566)](D:/Provenance Laboratories projects/ImagingLibWatch/Controller/hardware_drivers/unified_driver.py:4566)
+
+行為：
+
+- Production 才連 MQTT。
+- `DI0 == 0/false` 觸發急停。
+- JSON 解析錯誤也 fail-closed 觸發急停。
+- 停止順序為 Zaber → lighting → camera。
+- 鎖定後需要 `manual_safety_reset()`。
+
+缺口：
+
+- MQTT 初始連線失敗或後續斷線只記錄 disconnected，不會自動 latch 急停。
+- `manual_safety_reset()` 不檢查門是否已關閉，也不檢查 SafetyManager/MQTT 是否恢復；它只恢復 Zaber/light/camera/IO。
+
+---
+
+## 明確繞過完整防撞的入口
+
+|入口|實際保護|
+|---|---|
+|[WorkflowManager.manual_move (line 3056)](D:/Provenance Laboratories projects/ImagingLibWatch/core/workflow_manager.py:3056)|直接呼叫 Zaber；只有軸 clamp/firmware limit|
+|[controller_server move_stage (line 98)](D:/Provenance Laboratories projects/ImagingLibWatch/Controller/controller_server.py:98)|直接 Zaber，沒有 planner、Digital Twin、SafetyManager|
+|測試工具直接使用 ZaberManager|通常只有軸限位|
+|多個 autofocus 內部微調|初始 pose 可能安全，但後續直接單軸移動，不逐步跑 Digital Twin|
+|`execute_template_point`|有鎖及 planner，沒有一般 `move_compound` 的 Digital Twin/readback 層|
+
+---
+
+## 稽核與測試
+
+Strap 執行時會在 `DB/strap_motion_logs` 記錄：
+
+- 每個 Zaber command。
+- 移動前、目標、移動後的位置。
+- Strap 對 Y=0 牆的計算間隙。
+- 最低間隙及是否出現負值。
+
+程式在 [strap_motion_recorder.py (line 36)](D:/Provenance Laboratories projects/ImagingLibWatch/core/strap_motion_recorder.py:36)。這是事後稽核，不會即時阻止移動。
+
+主要測試：
+
+- [test_unified_motion_planning.py (line 36)](D:/Provenance Laboratories projects/ImagingLibWatch/tests/test_unified_motion_planning.py:36)：high-risk、special staging、readback fail-closed、連續 R_Z。
+- [test_strap_macro1_scan.py (line 963)](D:/Provenance Laboratories projects/ImagingLibWatch/tests/test_strap_macro1_scan.py:963)：safe transition、軸限位、wall envelope、零碰撞盒 gate。
+- [test_safety_system.py (line 1)](D:/Provenance Laboratories projects/ImagingLibWatch/Controller/test_hardware/test_safety_system.py:1)：MQTT 門禁模擬；不是實體門鎖/HIL 測試。
+
+## 建議優先處理
+
+1. 實測並填入非零 `safe_zone` 包絡，然後將 `require_nonzero_collision_envelopes` 改為 `true`。
+2. 讓 `execute_template_point` 統一走 `move_compound`，或補上相同 Digital Twin/readback contract。
+3. 禁止 production 的 `manual_move`/`controller_server.move_stage` 直接繞過 planner。
+4. MQTT disconnected 應 fail-closed，manual reset 應確認門已關閉且 safety channel healthy。
+5. 合併重複的 Y/Z、wall geometry、stage limits 成單一安全設定來源。
+6. 明確區分「latched emergency stop」與「shutdown stop」，避免 UI 呼叫錯誤 API。
+
+變更檔案：無。實體設備仍需要空治具、低速、最長 Strap、門禁斷線及實體 E-stop 的 HIL 驗證。
