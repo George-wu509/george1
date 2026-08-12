@@ -2872,3 +2872,10 @@ Create Template pre-capture、正式 selected-point capture、WatchEntry capture
 3. 確認 center image 的 `X=263.0985, Y=15.659`、曝光和燈光。
 4. 用空 holder、低速依序 dry-run 六種 view。
 5. Digital Twin 的 collision-envelope 尺寸目前仍為 0，尚未具有完整幾何防撞能力。
+
+
+
+
+```
+所以你的意思是目前在hardware_config.yaml裡面有hardware.zaber.SafetyRule裡面有door_estop, axis_travel_limits, load_verification....等設定是存在的, 但目前code裡面無法載入這些設定而真的實行SafetyRule避免撞擊嗎?
+```
