@@ -755,3 +755,558 @@ Keyence planned probe
 - `_do_final_approach()` 直接走 Zaber。
 - 仍存在直接 `move_axis()` 的 AF、safe retract、compatibility 路徑。
 - `move_compound()` 捕捉例外後回傳 `False`，caller 必須檢查；而且它目前沒有檢查每個 Zaber segment 的 boolean 回傳值。
+-
+
+
+
+
+```
+如果依App main.py的各 App 流程實際走法依照下列的錶列出的13個流程:
+
+
+## 各 App 流程實際走法
+
+| App 功能                         | 是否呼叫 `move_compound()` | 實際路徑                                                                                  |
+| ------------------------------ | ---------------------- | ------------------------------------------------------------------------------------- |
+| A. Create Template pre-capture | 否                      | `execute_template_point()` → `_plan_motion_segments()` → Zaber                        |
+| B. Create Template 點選後正式拍照     | 通常否                    | `execute_template_point()` → planner → AF → final approach                            |
+| C. WatchEntry 正式拍照             | 否                      | `_capture_images_routine_internal()` → `execute_template_point()` → planner           |
+| D. Standard/HDR capture        | 否                      | 都進 `execute_template_point()`；HDR 同點可能略過重複 XYZ                                        |
+| E. Control panel 手動五軸移動        | 是                      | `_move_control_pose()` → `move_compound()`                                            |
+| F. Control panel Go Home       | 是                      | `_resolve_control_home_pose()` → `_move_control_pose()` → `move_compound()`           |
+| G. 移到 holder／放錶位置              | 是，production driver 下  | `_move_zaber_to_start_pos()` → `_move_zaber_to_safe_strap_pose()` → `move_compound()` |
+| H. 移到 watch center             | 是                      | `_move_zaber_to_center_pos()` → safe strap pose → `move_compound()`                   |
+| I. App Exit 最終回 Home           | 部分                     | 先用直接 `move_axis()` 做 Strap safe retract，再用 `move_compound()` 回 Home                   |
+| J. Keyence probe 移動            | 否                      | `_execute_keyence_planned_pose()` 直接做 Digital Twin + planner + Zaber                  |
+| K. Final focus approach        | 否                      | `_do_final_approach()` 直接呼叫 Zaber                                                     |
+| L. 某些 AF 掃描／Keyence XY 掃描      | 混合                     | 有些 Y scan 用 `move_compound()`；有些直接 `move_axis()`                                      |
+| M. simulation `move_compound`  | 名稱相同但不是安全路徑            | 只有 sleep，沒有 planner 或碰撞檢查                                                             |
+
+
+我希望以此為基準完善各 App 流程的並模組化整理(也先不要修改code而是釐清每條流程), 包括個別流程的主要流程function(舉例來說在第一個Create Template pre-capture你有寫到實際路徑`execute_template_point()` → `_plan_motion_segments()` → Zaber那這是否是包含在哪個function裡面, 我會稱這個function為主要流程function or 入口function, 也就是在這function裡包含`execute_template_point()` → `_plan_motion_segments()` → Zaber, 且這function最可以代表Create Template pre-capture). 
+
+然後就像Create Template pre-capture, Create Template 點選後正式拍照, WatchEntry 正式拍照, Standard/HDR capture都有execute_template_point, 所以這些execute_template_point不同流程使用到execute_template_point下面的每一步小流程是否都一樣? 那這些小流程各是甚麼? 
+
+也請將一些類似execute_template_point這樣常用且有很多步小流程的也要整理這些小流程
+```
+
+已依目前程式做完靜態追蹤，沒有修改任何 code。
+
+先講核心結論：
+
+1. `execute_template_point()` 是「單一拍攝點的共用拍攝引擎」，但不同呼叫者不會走完全相同的小流程；Standard、HDR、AF 模式、焦點重用與位置快取都會造成分支或跳過。
+2. `move_compound()` 是「一般五軸安全移動入口」，它與 `execute_template_point()` 都使用 `_plan_motion_segments()`，但兩者不是同一條安全路徑。
+3. `execute_template_point()` 的初始定位雖使用 planner，卻不經過 `move_compound()`，因此也沒有 `move_compound()` 裡的 Digital Twin final-target 檢查；後段 `_do_final_approach()` 更是直接操作 Zaber。
+4. 目前 [system_config.yaml (line 2)](D:/Provenance Laboratories projects/ImagingLibWatch/config/system_config.yaml:2) 是 `simulation`。以下 hardware 路徑是 production/hybrid 時的實際走法。
+5. `_execute_point_capture()` 目前只有定義、沒有靜態呼叫者，應視為舊路徑，不能代表現行 Create Template 正式拍照。
+
+## 一、建議統一成三層理解
+
+````
+```mermaid
+flowchart TD
+    UI["App / UI 流程入口"]
+
+    A["A TemplatePreCaptureWorker.run"]
+    B["B _execute_prepared_point_capture"]
+    C["C _capture_images_routine_internal"]
+    EH["E–H 控制面板／Home／Holder／Center"]
+    I["I Exit Home"]
+    J["J Keyence pose"]
+    L["L AF / HDR scan"]
+
+    ETP["execute_template_point<br/>單點拍攝引擎"]
+    MC["move_compound<br/>一般五軸移動入口"]
+    KP["_execute_keyence_planned_pose"]
+    PLAN["_plan_motion_segments<br/>共用規則式路徑規劃"]
+    AF["Keyence / Vision / Liquid AF"]
+    FINAL["_do_final_approach<br/>直接 Zaber"]
+    HDR["_capture_and_fuse_hdr_v2"]
+    TWIN["DigitalTwinGuard<br/>只預測 final target"]
+    ZABER["Zaber move_axis / move_axes_absolute"]
+
+    UI --> A --> ETP
+    UI --> B --> ETP
+    UI --> C --> ETP
+    UI --> EH --> MC
+    UI --> I
+    UI --> J --> KP
+    UI --> L
+
+    MC --> TWIN --> PLAN --> ZABER
+    KP --> TWIN
+    KP --> PLAN
+
+    ETP --> PLAN
+    ETP --> AF
+    ETP --> FINAL --> ZABER
+    ETP --> HDR --> ZABER
+
+    I --> ZABER
+    I --> MC
+    L --> MC
+    L --> ZABER
+```
+````
+
+這張圖最重要的地方是：`_plan_motion_segments()` 是共用 planner，但「有使用 planner」不等於「完整走過同一個安全入口」。
+
+---
+
+# 二、A–M 每條 App 流程的主要入口
+
+|流程|最具代表性的主要流程函式|production/hybrid 實際主路徑|判定|
+|---|---|---|---|
+|A. Create Template pre-capture|`TemplatePreCaptureWorker.run()`|`_start_template_pre_capture_sequence()` → Worker `run()` → 建立每張 `hw_cfg` → `execute_template_point()` → 儲存/旋轉/crop|原表方向正確，但真正代表整個流程的是 Worker `run()`|
+|B. Create Template 正式點拍|`_execute_prepared_point_capture()`|`_scratch_next_capture()` → `_start_prepared_point_capture_async()` → `_execute_prepared_point_capture()` → `execute_template_point()`|現行路徑；舊 `_execute_point_capture()` 沒有呼叫者|
+|C. WatchEntry 正式拍照|`_capture_images_routine_internal()`|`load_camimgs()` → `CaptureRoutineWorker.run()` → `_capture_images_routine_internal()` → capture loop → `execute_template_point()`|正確|
+|D. Standard/HDR|不是獨立入口，是 B/C 內的 capture 分支|Standard/HDR 都建立各自 `hw_cfg` → `execute_template_point()`|共用入口，但內部步驟不完全相同|
+|E. Control panel 五軸移動|`_move_control_pose()`|`_ctrl_move()` → `_move_control_pose()` → `move_compound()`|正確|
+|F. Control panel Go Home|`_ctrl_action(...,"go_home")`|`_resolve_control_home_pose()` → `_move_control_pose()` → `move_compound()`|正確|
+|G. Holder／放錶位置|`_move_zaber_to_start_pos()`|Macro 1：`_strap_macro1_transition_to_pose()`；其他 camera：`_move_zaber_to_safe_strap_pose()` → `move_compound()`|原表需補 Macro 1 特殊 transition|
+|H. Watch center|`_move_zaber_to_center_pos()`|與 G 相同，依 camera 分成 Macro 1 特殊路徑或一般 safe strap pose|原表需補 Macro 1 分支|
+|I. App Exit Home|`_move_zaber_to_home_on_exit()`|`closeEvent()` → `_move_zaber_to_strap_safe_retract()` 直接分軸 → `move_compound(home)`|正確|
+|J. Keyence probe|App-facing：`position_height_measurement_probe()`；共用核心：`_execute_keyence_planned_pose()`|target validation → safety lock → Strap staging → Digital Twin → planner → Zaber → readback|正確，但 helper 並非唯一 UI 入口|
+|K. Final focus approach|`_do_final_approach()`|near point → 切 capture profile → 直接 Zaber X/Y/Z|正確；不經 planner/Twin|
+|L. AF/Keyence XY/Y scan|依 AF 類型不同|Side Y scan 可用 `move_compound()`；Keyence/vision/HDR Z-stack 有直接 `move_axis()`|正確，是混合安全邊界|
+|M. Simulation move|`SimulationHardware.move_compound()`|log → sleep 0.5 秒|正確；沒有 planner、碰撞檢查、pose state，且介面也與 production 不完全一致|
+
+## A. Create Template pre-capture
+
+UI 啟動入口：
+
+- [`_start_template_pre_capture_sequence()` (line 16836)](D:/Provenance Laboratories projects/ImagingLibWatch/App/main.py:16836)
+
+真正包含完整五張圖循環的主要流程函式：
+
+- [`TemplatePreCaptureWorker` (line 1508)](D:/Provenance Laboratories projects/ImagingLibWatch/App/main.py:1508)
+- [`TemplatePreCaptureWorker.run()` (line 1540)](D:/Provenance Laboratories projects/ImagingLibWatch/App/main.py:1540)
+
+路徑：
+
+```
+_start_template_pre_capture_sequence()
+└─ TemplatePreCaptureWorker.run()
+   ├─ 依 front / side1 / side2 / side3 / side4 建立 hw_cfg
+   ├─ simulation：讀取模擬圖片
+   └─ production/hybrid：
+      └─ execute_template_point(hw_cfg)
+         ├─ planner / AF / final approach
+         └─ camera capture
+   ├─ rotation
+   ├─ center crop
+   └─ 儲存 JPG / progress signal
+```
+
+完成後再進：
+
+- [`_on_template_pre_capture_finished()` (line 17249)](D:/Provenance Laboratories projects/ImagingLibWatch/App/main.py:17249)：更新圖片、執行 color detection、復歸角度、切換頁面。
+
+所以 A 的「主要流程函式」應定義為 `TemplatePreCaptureWorker.run()`；`_start_template_pre_capture_sequence()` 是 UI/執行緒入口。
+
+## B. Create Template 點選後正式拍照
+
+現行主要流程：
+
+- [`_prepare_selected_point_from_enlarge()` (line 8172)](D:/Provenance Laboratories projects/ImagingLibWatch/App/main.py:8172)：把點選座標轉成 pose，這時還沒有正式 AF/capture。
+- [`_scratch_next_capture()` (line 15858)](D:/Provenance Laboratories projects/ImagingLibWatch/App/main.py:15858)：決定下一張 Standard/HDR。
+- [`_start_prepared_point_capture_async()` (line 8886)](D:/Provenance Laboratories projects/ImagingLibWatch/App/main.py:8886)：非同步入口。
+- [`_execute_prepared_point_capture()` (line 8487)](D:/Provenance Laboratories projects/ImagingLibWatch/App/main.py:8487)：最能代表正式拍照的主要流程函式。
+
+```
+_prepare_selected_point_from_enlarge()
+└─ 準備/鎖定 pose
+
+_scratch_next_capture()
+└─ _start_prepared_point_capture_async()
+   └─ _execute_prepared_point_capture()
+      ├─ 解析 point/capture/internalnum
+      ├─ 建立 canonical hw_cfg
+      ├─ 建立 focus_hardware
+      ├─ 套用 bezel policy
+      ├─ HDR 可重用上一張 Standard focus
+      ├─ execute_template_point()
+      └─ 保存 scratch image / focus state
+```
+
+舊的 [`_execute_point_capture()` (line 8362)](D:/Provenance Laboratories projects/ImagingLibWatch/App/main.py:8362)：
+
+- Micro 走 interactive micro capture。
+- Macro 直接 `move_compound()` 後拍照。
+- 目前 `rg` 只找到定義，沒有實際呼叫者，應標為 legacy/dead candidate。
+
+## C. WatchEntry 正式拍照
+
+App/UI 入口：
+
+- [`load_camimgs()` (line 31355)](D:/Provenance Laboratories projects/ImagingLibWatch/App/main.py:31355)
+
+Worker：
+
+- [`CaptureRoutineWorker` (line 1478)](D:/Provenance Laboratories projects/ImagingLibWatch/App/main.py:1478)
+- `CaptureRoutineWorker.run()` 在同一區塊呼叫 internal routine。
+
+主要流程函式：
+
+- [`_capture_images_routine_internal()` (line 31780)](D:/Provenance Laboratories projects/ImagingLibWatch/App/main.py:31780)
+
+```
+load_camimgs(side)
+└─ CaptureRoutineWorker.run()
+   └─ _capture_images_routine_internal()
+      ├─ 建立 DB run / output dirs
+      ├─ 依 watchpoint execution order 走訪
+      ├─ normalization：point + capture + internalnum
+      ├─ 分出 standard_captures / hdr_captures
+      ├─ 建立 focus_hardware
+      ├─ 套用 WatchShift / bezel policy
+      ├─ HDR 判斷是否重用 Standard focus
+      ├─ execute_template_point(hw_cfg)
+      ├─ 儲存 local image / DB
+      ├─ S3 / metadata
+      └─ analysis / UI progress
+```
+
+所以 C 的代表函式確實是 `_capture_images_routine_internal()`；`load_camimgs()` 是 UI 啟動層。
+
+---
+
+# 三、`execute_template_point()` 的完整小流程
+
+核心位置：
+
+- [`UnifiedHardwareDriver.execute_template_point()` (line 8591)](D:/Provenance Laboratories projects/ImagingLibWatch/Controller/hardware_drivers/unified_driver.py:8591)
+
+## Phase 0：輸入與狀態
+
+- fixture profile override。
+- `check_safety_lock()`。
+- 建立 side-reference scope。
+- 判斷：
+    - `is_hdr`
+    - `z_positions`
+    - `reuse_previous_focus`
+    - `skip_xyz_move`
+    - 是否使用獨立 `focus_hardware`
+    - 是否有 Standard focus 可以重用。
+
+## Phase 1：解析拍照與 AF 路由
+
+主要工作：
+
+1. 解析 `X/Y/Z/RX/RZ`、`Xmod/Ymod/Zmod`。
+2. 解析 camera、exposure、gain、lighting、postcolor。
+3. HDR AF 使用中間 exposure 作 preview。
+4. 依 `af_mode_id` 載入 AF recipe。
+5. 決定 capture camera 與 focus camera。
+6. 呼叫 `resolve_autofocus_routing()` 決定：
+    - Keyence coarse AF
+    - vision AF
+    - liquid-lens AF
+    - side-Zaber AF
+    - 是否略過 first camera pose。
+7. 計算 Keyence angle-aware pose compensation。
+8. 建立 position signature，判斷是否 `is_same_pos`。
+
+## Phase 2：初始定位與機械 AF
+
+只有 `not is_same_pos` 時執行：
+
+```
+讀取 current pose
+→ 建立 target pose + semantic target
+→ _plan_motion_segments()
+→ 直接 zaber.move_axis / move_axes_absolute
+→ 選擇 coarse AF
+   ├─ option 4：_af_keyence_absolute()
+   ├─ option 1：_af_keyence_matlab_like()
+   ├─ option 2/3：_af_vision_method()
+   └─ disabled：使用 base Z
+→ 計算 final X/Y/Z
+→ _do_final_approach()
+```
+
+重點：
+
+- 這裡有 planner。
+- 但沒有呼叫 `move_compound()`。
+- 也沒有 `move_compound()` 裡的通用 Digital Twin preflight。
+- `_do_final_approach()` 又是另一段直接 Zaber 路徑。
+
+## Phase 3：拍照硬體設定
+
+- 開 capture lights。
+- 切換 camera。
+- 套用 AWB/AGC/Gamma/ColorTransform lock。
+- 設定並驗證 exposure/gain。
+
+## Phase 4：Liquid AF 與最後修正
+
+依設定走其中一條：
+
+- `reuse_previous_focus`：保持目前 liquid current，不重新 AF。
+- HDR skip AF：使用 manual cammag/current。
+- Side-Zaber two-stage：
+    - `_run_side_zaber_liquid_lens_autofocus()`
+- Side reference reuse。
+- FPGA/hardware liquid AF。
+- software sweep fallback。
+- AF failure fallback/manual current。
+- 若 `focus_required` 且 AF 失敗，capture 前中止。
+- 套用最後 `Xmod/Ymod/Zmod`。
+- 若 mod 非零，第二次呼叫 `_do_final_approach()`。
+- final stage readback。
+- 恢復 capture lighting/camera/exposure。
+- capture settle。
+
+## Phase 5：真正拍照
+
+- Standard：`cam.capture_image()`。
+- HDR：[`_capture_and_fuse_hdr_v2()` (line 5201)](D:/Provenance Laboratories projects/ImagingLibWatch/Controller/hardware_drivers/unified_driver.py:5201)。
+- finally 關燈。
+- color calibration / post-color。
+- rotation。
+- 更新位置 signature cache。
+- 回傳：
+
+```
+(image, final_z, glass_thickness)
+```
+
+---
+
+# 四、Standard/HDR 是否走完全相同的小流程？
+
+答案是：共用同一支函式，但不保證執行同一組步驟。
+
+|情況|XYZ 初始移動|Coarse AF|Liquid AF|最終 capture|
+|---|---|---|---|---|
+|一般 Standard|通常執行|依 `use_autofocus`/AF mode|依 `use_liqud_af`|單張|
+|同點 HDR，重用 Standard focus|通常跳過|跳過|保留 Standard liquid current|HDR brackets/fusion|
+|HDR 有不同 `z_positions`|可能先到 base pose|視 Z bucket 政策重跑|視設定|多 exposure／多 Z|
+|明確 `skip_xyz_move=True`|跳過|通常跳過|可能保留或手動設定|單張或 HDR|
+|position signature 相同|跳過|跳過機械 AF|視 reuse/設定|繼續拍照|
+|AF mode 7/8 等 side mode|執行 planner 定位|常停用 Keyence|Side-Zaber/FPGA two-stage|單張或 HDR|
+
+因此真正決定差異的不是「誰呼叫它」，而是呼叫者組出的 `hw_cfg`：
+
+- A：pre-capture 固定設定。
+- B：prepared point + capture + focus_capture + bezel policy。
+- C：template/watchpoint/capture + WatchEntry 修正 + Standard/HDR focus reference。
+- D：`is_hdr`、`hdr_enable`、`z_positions`、`reuse_previous_focus`、`skip_xyz_move`。
+
+---
+
+# 五、其他常用複合函式
+
+## 1. `move_compound()`
+
+位置：
+
+- [`move_compound()` (line 475)](D:/Provenance Laboratories projects/ImagingLibWatch/Controller/hardware_drivers/unified_driver.py:475)
+
+內部步驟：
+
+```
+check_safety_lock()
+→ 讀取五軸 current pose
+→ target 正規化
+→ optional kinematic auto compensation
+→ DigitalTwinGuard.predict_collision(final target)
+→ _plan_motion_segments()
+→ 逐 segment 執行 Z_ONLY / COMPOUND
+→ Strap rotation staging readback
+→ 成功 True；例外轉成 False + _last_move_error
+```
+
+這是目前最完整的一般五軸移動入口，但 Digital Twin 只檢查 final target，沒有逐一檢查所有中間 segment 的幾何碰撞。
+
+## 2. `_plan_motion_segments()`
+
+位置：
+
+- [`_plan_motion_segments()` (line 606)](D:/Provenance Laboratories projects/ImagingLibWatch/Controller/hardware_drivers/unified_driver.py:606)
+
+它是規則式 planner，主要負責：
+
+- fixture profile 與 `motion_interlock_mode`。
+- safe retract Z。
+- Strap/Box semantic 判斷。
+- large R_X transition staging。
+- Strap fixed-point whitelist。
+- Strap wall envelope。
+- high-risk R_X/R_Z staging。
+- R_Z hazard crossing。
+- generic dog-leg。
+- 最後 target segment。
+
+它不是 Digital Twin，也不直接操作硬體；輸出的是 `Z_ONLY`／`COMPOUND` segment 清單。
+
+## 3. `_execute_keyence_planned_pose()`
+
+位置：
+
+- [`_execute_keyence_planned_pose()` (line 3296)](D:/Provenance Laboratories projects/ImagingLibWatch/Controller/hardware_drivers/unified_driver.py:3296)
+
+步驟：
+
+```
+numeric/finite/axis-limit validation
+→ safety lock
+→ Strap Keyence staging
+→ 讀 current pose
+→ Digital Twin final-target check
+→ _plan_motion_segments()
+→ segment execution
+→ Strap rotation/RX fold readback
+→ final pose readback
+→ report
+```
+
+這條比 `execute_template_point()` Phase 2 多了明確 axis-limit 與 Digital Twin preflight。
+
+App-facing 六點量測入口是：
+
+- [`position_height_measurement_probe()` (line 3483)](D:/Provenance Laboratories projects/ImagingLibWatch/Controller/hardware_drivers/unified_driver.py:3483)
+
+一般 AF direct-probe 會經：
+
+- [`_start_keyence_probe_motion()` (line 3435)](D:/Provenance Laboratories projects/ImagingLibWatch/Controller/hardware_drivers/unified_driver.py:3435)
+
+## 4. `_do_final_approach()`
+
+位置：
+
+- [`_do_final_approach()` (line 4426)](D:/Provenance Laboratories projects/ImagingLibWatch/Controller/hardware_drivers/unified_driver.py:4426)
+
+步驟：
+
+```
+讀 final_approach config
+→ 套用 default motion profile
+→ 移到 near target
+→ 切 capture profile
+→ 最後 X/Y/Z
+→ 恢復 default profile
+```
+
+特殊 Strap case 會採 Y-last/reassert X/Z，但本質仍是直接 Zaber，不經：
+
+- `move_compound()`
+- `_plan_motion_segments()`
+- Digital Twin
+
+## 5. `_capture_and_fuse_hdr_v2()`
+
+位置：
+
+- [`_capture_and_fuse_hdr_v2()` (line 5201)](D:/Provenance Laboratories projects/ImagingLibWatch/Controller/hardware_drivers/unified_driver.py:5201)
+
+包含：
+
+- HDR defaults。
+- 自動 exposure plan。
+- exposure/Z bucket。
+- 每 bucket lighting/exposure。
+- 必要時遞迴呼叫 `execute_template_point()` 做 Z-bucket AF。
+- 其他 Z-stack 移動則直接 `move_axis(stage_L_Z)`。
+- bracket 儲存、fusion、auto processing。
+- 最後 restore Z。
+
+這也是 L 類「混合安全路徑」的一個來源。
+
+## 6. AF 複合函式
+
+- [`perform_two_stage_autofocus()` (line 1516)](D:/Provenance Laboratories projects/ImagingLibWatch/Controller/hardware_drivers/unified_driver.py:1516)  
+    Control/API 型入口：coarse AF → `move_compound()` 到 focus Z → liquid AF。
+    
+- [`run_robust_autofocus()` (line 1622)](D:/Provenance Laboratories projects/ImagingLibWatch/Controller/hardware_drivers/unified_driver.py:1622)  
+    依 AF option 路由到 Keyence absolute、Matlab-like 或 vision AF。
+    
+- [`_run_side_zaber_liquid_lens_autofocus()` (line 5932)](D:/Provenance Laboratories projects/ImagingLibWatch/Controller/hardware_drivers/unified_driver.py:5932)  
+    Side Y candidates + FPGA liquid current 掃描；Y 移動使用 `move_compound()`。
+    
+
+要注意：`execute_template_point()` 不只是簡單呼叫 `perform_two_stage_autofocus()`；它自己編排 coarse AF、liquid AF、focus/capture lighting、final approach 與失敗政策，因此兩者存在部分概念重疊。
+
+---
+
+# 六、設定檔位置與控制範圍
+
+|設定檔|主要用途|
+|---|---|
+|[system_config.yaml (line 1)](D:/Provenance Laboratories projects/ImagingLibWatch/config/system_config.yaml:1)|simulation/production/hybrid 模式|
+|[hardware_config.yaml (line 84)](D:/Provenance Laboratories projects/ImagingLibWatch/config/hardware_config.yaml:84)|Zaber、camera、lighting、Keyence、AF 的主要硬體設定|
+|[hardware_config.yaml (line 110)](D:/Provenance Laboratories projects/ImagingLibWatch/config/hardware_config.yaml:110)|Digital Twin `safe_zone` 幾何|
+|[hardware_config.yaml (line 116)](D:/Provenance Laboratories projects/ImagingLibWatch/config/hardware_config.yaml:116)|Home poses|
+|[hardware_config.yaml (line 159)](D:/Provenance Laboratories projects/ImagingLibWatch/config/hardware_config.yaml:159)|fixture profile、`motion_interlock_mode`|
+|[hardware_config.yaml (line 186)](D:/Provenance Laboratories projects/ImagingLibWatch/config/hardware_config.yaml:186)|large R_X staging|
+|[hardware_config.yaml (line 199)](D:/Provenance Laboratories projects/ImagingLibWatch/config/hardware_config.yaml:199)|Strap special staging/validated targets|
+|[hardware_config.yaml (line 214)](D:/Provenance Laboratories projects/ImagingLibWatch/config/hardware_config.yaml:214)|Strap wall envelope|
+|[hardware_config.yaml (line 222)](D:/Provenance Laboratories projects/ImagingLibWatch/config/hardware_config.yaml:222)|Strap high-risk interlock|
+|[hardware_config.yaml (line 261)](D:/Provenance Laboratories projects/ImagingLibWatch/config/hardware_config.yaml:261)|Zaber motion profiles|
+|[hardware_config.yaml (line 283)](D:/Provenance Laboratories projects/ImagingLibWatch/config/hardware_config.yaml:283)|final approach|
+|[hardware_config.yaml (line 335)](D:/Provenance Laboratories projects/ImagingLibWatch/config/hardware_config.yaml:335)|camera-to-Keyence offset|
+|[hardware_config.yaml (line 789)](D:/Provenance Laboratories projects/ImagingLibWatch/config/hardware_config.yaml:789)|AF 基本設定|
+|[af_mode_config.yaml (line 8)](D:/Provenance Laboratories projects/ImagingLibWatch/config/af_mode_config.yaml:8)|各 `af_mode_id` 對 hardware config 的 override recipe|
+|[hdr_config.yaml (line 234)](D:/Provenance Laboratories projects/ImagingLibWatch/config/hdr_config.yaml:234)|HDR 自動 exposure/fusion 處理|
+|[template_create_config.yaml (line 1)](D:/Provenance Laboratories projects/ImagingLibWatch/config/template_create_config.yaml:1)|Template pre-capture、bezel tilt 等 Create Template 行為|
+|[internalnum_config.yaml](D:/Provenance Laboratories projects/ImagingLibWatch/config/internalnum_config.yaml)|internalnum 對 point/capture 預設 pose、camera、AF、HDR 參數|
+|[strap_macro_cam1_scan.yaml (line 1)](D:/Provenance Laboratories projects/ImagingLibWatch/config/strap_macro_cam1_scan.yaml:1)|Strap Macro 1 scan、endpoint、tile、anchor AF、安全限制|
+
+目前需特別注意：
+
+- `hardware.zaber.safe_zone` 的 platform/macro/micro collision box 尺寸目前是 `0.0`，因此 Digital Twin 幾何保護實質上沒有正常物理 envelope。
+- Strap scan 設定在 [strap_macro_cam1_scan.yaml (line 273)](D:/Provenance Laboratories projects/ImagingLibWatch/config/strap_macro_cam1_scan.yaml:273) 設為 `require_nonzero_collision_envelopes: false`。
+- 所以目前真正主要的防撞力量來自 `_plan_motion_segments()` 的 staging/interlock/wall-envelope 規則，而不是 Digital Twin AABB。
+
+---
+
+# 七、13 條表之外，App 內還有的路徑
+
+若目標是「App/main.py 完整盤點」，原本 A–M 還漏了：
+
+1. Bezel 自動傾角量測  
+    [`_measure_bezel_surface_tilt()` (line 7573)](D:/Provenance Laboratories projects/ImagingLibWatch/App/main.py:7573)  
+    準備/恢復 pose 使用 `move_compound()`，Keyence sample 有自己的量測動作。
+    
+2. Strap Macro 1 dynamic scan  
+    [`_strap_macro1_capture_frame()` (line 35286)](D:/Provenance Laboratories projects/ImagingLibWatch/App/main.py:35286)  
+    Capture 使用 `execute_template_point()`。
+    
+3. Strap Macro 1 transition  
+    [`_strap_macro1_transition_to_pose()` (line 34593)](D:/Provenance Laboratories projects/ImagingLibWatch/App/main.py:34593)  
+    外層有額外 waypoint/readback，再進安全 compound move。
+    
+4. Strap extension probe  
+    [`_move_strap_keyence_probe_pose()` (line 37276)](D:/Provenance Laboratories projects/ImagingLibWatch/App/main.py:37276)  
+    優先使用 `move_compound()`，但仍保留沒有 driver 時的 raw-axis fallback。
+    
+5. Macro top-view preview  
+    [`_capture_and_show_macro_top_view()` (line 39273)](D:/Provenance Laboratories projects/ImagingLibWatch/App/main.py:39273)  
+    production 使用 `execute_template_point()`。
+    
+
+---
+
+# 八、依相似性整理後的模組分組
+
+目前可以先在文件/設計上歸為五組，不必立刻修改 code：
+
+1. App Orchestrators  
+    A/B/C、Strap scan、top preview：負責建立 capture payload、循環、儲存、UI/DB。
+    
+2. Capture Point Engine  
+    `execute_template_point()`：單一點的 motion + AF + light + camera + HDR。
+    
+3. Safe Pose Motion  
+    `move_compound()`、`_execute_keyence_planned_pose()`、`_plan_motion_segments()`。
+    
+4. Focus Pipeline  
+    Keyence、vision、liquid-lens、side-Zaber、focus reuse。
+    
+5. Raw/Terminal Motion  
+    `_do_final_approach()`、HDR Z-stack、Exit safe retract、legacy fallback。
+    
+
+最值得後續統一的不是 A/B/C 本身，而是第 3 與第 5 組之間的安全邊界：目前「一般移動」、「capture 初始定位」、「Keyence」、「final approach」、「HDR Z-stack」、「Exit retract」各自有不同程度的 planner、Twin、limit validation 與 readback。這正是目前看起來很多功能相似、實際保護程度卻不完全一致的主因。
