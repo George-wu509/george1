@@ -175,8 +175,9 @@
   },
   "active": "4b4e4c70eba2ab62",
   "lastOpenFiles": [
-    "TRIVECTO system - file system.md",
     "TRIVECTO system - collision avoidance.md",
+    "主要防撞路徑.md",
+    "TRIVECTO system - file system.md",
     "Work - TRIVECTO Laboratories/TRIVECTO system - internalnum_config.md",
     "Work - TRIVECTO Laboratories/TRIVECTO system - template.md",
     "Work - TRIVECTO Laboratories/TRIVECTO system - AotoFocus.md",
@@ -199,7 +200,6 @@
     "Work - TRIVECTO Laboratories/TRIVECTO system - design.md",
     "Work - TRIVECTO Laboratories/Provenance - OCR compare.md",
     "Work - TRIVECTO Laboratories/TRIVECTO system - matlab convert.md",
-    "@@ Daily practice.md",
-    "Work - TRIVECTO Laboratories/TRIVECTO system - hardware test code.md"
+    "@@ Daily practice.md"
   ]
 }

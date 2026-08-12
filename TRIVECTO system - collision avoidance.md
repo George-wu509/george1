@@ -1,12 +1,18 @@
 
 
-|                                          |     |
-| ---------------------------------------- | --- |
-| [[主要防撞路徑]]                               |     |
-| [[#### 完整防撞路徑及現有保護機制]]                   |     |
-| [[#### move_compound function analysis]] |     |
-|                                          |     |
+|                                                        |     |
+| ------------------------------------------------------ | --- |
+| [[#### 主要防撞路徑]]                                        |     |
+| [[#### 完整防撞路徑及現有保護機制]]                                 |     |
+| [[#### move_compound function analysis]]               |     |
+| [[#### App 13拍照移動流程實際走法]]                              |     |
+| [[#### Strap合併成兩個Rules, 且所有safety都整合進hardware_config]] |     |
+|                                                        |     |
+|                                                        |     |
 
+
+
+#### 主要防撞路徑
 目前的主要防撞路徑是 `UnifiedHardwareDriver.move_compound()`：先檢查門禁鎖定、預測目標碰撞，再把移動拆成「Z 退避 → XY/旋轉 → Z 接近」的安全段落。
 
 ### 程式與設定位置
@@ -1310,3 +1316,1559 @@ App-facing 六點量測入口是：
     
 
 最值得後續統一的不是 A/B/C 本身，而是第 3 與第 5 組之間的安全邊界：目前「一般移動」、「capture 初始定位」、「Keyence」、「final approach」、「HDR Z-stack」、「Exit retract」各自有不同程度的 planner、Twin、limit validation 與 readback。這正是目前看起來很多功能相似、實際保護程度卻不完全一致的主因。
+
+
+
+
+
+
+#### App 13拍照移動流程實際走法
+```
+我可以把A. Create Template pre-capture的路徑寫成  
+_start_template_pre_capture_sequence()  
+└─ TemplatePreCaptureWorker.run()  
+├─ 依 front / side1 / side2 / side3 / side4 建立 hw_cfg  
+├─ simulation：讀取模擬圖片  
+└─ production/hybrid：  
+└─ execute_template_point(hw_cfg)  
+├─ planner / AF / final approach  
+└─ camera capture  
+├─ rotation  
+├─ center crop  
+└─ 儲存 JPG / progress signal
+
+把B. Create Template 點選後正式拍照的路徑寫成  
+_prepare_selected_point_from_enlarge()  
+└─ 準備/鎖定 pose
+
+_scratch_next_capture()  
+└─ _start_prepared_point_capture_async()  
+└─ _execute_prepared_point_capture()  
+├─ 解析 point/capture/internalnum  
+├─ 建立 canonical hw_cfg  
+├─ 建立 focus_hardware  
+├─ 套用 bezel policy  
+├─ HDR 可重用上一張 Standard focus  
+├─ execute_template_point()  
+└─ 保存 scratch image / focus state
+
+把C. WatchEntry 正式拍照的路徑寫成  
+load_camimgs(side)  
+└─ CaptureRoutineWorker.run()  
+└─ _capture_images_routine_internal()  
+├─ 建立 DB run / output dirs  
+├─ 依 watchpoint execution order 走訪  
+├─ normalization：point + capture + internalnum  
+├─ 分出 standard_captures / hdr_captures  
+├─ 建立 focus_hardware  
+├─ 套用 WatchShift / bezel policy  
+├─ HDR 判斷是否重用 Standard focus  
+├─ execute_template_point(hw_cfg)  
+├─ 儲存 local image / DB  
+├─ S3 / metadata  
+└─ analysis / UI progress
+
+使用你的分類的有13個 App 流程實際走法, 請都列出路徑並指出路路徑的哪一步是跟哪個防撞機制有關係特別解釋
+```
+
+可以，但 A、B、C 各有幾個重要細節需要修正。最關鍵的是：
+
+- `execute_template_point()` 的主拍照姿態會走 `_plan_motion_segments()`。
+- 但它的主姿態移動**沒有呼叫 `move_compound()`，也沒有先呼叫 `DigitalTwinGuard`**。
+- Keyence planned pose 才有獨立的 Digital Twin 檢查。
+- `_do_final_approach()`、HDR Z-stack 與部分 AF 則直接操作 Zaber。
+
+## 防撞／安全機制圖例
+
+下面 13 條路徑會用這些標記：
+
+|標記|機制|性質|
+|---|---|---|
+|`[LOCK]`|`check_safety_lock()`|Door open／E-stop 系統鎖；不是幾何防撞|
+|`[VALIDATE]`|目標範圍、whitelist、semantic、wall clearance 驗證|App/driver 額外前置檢查|
+|`[TWIN]`|`DigitalTwinGuard.predict_collision()`|最終五軸 pose 的 AABB 碰撞預測|
+|`[PLAN]`|`_plan_motion_segments()`|retract、staging、fold R_X、R_Z 順序、wall/high-risk interlock|
+|`[READBACK]`|Y/Z/R_X/R_Z 實際位置核對|防止 staging 尚未到位就旋轉|
+|`[LIMIT]`|軟體 clamp + Zaber firmware limits|單軸範圍保護，不理解多軸碰撞|
+|`[RAW]`|直接 `move_axis()`／`move_axes_absolute()`|沒有 Twin/Planner，除非 caller 先自行做|
+
+---
+
+# A. Create Template pre-capture
+
+你的寫法基本正確，但完整入口前面還有「等待 holder move」；而且五張的 `view_name` 目前全部設為 `"Front"`。
+
+```
+_start_template_pre_capture_sequence()
+├─ 如果 holder move 正在執行
+│  └─ _start_holder_move_async()
+│     └─ HolderMoveWorker.run()
+│        └─ _move_zaber_to_start_pos()
+│           └─ move_compound()                         [完整安全鏈，見流程 7]
+│
+├─ 載入 config/template_create_config.yaml
+├─ 建立 TemplatePreCaptureWorker
+└─ TemplatePreCaptureWorker.run()
+   └─ 依 front / side1 / side2 / side3 / side4
+      ├─ point_defaults_for_internalnum()
+      ├─ capture_defaults_for_internalnum()
+      ├─ 建立 hw_cfg
+      │  ├─ 五軸 pose
+      │  ├─ camera / exposure / lighting
+      │  ├─ AF 設定
+      │  └─ view_name="Front"
+      │
+      ├─ simulation
+      │  └─ _get_sim_image_by_internalnum()
+      │     └─ 無硬體運動、無防撞
+      │
+      └─ production / hybrid
+         └─ execute_template_point(hw_cfg)
+            ├─ check_safety_lock()                    [LOCK]
+            ├─ angle pose compensation
+            ├─ _plan_motion_segments()                [PLAN]
+            ├─ Zaber 執行 segments                    [LIMIT]
+            ├─ Keyence / vision / liquid-lens AF
+            │  ├─ planned Keyence 路徑可能有          [TWIN][PLAN][READBACK]
+            │  └─ 其他 AF/direct move 可能是          [RAW][LIMIT]
+            ├─ _do_final_approach()                   [RAW][LIMIT]
+            └─ camera capture
+      ├─ 套用 rotation
+      ├─ center crop
+      ├─ cv2.imwrite(...jpg)
+      ├─ step_done_signal
+      └─ finished_signal
+```
+
+程式位置：
+
+- [`_start_template_pre_capture_sequence()` (line 16836)](/D:/Provenance Project/ImagingLibWatch/App/main.py:16836)
+- [`TemplatePreCaptureWorker.run()` (line 1540)](/D:/Provenance Project/ImagingLibWatch/App/main.py:1540)
+- [`execute_template_point()` (line 8591)](/D:/Provenance Project/ImagingLibWatch/Controller/hardware_drivers/unified_driver.py:8591)
+
+防撞重點：
+
+1. `execute_template_point()` 初始移動有 `[PLAN]`，但沒有 `[TWIN]`。
+2. side1–side4 仍傳 `view_name="Front"`，所以不一定取得 `SIDE_VIEW` generic dog-leg；但 large-R_X、Strap 特殊規則仍可能依角度／semantic 觸發。
+3. 最後的 `_do_final_approach()` 是直接 XYZ move，只有 `[LIMIT]`。
+
+---
+
+# B. Create Template 點選後正式拍照
+
+你的路徑需要拆成「第一張拍照」和「下一個 capture」。
+
+`_prepare_selected_point_from_enlarge()` 只計算並保存 pose，**不會在這裡移動硬體**。
+
+## B1. 第一張 capture
+
+```
+_process_interactive_macro_click()
+├─ Stage 1：top → enlarge
+├─ Stage 2：enlarge → locked
+│  └─ _start_point_prepare_async()
+│     └─ _prepare_selected_point_from_enlarge()
+│        ├─ 解析 point / active capture / internalnum
+│        ├─ fixed internalnum：
+│        │  └─ 使用 internalnum_config pose
+│        ├─ 一般點：
+│        │  └─ _macro_click_to_target_xyz()
+│        ├─ _apply_bezel_auto_tilt_if_needed()
+│        ├─ 套用 template-side / Strap stitched pose
+│        ├─ 同步 pose 到所有 captures
+│        └─ 僅保存/鎖定 pose，不移動硬體
+│
+└─ Stage 3：locked → taken
+   └─ _start_prepared_point_capture_async()
+      └─ _execute_prepared_point_capture()
+         ├─ 解析 point / capture / internalnum
+         ├─ 判斷 Standard 或 HDR
+         ├─ 建立 canonical hw_cfg
+         ├─ 建立 focus_hardware
+         ├─ 套用 fixed pose / bezel policy
+         ├─ 判斷是否可重用 Standard focus
+         ├─ execute_template_point()                  [LOCK][PLAN][LIMIT]
+         │  ├─ Keyence planned 部分可能              [TWIN][PLAN][READBACK]
+         │  └─ final approach                         [RAW][LIMIT]
+         ├─ _save_scratch_template_image()
+         └─ 更新 _scratch_standard_focus_ready
+```
+
+## B2. 下一個 capture
+
+```
+_scratch_next_capture()
+├─ 找出 standard_captures + hdr_captures
+├─ current_scratch_capture_idx += 1
+├─ point pose 同步至下一個 capture
+├─ 如果下一個是 HDR
+│  └─ reuse_previous_focus=True
+└─ _start_prepared_point_capture_async()
+   └─ _execute_prepared_point_capture()
+      └─ 與 B1 相同
+```
+
+程式位置：
+
+- [`_process_interactive_macro_click()` (line 39576)](/D:/Provenance Project/ImagingLibWatch/App/main.py:39576)
+- [`_prepare_selected_point_from_enlarge()` (line 8172)](/D:/Provenance Project/ImagingLibWatch/App/main.py:8172)
+- [`_execute_prepared_point_capture()` (line 8487)](/D:/Provenance Project/ImagingLibWatch/App/main.py:8487)
+- [`_scratch_next_capture()` (line 15858)](/D:/Provenance Project/ImagingLibWatch/App/main.py:15858)
+
+---
+
+# C. WatchEntry 正式拍照
+
+你的路徑也正確。更完整的版本是：
+
+```
+load_camimgs(side)
+├─ capture preflight / duplicate-run guard
+├─ 建立 run_context
+└─ production / hybrid
+   └─ CaptureRoutineWorker.run()
+      └─ _capture_images_routine_internal()
+         ├─ normalize template internalnums
+         ├─ 建立 raw/output/analysis directories
+         ├─ local_db.start_watch_run()
+         ├─ _watchpoint_execution_order()
+         └─ 對每個 watch point
+            ├─ normalization：
+            │  ├─ point pose
+            │  ├─ camera / AF / lighting
+            │  ├─ internalnum1 / internalnum2
+            │  └─ capture defaults
+            ├─ 分出 standard_captures / hdr_captures
+            ├─ local_db.start_point_instance()
+            └─ 對每個 capture
+               ├─ 建立 canonical hw_cfg
+               ├─ 合併 focus_hardware
+               ├─ 套用 WatchShift correction
+               ├─ 套用 bezel / capture policy
+               ├─ HDR 判斷 reuse Standard focus
+               ├─ execute_template_point(hw_cfg)      [LOCK][PLAN][LIMIT]
+               │  ├─ Keyence planned pose            [TWIN][PLAN][READBACK]
+               │  └─ final approach                  [RAW][LIMIT]
+               ├─ HDR fusion
+               ├─ 寫入暫存 PNG
+               ├─ local_db.start_capture_instance()
+               ├─ process_and_sync_raw_image()
+               │  ├─ local image
+               │  ├─ S3
+               │  └─ metadata
+               ├─ register_image_asset()
+               ├─ record_capture_image_result()
+               ├─ analysis tasks
+               └─ step_done_signal → UI progress
+```
+
+程式位置：
+
+- [`load_camimgs()` (line 31355)](/D:/Provenance Project/ImagingLibWatch/App/main.py:31355)
+- [`CaptureRoutineWorker.run()` (line 1493)](/D:/Provenance Project/ImagingLibWatch/App/main.py:1493)
+- [`_capture_images_routine_internal()` (line 31780)](/D:/Provenance Project/ImagingLibWatch/App/main.py:31780)
+
+防撞重點與 A/B 相同：正式拍照初始 pose 有 planner，但沒有先做 Digital Twin。
+
+---
+
+# 4. Standard／HDR capture 內部路徑
+
+這不是另一個獨立 UI 入口，而是 A、B、C 最後都可能進入的內部 branch。
+
+## Standard
+
+```
+execute_template_point()
+├─ check_safety_lock()                               [LOCK]
+├─ 解析 capture/focus pose
+├─ _apply_angle_pose_compensation()
+├─ 判斷 is_same_pos / skip_xyz_move
+├─ 若需要定位
+│  ├─ _plan_motion_segments()                       [PLAN]
+│  └─ move_axis / move_axes_absolute                [LIMIT]
+├─ autofocus
+├─ _do_final_approach()                             [RAW][LIMIT]
+└─ cam.capture_image()
+```
+
+## HDR 重用 Standard focus
+
+```
+Standard capture 成功
+└─ 記錄 Standard focus ready
+
+HDR capture
+├─ configure_hdr_reuse_standard_focus()
+├─ reuse_previous_focus=True
+├─ skip_xyz_move=True
+├─ 不重新做主要 XYZ/AF
+└─ _capture_and_fuse_hdr_v2()
+```
+
+## HDR 有 `z_positions`
+
+```
+_capture_and_fuse_hdr_v2()
+└─ 對每個 HDR bucket
+   ├─ 若要求 AF 且 Z bucket 改變
+   │  └─ 遞迴 execute_template_point(frame_cfg)
+   ├─ 否則
+   │  └─ zaber.move_axis(stage_L_Z, z_target)        [RAW][LIMIT]
+   ├─ camera capture
+   └─ 最後 restore Z                                [RAW][LIMIT]
+```
+
+重要風險：HDR Z-stack 的直接 Z 移動沒有 `[TWIN]`、`[PLAN]` 或獨立 `[LOCK]`。
+
+---
+
+# 5. Control panel 手動五軸移動
+
+```
+Control UI axis/pose action
+└─ _move_control_pose()
+   ├─ _control_edit_allowed()
+   ├─ 讀取現有五軸 pose
+   ├─ 合併 requested pose
+   ├─ _clamp_control_pose_to_limits()                [VALIDATE]
+   └─ background move_job()
+      └─ driver.move_compound()
+         ├─ check_safety_lock()                      [LOCK]
+         ├─ 讀取目前五軸
+         ├─ DigitalTwinGuard final target            [TWIN]
+         ├─ _plan_motion_segments()                  [PLAN]
+         ├─ Strap rotation readback，條件式          [READBACK]
+         └─ Zaber                                    [LIMIT]
+```
+
+位置：[`_move_control_pose()` (line 26454)](/D:/Provenance Project/ImagingLibWatch/App/main.py:26454)。
+
+這是較完整的安全鏈。
+
+---
+
+# 6. Control panel Go Home
+
+```
+_ctrl_action(action="go_home")
+├─ _resolve_control_home_pose()
+│  ├─ 優先 current template home point
+│  └─ fallback hardware.zaber.home_positions
+└─ _move_control_pose(reason="<profile>_home")
+   └─ move_compound()                                [LOCK][TWIN][PLAN][READBACK][LIMIT]
+```
+
+位置：[`_ctrl_action()` (line 27061)](/D:/Provenance Project/ImagingLibWatch/App/main.py:27061)。
+
+Home 在此是 configured/template pose，不是 `ZaberManager.home_axis()` 的機械歸零。
+
+---
+
+# 7. Holder／放置手錶位置
+
+```
+_start_holder_move_async()
+└─ HolderMoveWorker.run()
+   └─ _move_zaber_to_start_pos()
+      ├─ 讀取 hardware.zaber.start_position
+      │
+      ├─ macro_cam_2
+      │  └─ _move_zaber_to_safe_strap_pose()
+      │     └─ move_compound()                       [LOCK][TWIN][PLAN][READBACK][LIMIT]
+      │
+      └─ macro_cam_1 Strap pipeline
+         └─ _strap_macro1_transition_to_pose()
+            ├─ _strap_macro1_validate_pose()         [VALIDATE]
+            ├─ build_safe_transition_waypoints()     [VALIDATE]
+            └─ 每個 waypoint
+               ├─ 確認 rotation 僅在 safe Y/Z        [VALIDATE]
+               ├─ R_Z 前要求 R_X=0                  [VALIDATE]
+               ├─ _strap_macro1_safe_compound_move()
+               │  └─ move_compound()                 [LOCK][TWIN][PLAN][READBACK][LIMIT]
+               └─ 五軸 waypoint readback             [READBACK]
+```
+
+設定：
+
+```
+hardware.zaber.start_position:
+  x: 0
+  y: 292
+  z: 150
+  r_x: 0
+  r_z: 0
+```
+
+這是目前安全機制最完整的 App 移動之一。
+
+---
+
+# 8. 移到 Watch Center
+
+```
+_move_zaber_to_center_pos()
+├─ _zaber_center_position_from_config()
+│  └─ hardware.zaber.home_positions.watch
+│
+├─ macro_cam_2
+│  └─ _move_zaber_to_safe_strap_pose()
+│     └─ move_compound()                             [LOCK][TWIN][PLAN][READBACK][LIMIT]
+│
+└─ macro_cam_1
+   └─ _strap_macro1_transition_to_pose()
+      └─ 安全 waypoints + move_compound              [VALIDATE][LOCK][TWIN][PLAN][READBACK][LIMIT]
+```
+
+位置：[`_move_zaber_to_center_pos()` (line 9347)](/D:/Provenance Project/ImagingLibWatch/App/main.py:9347)。
+
+---
+
+# 9. App Exit cleanup
+
+Exit 是混合路徑。
+
+```
+closeEvent()
+└─ _move_zaber_to_home_on_exit()
+   ├─ 取得 Zaber motion lock
+   ├─ _move_zaber_to_strap_safe_retract()
+   │  ├─ driver.check_safety_lock()                  [LOCK]
+   │  ├─ move_axis(Y=safe_y)                         [RAW][LIMIT]
+   │  ├─ move_axis(Z=safe_z)                         [RAW][LIMIT]
+   │  ├─ Y/Z readback                                [READBACK]
+   │  ├─ move_axis(R_X=0)                            [RAW][LIMIT]
+   │  ├─ R_X readback                                [READBACK]
+   │  ├─ move_axis(R_Z=0)                            [RAW][LIMIT]
+   │  └─ 最終 Y/Z/R_X/R_Z readback                   [READBACK]
+   │
+   └─ safe retract 成功後
+      └─ driver.move_compound(home pose)
+         └─                                           [LOCK][TWIN][PLAN][LIMIT]
+```
+
+注意：safe retract 雖然順序保守且有 readback，但沒有 `[TWIN]` 或 `[PLAN]`。
+
+---
+
+# 10. Keyence planned probe pose
+
+```
+AF / Keyence caller
+└─ _execute_keyence_planned_pose()
+   ├─ _validate_keyence_direct_target()              [VALIDATE]
+   ├─ check_safety_lock()                            [LOCK]
+   ├─ Strap target：
+   │  └─ _move_to_strap_keyence_staging()
+   │     └─ 安全 Y/Z staging + readback              [PLAN][READBACK]
+   ├─ 讀取目前五軸
+   ├─ DigitalTwinGuard.predict_collision()           [TWIN]
+   ├─ _plan_motion_segments()                        [PLAN]
+   ├─ rotation 前：
+   │  ├─ _verify_strap_rotation_staging()            [READBACK]
+   │  └─ _verify_strap_rz_fold_readback()            [READBACK]
+   ├─ Zaber 執行 segments                            [LIMIT]
+   └─ 最終 pose readback                             [READBACK]
+```
+
+位置：[`_execute_keyence_planned_pose()` (line 3296)](/D:/Provenance Project/ImagingLibWatch/Controller/hardware_drivers/unified_driver.py:3296)。
+
+這條路徑比 `execute_template_point()` 的主姿態移動更完整，因為它明確包含 `[TWIN]` 和 Strap readback。
+
+---
+
+# 11. Final focus approach
+
+```
+execute_template_point()
+└─ _do_final_approach(target_x, target_y, target_z)
+   ├─ apply default motion profile
+   ├─ final_approach.enable=False
+   │  └─ move_axes_absolute_ordered(X,Y,Z)            [RAW][LIMIT]
+   │
+   └─ final_approach.enable=True
+      ├─ 移到 near pose                               [RAW][LIMIT]
+      ├─ apply capture motion profile
+      ├─ 移到 final pose                              [RAW][LIMIT]
+      └─ restore default profile
+```
+
+位置：[`_do_final_approach()` (line 4426)](/D:/Provenance Project/ImagingLibWatch/Controller/hardware_drivers/unified_driver.py:4426)。
+
+它沒有：
+
+- `[TWIN]`
+- `[PLAN]`
+- 自己的 `check_safety_lock()`
+- 一般情況下的 final pose readback gate
+
+它依賴前面流程已經把機器移到接近安全位置，以及 Zaber `[LIMIT]`。但 near/final XYZ 是新的多軸命令，因此仍是重要殘餘風險。
+
+---
+
+# 12. AF scan／Keyence XY／Side-Zaber 路徑
+
+這一類是混合的，不能統一說都走 `move_compound()`。
+
+## Side-Zaber liquid AF 的 Y scan
+
+```
+_run_side_zaber_liquid_lens_autofocus()
+└─ _move_to_y()
+   ├─ check_safety_lock()                            [LOCK]
+   └─ move_compound(target_y=...)
+      └─                                             [TWIN][PLAN][READBACK][LIMIT]
+```
+
+## 新式 Keyence planned pose
+
+```
+_af_keyence_absolute() / angle-aware route
+└─ _execute_keyence_planned_pose()
+   └─                                             [VALIDATE][LOCK][TWIN][PLAN][READBACK][LIMIT]
+```
+
+## 舊式／fallback Keyence XY
+
+```
+run_robust_autofocus() / fallback branch
+├─ check_safety_lock()                              [LOCK，僅入口]
+├─ move_axis(stage_L_X, keyence_x)                  [RAW][LIMIT]
+├─ move_axis(stage_L_Y, keyence_y)                  [RAW][LIMIT]
+├─ Keyence read
+└─ move_axis 回 camera/base pose                    [RAW][LIMIT]
+```
+
+因此「AF 有移動」不代表一定具備 Twin/Planner。要看它走 `_execute_keyence_planned_pose()`、`move_compound()`，還是直接 `move_axis()`。
+
+---
+
+# 13. Simulation `move_compound`
+
+```
+SimulationHardware.move_compound(position_list)
+├─ logger
+├─ time.sleep(0.5)
+└─ return
+```
+
+沒有：
+
+- 真正五軸位置 state
+- `[LOCK]`
+- `[TWIN]`
+- `[PLAN]`
+- `[READBACK]`
+- `[LIMIT]`
+
+位置：[simulation_driver.py (line 74)](/D:/Provenance Project/ImagingLibWatch/Controller/hardware_drivers/simulation_driver.py:74)。
+
+所以 simulation 可以測 UI、資料、影像與流程，但不能驗證運動防撞邏輯。
+
+---
+
+# 13 條路徑的安全覆蓋總表
+
+|#|流程|LOCK|TWIN|PLAN|READBACK|LIMIT|
+|---|---|---|---|---|---|---|
+|1|Template pre-capture|✓|僅 Keyence 子路徑|✓|僅特定子路徑|✓|
+|2|Template 正式點拍|✓|僅 Keyence 子路徑|✓|僅特定子路徑|✓|
+|3|WatchEntry 正式拍照|✓|僅 Keyence 子路徑|✓|僅特定子路徑|✓|
+|4|Standard/HDR|✓|部分|部分|部分|✓|
+|5|Control 五軸 move|✓|✓|✓|Strap 條件式|✓|
+|6|Control Go Home|✓|✓|✓|Strap 條件式|✓|
+|7|Holder／放錶|✓|✓|✓|✓|✓|
+|8|Watch Center|✓|✓|✓|✓|✓|
+|9|Exit cleanup|✓|最後一段|最後一段|safe retract 有|✓|
+|10|Keyence planned pose|✓|✓|✓|✓|✓|
+|11|Final approach|間接|✗|✗|通常無|✓|
+|12|AF／Keyence scan|混合|混合|混合|混合|✓|
+|13|Simulation|✗|✗|✗|✗|✗|
+
+## 最需要特別注意的三點
+
+1. `execute_template_point()` 不是 `move_compound()` 的完整等價替代  
+    它使用 planner，但主拍照 target 沒有 Digital Twin，執行 rotation segments 時也沒有 `move_compound()` 那套完整 Strap readback wrapper。
+    
+2. Digital Twin 目前 box dimensions 都是 0  
+    [hardware_config.yaml (line 110)](/D:/Provenance Project/ImagingLibWatch/config/hardware_config.yaml:110) 中 `platform_box`、`macro_box`、`micro_box` 都是零尺寸，因此即使路徑標記 `[TWIN]`，目前幾何碰撞模型的實際保護力仍很弱。
+    
+3. Planner 與 axis limits 是不同層次  
+    `_plan_motion_segments()` 能理解安全順序、Strap wall、R_X/R_Z hazard；Zaber limits 只知道單一軸是否超出 X/Y/Z/R_X/R_Z 範圍，無法判斷五軸組合碰撞。
+
+
+
+
+
+```
+這是現有的保護機制, 請更詳細解釋"R_X/R_Z interlock", "Strap 高風險","Strap 白名單", "Strap 牆面包絡", "讀回確認"這幾個Strap相關現有保護機制的差別在哪裡? 是否觸發的條件不同? 如果我想要結合成1 or 2重要strap 保護機制就好 是否建議以及應該怎麼合併? 以及我是否可以把這幾條重要strap 保護機制放在config用參數或其他方式控制, 當要修改就不需要改code只要改config 先提供分析建議不要改code
+
+|層級|定義與作用|
+|---|---|
+|軸行程限制|X `0–435 mm`、Y `0–292 mm`、Z `0–150 mm`、R_X `0–90°`。程式會 clamp，連線後也會寫入 Zaber 韌體 `limit.min/max`。|
+|R_Z 轉動|`rotate_z_limit: []` 表示連續軸；程式會選擇最短等效角度旋轉，避免不必要多圈，但沒有機械纜線扭轉/圈數上限。|
+|運動平滑|linear/rotation motion profiles 限制速度、加減速與 S-curve，降低慣性撞擊，但本身不是碰撞偵測。|
+|一般安全路徑|Side/Crown 等路徑先移到 `safe_retract_z`（watch 為 20 mm；box 為 10 mm），再平移/旋轉，最後回目標 Z。|
+|R_X/R_Z interlock|觸發條件包含大角度 R_X、R_Z 穿越危險角、XY 大位移等；會先退 Z、把 R_X 收至 `0°`、完成 R_Z/XY、再恢復 R_X。|
+|Strap 高風險|R_X ≥ 30° 且 R_Z 接近/穿越 90° 或 270° 時，強制至 Y=160、Z=70 的已驗證避讓姿態；先折回 R_X=0°，再轉 R_Z，最後才接近目標。|
+|Strap 白名單|`4029–4032` 必須同時匹配完整五軸姿態才允許，並經由 Y=160/Z=70 進出。|
+|Strap 牆面包絡|以 200 mm Strap、Y=0 牆面、30 mm 最小淨空估算；在 R_X > 30° 時拒絕端點會進入危險區的目標。|
+|讀回確認|Strap 每個涉及旋轉的 segment 前，都會讀回 Y/Z；R_Z 旋轉前還會確認 R_X 已折回安全角度。|
+|門禁 E-stop|MQTT 收到 `DI0 = 0` 時，鎖定系統、停止所有 Zaber 軸、關燈、停相機；必須手動 reset 才可恢復。|
+```
+可以整合，但我不建議把五種保護「刪到只剩一個判斷」。它們其實負責不同安全問題：
+
+- 安全終點：這個目標姿態本身能不能存在？
+- 安全路徑：從目前姿態怎麼走到目標？
+- 執行確認：硬體是否真的到達安全中繼點？
+
+最好的簡化方式是：**對外只有一個 Strap motion safety 入口，內部保留兩層機制**：
+
+1. `Strap Target Validator`：牆面包絡＋精確姿態例外白名單。
+2. `Strap Transition Guard`：統一 R_X/R_Z staging 路徑＋讀回確認。
+
+---
+
+# 一、五種現有機制的差別
+
+| 機制                   | 回答的安全問題                                        | 結果                                |
+| -------------------- | ---------------------------------------------- | --------------------------------- |
+| 一般 R_X/R_Z interlock | 這次運動是否要改走安全 dog-leg？                           | 產生安全 segments                     |
+| Strap 高風險            | Strap 展開且靠近 90°/270° 時，要不要走更保守的 Y=160/Z=70 路線？ | 產生更保守 segments，或拒絕 final approach |
+| Strap 白名單            | 某個一般幾何規則可能不允許的特殊姿態，是否已人工驗證？                    | 精確匹配才允許，否則拒絕                      |
+| Strap 牆面包絡           | Strap 最終端點是否會太靠近 Y=0 牆？                        | 不安全就直接拒絕                          |
+| 讀回確認                 | 軟體以為已到 safe Y/Z/R_X，但硬體真的到了嗎？                  | 不符合就拒絕下一個旋轉命令                     |
+
+所以：
+
+- Interlock／高風險是「路徑規劃」。
+- 白名單／牆面包絡是「終點准入」。
+- 讀回確認是「執行階段驗證」。
+
+它們不是完全重複。
+
+---
+
+# 二、一般 R_X/R_Z interlock
+
+## 觸發條件
+
+目前 `should_apply_rotation_interlock` 大致要求全部成立：
+
+```
+rotation_interlock.enable = true
+AND 這次被視為適用的 fixture/view
+AND max(|current R_X|, |target R_X|) >= rx_side_threshold
+AND 存在明顯姿態變化
+AND current R_Z → target R_Z 的最短路徑經過 hazard window
+```
+
+「明顯姿態變化」包括任一項：
+
+```
+XY distance >= xy_delta_threshold_mm
+OR R_Z delta >= rz_delta_threshold_deg
+OR R_X delta >= rx_delta_threshold_deg
+```
+
+目前 watch profile 主要參數：
+
+```
+rx_side_threshold_deg: 30
+rx_delta_threshold_deg: 5
+rz_delta_threshold_deg: 30
+xy_delta_threshold_mm: 0.5
+rz_hazard_angles_deg: [90, 270]
+rz_hazard_window_deg: 20
+safe_rx_deg: 0
+```
+
+因此典型 hazard window 是：
+
+```
+R_Z 70°–110°
+R_Z 250°–290°
+```
+
+而且它判斷的是 R_Z 的**最短旋轉路徑**，不是只看最終 R_Z。
+
+## 產生的路徑
+
+一般 interlock 是：
+
+```
+必要時 Z → safe_retract_z
+R_X → 0°
+R_Z + XY → target
+R_X → target
+Z → target
+```
+
+watch 的一般 `safe_retract_z` 是 20 mm，不是 Strap 的 Y=160/Z=70。
+
+## 和 `large_rx_transition` 的關係
+
+目前實際上還有一個優先級較高的：
+
+```
+large_rx_transition:
+  activation_rx_deg: 30
+  rx_delta_threshold_deg: 5
+  safe_y_mm: 160
+  safe_z_mm: 70
+```
+
+只要：
+
+```
+watch fixture
+AND R_X 變化 >= 5°
+AND current/target R_X 最大值 > 30°
+```
+
+就可能直接走 `large_rx_transition`，不需要 R_Z 經過 90°/270°。
+
+所以目前你稱作「R_X/R_Z interlock」的部分，實際包含兩個概念：
+
+1. Large R_X transition：R_X 大幅變化就 staging。
+2. Generic rotation interlock：R_X 已高角度且 R_Z 路徑經 hazard 才 staging。
+
+這也是目前邏輯顯得複雜的來源之一。
+
+---
+
+# 三、Strap 高風險 interlock
+
+## 觸發條件
+
+`strap_high_risk_motion` 大致要求：
+
+```
+strap_high_risk_interlock.enable = true
+AND 上層 rotation_interlock.enable = true
+AND semantic target 被辨識為 Strap
+AND max(|current R_X|, |target R_X|) >= 30°
+AND 存在旋轉、位移或 Y 不在 safe 區
+AND current/target/path 的 R_Z 接近 90° 或 270°
+```
+
+目前參數：
+
+```
+rx_threshold_deg: 30
+rz_hazard_angles_deg: [90, 270]
+rz_hazard_window_deg: 20
+safe_y_mm: 160
+safe_z_mm: 70
+fold_rx_during_rz: true
+require_final_approach_whitelist: true
+```
+
+和一般 interlock 最大的不同是：
+
+- 只針對 Strap semantic target。
+- 同時考慮 current R_Z、target R_Z 和中間 R_Z path。
+- 使用 Y=160/Z=70，而不是一般 watch `safe_retract_z=20`。
+- R_Z 旋轉前強制把 R_X 收回 0°。
+- 最後進入低 Y、高 R_X、hazard R_Z 的姿態時，可能需要額外授權。
+
+## 路徑
+
+```
+Y → 160
+Z → 70
+R_X → 0
+R_Z → target
+R_X → target
+X → target
+Z → target
+Y → target
+```
+
+Y 最後才接近目標，是為了讓長 Strap 在旋轉完成後才接近牆面／fixture。
+
+## `require_final_approach_whitelist` 的命名問題
+
+這個名稱容易和 `validated_targets: 4029–4032` 混淆。
+
+目前它實際檢查的是 caller 傳入：
+
+```
+allow_high_risk_final_approach=True
+```
+
+或：
+
+```
+strap_high_risk_final_approach=True
+```
+
+它**不是直接查詢 4029–4032 的白名單 map**。
+
+因此現有程式中其實有兩種「白名單」：
+
+1. `validated_targets`：internalnum＋精確五軸 pose 白名單。
+2. `allow_high_risk_final_approach`：caller 傳入的 boolean permission。
+
+我建議未來移除第二種 caller boolean，統一由安全 config 的命名例外規則決定，不應由任一 caller 自行聲稱「這次可以進高風險終點」。
+
+---
+
+# 四、Strap 精確姿態白名單
+
+目前是：
+
+```
+strap_special_staging:
+  validated_targets:
+    '4029': {完整五軸 pose}
+    '4030': {完整五軸 pose}
+    '4031': {完整五軸 pose}
+    '4032': {完整五軸 pose}
+```
+
+## 觸發條件
+
+只要 `semantic_target.internalnum1` 命中其中一個 key，就會進入特殊白名單處理。
+
+但不只 internalnum 要相同，還需要：
+
+```
+X/Y/Z 誤差 <= axis_tolerance_mm，目前 0.05 mm
+R_X/R_Z 誤差 <= angle_tolerance_deg，目前 0.5°
+semantic 必須被識別為 Strap
+```
+
+只要 internalnum 命中但 pose 不吻合，直接拒絕。
+
+例如：
+
+```
+internalnum1=4032
+但 X/Y/Z/R_X/R_Z 任一值不是 config 中的驗證值
+→ reject
+```
+
+## 路徑
+
+特殊點也走：
+
+```
+Y → 160
+Z → 70
+必要時 R_X → 0
+R_Z → target
+R_X → target
+X → target
+Z → target
+Y → target
+```
+
+離開特殊點時，也會先辨識目前 pose 是否等於白名單 pose；如果是，會先退出到 safe Y/Z，再遞迴規劃下一段。
+
+## 與牆面包絡的關係
+
+特殊白名單的優先序比牆面包絡高：
+
+```
+special whitelist
+→ wall envelope
+→ large/high-risk/general interlock
+```
+
+白名單命中後 `_plan_motion_segments()` 直接回傳特殊 route，因此後面的 wall envelope 不會再執行。
+
+這代表白名單本質上是：
+
+> 這個姿態可能不符合一般保守模型，但已經人工實測，所以允許作為精確例外。
+
+例如 4032：
+
+```
+Y=63
+R_Z=270
+half length=100
+```
+
+一般牆面公式會算成：
+
+```
+63 - 100 × |sin(270°)| = -37 mm
+```
+
+一定會被牆面包絡拒絕；但因 4032 是精確人工驗證姿態，會在牆面檢查前走特殊 route。
+
+所以白名單不能簡單刪除併入 wall envelope，除非新幾何模型能準確描述這些特殊實際配置。
+
+---
+
+# 五、Strap 牆面包絡
+
+這是「最終 target rejection」，不是路徑 planner。
+
+## 觸發條件
+
+```
+strap_wall_envelope.enable = true
+AND semantic target 是 Strap
+AND |target R_X| >= rx_threshold_deg，目前 30°
+```
+
+接著計算：
+
+```
+clearance =
+    target_Y
+    - wall_Y
+    - strap_half_length × |sin(target_R_Z)|
+```
+
+目前：
+
+```
+wall_y_mm: 0
+strap_half_length_mm: 100
+minimum_clearance_mm: 30
+rx_threshold_deg: 30
+tolerance_mm: 0.05
+```
+
+如果：
+
+```
+clearance <= 30.05 mm
+```
+
+就拒絕。
+
+## 例子
+
+R_Z=0° 或 180°：
+
+```
+sin(R_Z)=0
+clearance = Y
+所以 Y 必須 > 30.05
+```
+
+R_Z=90° 或 270°：
+
+```
+|sin(R_Z)|=1
+clearance = Y - 100
+所以 Y 必須 > 130.05
+```
+
+R_Z=45°：
+
+```
+clearance ≈ Y - 70.71
+所以 Y 必須 > 100.76
+```
+
+## 這個模型的限制
+
+它只是保守的平面幾何估算：
+
+- 只看最終 target，不檢查中間路徑。
+- Strap 被當成固定半長的直線。
+- 沒有考慮 Strap 彎曲、厚度、錶頭、扣件或 fixture。
+- R_X 只作為啟動門檻，公式沒有使用 R_X 投影。
+- 不會判斷相機、光源或其他機構碰撞。
+
+但是它的優點是簡單、可解釋，而且能在任何馬達命令之前拒絕明顯不安全的終點。
+
+另外 caller 可以傳入：
+
+```
+strap_half_length_mm
+strap_minimum_wall_clearance_mm
+```
+
+但程式只允許讓它們變得更保守：
+
+```
+effective value = max(config value, caller value)
+```
+
+caller 不能把全域限制降低。
+
+---
+
+# 六、讀回確認
+
+讀回確認不是碰撞模型，而是確認安全前置條件真的成立。
+
+## `move_compound()` 中的觸發條件
+
+目前並不是「每個 Strap rotation segment 都檢查」。
+
+只有同時符合：
+
+```
+segment.type == COMPOUND
+AND segment 包含 R_X 或 R_Z
+AND semantic target 是 Strap
+AND segment.strap_rotation_staging_required == true
+AND readback 顯示確實存在 rotation delta
+```
+
+才會執行。
+
+## 檢查內容
+
+旋轉 R_X/R_Z 前：
+
+```
+讀回 Y 是否等於 safe_y
+讀回 Z 是否等於 safe_z
+```
+
+R_Z 前，如果 segment 包含：
+
+```
+strap_rz_requires_rx_deg = 0
+```
+
+還會讀回：
+
+```
+R_X 是否確實已到 0°
+```
+
+不吻合就不送出下一個旋轉命令。
+
+## 現有覆蓋缺口
+
+讀回目前不是全域一致的：
+
+- `move_compound()`：只有帶 staging flag 的 segment 才檢查。
+- `_execute_keyence_planned_pose()`：有自己的 Strap staging/readback。
+- macro_cam_1 Strap transition：每個 waypoint 後會做完整五軸 readback，最完整。
+- `execute_template_point()` 主 segment loop：沒有完全共用 `move_compound()` 的 rotation readback wrapper。
+- `_do_final_approach()`：通常沒有 final pose gate。
+- 一般 generic fixture interlock segments 沒有都設 `strap_rotation_staging_required`。
+- `move_compound()` 一般是旋轉前檢查，不是每一段執行後都驗證最終位置。
+
+因此你原表格這句：
+
+> Strap 每個涉及旋轉的 segment 前，都會讀回 Y/Z
+
+應修正成：
+
+> 經 `move_compound()` 或 Keyence 特定安全路徑執行、且被 planner 標為需要 Strap staging 的實際旋轉 segment，會在旋轉前讀回 Y/Z；R_Z 前還可驗證 R_X。其他直接執行 planner 或 Zaber 的路徑未必涵蓋。
+
+---
+
+# 七、目前實際優先順序
+
+目前 `_plan_motion_segments()` 的核心優先順序可以理解為：
+
+````
+```mermaid
+flowchart TD
+    A["Strap target"] --> B{"internalnum 命中 4029–4032？"}
+    B -->|是| C["精確五軸白名單驗證"]
+    C --> D["特殊 staging route"]
+    B -->|否| E{"由特殊點離開？"}
+    E -->|是| F["先退出到 Y=160 / Z=70"]
+    E -->|否| G{"Strap Keyence transition？"}
+    G -->|是| H["特殊 staging route"]
+    G -->|否| I["牆面包絡終點檢查"]
+    I --> J{"Strap high-risk？"}
+    J -->|是| K["高風險 staging route"]
+    J -->|否| L{"Large R_X transition？"}
+    L -->|是| M["Large R_X staging route"]
+    L -->|否| N{"Generic R_X/R_Z interlock？"}
+    N -->|是| O["一般 retract/fold/rotate route"]
+    N -->|否| P["一般 view dog-leg"]
+```
+````
+
+這個順序會影響結果。例如特殊白名單命中後，wall/high-risk 就不再執行。
+
+---
+
+# 八、建議合併成兩個機制
+
+## 機制一：Strap Target Validator
+
+負責回答：
+
+> 目標姿態是否允許？
+
+內部合併：
+
+- 軸 limits 的前置 target validation。
+- Strap wall envelope。
+- 精確人工驗證例外。
+- internalnum／完整五軸 pose 一致性。
+- target semantic 必須明確是 Strap。
+
+建議結果只有三種：
+
+```
+ALLOW_GENERAL
+ALLOW_VALIDATED_EXCEPTION
+REJECT
+```
+
+白名單不再是一套獨立 planner，只是 validator 的「精確例外資料」。
+
+例如：
+
+```
+一般 target
+→ 必須通過 wall envelope
+
+4029–4032
+→ internalnum＋五軸 pose 精確匹配
+→ 標記為 VALIDATED_EXCEPTION
+→ 可以略過一般 wall formula
+→ 但仍必須走特殊安全 route
+```
+
+不建議繼續讓 caller 傳：
+
+```
+allow_high_risk_final_approach=True
+```
+
+caller 應只能提供：
+
+```
+motion_domain=strap
+internalnum=4032
+target pose=...
+```
+
+是否例外應完全由 validator 和 config 判定。
+
+## 機制二：Strap Transition Guard
+
+負責回答：
+
+> 已允許的 target 要怎麼安全到達？硬體是否真的照路徑到達？
+
+內部合併：
+
+- Generic R_X/R_Z interlock。
+- Large R_X transition。
+- Strap high-risk route。
+- safe Y/Z staging。
+- R_X fold。
+- segment 前後 readback。
+- final pose readback。
+
+推薦一條 canonical route：
+
+```
+1. 讀取 current pose
+2. 必要時 Y → safe transit Y
+3. 必要時 Z → safe transit Z
+4. 驗證 Y/Z readback
+5. 若要轉 R_Z，先 R_X → safe R_X
+6. 驗證 R_X readback
+7. R_Z → target
+8. 驗證 R_Z readback
+9. R_X → target
+10. 驗證 R_X readback
+11. X → target
+12. Z → target
+13. Y → target
+14. 驗證完整 final pose
+```
+
+如此不再需要三套非常相似的：
+
+- generic interlock route
+- large-R_X route
+- high-risk route
+
+它們可以變成同一 route 的不同觸發級別。
+
+---
+
+# 九、要使用保守或最佳化模式？
+
+建議 config 提供兩種命名 policy，而不是保留大量相互重疊的 boolean。
+
+## Conservative，建議 production 起始值
+
+```
+任何 R_Z 變化
+OR 任何明顯 R_X 變化
+OR R_X 已展開時的 XY 移動
+→ 一律先到 Y=160/Z=70
+```
+
+優點：
+
+- 邏輯簡單。
+- 比較容易證明安全。
+- 不依賴 90°/270° hazard 判斷是否正確。
+- 讀回規則一致。
+
+缺點：
+
+- 移動時間增加。
+- 很小的 X tile move 也可能多走 staging。
+
+## Optimized
+
+允許經驗證的快速例外，例如：
+
+```
+只移動 X
+AND Y/Z/R_X/R_Z 都不變
+AND R_Z 接近 0° 或 180°
+AND wall envelope 通過
+→ 保持 R_X，不進 staging
+```
+
+目前已有 `strap_x_only_keep_rx_at_rz_0_180` 的概念，可以保留為 optimization，但必須：
+
+- 有完整測試。
+- 只能縮短路徑，不能略過 target validator。
+- 仍需 final X readback。
+- production 預設應先使用 conservative。
+
+---
+
+# 十、哪些應該放 config，哪些不應該？
+
+可以讓未來校正主要透過 config，但不是所有安全邏輯都適合變成可自由修改的參數。
+
+## 適合放 config
+
+這些是設備校正資料：
+
+```
+safe_transit_y_mm
+safe_transit_z_mm
+safe_rx_deg
+deployed_rx_threshold_deg
+hazard_angles_deg
+hazard_window_deg
+axis_tolerance_mm
+angle_tolerance_deg
+wall_y_mm
+strap_half_length_mm
+minimum_wall_clearance_mm
+validated_exception_poses
+x_only_optimization
+```
+
+## 應固定在 code 的安全 invariant
+
+這些不建議讓 YAML 任意重排：
+
+```
+不安全 target 必須 fail closed
+R_Z 旋轉前必須驗證 R_X 已折回
+旋轉前必須驗證 safe Y/Z
+人工例外必須匹配完整五軸 pose
+target validator 必須在任何 motion 之前執行
+每段失敗不得繼續執行下一段
+invalid/missing config 在 production 必須拒絕運動
+```
+
+例如不建議讓使用者在 YAML 寫任意：
+
+```
+move_order: [R_Z, Y, R_X, Z]
+```
+
+因為一個順序錯誤就可能取消整個防撞保證。應讓 config 只能選擇經 code 定義和測試的 named policy：
+
+```
+transition_policy: conservative
+```
+
+或：
+
+```
+transition_policy: validated_optimized
+```
+
+---
+
+# 十一、建議的新 config 結構
+
+以下只是架構建議，不是目前已實作格式：
+
+```
+strap_safety:
+  version: 1
+  enforcement: production_fail_closed
+
+  identification:
+    require_explicit_motion_domain: true
+
+  transit_pose:
+    y_mm: 160.0
+    z_mm: 70.0
+    safe_rx_deg: 0.0
+
+  target_validator:
+    wall_envelope:
+      enabled: true
+      wall_y_mm: 0.0
+      strap_half_length_mm: 100.0
+      minimum_clearance_mm: 30.0
+      deployed_rx_threshold_deg: 30.0
+      tolerance_mm: 0.05
+
+    validated_exceptions:
+      "4029":
+        pose:
+          x: 327.512
+          y: 164.001
+          z: 74.213
+          rx: 90.0
+          rz: 90.0
+        route_profile: validated_exception
+        reason: manually_validated_reference_pose
+
+  transition_guard:
+    policy: conservative
+    deployed_rx_threshold_deg: 30.0
+    rotation_delta_threshold_deg: 0.5
+
+    hazards:
+      rz_angles_deg: [90.0, 270.0]
+      window_deg: 20.0
+
+    optimization:
+      allow_x_only_at_rz_0_180: false
+
+  readback:
+    before_rotation: true
+    after_each_rotation: true
+    after_each_translation: true
+    verify_final_pose: true
+    axis_tolerance_mm: 0.05
+    angle_tolerance_deg: 0.5
+```
+
+---
+
+# 十二、只改 config 能不能完成這次合併？
+
+**目前不行。**
+
+目前很多數值已經 config-driven，但以下仍寫死在 code：
+
+- 規則優先順序。
+- generic／large-RX／high-risk 三套 route 的分支。
+- wall envelope 公式。
+- special whitelist 先於 wall envelope 的行為。
+- 哪些 segments 具有 readback flag。
+- 哪些 caller 可以傳 high-risk permission。
+- `execute_template_point()`、final approach、HDR、AF 等不同運動入口。
+- semantic target 的部分字串判斷。
+- readback 對 `strap_special_staging` config 的耦合。
+
+因此需要一次初始 refactor，把所有 Strap 運動導向單一 safety API。完成後，大部分物理參數和白名單才可以只改 config。
+
+目前還有兩份容易混淆的設定：
+
+```
+hardware.zaber.strap_rotation_interlock
+hardware.zaber.fixture.profiles.watch.motion_safety.rotation_interlock
+```
+
+profile 內的設定通常優先，外層主要是 fallback。未來應統一成單一 `strap_safety` 設定來源，否則修改了外層但 runtime 仍使用 profile 內層，容易造成誤判。
+
+# 最終建議
+
+我建議採用：
+
+```
+一個對外入口：
+StrapSafetyController.execute_move(target, context)
+
+內部兩個不可略過的階段：
+1. Target Validator
+2. Transition Guard + Readback
+```
+
+合併關係如下：
+
+```
+牆面包絡 + 精確白名單
+→ Target Validator
+
+Generic R_X/R_Z + Large R_X + Strap high-risk + 讀回確認
+→ Transition Guard
+```
+
+不要只保留 wall envelope，因為安全終點不代表中間路徑安全；也不要只保留 staging route，因為安全路徑不能讓不安全終點變安全。
+
+此外，未來 config 應在載入時做 schema 驗證、軸範圍檢查、safe pose 合理性檢查、白名單完整五軸驗證和 config hash 日誌。Production 下 config 缺漏或無效時應 fail closed，且不建議在運動中 hot reload。
+
+
+
+#### Strap合併成兩個Rules, 且所有safety都整合進hardware_config
+```
+請採用你的最終建議修改code跟config, 合併成 Target Validator跟Transition Guard, 也把其他相關的保護機制例如軸行程限制等等參數都統一放在hardware_config裡面的SafetyRule裡面, 方面user去調整防撞相關所有參數, 並再三確定相關的config, code都有做相對應的變更
+```
+已完成重構。正式 App、拍照、AF/HDR、WatchEntry、Home/Center/Holder、遠端與手動移動路徑都已統一進入安全 planner；Strap 保護正式收斂為兩層：
+
+- `Target Validator`：軸範圍、Digital Twin、牆面包絡、4029–4032 精確五軸白名單。
+- `Transition Guard`：Y/Z staging、R_X 折回、R_Z 旋轉、恢復 R_X、逐段與最終讀回。Strap 或多段路徑禁止 `wait=False`。
+
+主要變更：
+
+- 所有防撞參數集中在 [hardware_config.yaml (line 94)](D:/Provenance Project/ImagingLibWatch/config/hardware_config.yaml:94) 的 `hardware.zaber.SafetyRule`：
+
+    - Door E-stop  -->  **door_estop:**
+    - 軸行程與韌體 soft limits --> **axis_travel_limits**
+    - Watch holder load確認 --> **load_verification**
+    - 運動/旋轉 profile --> **motion_profiles, rotation_control**
+    - final approach --> **final_approach:**
+    - AF 移動限制 --> **autofocus_motion_safety**
+    - Digital Twin 幾何與旋轉中心 --> **digital_twin**
+    - watch/box fixture --> **fixture**
+    - Target Validator / Transition Guard -->
+    
+- 新增集中式 schema、resolver 與兩層 Strap 保護：[safety_rules.py (line 173)](D:/Provenance Project/ImagingLibWatch/Controller/safety_rules.py:173)。
+- 統一運動入口及 segment executor：[unified_driver.py (line 497)](D:/Provenance Project/ImagingLibWatch/Controller/hardware_drivers/unified_driver.py:497)。
+- Keyence probe、AF 掃描、HDR Z-stack、final approach 等內部小移動也重新經過 planner，不再視為安全例外。
+- App safe retract、exit、Home/Center/Holder 均使用 `move_compound`：[main.py (line 3550)](D:/Provenance Project/ImagingLibWatch/App/main.py:3550)。
+- Macro1 scan 的安全參數改由 Hardware SafetyRule 注入：[strap_macro1_scan.py (line 31)](D:/Provenance Project/ImagingLibWatch/core/strap_macro1_scan.py:31)。
+- 遠端 E-stop 現在同時設定持續性 software lock，必須明確 reset：[controller_server.py (line 76)](D:/Provenance Project/ImagingLibWatch/Controller/controller_server.py:76)。
+- 加入架構測試，防止正式路徑再次出現裸 `move_axis`：[test_safety_rules.py (line 73)](D:/Provenance Project/ImagingLibWatch/tests/test_safety_rules.py:73)。
+
+驗證結果：
+
+- 141 項 SafetyRule、motion、AF、capture、Macro1 測試通過。
+- 10 項 App Strap/Home/Bezel 回歸測試通過。
+- 192 個已配置 Strap 姿態全部完成 Target Validator 與連續轉場模擬。
+- YAML schema、scan config、Python compile、`git diff --check` 均通過。
+- 使用者原本未追蹤的 wiki 檔案未修改。
+
+仍有兩項必須注意：
+
+- Digital Twin box dimensions 目前仍是既有的 `0.0`，所以幾何碰撞模型尚未完成實體資格確認。填入量測值後，建議把 `require_nonzero_collision_envelopes_for_strap_scan` 改成 `true`，屆時零值會讓 production/hybrid fail-closed。
+- `Controller/test_hardware` 內部分工程校正工具仍有刻意保留的裸軸操作；正式 App/core/server 不會走這些工具。實機上線前仍應以空載、低速完成 Home、四個 Strap 方向、4029–4032 與 E-stop/reset 的人工驗證。
+-
+
+
+
+
+```
+在目前的軸行程限制保護機制只有一組譬如(X `0–435 mm`、Y `0–292 mm`、Z `0–150 mm`、R_X `0–90), 但我們要擴充成三組包括watch, strap, box的軸行程限制因為他們的size都不同所以應該要分成三組才合理. 譬如在watchentry or create template時, 當選擇Front view, back view, openback view, openbackcrown view時是watch的軸行程限制, Strap view是strap的軸行程限制, box view是box的軸行程限制. 而數值應該在hardware_config裡面的SafetyRule裡面方面設定. 
+
+在Controller/test_hardware/裡面有很多testing code裡面都可以按鈕直接zaber移動或轉動, 但目前都沒有遵守保護機制譬如軸行程限制保護機制 or strap Target Validator or Transition Guard. 我希望這些有可以移動的testing code也都要套用軸行程限制保護機制 or strap Target Validator or Transition Guard. 方法是當打開這些有UI的testing code, 然後當要開始移動zaber就會跳出視窗詢問這是watch or strap or box有選單or clicked box可以讓user選擇, 之後就會套用所屬的軸行程限制保護機制 or strap Target Validator or Transition Guard, 而當你按鈕譬如會超出軸行程限制或可能撞擊, 則在移動前會跳出警告window說明為何並有選項可以繼續獲取消這個動作.
+
+在按下App main.py按下下列代表不同watch view or strap or box前應該新增一個確認機制確保user在holder真的是放front or back or box or strap. 方法是按下這些按鈕之後, zaber移動到x=150, y=78.46, rx=0, rz=0且z=80的位置(這應該就是Keyence probe position對準watch中央位置), 然後依據z=80, z=73, z=32, z=27, z=21分別測量keyence的讀數, 而如果keyence的out1有讀到數值則停止下個z位置的測量.
+
+譬如如果我目前選的是box(按下pushButton_TemplateRun_23, pushButton_TemplateRun_215)然後我從z=80開始測量, 如果在z=80位置keyence的out1有讀到數值且推算final z的位置是z=80+-3, 則代表這是box, 則停止測量且代表load正確可以進到下一步(而如果load錯誤譬如在z=80讀取不到則直接顯示錯誤), 並跳出視窗顯示在center position拍的image. 
+
+譬如如果我目前選的是strap(按下pushButton_TemplateRun_22, pushButton_TemplateRun_37, pushButton_TemplateRun_213, pushButton_TemplateRun_217)然後我從z=80開始測量,如果在z=80位置讀取no signal, 則移動到z=73位置讀取no signal(在z=73位置需在附近水平搜尋以每次一格1mm, 找5x5的區域如果都沒有才確定沒有), 那有讀到數值且推算final z的位置不是z=73+-3, 也代表錯誤, 並跳出視窗顯示在center position拍的image. 
+
+譬如如果我目前選的是front(按下pushButton_TemplateRun_3, pushButton_TemplateRun_124)然後我從z=80開始測量, 如果在z=80位置讀取no signal, 則移動到z=73位置讀取no signal, 移動到z=32位置讀取no signal, 移動到z=27位置讀取no signal, 如果在z=21位置keyence的out1有讀到數值且推算final z的位置是z=21+-3, 則代表這是front則停止測量且代表load正確可以進到下一步. 但如果移動到z=27位置讀取keyence的out1有讀到數值且推算final z的位置不是z=21+-3, 也代表錯誤, 並跳出視窗顯示在center position拍的image. 
+
+這是代表不同view應該要有的z position: Front watch z = 21.779, Back watch z = 32.717, openback and openbackcrown watch z = 27.123, strap 73.213, box =80
+
+以下是代表不同view跟相關的按鈕:
+front: pushButton_TemplateRun_3, pushButton_TemplateRun_124
+back: pushButton_TemplateRun_6, pushButton_TemplateRun_126
+openback: pushButton_TemplateRun_16, pushButton_TemplateRun_128
+openbackcrown: pushButton_TemplateRun_20, pushButton_TemplateRun_130
+strap: pushButton_TemplateRun_22, pushButton_TemplateRun_37, pushButton_TemplateRun_213, pushButton_TemplateRun_217
+box: pushButton_TemplateRun_23, pushButton_TemplateRun_215
+```
+
+已完成程式與設定重構，所有 Zaber 移動現在統一受 SafetyRule、fixture profile 與 `move_compound()` planner 管理。
+
+### 主要完成項目
+
+- 在 [hardware_config.yaml (line 103)](D:/Provenance Project/ImagingLibWatch/config/hardware_config.yaml:103) 建立三組獨立軸行程：
+    
+    - `watch`
+    - `strap`
+    - `box`
+- 目前三組先沿用既有安全範圍，避免在沒有實機量測資料下猜測限制值；之後可直接修改 YAML，不需改 code。
+    
+- Zaber firmware 寫入三組限制的聯集範圍；實際每次移動則由 software planner 套用所選 profile 的限制。
+    
+- [safety_rules.py (line 62)](D:/Provenance Project/ImagingLibWatch/Controller/safety_rules.py:62) 集中管理：
+    
+    - profile 判斷
+    - 軸行程限制
+    - Target Validator
+    - Transition Guard
+    - SafetyRule schema validation
+    - profile 與 view 衝突時 fail-closed，例如 `watch + StrapRightSide` 會直接拒絕。
+- [unified_driver.py (line 583)](D:/Provenance Project/ImagingLibWatch/Controller/hardware_drivers/unified_driver.py:583) 已確保：
+    
+    - `move_compound()` 按 watch／strap／box 選擇限制。
+    - Strap 自動使用 Target Validator 與 Transition Guard。
+    - Create Template、WatchEntry、CLI workflow 都帶入 per-view profile。
+    - testing UI 選擇的 profile 不會被 `execute_template_point()` 重設成 watch。
+- [hardware_managers.py (line 115)](D:/Provenance Project/ImagingLibWatch/Controller/hardware_managers.py:115) 增加 raw-motion router：
+    
+    - `move_axis`
+    - `move_relative`
+    - `move_axes_absolute`
+    - `home_axis`
+    
+    若不是 planner 核准的 segment，都會重新導入 `move_compound()`；raw mechanical home 會被阻擋。
+    
+
+### App Holder Load Verification
+
+14 個指定按鈕已全部接到 [App/main.py (line 2968)](D:/Provenance Project/ImagingLibWatch/App/main.py:2968) 的驗證流程。
+
+實際驗證由 [load_fixture_verifier.py (line 203)](D:/Provenance Project/ImagingLibWatch/Controller/load_fixture_verifier.py:203) 執行：
+
+- 移動到 `X=150, Y=78.46, RX=0, RZ=0`。
+- 按 `Z=80 → 73 → 32 → 27 → 21` 依 view 搜尋。
+- Box 在 Z80 無訊號就失敗。
+- Strap 在 Z73 中心無訊號時搜尋 5×5、每格 1 mm。
+- 第一個有效 OUT1 後立即停止後續 Z 探測。
+- 使用 config 的 `probe_z + OUT1 × scale + offset` 推算 final Z。
+- 與各 view 預期 Z 比較，容許值 ±3 mm。
+- 顯示 center image；錯誤載入時維持已安全到達的 Z 拍攝，不會為了錯誤照片移向可能碰撞的 expected Z。
+- 成功時使用者仍須按 Continue；失敗不可繞過。
+
+### Testing tools
+
+新增共用 [safety_motion.py (line 25)](D:/Provenance Project/ImagingLibWatch/Controller/test_hardware/safety_motion.py:25)，並套用到所有可移動或會執行拍照運動的 testing UI／CLI：
+
+- UI 必須選擇 watch／strap／box，Strap Registration 固定使用 strap。
+- 超出 axis limit、Target Validator 拒絕的目標不可強制繼續。
+- 可透過安全 staging 完成的高風險移動會顯示 Continue Safely／Cancel。
+- `unlock_table.py` 不再把 firmware limits 擴張到極大值。
+- 非 UI script 必須設定 `IMAGINGLIB_TEST_FIXTURE=watch|strap|box`。
+
+### 正式拍照 profile
+
+[workflow_manager.py (line 2646)](D:/Provenance Project/ImagingLibWatch/core/workflow_manager.py:2646) 現在逐 capture step 判斷：
+
+- Front／Back／OpenBack／OpenBackCrown → `watch`
+- StrapRightSide → `strap`
+- Box Front → `box`
+
+Create Template pre-capture、正式 selected-point capture、WatchEntry capture 也採用相同規則。
+
+### 驗證結果
+
+- Safety／motion／load verification／workflow：48 項全數通過。
+- Autofocus／Strap macro scan／side AF／internalnum：113 項全數通過。
+- App 規則：159 項中 157 通過；兩個原有且與本次安全重構無關的失敗仍存在：
+    - `0032_creation_and_watchentry_share_canonical_capture_precedence`
+    - `side_xz_initial_values_preserve_legacy_center_target_pose`
+- Python compile、YAML parse、`git diff --check` 通過。
+- SafetyRule schema validation：`[]`，沒有設定錯誤。
+- 測試產生的暫存 output 已移除；既有未追蹤的 wiki 文件未修改。
+
+### 實機啟用前仍需確認
+
+1. 實際量測並分別填入 watch／strap／box 的限制；目前三組仍是相同的 legacy 範圍。
+2. 確認 Keyence OUT1 正負方向與 `probe_z_plus_out1` 公式。
+3. 確認 center image 的 `X=263.0985, Y=15.659`、曝光和燈光。
+4. 用空 holder、低速依序 dry-run 六種 view。
+5. Digital Twin 的 collision-envelope 尺寸目前仍為 0，尚未具有完整幾何防撞能力。
