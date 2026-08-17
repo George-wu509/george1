@@ -5,7 +5,7 @@
 | [[#### af_mode_config.yaml裡面定義的所有af_mode並列表整理]] |     |
 | [[#### 列表整理每個af_mode_id(0~12)類別]]               |     |
 | [[#### 在執行App的create template拍照的autofocus]]     |     |
-|                                                 |     |
+| [[#### 完整整理在Strap時Af_mode]]                     |     |
 |                                                 |     |
 |                                                 |     |
 |                                                 |     |
@@ -774,6 +774,11 @@ internalnum_config
 
 
 
+
+
+
+
+#### 完整整理在Strap時Af_mode
 ```
 那特別幫我完整整理在Strap時, 包括macro_cam_2拍的stitch用的images(front, side, back, 9oclock side)的對焦, macro_cam_1拍的stitch用的images(front, side, back, 9oclock side)的對焦, 以及使用macro_cam_2的stitched image(front, side, back, 9oclock side)用SAM model推測links, endlinks, screw座標之後拍照的images的對焦, 使用macro_cam_1的stitched image(front, side, back, 9oclock side)用SAM model推測links, endlinks, screw座標之後拍照的images的對焦, 以及兩個endlinks reference images的對焦. 這些autofocus是用哪個af_modes, 是否有用keyence af, keyence af的z start or y start, 是否有用liquid lens af等等.
 ```
@@ -929,12 +934,12 @@ Liquid lens：仍然每張重跑
 
 ## macro_cam_1 stitch AF 明細
 
-|View|Anchor mode|Anchor Keyence|Anchor liquid AF|非 anchor tile|
-|---|---|---|---|---|
-|Front|3|有，Y start 65|有|mode 8，但兩種 AF 都關|
-|Side|12|有，calibrated Z start 68.12|有|mode 8，但兩種 AF 都關|
-|Back|3|有，Y start 65|有|mode 8，但兩種 AF 都關|
-|9-clock|12|有，calibrated Z start 68.12|有|mode 8，但兩種 AF 都關|
+| View    | Anchor mode | Anchor Keyence             | Anchor liquid AF | 非 anchor tile    |
+| ------- | ----------- | -------------------------- | ---------------- | ---------------- |
+| Front   | 3           | 有，Y start 65               | 有                | mode 8，但兩種 AF 都關 |
+| Side    | 12          | 有，calibrated Z start 68.12 | 有                | mode 8，但兩種 AF 都關 |
+| Back    | 3           | 有，Y start 65               | 有                | mode 8，但兩種 AF 都關 |
+| 9-clock | 12          | 有，calibrated Z start 68.12 | 有                | mode 8，但兩種 AF 都關 |
 
 設定位置：
 

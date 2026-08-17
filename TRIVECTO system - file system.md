@@ -1,15 +1,20 @@
 
 
-|                      |     |
-| -------------------- | --- |
-| [[#### 一些不清楚的資料夾檔案]] |     |
-|                      |     |
-|                      |     |
-|                      |     |
-|                      |     |
+|                                                       |     |
+| ----------------------------------------------------- | --- |
+| [[#### 一些不清楚的資料夾檔案]]                                  |     |
+| [[#### 整理目前App main.py如果有儲存images or 其他files的功能有哪幾種]] |     |
+|                                                       |     |
+|                                                       |     |
+|                                                       |     |
 
 
 
+
+```
+請介紹在repo folder的files(譬如AGENTS.md, main_cli.py等..), 以及這幾個folder  
+debug_color, helper, output_results, temp__results, temp_task_result的作用是甚麼? 跟App main.py有甚麼關係, 或是否建議移除或移動到其他folder
+```
 #### 一些不清楚的資料夾檔案
 這個 repo 的主要入口有三個；真正的 App 主程式是 `App/main.py`，不是根目錄的 `main.py`。
 
@@ -25,6 +30,7 @@ flowchart TD
   H["Controller/hardware_managers.py<br/>hardware_check=True"] --> D["debug_color"]
 ```
 ````
+
 
 根目錄重要檔案：
 
@@ -68,3 +74,328 @@ flowchart TD
 - `helper/` 是開發工具，與正式 App 無關，適合移到 `tools/dev/`。
 - `temp__result` 的雙底線命名明顯不一致；長期應合併到 `temp_task_result`。
 - `debug_color` 和 `output_results` 目前有已追蹤檔案；若改成純 runtime artifacts，應先確認不需要保留作測試樣本，再調整 `.gitignore` 與路徑。
+
+
+
+
+#### 整理目前App main.py如果有儲存images or 其他files的功能有哪幾種
+```
+請幫我整理目前App main.py如果有儲存images or 其他files的功能有哪幾種? 是存到哪個folder? 那其他的yaml or txt or log檔案是儲存到哪個檔案? 或者還有甚麼其他files是存到哪裡呢?
+```
+
+已完成盤點。以目前設定來看，App 的主要資料根目錄是：
+
+`D:\Provenance Project\ImagingLibWatch\Local_Data`
+
+來源是 [system_config.yaml (line 85)](D:/Provenance Project/ImagingLibWatch/config/system_config.yaml:85) 的：
+
+```
+paths:
+  base_data_dir: ./Local_Data
+```
+
+相對路徑會固定從專案根目錄解析，不受啟動 App 時的 working directory 影響。
+
+## 1. 正式拍攝影像
+
+|功能|實際儲存位置|備註|
+|---|---|---|
+|Standard capture|`Local_Data\<WatchID>\Raw\<UUID>.png`|檔名會改成 32 字元 UUID|
+|HDR 融合結果|`Local_Data\<WatchID>\Raw\<UUID>.png`|DB metadata 的 `asset_role=hdr_fused`|
+|Sidepoint 額外角度原圖|`Local_Data\<WatchID>\Raw\<UUID>.png`|每個角度各自存檔|
+|Remote manual capture 下載|`Local_Data\<WatchID>\Raw\<S3檔名>`|從 S3 下載至 Raw|
+|Capture 暫存|`Local_Data\temp\tmp_<id>.png`|正式儲存時會被搬到 Raw，正常情況不會保留|
+
+主要路徑定義在 [local_storage.py (line 224)](D:/Provenance Project/ImagingLibWatch/data_manager/local_storage.py:224)，App 寫入流程在 [main.py (line 27096)](D:/Provenance Project/ImagingLibWatch/App/main.py:27096)。
+
+也就是目前一個 Watch Point 如果有多個 Standard capture 或 HDR capture，每個 capture 都會成為一個獨立的 UUID 影像檔，不會使用 Watch Point 名稱當實體檔名；Watch Point、Capture ID、Standard/HDR 等資料存在 SQLite metadata 中。
+
+另一套 Core Workflow 的 V3 asset 路徑是：
+
+```
+Local_Data\<WatchID>\runs\<RunID>\
+  views\<ViewName>\
+  points\<PointName>\
+  captures\<CaptureID>\
+  <UUID>.png
+```
+
+定義在 [local_storage.py (line 365)](D:/Provenance Project/ImagingLibWatch/data_manager/local_storage.py:365)。
+
+## 2. 分析結果
+
+每次 App 執行分析會建立：
+
+```
+Local_Data\<WatchID>\Analysis\
+  Exp_YYYYMMDD_HHMMSS_<8字元ID>\
+```
+
+定義在 [local_storage.py (line 231)](D:/Provenance Project/ImagingLibWatch/data_manager/local_storage.py:231)。
+
+這個資料夾內可能包含：
+
+- 演算法輸出的 `.json`
+- 演算法報告 `.yaml` / `.yml`
+- Mask、overlay、crop、stitched image 等 `.png` / `.jpg`
+- `watchshift_<ViewName>.json`
+- `material_records.json`
+- `report_identifiers_<WatchID>.json`
+- `front_template_suggestion_ocr_report.json`
+- `front_stitch_report.json`
+- Sidepoint 子資料夾，例如：
+
+```
+sidepoint_sidepoint1_std_1\
+  angle_inputs\
+  sidepoint_report.json
+  <overlay / stitched / analysis images>
+```
+
+因為實際輸出檔名由各個 analysis task 決定，所以不是只有一組固定檔名。App 會掃描新增的檔案，將路徑、task、S3 key 註冊進 SQLite，流程在 [main.py (line 22494)](D:/Provenance Project/ImagingLibWatch/App/main.py:22494)。
+
+## 3. Camera pipeline TXT 報告
+
+每張正式影像拍完後，App 還會存一份實際 Camera、Exposure、Autofocus、HDR、XYZ、燈光與輸出路徑紀錄：
+
+```
+Local_Data\<WatchID>\CameraPipelineReports\
+  <timestamp>_app_main_camera_pipeline_<View>_<Point>_<Capture>_standard.txt
+  <timestamp>_app_main_camera_pipeline_<View>_<Point>_<Capture>_hdr.txt
+```
+
+路徑定義在 [main.py (line 25055)](D:/Provenance Project/ImagingLibWatch/App/main.py:25055)，TXT 寫入在 [camera_pipeline_report.py (line 116)](D:/Provenance Project/ImagingLibWatch/core/camera_pipeline_report.py:116)。
+
+## 4. Template 建立影像
+
+### 一般 TemplateScratch
+
+Template 建立過程確認保存的 top view、point image 等會存到：
+
+```
+Local_Data\<TemplateName>\TemplateScratch\
+  <View>_<PointName>_<CaptureID>.png
+```
+
+例如：
+
+```
+Local_Data\Rolex_116610_Black_Dial\TemplateScratch\
+  Front_toppoint1_std_1.png
+  Front_micropoint1_std_1.png
+```
+
+定義在 [main.py (line 5250)](D:/Provenance Project/ImagingLibWatch/App/main.py:5250)。
+
+### Template 五面預拍暫存
+
+Front、Side1～Side4 等預拍會先存：
+
+```
+Local_Data\create_template_img\
+  template_create_front.jpg
+  template_create_side1.jpg
+  template_create_side2.jpg
+  template_create_side3.jpg
+  template_create_side4.jpg
+```
+
+這整個資料夾會在正常關閉 App 時刪除，見 [main.py (line 3087)](D:/Provenance Project/ImagingLibWatch/App/main.py:3087)。
+
+### Strap pre-capture／stitch
+
+Strap 213 → 217 流程先建立臨時 session：
+
+```
+Local_Data\temp\strap_precapture\
+  <timestamp>_<sessionID>\
+```
+
+其中可能包含：
+
+```
+macro_cam_1_raw_scan\
+  front\
+    front_tile_001_x_....png
+    macro_cam_1_front_contact_sheet.png
+    macro_cam_1_front_stitched.png
+    front_manifest.yaml
+    watchband_stitch_..._report.json
+  side\
+  back\
+  9clock\
+
+strap_stitch\
+  StrapRightSide_front_stitched.png
+  StrapRightSide_side_stitched.png
+  StrapRightSide_back_stitched.png
+  watchband_stitch_<group>_report.json
+
+StrapRightSide_stitched_overview_stitched.png
+StrapRightSide_stitched_overview_stitched_metadata.json
+<processID>_take_image_autofocus_stitch_process.yaml
+```
+
+若 Template 完整保存，整個 session 會被搬到：
+
+```
+Local_Data\<TemplateName>\TemplateScratch
+```
+
+若流程沒有完成，session 會留在 `Local_Data\temp\strap_precapture`，不會自動刪除，以避免拍攝資料遺失。相關邏輯在 [main.py (line 5285)](D:/Provenance Project/ImagingLibWatch/App/main.py:5285)。
+
+`template_create_config.yaml` 裡另有 fallback：
+
+```
+Local_Data\StrapPreCapture\TemplateScratch
+```
+
+但目前正常的 213 → 217 session 會優先寫入上述 session folder。
+
+## 5. WatchShift 參考影像
+
+每個 Template、View 的 WatchShift 基準圖存到：
+
+```
+DB\watchshift\<TemplateID>\
+  Front.toppoint1.png
+  Back.toppoint1.png
+  OpenBack.toppoint1.png
+  OpenBackCrown.toppoint1.png
+  StrapRightSide.toppoint1.png
+  Box.toppoint1.png
+```
+
+定義在 [internalnum_config.py (line 1704)](D:/Provenance Project/ImagingLibWatch/DB/templates/internalnum_config.py:1704)。
+
+每次 WatchEntry 的校正結果則存到當次 Analysis：
+
+```
+Local_Data\<WatchID>\Analysis\<ExpID>\watchshift_<View>.json
+```
+
+## 6. Material／XRF 檔案
+
+### 外部 XRF CSV
+
+App 只讀取使用者選取的 XRF folder；如果未選擇，預設是：
+
+```
+D:\Moonlight\xrf_data\Vanta\exports
+```
+
+原始 CSV 不會被搬走或複製。
+
+### Material session JSON
+
+正常有 WatchEntry 時：
+
+```
+Local_Data\<WatchID>\Analysis\<ExpID>\material_records.json
+```
+
+沒有 WatchEntry／Analysis session 時才 fallback 到：
+
+```
+output_results\material_db\material_records.json
+```
+
+路徑邏輯在 [main.py (line 9505)](D:/Provenance Project/ImagingLibWatch/App/main.py:9505)。
+
+### Material marker 圖片
+
+目前設定是：
+
+```
+Local_Data\material_markers\
+  material_marker_<internalnum1>.jpg
+```
+
+來自 [template_create_config.yaml (line 532)](D:/Provenance Project/ImagingLibWatch/config/template_create_config.yaml:532)。
+
+## 7. PDF 與報告檔
+
+|功能|儲存位置|
+|---|---|
+|Finish Watch Entry 自動 PDF|`Local_Data\<WatchID>\Reports\PDF\Moonlight_Inspection_<WatchID>_<timestamp>_<id>.pdf`|
+|手動 Export PDF|由使用者在 Save dialog 自選位置|
+|PDF identifier JSON|最新的 `Analysis\<ExpID>\report_identifiers_<WatchID>.json`|
+|PDF 暫時壓縮圖片|Windows `%TEMP%`，PDF 完成後刪除|
+
+自動 PDF 路徑在 [main.py (line 24314)](D:/Provenance Project/ImagingLibWatch/App/main.py:24314)。
+
+## 8. SQLite 資料庫
+
+App 的主要本地資料庫是：
+
+[DB/watchDB.db](D:/Provenance Project/ImagingLibWatch/DB/watchDB.db)
+
+目前檔案約 359 MB。裡面包含：
+
+- Template JSON payload
+- WatchEntry／Final Report metadata
+- Watch metadata
+- Raw image index與 metadata
+- Experiment result 路徑
+- UI asset registry
+- Run、Point instance、Capture instance
+- 多張 image asset 資料
+- Account／同步狀態
+
+重要的是：目前 Template 不是另存成 YAML；按 Save Template 時是存進 `watchDB.db`，並嘗試同步 DynamoDB。程式在 [main.py (line 10830)](D:/Provenance Project/ImagingLibWatch/App/main.py:10830)。
+
+## 9. Log 與稽核檔案
+
+|類型|儲存位置|
+|---|---|
+|Audit log|`Local_Data\audit_logs\audit_YYYY-MM-DD.jsonl`|
+|Runtime performance|`Local_Data\runtime_logs\runtime_performance_YYYYMMDD.jsonl`|
+|Strap motion safety log|`DB\strap_motion_logs\strap_motion_<timestamp>_<id>.yaml`|
+|Console／UI Hardware、Data、DB、AWS 訊息|只輸出到 console/UI，沒有一般 `.log` 檔|
+
+Audit log 定義在 [audit_logger.py (line 22)](D:/Provenance Project/ImagingLibWatch/logging_system/audit_logger.py:22)；runtime log 定義在 [workflow_manager.py (line 62)](D:/Provenance Project/ImagingLibWatch/core/workflow_manager.py:62)。
+
+Audit log 的簽章 key 位於：
+
+```
+config\keys\hmac.key
+```
+
+目前設定未開啟 audit field encryption，所以 `fernet.key` 不會被使用或自動產生。
+
+## 10. 其他零散輸出與快取
+
+|功能|儲存位置|
+|---|---|
+|Component 判斷結果|`output_results\component_results_<timestamp>.json`|
+|Component gallery 縮圖快取|`Local_Data\component_thumbnails\<SHA256>.jpg`|
+|Remote preview 暫存|`Local_Data\temp_preview.jpg`，重複覆寫|
+|Gold standard identifiers|`DB\goldstand_identifiers.json`|
+|舊版 Gold standard metrics|`DB\goldstand_result.json`|
+|加密圖片檢視暫存|Windows `%TEMP%`，使用完刪除|
+
+## YAML 設定檔是否會被 App 修改？
+
+目前 `main.py` 對 `config` 下的 YAML 基本上只有讀取，沒有把操作結果寫回這些設定檔，例如：
+
+- `config/system_config.yaml`
+- `config/App_config.yaml`
+- `config/hardware_config.yaml`
+- `config/internalnum_config.yaml`
+- `config/template_create_config.yaml`
+- `config/strap_macro_cam1_scan.yaml`
+- `config/watchband_stitch.yaml`
+- `config/pdf_config.yaml`
+- 各 analysis task 的 `*_config.yaml`
+
+動態產生的 YAML 主要只有：
+
+- Strap process YAML
+- Strap view manifest YAML
+- Strap motion audit YAML
+- 部分 analysis task report YAML
+
+它們會存到 `TemplateScratch`、Strap session、`DB\strap_motion_logs` 或當次 `Analysis\Exp_...`，不會存回 `config`。
+
+最後一個值得注意的地方：大部分資料會跟著 `base_data_dir`，但 `DB\watchDB.db`、`DB\watchshift`、`DB\strap_motion_logs`、`output_results`，以及目前 hard-code 的 component thumbnail folder 不受 `base_data_dir` 控制。因此如果未來把 `base_data_dir` 改到別的硬碟，資料仍會分散在這幾個位置。
+
