@@ -4,11 +4,12 @@
     "type": "split",
     "children": [
       {
-        "id": "20f4c2b0c4339564",
+        "id": "ea36fef8e0ca1b04",
         "type": "tabs",
+        "dimension": 99.99999999999999,
         "children": [
           {
-            "id": "512b18b989b8ea60",
+            "id": "eb3b25fa12307615",
             "type": "leaf",
             "state": {
               "type": "markdown",
@@ -97,7 +98,7 @@
             "state": {
               "type": "backlink",
               "state": {
-                "file": "TRIVECTO system - Github.md",
+                "file": "TRIVECTO system - DB.md",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -107,7 +108,7 @@
                 "unlinkedCollapsed": true
               },
               "icon": "links-coming-in",
-              "title": "Backlinks for TRIVECTO system - Github"
+              "title": "Backlinks"
             }
           },
           {
@@ -173,13 +174,12 @@
       "table-editor-obsidian:Advanced Tables Toolbar": false
     }
   },
-  "active": "512b18b989b8ea60",
+  "active": "eb3b25fa12307615",
   "lastOpenFiles": [
-    "Work - TRIVECTO Laboratories/TRIVECTO system - DynamoDB.md",
+    "TRIVECTO system - collision avoidance.md",
     "TRIVECTO system - DB.md",
     "TRIVECTO system - file system.md",
     "TRIVECTO system - af mode.md",
-    "TRIVECTO system - collision avoidance.md",
     "主要防撞路徑.md",
     "Work - TRIVECTO Laboratories/TRIVECTO system - internalnum_config.md",
     "Work - TRIVECTO Laboratories/TRIVECTO system - template.md",
@@ -198,6 +198,7 @@
     "Work - TRIVECTO Laboratories/TRIVECTO system - run plans.md",
     "Work - TRIVECTO Laboratories/TRIVECTO system - WatchQwen.md",
     "Work - TRIVECTO Laboratories/TRIVECTO system - Ethernet.md",
+    "Work - TRIVECTO Laboratories/TRIVECTO system - DynamoDB.md",
     "Work - TRIVECTO Laboratories/TRIVECTO system - design.md",
     "Work - TRIVECTO Laboratories/Provenance - OCR compare.md",
     "Work - TRIVECTO Laboratories/TRIVECTO system - matlab convert.md"

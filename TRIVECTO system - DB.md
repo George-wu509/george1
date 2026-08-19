@@ -1,12 +1,16 @@
 
-|                                   |     |
-| --------------------------------- | --- |
-| [[#### 整理all files 連結 Database]]  |     |
-| [[#### 整理all files 連結 Database2]] |     |
-| [[#### database支援上萬watch?]]       |     |
-|                                   |     |
 
-#### 整理all files 連結 Database
+| [[#### 整理這些檔案的data or index等有哪些會存入local DB方便我們管理所有的files跟後續的分析]]<br> |     |
+| -------------------------------------------------------------------- | --- |
+| [[#### 整理all files 連結 Database]]                                     |     |
+| [[#### database支援上萬watch?]]                                          |     |
+| [[#### 「邊緣到雲端 (Edge-to-Cloud)」與「OLTP / OLAP 分離」架構]]                  |     |
+| [[#### 舉例解釋SQLite vs. DynamoDB的差別]]                                  |     |
+|                                                                      |     |
+|                                                                      |     |
+
+#### 整理這些檔案的data or index等有哪些會存入local DB方便我們管理所有的files跟後續的分析
+
 ```
 **
 
@@ -751,7 +755,7 @@ report_analysis_links(report_id, analysis_run_id)
 
 
 
-#### 整理all files 連結 Database2
+#### 整理all files 連結 Database
 ```
 之前有整理了這個App main.py如果有儲存images or 其他files有包括1. 正式拍攝影像, 2. 分析結果, 3. Camera pipeline TXT 報告, 4. Template 建立影像, 5. WatchShift 參考影像, 6. Material／XRF 檔案, 7. PDF 與報告檔, 8. SQLite 資料庫, 9. Log 與稽核檔案, 10. 其他零散輸出與快取, 及yaml files.
 
@@ -1214,7 +1218,7 @@ AWS write 必須使用 deterministic idempotency key；成功後記錄 DynamoDB 
 
 ## 建議的正式架構
 
-````
+
 ```mermaid
 flowchart LR
     App["App / CLI / Hardware"] --> Local["每台設備 Local SQLite V4"]
@@ -1226,7 +1230,7 @@ flowchart LR
     Catalog --> API["UUID / Watch / Capture / Experiment API"]
     Athena --> Analysis["Distribution / Comparison / Statistics"]
 ```
-````
+
 
 各層職責：
 
@@ -1523,3 +1527,729 @@ App 先顯示 cached summary，需要細節時才觸發 Athena。
 - Outbox：可靠且可重試的同步層
 
 只要不把十萬 watches 的全部影像 metadata、完整 JSON 和數億 metrics 永久塞進單一 local SQLite，這個規模不會是架構瓶頸。
+
+
+
+
+
+#### 「邊緣到雲端 (Edge-to-Cloud)」與「OLTP / OLAP 分離」架構
+```
+以下是Moonlight system的建議的正式架構架構圖, 根據我的需求: "所以新的database不但要能夠執行以上提到的查詢跟分析, 而且我們可能有上千個watch系列, 十萬了watch. 跟你你設計的新database是否能否順暢的運行support這些功能性"
+可以順暢支援，但必須採用「分層式 database architecture」。如果把十萬支 watch、數千萬 image assets 和數億筆 analysis values 全塞在單一 `watchDB.db`，最後一定會遇到檔案過大、寫入鎖、備份緩慢及 distribution 查詢過慢。
+
+請更詳細解釋各個單元以及其作用, 詳細解釋SQLite跟DynamoDB的差別, 以及這系統是怎麼運作的
+
+flowchart LR
+    App["App / CLI / Hardware"] --> Local["每台設備 Local SQLite V4"]
+    Local --> Outbox["Transactional Sync Outbox"]
+    Outbox --> Catalog["DynamoDB V4 Operational Catalog"]
+    Outbox --> S3["S3 Artifact Storage"]
+    Outbox --> Facts["Parquet / Iceberg Metric Facts"]
+    Facts --> Athena["Athena Analytics"]
+    Catalog --> API["UUID / Watch / Capture / Experiment API"]
+    Athena --> Analysis["Distribution / Comparison / Statistics"]
+```
+
+```mermaid
+flowchart LR
+    App["App / CLI / Hardware"] --> Local["每台設備 Local SQLite V4"]
+    Local --> Outbox["Transactional Sync Outbox"]
+    Outbox --> Catalog["DynamoDB V4 Operational Catalog"]
+    Outbox --> S3["S3 Artifact Storage"]
+    Outbox --> Facts["Parquet / Iceberg Metric Facts"]
+    Facts --> Athena["Athena Analytics"]
+    Catalog --> API["UUID / Watch / Capture / Experiment API"]
+    Athena --> Analysis["Distribution / Comparison / Statistics"]
+```
+
+這是一個非常經典且具備高度擴展性的「邊緣到雲端 (Edge-to-Cloud)」與「OLTP / OLAP 分離」架構。
+
+針對你提到的規模（上千個 Watch 系列、十萬支 Watch、數千萬的影像與數億筆分析數據），這套架構是能夠**順暢運行且經得起未來擴展**的最佳實踐。如果將這些資料全塞在一個 `watchDB.db`（SQLite）中，你一定會遇到「寫入鎖死 (Write Locks)」、「查詢超時 (Timeout)」與「備份災難」等瓶頸。
+
+以下為你詳細拆解這個架構的各個單元、SQLite 與 DynamoDB 的差異，以及資料是如何在這套系統中流動的。
+
+## 1. 系統單元與作用解析
+
+這個架構將系統分為三個主要層級：**Edge（邊緣端）、Sync（同步層）、Cloud（雲端層）**。
+
+### Edge 層 (設備端)
+
+- **App / CLI / Hardware (硬體設備/控制介面):** 第一線與硬體互動的程式。負責拍攝 Watch 的影像、執行 Experiment（實驗）並收集原始數據。
+    
+- **Local SQLite V4 (邊緣資料庫):** 位於每台設備本機的資料庫。它**只儲存該台設備當下需要的熱資料 (Hot Data)** 或最近幾天的測試紀錄。它的存在讓硬體在網路斷線時依然能全速運行，不用等待雲端回應。
+    
+
+### Sync 層 (同步層)
+
+- **Transactional Sync Outbox (交易同步發件匣):** 這是一個保證資料「不遺失、不重複」的關鍵設計（Outbox Pattern）。當設備產生新資料時，會先寫入 Local SQLite，同時在 Outbox 記錄一筆「待同步任務」。背景程式會依序將 Outbox 裡的資料往雲端送，成功後才標記完成。這解決了網路不穩時的資料同步問題。
+    
+
+### Cloud 層 (雲端儲存與運算)
+
+- **DynamoDB V4 Operational Catalog (營運目錄庫):** 負責處理「高頻率的單筆讀寫」。例如：查詢某支 Watch 的當前狀態、設備清單、或是特定 Capture 的 metadata。它是雲端系統的操作大腦。
+    
+- **S3 Artifact Storage (大檔案物件儲存):** 專門用來存放影像 (Images)、原始日誌檔或大型 JSON。S3 的儲存成本極低且容量無限，將大檔案從資料庫剝離，是保證資料庫效能的關鍵。
+    
+- **Parquet / Iceberg Metric Facts (大數據分析格式):** 這是將分析數據（Values）轉換成適合「欄位導向 (Columnar)」查詢的格式並存放在 S3。Parquet/Iceberg 非常適合壓縮大量重複的數據（例如幾億筆的測量點），且只讀取需要的欄位，速度極快。
+    
+- **Athena Analytics (無伺服器分析引擎):** 針對 Parquet 檔案執行標準 SQL 查詢的雲端服務。當你要分析「過去三個月內，特定 Watch 系列的良率分佈」時，Athena 可以在幾秒內掃描數億筆資料並給出結果。
+    
+- **API & Analysis (應用介面):** 面對終端使用者或 Web 儀表板的接口，將背後的複雜邏輯封裝起來。
+    
+
+## 2. 深入比較：SQLite vs. DynamoDB
+
+為何不全用 SQLite？或者為何不全用 DynamoDB？這兩者的設計哲學完全不同，在架構中扮演互補的角色：
+
+|**比較維度**|**Local SQLite V4 (邊緣端)**|**DynamoDB V4 (雲端營運端)**|
+|---|---|---|
+|**核心架構**|**單機關聯式資料庫** (檔案型)。所有資料存在一個本地檔案中。|**全託管分散式 NoSQL 資料庫**。資料自動分散在多個伺服器節點。|
+|**資料關聯性**|支援複雜的 JOIN (關聯表查詢) 與 ACID 交易。|適合 Key-Value 或 Document 結構，不支援跨表 JOIN，強調極速的單筆讀取。|
+|**規模上限**|GB 級最佳。檔案超過幾十 GB 後，查詢與備份速度會明顯下降。|**無上限 (PB 級)**。即便存入十萬支 Watch 或千萬筆 Metadata，效能依然穩定。|
+|**併發能力 (Concurrency)**|較弱。寫入時會產生檔案鎖 (File/WAL Lock)，多個寫入者會互相排隊等待。|**極強**。支援每秒數十萬次的並行讀寫，完全不會互相卡死。|
+|**在此架構的定位**|**「快取與單機操作」**。只存特定設備近期的擷取與測試資料，保證硬體反應速度。|**「全域目錄」**。儲存所有設備、十萬支 Watch 的總目錄與最新狀態，供 Web API 快速查詢。|
+
+> **總結：** 讓 **SQLite** 處理單台設備的即時反應，讓 **DynamoDB** 扛下十萬支 Watch 的全局併發查詢。
+
+## 3. 系統是如何運作的 (End-to-End Flow)
+
+這套系統的威力在於「資料分流」**。我們以一個具體的場景為例：**「設備對一支 Watch 進行拍攝與分析，然後主管在雲端查看整體數據的分佈」。
+
+1. **資料產生 (Capture & Analyze)：**
+    
+    - 硬體拍攝了 Watch 的影像，並產生了 10,000 個測量數據點。
+        
+    - App 將影像暫存在本地，並將 Metadata 與 10,000 個數據點快速寫入 **Local SQLite**。硬體立即進入下一次測試，零延遲。
+        
+2. **背景同步 (Sync Outbox)：**
+    
+    - Outbox 偵測到新資料，開始工作：
+        
+        - **大檔案分流：** 將影像上傳到 **S3 Artifact Storage**，並取得一組 S3 URL。
+            
+        - **目錄分流：** 將「這支 Watch 剛完成一次測試」的狀態、時間戳記、影像 URL 上傳到 **DynamoDB** 更新狀態。
+            
+        - **分析數據分流：** 將這 10,000 個測量數據點打包，轉成 **Parquet** 格式，丟入資料湖 (Data Lake) 中。
+            
+3. **日常查詢 (Operational API)：**
+    
+    - 當工程師打開網頁想看「清單上有哪些 Watch 剛測試完？」，**API** 會向 **DynamoDB** 查詢。因為 DynamoDB 只有輕量的 Metadata，即使有十萬支 Watch，網頁載入時間也只有幾十毫秒。
+        
+4. **巨量分析 (Analytics & Distribution)：**
+    
+    - 當資料科學家想知道「這 10 萬支 Watch、數億個數據點的分佈 (Distribution) 狀況」時。
+        
+    - 系統**不會**去查詢 DynamoDB，而是呼叫 **Athena**。Athena 會平行處理 S3 裡的 **Parquet** 檔案，在一兩秒內算出統計學上的均值、標準差與分佈曲線，並回傳給 **Analysis** 前端。
+        
+    - **關鍵好處：** 這種超級沈重的分析運算，完全不會影響到線上設備同步資料與 API 網頁的流暢度（這就是 OLTP 與 OLAP 分離的價值）。
+
+
+
+#### 舉例解釋SQLite vs. DynamoDB的差別
+```
+能否舉幾個簡單的例子解釋SQLite vs. DynamoDB的差別, 並以例子解釋核心架構, 資料關聯性, 併發能力, 在此架構的定位以及其他跟我們系統有關的價
+```
+我們可以把 **SQLite** 想像成「**工廠檢測站工程師隨身攜帶的電子筆記本**」，而 **DynamoDB** 則是「**跨國企業總部的超大型自動化檔案中心**」。
+
+以下我用具體、生活化的例子，為你對比這兩者在不同維度上的差異，以及它們為何在你的系統中必須這樣搭配。
+
+### 1. 核心架構 (Core Architecture)
+
+- **SQLite (單機檔案型):**
+    
+    - **例子：** 你的筆記型電腦裡有一個名為 `watchDB.db` 的 Excel 檔案。所有的資料都在這「一個檔案」裡。
+        
+    - **特點：** 超級輕便，不需要架設伺服器，隨開隨用。但如果這台電腦壞了，或者你想把這個檔案分享給遠在美國的同事，你必須把整個檔案傳過去。
+        
+- **DynamoDB (全託管分散式):**
+    
+    - **例子：** 像是 Google 搜尋引擎背後的超級資料中心。資料被自動切碎、複製並分散儲存在幾十台甚至幾百台伺服器上。
+        
+    - **特點：** 你看不到任何「實體檔案」。當你存入第十萬支 Watch 的資料時，AWS 雲端會自動增加伺服器來容納，容量與效能是「無限延伸」的。
+        
+
+### 2. 併發能力 (Concurrency) ── 這是單一資料庫最容易崩潰的地方
+
+- **SQLite (排隊機制 / File Locks):**
+    
+    - **例子：** 想像一間只有「一把鑰匙」的廁所。雖然大家上廁所都很快（寫入速度快），但如果 10 個檢測儀器在「同一個毫秒」都要把測試數據寫入 `watchDB.db`，系統會把檔案鎖住。第 1 個寫入時，剩下 9 個必須排隊等待。如果資料量大，排隊太久就會引發 `Timeout` (超時錯誤)。
+        
+- **DynamoDB (極高併發):**
+    
+    - **例子：** 想像一個有 10,000 個收費閘道的高速公路收費站。全台各地的設備（幾千台儀器）同時把 Watch 的狀態回傳給總部，DynamoDB 可以瞬間讓大家同時通過，完全不需要排隊，互不干擾。
+        
+
+### 3. 資料關聯性 (Data Relationships) ── 查詢方式的不同
+
+- **SQLite (關聯式 SQL):**
+    
+    - **例子：** 像是精密的試算表。你有一個「手錶表單 (Watches)」和一個「測試人員表單 (Users)」。你可以下一個指令（JOIN 查詢）：「_幫我找出『張三』在『昨天』測試的所有『Series 5 手錶』_」。SQLite 擅長做這種跨表格的複雜關聯比對。
+        
+- **DynamoDB (NoSQL 鍵值對):**
+    
+    - **例子：** 像是一本「字典」。你只要輸入 Watch 的身分證號碼（UUID），它會在一毫秒內把這支手錶的所有狀態（目錄）整包丟給你。
+        
+    - **特點：** 它**不擅長**做複雜的跨表 JOIN。所以我們在架構中，只把它當作「營運目錄 (Operational Catalog)」，用最簡單直接的方式（Key-Value）來取得特定 Watch 的最新狀態。
+        
+
+### 4. 在此系統架構中的精確定位
+
+回到你的需求：「有上千個 watch 系列，十萬支 watch，數千萬 images，數億筆 values」。
+
+- **Local SQLite 的定位：** **「前線的防護罩與快取」**
+    
+    - **情境：** 設備正在進行精密拍攝，如果此時網路斷線，設備不能卡死。所以設備只管把當下的 1 萬筆測試結果「啪」一下寫入本地的 SQLite（因為是本機，保證低於 1 毫秒）。SQLite 裡面可能只存這台設備「這三天」測過的幾百支 Watch，負載極輕，永遠不會變慢。
+        
+- **DynamoDB 的定位：** **「總部的戰情看板 (Catalog)」**
+    
+    - **情境：** 主管在網頁端想要查詢 UUID 為 `W-99999` 的手錶狀態。因為十萬支 Watch 的資料都在 DynamoDB，無論系統裡有 100 支還是 10 萬支手錶，DynamoDB 抓取單一支手錶的時間永遠是**平穩的個位數毫秒**。
+        
+
+### 5. 其他跟你們系統有關的巨大價值 (擴展與備份)
+
+如果把十萬支 Watch 和數億筆數據都硬塞進一個雲端 SQLite (或單一 MySQL)：
+
+1. **資料庫過度肥大 (The Fat DB Problem)：** 一個 `.db` 檔案可能膨脹到 50GB 甚至 100GB。每次你想備份，就得複製一個 100GB 的檔案，不但極慢，還可能在備份時影響效能。
+    
+    - _架構解法：_ 在這套 Moonlight 架構中，最佔空間的 Image 全丟給 S3，最龐大的數億筆 Values 丟給 Parquet/Athena。DynamoDB 裡只存「文字標籤和網址 (Metadata)」。你的 DynamoDB 可能只有幾百 MB 到幾 GB，輕巧無比。
+        
+2. **效能衰退 (Performance Degradation)：** 傳統資料庫資料達到千萬級別後，如果沒有精準設定 Index (索引)，查詢速度會從 0.1 秒掉到 5 秒甚至 30 秒。
+    
+    - _架構解法：_ DynamoDB 的特性是「效能與資料量無關」。查詢第 1 筆資料和查詢第 1 億筆資料的速度是完全一樣的。而數億筆數據的分析，交由專門做大數據掃描的 Athena 處理，這確保了系統未來成長到百萬支 Watch 時，網頁依然秒開。
+        
+
+**總結來說：** 我們利用 SQLite 在邊緣端提供「無視網路狀態的極速寫入」**；利用 DynamoDB 在雲端提供**「十萬支手錶等級的高併發全局目錄」；最後把真正巨大且沉重的檔案與數據交給 S3 和 Athena。這就是為何這套系統能順暢運行的根本原因。
+
+
+
+
+
+
+
+```
+以下是構想的下一代Moonlight system的的database架構圖, 根據我的需求: "所以新的database不但要能夠執行以上提到的查詢跟分析, 而且我們可能有上千個watch系列, 十萬了watch. 跟你你設計的新database是否能否順暢的運行support這些功能性"  
+可以順暢支援，但必須採用「分層式 database architecture」。如果把十萬支 watch、數千萬 image assets 和數億筆 analysis values 全塞在單一 `watchDB.db`，最後一定會遇到檔案過大、寫入鎖、備份緩慢及 distribution 查詢過慢。
+
+請幫我深入分析根據我目前的架構比較這下一代的架構, 以及各有甚麼優缺點? 以及是否建議用下一代Moonlight system的的database架構圖取代現在的database? 以及如果現在在local機台的SQLite是否需要更新,
+
+詳細要升新的步驟是甚麼? 以及如果這一兩天就要開始大量create template, 掃描watchentry, 是否來得及更新整個database包括AWS? 如果來不及有沒有優先要做的變動?
+
+flowchart LR  
+App["App / CLI / Hardware"] --> Local["每台設備 Local SQLite V4"]  
+Local --> Outbox["Transactional Sync Outbox"]  
+Outbox --> Catalog["DynamoDB V4 Operational Catalog"]  
+Outbox --> S3["S3 Artifact Storage"]  
+Outbox --> Facts["Parquet / Iceberg Metric Facts"]  
+Facts --> Athena["Athena Analytics"]  
+Catalog --> API["UUID / Watch / Capture / Experiment API"]  
+Athena --> Analysis["Distribution / Comparison / Statistics"]
+```
+
+## 結論
+
+我建議採用下一代 Moonlight 分層架構作為目標架構，但**不建議一次性取代現有 database**。正確做法是：
+
+1. 保留 SQLite，將它升級為每台設備的 edge operational database／durable outbox。
+2. 建立全新的 AWS V4 資源，與現有 AWS V2/V3 並行。
+3. 新舊 schema 雙寫、核對，最後逐步切換讀取。
+4. 數億筆 metrics 只進 Parquet/Iceberg，不進 SQLite 或 DynamoDB。
+
+完整、production-grade 的本機加 AWS 遷移，**1–2 天內來不及安全完成**。但來得及完成一組 P0 保護措施，讓你先大量建立 template，並在有限條件下開始掃描，同時保證資料未來可回填 V4。
+
+---
+
+## 一、目前架構其實已經有部分 V4 能力
+
+目前並不是完全的「一個 point 一張圖」：
+
+- 已有 `watch_runs → point_instances → capture_instances → image_assets`。
+- `image_assets` 有 `capture_id`、`asset_role`、`asset_index`、`internalnum1/2`。
+- HDR 可產生多張 `raw_bracket` 加一張 `hdr_fused`。
+- `watchentry` 已有 `PointImageResult.captures`，每個 capture 支援多張 image 及 optional HDR。[watchentry_structure.py (line 24)](D:/Provenance Project/ImagingLibWatch/DB/templates/watchentry_structure.py:24)
+- 舊 template 仍可轉成新結構。
+- 我執行了三個針對多圖、HDR、舊 template 相容性的測試，全部通過。
+
+所以真正要做的不是重新發明 multi-image model，而是把已經存在的 V4 雛形變成唯一可靠的資料路徑。
+
+---
+
+## 二、目前 database 的實際問題
+
+### 1. SQLite 已經明顯膨脹
+
+目前 `watchDB.db`：
+
+- 約 359 MB。
+- 7,277 筆 `raw_images`。
+- 9,944 筆 `experiment_results`。
+- 其中 `experiment_results.data` JSON 合計約 279 MB。
+- 單筆最大 JSON 約 500 KB。
+- 約 139–146 個 distinct watch IDs。
+
+依目前樣本線性估算，十萬支 watch 會產生約 **200–260 GB 的 SQLite DB**，還不包含影像本身。這不是 SQLite 檔案大小的硬限制問題，而是：
+
+- 備份、restore、migration 太慢。
+- JSON distribution query 必須逐列 parse。
+- index 和 VACUUM 成本增加。
+- 多執行緒 capture、analysis、sync 會出現寫入競爭。
+
+主要問題是把完整 analysis payload 重複存進 SQLite，不是影像索引本身。
+
+### 2. 新舊 tables 雙寫，但新 table 尚未真正成為主資料源
+
+目前 `register_image_asset()` 同時寫：
+
+- `image_assets`
+- `raw_images`
+
+`register_analysis_result_v2()` 同時寫：
+
+- `analysis_results_v2`
+- `experiment_results`
+
+但實際 DB 中：
+
+- `image_assets`：3,521 rows
+- `analysis_results_v2`：0 rows
+- `experiment_results`：9,944 rows
+
+表示 analysis 還是大量走 legacy path。[db_manager.py (line 144)](D:/Provenance Project/ImagingLibWatch/DB/db_manager.py:144)
+
+### 3. 現在的 sync queue 不是 transactional outbox
+
+目前只用 `synced=0/1`：
+
+- 沒有 `event_id`。
+- 沒有每個 destination 的獨立狀態。
+- 沒有 retry count、next retry time、last error、dead-letter。
+- S3、DynamoDB、Facts 無法分別追蹤。
+- `get_pending_uploads()` 仍然讀 legacy tables。[db_manager.py (line 412)](D:/Provenance Project/ImagingLibWatch/DB/db_manager.py:412)
+
+更嚴重的是：
+
+- S3 key 空白時會直接標記 synced。
+- local file 遺失時，程式目前仍可能將這筆視為成功，甚至建立 DynamoDB index。
+
+這會造成「DB 顯示已同步，但 S3 根本沒有 object」的永久資料洞。[cloud_sync.py (line 187)](D:/Provenance Project/ImagingLibWatch/data_manager/cloud_sync.py:187)
+
+Transactional outbox 必須把 domain row 與 outbox event 放在同一個 SQLite transaction，消費端則必須允許重送並具備冪等性；這也符合 [AWS transactional outbox guidance](https://docs.aws.amazon.com/prescriptive-guidance/latest/cloud-design-patterns/transactional-outbox.html)。
+
+### 4. Run/capture 狀態沒有正常結束
+
+目前資料中：
+
+- 1,378 個 `watch_runs` 全部是 `running`。
+- 3,521 個 `capture_instances` 全部是 `processing`。
+
+程式有 start methods，卻沒有一致使用的 complete/failed/cancelled transition。[db_manager.py (line 114)](D:/Provenance Project/ImagingLibWatch/DB/db_manager.py:114)
+
+因此以下查詢目前會失真：
+
+- 成功率。
+- 失敗 capture。
+- 未完成 run。
+- 可安全重跑的 capture。
+- 每支 watch 最新的完整 run。
+
+### 5. SQLite index 不足
+
+現在主要只有四個自建 indexes。實際 query plan 顯示這些查詢會 full scan 或建立 temporary sort：
+
+- `raw_images WHERE synced=0`
+- `experiment_results WHERE synced=0`
+- analysis results by watch/task/time
+- runs by watch/time
+- analysis by asset
+
+此外：
+
+- `journal_mode=DELETE`
+- `foreign_keys=OFF`
+- 沒有 schema migration version table
+
+對單機少量資料尚可，但不是長期大量掃描的理想設定。
+
+### 6. DynamoDB 現行 query model 有缺口
+
+目前 DynamoDB `WatchAnalysisResults` 混合：
+
+- asset index rows
+- `INFO`
+- `VIEW#...`
+- `MAT#...`
+- `AUTH`
+
+主要問題：
+
+- asset 的 sort key 是隨機 UUID；`query_watch_history(... ScanIndexForward=False)` 並不會依時間倒序，只是依 UUID 排序。[cloud_db.py (line 127)](D:/Provenance Project/ImagingLibWatch/data_manager/cloud_db.py:127)
+- 程式查詢 `BrandModelIndex`，但 repository 中沒有任何實際寫入 `GSI1_PK/GSI1_SK` 的程式碼。
+- 一千個以上 templates 時，`scan_all_templates()` 會下載整張 template table，而不是先讀 summary 或 delta。[cloud_db.py (line 305)](D:/Provenance Project/ImagingLibWatch/data_manager/cloud_db.py:305)
+- DynamoDB 單 item 上限仍是 400 KB，因此完整 watchentry、template 或 analysis JSON 不適合持續膨脹。[AWS DynamoDB constraints](https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/Constraints.html)
+
+### 7. Athena 現在只是 query wrapper
+
+目前 `AthenaQueryEngine` 只負責送出任意 SQL：
+
+- 沒有 metric facts exporter。
+- 沒有 Parquet writer。
+- 沒有 Iceberg schema／table provisioning。
+- 沒有 Glue/Iceberg maintenance。
+- 沒有 compaction。
+- 沒有明確 partition strategy。
+
+所以「Athena 已 enabled」不等於已經有可支援 distribution analysis 的 data lake。
+
+---
+
+## 三、現行與下一代架構比較
+
+|面向|現行架構|下一代分層架構|
+|---|---|---|
+|離線操作|很好，SQLite 可獨立工作|保留相同優點|
+|實作複雜度|低至中|高，需要資料契約、IaC、監控|
+|多圖/HDR|已部分支援，但新舊路徑並存|原生 point → captures → assets|
+|同步可靠性|單一 `synced` flag，容易誤標成功|Transactional outbox、冪等重送、DLQ|
+|十萬 watch catalog|本機全塞不可取|DynamoDB 適合 operational lookup|
+|數億 metrics|JSON row 不適合|Parquet/Iceberg 適合|
+|Distribution/比較|需讀大量 JSON|Athena column pruning、aggregation|
+|備份與 restore|DB 越來越大|本機小型 DB；artifact/facts 分別管理|
+|一致性|多處直接雙寫|明確 eventual consistency 與狀態|
+|維運成本|初期低、後期技術債高|AWS 成本及維運較高，但可控|
+|Cutover 風險|已運作|Big-bang 高風險，side-by-side 可控|
+
+---
+
+## 四、建議修正後的下一代架構
+
+原圖的主要修改是：**設備端不要直接 commit Iceberg**。
+
+````
+```mermaid
+flowchart LR
+    App["App / CLI / Hardware"] --> Local["每台設備 Local SQLite V4"]
+    Local -->|"同一個 transaction"| Outbox["Transactional Outbox"]
+
+    Outbox --> Artifact["S3 Artifact Storage"]
+    Outbox --> Landing["S3 Event Landing / SQS"]
+
+    Landing --> Projector["Idempotent Cloud Projectors"]
+    Projector --> Catalog["DynamoDB V4 Operational Catalog"]
+    Projector --> FactWriter["Batch Fact Writer / Compaction"]
+    FactWriter --> Facts["Parquet / Iceberg Metric Facts"]
+
+    Catalog --> API["Watch / Run / Capture / Asset API"]
+    Artifact --> API
+    Facts --> Athena["Athena Analytics"]
+    Athena --> Analysis["Distribution / Comparison / Statistics"]
+```
+````
+
+原因是 Athena 官方也明確指出，大量小型 Parquet files 會降低效能；應批次合併成較大的 columnar files，並按常用查詢條件合理 partition。[Athena data optimization](https://docs.aws.amazon.com/athena/latest/ug/performance-tuning-data-optimization-techniques.html)
+
+Iceberg 還需要定期 `OPTIMIZE` compaction 及 `VACUUM` snapshot/orphan cleanup。[Athena Iceberg optimization](https://docs.aws.amazon.com/athena/latest/ug/querying-iceberg-data-optimization.html)
+
+---
+
+## 五、哪些查詢應該去哪一層
+
+|查詢|正確資料層|
+|---|---|
+|用 UUID／serial／reference 找 watch|DynamoDB GSI|
+|取得某 watch 最新 run|DynamoDB，time-based sort key|
+|顯示 run、point、capture、image gallery|DynamoDB + S3|
+|找 HDR source brackets 與 fused image|DynamoDB asset lineage|
+|取得 template 最新版本|Local cache + Templates DynamoDB|
+|某系列某 metric 的 distribution|Athena/Iceberg|
+|不同系列／reference／年份比較|Athena/Iceberg|
+|平均、標準差、percentile、outlier|Athena/Iceberg|
+|單支 watch 產生 report|DynamoDB manifest + S3 report|
+|本機等待／失敗同步項目|SQLite outbox|
+|即時 sub-second distribution UI|預先聚合 summary/cache；不要每次掃 Athena|
+
+十萬 watch 對 DynamoDB 不是問題，因為 `WatchID/watch_uuid` 可自然分散 partition。真正不能放進 DynamoDB 的是數億個 analysis values；這些應維持 narrow fact schema。
+
+---
+
+## 六、Local SQLite 是否需要更新
+
+**需要，而且應該比 AWS 遷移更早做。** 但不必取消 SQLite，也不需要每支 watch 一個 DB。
+
+建議 V4 local schema 至少有：
+
+- `schema_migrations`
+- `watches`
+- `watch_runs`
+- `point_instances`
+- `capture_instances`
+- `image_assets`
+- `analysis_runs`
+- `metric_summaries`：只存少量本機 UI 必要 metrics
+- `sync_outbox`
+- `sync_deliveries`
+
+資料責任應明確分離：
+
+- Point metadata：座標、component、description、`internalnum1`
+- Capture metadata：曝光計畫、capture type、`internalnum2`
+- Image metadata：checksum、mime、尺寸、role、index、S3 key
+- Analysis metadata：algorithm/model/config version
+- Metric facts：獨立 long-form rows，最終寫入 Iceberg
+- 完整 analysis report：local file/S3 artifact，不再塞進 SQLite JSON
+
+應加入的主要 indexes：
+
+- `raw_images(synced, created_at)`
+- `experiment_results(synced, created_at)`
+- `watch_runs(watchid, started_at DESC)`
+- `capture_instances(run_id, point_instance_id, capture_id)`
+- `image_assets(watchid, view_name, point_name, capture_id, created_at DESC)`
+- `analysis_results_v2(asset_id, algorithm_name, created_at DESC)`
+- `sync_outbox(status, next_attempt_at, created_at)`
+
+在確認 DB 位於本機磁碟且完成 backup 後，可評估：
+
+- `journal_mode=WAL`
+- `foreign_keys=ON`
+- `busy_timeout`
+- 一致的 transaction boundaries
+- 定期 WAL checkpoint
+
+---
+
+## 七、完整升級步驟
+
+### Phase 0：定義資料契約
+
+先固定 immutable IDs：
+
+- `series_uuid`
+- `template_uuid` + `template_version`
+- `watch_uuid`
+- `run_id`
+- `point_instance_id`
+- `capture_instance_id`
+- `asset_id`
+- `analysis_run_id`
+- `event_id`
+
+現有 `internalnum1/2` 應保留作為穩定 business identity，但不要用它取代 UUID。
+
+同時列出正式 access patterns 和 SLO，例如：
+
+- operational lookup < 300 ms
+- gallery load < 1 s
+- Athena distribution query < 10–30 s
+- outbox eventual sync < 5 min
+
+### Phase 1：備份與 additive SQLite migration
+
+- 使用 SQLite online backup 建立可驗證 snapshot。
+- 匯出所有 template YAML 並記錄 checksum。
+- 建立 `schema_migrations`。
+- 新增 V4 tables，不刪除舊 tables。
+- 舊資料保持可讀。
+- 新 writer 在同一 transaction 寫 canonical row 和 outbox event。
+
+### Phase 2：修正 capture lifecycle
+
+每層都要有：
+
+- `pending`
+- `running`
+- `completed`
+- `failed`
+- `cancelled`
+- `completed_with_warnings`
+
+並增加：
+
+- `completed_at`
+- `error_code`
+- `error_message`
+- `attempt`
+- `quality_status`
+
+### Phase 3：真正的 transactional outbox
+
+Outbox 至少需要：
+
+- `event_id`
+- `event_type`
+- `aggregate_type`
+- `aggregate_id`
+- `payload_json`
+- `created_at`
+- `status`
+- `attempts`
+- `next_attempt_at`
+- `last_error`
+
+S3、Dynamo、Facts 必須有獨立 delivery status。相同 `event_id` 重送不得建立重複 asset/fact。
+
+### Phase 4：建立 AWS V4 side-by-side
+
+不要原地修改 production tables，建立：
+
+- `moonlight-v4-catalog`
+- `moonlight-v4-templates`
+- 新 S3 V4 prefixes/bucket
+- Glue catalog
+- Iceberg metric tables
+- alarms、PITR、lifecycle、IAM roles
+
+DynamoDB sort key 應包含時間，例如：
+
+```
+PK = WATCH#<watch_uuid>
+SK = RUN#<captured_at>#<run_id>
+SK = ASSET#<captured_at>#<asset_id>
+```
+
+另建 series/reference/serial/date 所需 GSIs。
+
+### Phase 5：Metric fact pipeline
+
+建議 narrow schema：
+
+```
+event_id
+watch_uuid
+series_uuid
+run_id
+internalnum1
+internalnum2
+capture_instance_id
+asset_id
+analysis_run_id
+algorithm_name
+algorithm_version
+metric_name
+metric_index
+value_double
+value_text
+unit
+captured_at
+station_id
+template_version
+quality_status
+```
+
+不要按 `watch_uuid` partition，否則會產生十萬個以上的小 partitions。通常按：
+
+- capture date/month
+- metric family 或 algorithm family
+- deployment/tenant（若需要）
+
+並在 partition 內保留 series/watch 作 column/filter。
+
+### Phase 6：Shadow write、backfill、reconciliation
+
+- 所有新 capture 同時寫 legacy 和 V4。
+- 從現有 SQLite/S3 reports 抽取 metric facts。
+- 使用 S3 Inventory 和 Dynamo export 對帳。
+- 比較每個 run 的 point/capture/asset 數量。
+- 比較 checksum、S3 existence、Dynamo status。
+- 任一 destination 不一致不得標記 global complete。
+
+### Phase 7：逐讀路徑 cutover
+
+順序建議：
+
+1. 新 template reads
+2. gallery/asset reads
+3. watch operational API
+4. report reads
+5. distribution/analytics
+6. 停止 legacy writes
+7. 舊 DB 轉 read-only archive
+
+---
+
+## 八、未來 1–2 天能做甚麼
+
+### 可以安全完成的 P0
+
+1. **立即旋轉 AWS credentials。**  
+    [system_config.yaml (line 55)](D:/Provenance Project/ImagingLibWatch/config/system_config.yaml:55) 目前包含 plaintext AWS access credentials。應立刻停用、rotate，改用環境變數、AWS profile 或 device IAM mechanism；若曾提交 Git，還要視為已外洩處理。
+    
+2. 備份 `watchDB.db`，執行 integrity check，匯出所有 template YAML。
+    
+3. 大量 template 建立時：
+    
+    - 統一 `schema_version=3.1`
+    - `internalnum_schema_version=4`
+    - 使用 `standard_captures[]` / `hdr_captures[]`
+    - 保持 `internalnum1/2` 不變
+    - 每次修改建立新 version，不覆寫舊 version
+    - 每份 YAML 保存 checksum 和建立時間
+4. 將 template 保存改為 local-first + outbox。  
+    現在 `TemplateManager.save_template()` 是 cloud 成功後才存 local；AWS 暫時故障會讓新 template 無法可靠保存。[template_manager.py (line 309)](D:/Provenance Project/ImagingLibWatch/DB/templates/template_manager.py:309)
+    
+5. 修正兩個資料遺失風險：
+    
+    - empty S3 key 不得標記 synced
+    - missing local file 不得視為成功
+6. 增加必要 SQLite indexes 和 run/capture completion updates。
+    
+7. 所有掃描保留：
+    
+    - raw assets
+    - HDR source brackets
+    - fused image
+    - 完整 analysis report
+    - algorithm/config/template versions
+    - checksum
+
+只要完整 artifacts 沒有遺失，metric facts 可以在 AWS V4 完成後再 backfill。
+
+### 不建議 1–2 天內做的事
+
+- 直接改掉現有 DynamoDB production table keys。
+- 一次搬完全部 S3 keys。
+- 讓設備直接寫 Iceberg。
+- 刪除 legacy tables。
+- 在未 load-test 前切換 report/gallery 全部讀 V4。
+- 邊大量掃描邊執行大型 `VACUUM` 或 destructive migration。
+
+---
+
+## 九、是否可以現在開始大量建立 template／掃描
+
+### Template：可以開始，但先完成保存保護
+
+現有 schema 已能表達 multi-image/HDR，舊 template 也能相容。只要：
+
+- append-only versioning
+- local backup
+- YAML export
+- stable internal IDs
+- 不依賴 cloud-first save
+
+大量 template 建立不必等待完整 AWS V4。
+
+### Watch scanning：有條件可以
+
+至少先完成：
+
+- DB snapshot
+- sync false-success 修正
+- run/capture status 修正
+- stable IDs
+- 保留完整 raw/report artifacts
+- 確認本機磁碟容量與 pending sync queue
+
+如果這些 P0 尚未完成，我不建議直接進入不可重做的大量 production scanning。
+
+---
+
+## 最終建議
+
+- **架構方向：採用下一代分層架構。**
+- **遷移方式：side-by-side、additive、shadow write；不要 big-bang replacement。**
+- **SQLite：保留，但改成小型 edge DB/outbox，必須立即升級。**
+- **DynamoDB：只做 operational catalog，不存數億 metrics。**
+- **S3：保存不可取代的 images/reports。**
+- **Iceberg/Athena：承擔 distribution、comparison、statistics。**
+- **1–2 天：先保護資料與 template identity；完整 AWS V4 遷移來不及。**
+
+本次只做了分析與驗證，沒有修改 repository 檔案。SQLite `integrity_check` 通過，三個 multi-image/HDR/legacy compatibility 測試通過；尚未實際讀取你 AWS account 內已部署 tables、GSIs、Glue catalog 和 S3 inventory，因此正式 migration 前仍須先完成一次 read-only AWS inventory。

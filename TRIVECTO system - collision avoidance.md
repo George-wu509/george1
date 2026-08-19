@@ -1,14 +1,16 @@
 
 
-|                                                        |     |
-| ------------------------------------------------------ | --- |
-| [[#### 主要防撞路徑]]                                        |     |
-| [[#### 完整防撞路徑及現有保護機制]]                                 |     |
-| [[#### move_compound function analysis]]               |     |
-| [[#### App 13拍照移動流程實際走法]]                              |     |
-| [[#### Strap合併成兩個Rules, 且所有safety都整合進hardware_config]] |     |
-|                                                        |     |
-|                                                        |     |
+|                                                                 |     |
+| --------------------------------------------------------------- | --- |
+| [[#### 主要防撞路徑]]                                                 |     |
+| [[#### 完整防撞路徑及現有保護機制]]                                          |     |
+| [[#### move_compound function analysis]]                        |     |
+| [[#### App 13拍照移動流程實際走法]]                                       |     |
+| [[#### Strap合併成兩個Rules, 且所有safety都整合進hardware_config]]          |     |
+|                                                                 |     |
+| [[#### TemplateRun_213跟TemplateRun_213流程中的collision avoidance]] |     |
+|                                                                 |     |
+|                                                                 |     |
 
 
 
@@ -2879,3 +2881,176 @@ Create Template pre-capture、正式 selected-point capture、WatchEntry capture
 ```
 所以你的意思是目前在hardware_config.yaml裡面有hardware.zaber.SafetyRule裡面有door_estop, axis_travel_limits, load_verification....等設定是存在的, 但目前code裡面無法載入這些設定而真的實行SafetyRule避免撞擊嗎?
 ```
+
+
+
+
+
+
+
+
+
+#### TemplateRun_213跟TemplateRun_213流程中的collision avoidance
+```
+請幫我完整整理從按下page_template_new_strap_pre的pushButton_TemplateRun_213按鈕到結束的流程中, 以及從page_template_new_strap_pre2的pushButton_TemplateRun_217按鈕到結束的流程中, 有哪些流程中重要步驟的functions, 以及在流程中遇到的跟防撞safety rules相關的functions.
+
+只需簡短解釋, 重點是讓junior engineer了解Strap的拍照流程及在哪幾個點會觸發防撞safety rules, 以及這些防撞safety rules functions在哪裡控制. 如果可以提供流程圖或可幫助了解的figures(裡面都是英文)更好
+```
+
+目前實際設定是 `use_macro_cam_1_pipeline: false`，所以兩個按鈕會走 **legacy macro_cam_2 + internalnum 4001–4028 + stitching** 流程；程式也保留 macro_cam_1 動態掃描分支。
+
+## Button 213：Front / 3-clock / Back
+
+
+```mermaid
+flowchart TD
+    A["Button 213 Clicked"] --> B["Strap Load Verification [S1]"]
+    B -->|Failed| X["Abort - No Capture"]
+    B -->|Passed| C["Acquire Camera Operation Guard [S2]"]
+    C --> D["Lock Pipeline for This Session"]
+    D --> E{"Selected Pipeline"}
+
+    E -->|"Current: macro_cam_2"| F["Detect Left / Right Strap Extension [S3]"]
+    F --> G["Build Dynamic Front / 3-clock / Back Groups"]
+    G --> H["Capture Each Configured Point [S4]"]
+    H --> I["Autofocus + Image Capture"]
+    I --> J["Stitch Three Views"]
+    
+    E -->|"Optional: macro_cam_1"| K["Detect Strap Endpoints [S3]"]
+    K --> L["Capture AF Anchors and Raw Tiles [S4]"]
+    L --> J
+
+    J --> M["Save Views, Overview, Metadata and Process YAML"]
+    M --> N["Safe Return to Holder / Start Pose [S5]"]
+    N --> O{"Components Selected?"}
+    O -->|Yes| P["SAM Analysis and Component Capture [S6]"]
+    O -->|No| Q["Open 9-clock Load Page"]
+    P --> Q
+    Q --> R["Release Operation Guard"]
+```
+
+
+主要 functions：
+
+- 按鈕綁定在 [`_batch_connect()` (line 10361)](D:/Provenance Project/ImagingLibWatch/App/main.py:10361)，Button 213 的入口為 [`_strap_probe_stitch_or_create()` (line 24905)](D:/Provenance Project/ImagingLibWatch/App/main.py:24905)。
+- [`_verify_loaded_fixture_then()` (line 10472)](D:/Provenance Project/ImagingLibWatch/App/main.py:10472) → [`verify_loaded_fixture()` (line 296)](D:/Provenance Project/ImagingLibWatch/Controller/load_fixture_verifier.py:296)：用 Keyence 確認目前 Holder 上確實是 Strap。
+- [`_begin_camera_operation()` (line 10532)](D:/Provenance Project/ImagingLibWatch/App/main.py:10532)：鎖住所有拍照入口，防止重複點擊或兩個流程同時移動硬體。
+- [`_start_strap_213_workflow()` (line 39955)](D:/Provenance Project/ImagingLibWatch/App/main.py:39955)：啟動背景硬體 worker。
+- [`_run_strap_213_workflow_core()` (line 39876)](D:/Provenance Project/ImagingLibWatch/App/main.py:39876)：213 的實際工作主體。
+- Legacy 路線使用 [`_detect_strap_extension_flags()` (line 40337)](D:/Provenance Project/ImagingLibWatch/App/main.py:40337) 判斷左右 Strap 是否延伸。
+- [`_capture_and_show_strap_stitched_views()` (line 42036)](D:/Provenance Project/ImagingLibWatch/App/main.py:42036)：依 group 拍圖、stitch、組合 overview、儲存 metadata。
+- 每一張來源圖經過 [`_capture_strap_stitch_source_image()` (line 41431)](D:/Provenance Project/ImagingLibWatch/App/main.py:41431) → [`_execute_prepared_point_capture()` (line 9132)](D:/Provenance Project/ImagingLibWatch/App/main.py:9132) → `execute_template_point()`。
+- 若有勾選 component，會執行 [`_start_automatic_strap_component_capture()` (line 14499)](D:/Provenance Project/ImagingLibWatch/App/main.py:14499)，先做 SAM 分析，再拍 Endlink、Screw、Link 等指定部件。
+- 完成後安全回到 Holder，進入 `page_template_new_strap_pre2`。
+
+## Button 217：9-clock
+
+
+```mermaid
+flowchart TD
+    A["Button 217 Clicked"] --> B["Strap Load Verification [S1]"]
+    B -->|Failed| X["Abort - No Capture"]
+    B -->|Passed| C["Acquire Camera Operation Guard [S2]"]
+    C --> D["Verify Same Pipeline as Button 213"]
+    D --> E["Require Three Existing Button-213 Views"]
+    E -->|Missing| X
+    E -->|Ready| F{"Selected Pipeline"}
+
+    F -->|"Current: macro_cam_2"| G["Build Dynamic 9-clock Group"]
+    G --> H["Safe Move to First Capture Point [S3]"]
+    H --> I["Capture 4022-4028 Points [S4]"]
+    I --> J["Stitch 9-clock View"]
+
+    F -->|"Optional: macro_cam_1"| K["Independent 9-clock Endpoint Detection [S3]"]
+    K --> L["Capture AF Anchors and Raw Tiles [S4]"]
+    L --> J
+
+    J --> M["Combine with Previous Three Views"]
+    M --> N["Save Four-view Overview and Metadata"]
+    N --> O["Safe Return to Watch Center [S5]"]
+    O --> P{"Components Selected?"}
+    P -->|Yes| Q["SAM Analysis and Component Capture [S6]"]
+    P -->|No| R["Open Final Strap Page"]
+    Q --> R
+    R --> S["Release Operation Guard"]
+    S --> T["When Leaving Page: Reset R_X to 0 [S7]"]
+```
+
+
+主要 functions：
+
+- 入口為 [`_start_strap_9clock_pre_capture()` (line 40747)](D:/Provenance Project/ImagingLibWatch/App/main.py:40747)。
+    
+- [`_start_strap_217_workflow()` (line 41037)](D:/Provenance Project/ImagingLibWatch/App/main.py:41037)：確認 pipeline 沒有在 213/217 中間被切換，並確認前三個 view 已存在。
+    
+- [`_run_strap_217_workflow_core()` (line 40950)](D:/Provenance Project/ImagingLibWatch/App/main.py:40950)：拍攝 9-clock 並安全回到 watch center。
+    
+- [`_move_strap_capture_group_start()` (line 40659)](D:/Provenance Project/ImagingLibWatch/App/main.py:40659)：Legacy 路線在開始拍照前，先透過 safety planner 移到第一個 9-clock point。
+    
+- 完成後把 9-clock 與前三個 view 合併，產生順序固定為：
+    
+    `Front → 3-clock → Back → 9-clock`
+    
+- 有 component 選項時，再執行 phase 217 的 SAM/component capture。
+    
+- 新 template 會進入命名頁；既有 template 直接進入 `page_template_new_strap` 並顯示四張 overview。
+    
+- 離開最終 Strap 頁時，[`_force_rx_to_zero()` (line 19800)](D:/Provenance Project/ImagingLibWatch/App/main.py:19800) 將 R_X 收回 0°。
+    
+
+## 防撞 Safety Rules 觸發點
+
+|標記|何時觸發|控制 functions|
+|---|---|---|
+|S1|213、217 每次按下後、正式拍照前|`_verify_loaded_fixture_then()`、`verify_loaded_fixture()`、[`_safe_move()` (line 221)](D:/Provenance Project/ImagingLibWatch/Controller/load_fixture_verifier.py:221)|
+|S2|建立拍照流程及硬體 worker 時|`_begin_camera_operation()`、[`_start_workflow_task()` (line 10642)](D:/Provenance Project/ImagingLibWatch/App/main.py:10642)|
+|S3|Keyence load/extension/endpoint probe，以及進入第一個拍照點|`_move_strap_keyence_probe_pose()`、`_move_strap_capture_group_start()`|
+|S4|每一個拍照點、AF 移動、HDR Z 移動及小幅 focus correction|[`execute_template_point()` (line 9762)](D:/Provenance Project/ImagingLibWatch/Controller/hardware_drivers/unified_driver.py:9762)、`_move_xyz_with_safety()`|
+|S5|回 Holder、回 watch center|[`_move_zaber_to_safe_strap_pose()` (line 10106)](D:/Provenance Project/ImagingLibWatch/App/main.py:10106) → `move_compound()`|
+|S6|SAM/component 拍照前及每一個 component point|component route preflight，之後仍經 `execute_template_point()`|
+|S7|離開最後 Strap 頁、R_X 歸零|`_force_rx_to_zero()` → `manual_move()` → `move_compound()`|
+|Anytime|Door 打開、MQTT 資料異常或系統已鎖定|[`SafetyManager._on_message()` (line 4640)](D:/Provenance Project/ImagingLibWatch/Controller/hardware_managers.py:4640) → [`trigger_emergency_stop()` (line 5383)](D:/Provenance Project/ImagingLibWatch/Controller/hardware_drivers/unified_driver.py:5383)|
+
+所有實際 Strap 移動最後都集中到：
+
+
+```mermaid
+flowchart LR
+    A["Capture / Probe / Return Move"] --> B["move_compound"]
+    B --> C["Door / E-stop Lock Check"]
+    C --> D["Axis Limit Check"]
+    D --> E["Digital Twin Prediction"]
+    E --> F["Strap Target Validator"]
+    F --> G["Strap Transition Guard"]
+    G --> H["Segmented Hardware Movement"]
+    H --> I["Readback After Every Segment"]
+    I --> J["Final Pose Verification"]
+```
+
+
+核心 enforcement functions：
+
+- [`move_compound()` (line 646)](D:/Provenance Project/ImagingLibWatch/Controller/hardware_drivers/unified_driver.py:646)：所有安全移動的中央入口。
+- [`_plan_motion_segments()` (line 1018)](D:/Provenance Project/ImagingLibWatch/Controller/hardware_drivers/unified_driver.py:1018)：執行 axis limits、Digital Twin、Strap target validation 和 route planning。
+- [`StrapTargetValidator.validate()` (line 816)](D:/Provenance Project/ImagingLibWatch/Controller/safety_rules.py:816)：檢查最終五軸位置是否安全。
+- [`StrapTransitionGuard.plan()` (line 1394)](D:/Provenance Project/ImagingLibWatch/Controller/safety_rules.py:1394)：把移動拆成安全順序。
+- [`_execute_motion_segments()` (line 765)](D:/Provenance Project/ImagingLibWatch/Controller/hardware_drivers/unified_driver.py:765)：每段移動後做 readback，錯誤就停止後續段落。
+
+Junior engineer 最需要記住的三條規則：
+
+1. **Final target 必須先合法**：Y 不得低於 30 mm；Strap 展開時必須通過 wall-clearance 檢查。
+2. **需要轉動或長距離移動時先退到安全區**：一般為 Y ≥ 160、Z = 70；4029/4030 使用更保守的 Y ≥ 190、Z = 70。改變 R_Z 前會先把 R_X 收回 0°。
+3. **每一段都要 readback**：XYZ 誤差 0.05 mm、角度誤差 0.5°；不符合便 fail closed。
+
+Safety Rules 的主要控制位置是 [config/hardware_config.yaml (line 94)](D:/Provenance Project/ImagingLibWatch/config/hardware_config.yaml:94)：
+
+- Load verification：line 134
+- Digital Twin：line 284
+- Strap target validator：line 359
+- Strap transition guard：line 402
+- Segment/final readback：line 444
+- Holder/start 與 watch-center pose：line 465 起
+
+Pipeline switch 在 [config/strap_macro_cam1_scan.yaml (line 7)](D:/Provenance Project/ImagingLibWatch/config/strap_macro_cam1_scan.yaml:7)；目前為 `false`，而且 213 開始後會鎖定，217 不允許混用另一條 pipeline。
+
+需要特別注意：程式確實會呼叫 [`DigitalTwinGuard.predict_collision()` (line 62)](D:/Provenance Project/ImagingLibWatch/Controller/kinematics/digital_twin_guard.py:62)，但目前 `collision_envelopes` 三組尺寸都是 `0.0`。因此現在主要有效的防撞保護是 **axis limits、StrapTargetValidator、StrapTransitionGuard、segment readback 與 Door/E-stop**；Digital Twin 尚不能視為已完成實體體積校準的防撞層。
