@@ -4,11 +4,11 @@
     "type": "split",
     "children": [
       {
-        "id": "b2e1369889c23676",
+        "id": "20f4c2b0c4339564",
         "type": "tabs",
         "children": [
           {
-            "id": "9dc2b4f05c681743",
+            "id": "512b18b989b8ea60",
             "type": "leaf",
             "state": {
               "type": "markdown",
@@ -173,10 +173,11 @@
       "table-editor-obsidian:Advanced Tables Toolbar": false
     }
   },
-  "active": "9dc2b4f05c681743",
+  "active": "512b18b989b8ea60",
   "lastOpenFiles": [
-    "TRIVECTO system - file system.md",
+    "Work - TRIVECTO Laboratories/TRIVECTO system - DynamoDB.md",
     "TRIVECTO system - DB.md",
+    "TRIVECTO system - file system.md",
     "TRIVECTO system - af mode.md",
     "TRIVECTO system - collision avoidance.md",
     "主要防撞路徑.md",
@@ -197,7 +198,6 @@
     "Work - TRIVECTO Laboratories/TRIVECTO system - run plans.md",
     "Work - TRIVECTO Laboratories/TRIVECTO system - WatchQwen.md",
     "Work - TRIVECTO Laboratories/TRIVECTO system - Ethernet.md",
-    "Work - TRIVECTO Laboratories/TRIVECTO system - DynamoDB.md",
     "Work - TRIVECTO Laboratories/TRIVECTO system - design.md",
     "Work - TRIVECTO Laboratories/Provenance - OCR compare.md",
     "Work - TRIVECTO Laboratories/TRIVECTO system - matlab convert.md"
