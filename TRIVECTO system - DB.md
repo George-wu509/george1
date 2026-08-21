@@ -6,6 +6,8 @@
 | [[#### database支援上萬watch?]]                                          |     |
 | [[#### 「邊緣到雲端 (Edge-to-Cloud)」與「OLTP / OLAP 分離」架構]]                  |     |
 | [[#### 舉例解釋SQLite vs. DynamoDB的差別]]                                  |     |
+| [[#### 文詳細解釋 DB/watchDB.db的內部資料結構]]                                  |     |
+|                                                                      |     |
 |                                                                      |     |
 |                                                                      |     |
 
@@ -5402,3 +5404,202 @@ micro_box:    {width: 0.0, length: 0.0}
 但它們不能直接授權危險位置。
 
 每一個由這些設定產生的 target pose，仍然必須通過 canonical SafetyRule。
+
+
+
+
+
+
+#### 文詳細解釋 DB/watchDB.db的內部資料結構
+```
+能否中文詳細解釋 DB/watchDB.db的內部資料結構, 是否裡面有很多template, 很多watchentry以及其他等等, 我以為watchDB.db是SQLite database, 不是應該類似excel一樣有row, column..
+```
+我已經確認了 `DB/watchDB.db` 檔案本身確實是 SQLite 3 格式(用 `file` 指令驗證過:`SQLite 3.x database ... database pages 87740`),檔案大小 359MB,並且對照了建表的原始碼 `DB/db_manager.py` 逐一確認了裡面的資料表結構。以下詳細說明。
+
+## 為什麼「看起來不像 Excel」
+
+你的直覺沒錯——SQLite **確實**有 row(列)/column(欄)的結構,但它跟 Excel 不同的地方是:
+
+- Excel 檔案通常只有一張或幾張「表」(sheet),你打開就整個看到。
+- SQLite 資料庫檔案裡可以包含**多達十幾個獨立的表(table)**,每個表有自己的欄位定義,彼此用外鍵/ID關聯起來(這叫「關聯式資料庫」)。
+- 如果你直接用文字編輯器打開 `.db` 檔案,看到的是二進位格式,當然看不出 row/column——要用 **DB Browser for SQLite** 這類 GUI 工具,或指令列 `sqlite3 DB/watchDB.db` 才能看到熟悉的表格畫面。
+
+所以正確理解是:`watchDB.db` = 一個容器,裡面裝了 **13 張表**,每張表才是「像 Excel 一樣有 row/column」的東西。
+
+## 實際的表結構(依 `_init_db()` 逐一列出)
+
+**舊版相容表(Legacy)**
+
+|表名|用途|
+|---|---|
+|`raw_images`|每張拍攝的原始照片一筆記錄(watchid, step_name, local_path, s3_key, metadata JSON, synced)|
+|`experiment_results`|每個分析結果一筆記錄(watchid, task_name, result_type, data JSON)|
+
+**核心設定/快取表**
+
+|表名|用途|
+|---|---|
+|`watch_registry`|極簡的 watchid 首次/最後出現時間|
+|`users`|本地帳號快取(username, password_hash, salt, role)|
+|**`local_templates`**|**你問的 template 就在這裡** — Primary Key 是 `(TemplateID, version)`,`data` 欄位是整包 template 的 JSON 字串|
+|`watch_metadata`|每支錶一筆(WatchID 為主鍵),含 Brand/Model/Reference/Version + `Full_JSON`(完整快照)—用來做搜尋索引|
+|`ui_asset_registry`|UI 顯示用的路徑對照表|
+
+**V3 資產導向表(新架構,拆得更細)**
+
+|表名|用途|
+|---|---|
+|`watch_runs`|一次拍攝流程(routine)的執行記錄|
+|`point_instances`|流程中每個拍攝點(view+point)的執行實例|
+|`capture_instances`|每個點底下每次拍照(capture)的實例|
+|`image_assets`|**每一張照片一筆**(取代 raw_images 的正規化新版)|
+|`analysis_results_v2`|**每一個分析結果一筆**(取代 experiment_results 的正規化新版)|
+
+## 針對你的問題:「是否有很多 template、很多 watchentry」
+
+- **Template:確實存在,且很多** — 全部存在 `local_templates` 表裡,一列 = 一個 (TemplateID, version) 組合,內容是 JSON 字串(不是攤平成很多欄位,而是整包塞進一個 `data` TEXT 欄位)。這是典型的「關聯式表 + JSON blob 欄位」混合設計。
+- **`watchentry`(手錶檢測執行記錄):並沒有一張叫 `watchentries` 的表** — 我查了 `core/workflow_manager.py` 和 `App/main.py:32625`,`watchentry` 這個 Python dataclass(定義在 `DB/templates/watchentry_structure.py`)的完整內容主要是寫到**雲端 DynamoDB**,SQLite 這邊只做兩件事:
+    1. `watch_metadata` 表存一份**扁平化快取**(Brand/Model/Reference + Full_JSON 快照),方便離線快速搜尋;
+    2. 過程中產生的**照片與分析結果**(不是整個 entry)則逐筆寫進 `image_assets` / `analysis_results_v2`(以及舊版 `raw_images` / `experiment_results` 做雙寫相容)。
+
+也就是說,watchDB.db 的角色是:「**本地寫入緩衝區 + 雲端 DynamoDB 的鏡射快取**」,不是唯一真實來源(source of truth)——這點在文件 `helper/docs/14_db/14.3_watchDB_db.md` 裡也有明確說明,而且它被 `.gitignore` 排除,是每台工作站各自產生的執行期資料。
+
+## 如果你想親眼看實際的 row 數量
+
+我這台環境沒有現成的 `python`/`sqlite3` 指令列可以直接查詢實際筆數(只確認了 schema 是否吻合)。你可以自己執行,例如:
+
+sqlite3 "DB/watchDB.db" ".tables"
+
+或者更方便的是下載 **DB Browser for SQLite**(免費 GUI 工具),直接打開 `watchDB.db`,點「Browse Data」分頁,選任一張表,就會看到你熟悉的 row/column 表格畫面了。需要的話我可以幫你寫一個小腳本把每張表的筆數和大小統計出來。
+
+Background shell completedSearch for a real python executable outside the store alias
+
+This is just a background task finishing (the earlier `find` search for a Python executable) — nothing requiring action, and my previous answer already covered the question without needing it. No further action needed here.
+
+
+
+
+
+```
+那請中文詳細解釋DB/watchDB.db是如何跟AWS同步, 而且watchDB.db是SQLite, 而AWS上的應該是有四個DynamoDB(目前有moonlight-WatchAnalysisResults, moonlight-WatchCommandLog, moonlight-WatchTemplates, moonlight-WatchUsers), 他們之間是怎麼互動? 怎麼由local的SQLite database跟AWS 不同型態database DynamoDB互動
+```
+我對照了實際設定檔 `config/system_config.yaml:57-70` 確認你講的四張表名稱完全正確,以及原始碼 `data_manager/cloud_db.py`、`data_manager/cloud_sync.py`、`core/watch_record_manager.py` 的實際邏輯。以下詳細說明。
+
+## 核心觀念:SQLite 和 DynamoDB 「不是互相同步的兩份一樣的資料庫」
+
+這是最關鍵的一點——這套系統**沒有底層自動的表對表複製機制**(不是 SQLite table ↔ DynamoDB table 逐欄同步)。而是**應用層(Python 程式碼)在每個關鍵操作點,手動把同一份資料分別轉換成兩邊各自適合的格式**去寫入:
+
+- SQLite 扮演的角色:**本地寫入緩衝區(write buffer)+ 離線快取(offline cache)**
+- DynamoDB 扮演的角色:**雲端的「可查詢索引」或「主要真實來源(master)」**,依表而異
+
+兩者資料模型完全不同,靠中間的 Python dict/JSON 物件當「轉接介面」,分別呼叫 `sqlite3` 的 INSERT 和 `boto3` 的 `put_item` API。
+
+---
+
+## 四張 DynamoDB 表,對應到系統裡的三個「平面(plane)」
+
+|DynamoDB 表|Partition Key / Sort Key|平面|跟本地 SQLite 的關係|
+|---|---|---|---|
+|`moonlight-WatchAnalysisResults`|`WatchID` / `sort_key`|資料平面(Data)|**單向推送**:本地 `image_assets`/`raw_images`/`analysis_results_v2` 等表 → 雲端(見下方流程①②)|
+|`moonlight-WatchCommandLog`|`DeviceID` / `CommandID`|控制平面(Control)|**幾乎無關**:這是 AWS IoT 遠端遙控指令的日誌,直接由雲端讀寫,不經過本地 SQLite|
+|`moonlight-WatchTemplates`|`TemplateID` / `version`|設定平面(Config)|**雲端為主、本地為快取**:對應本地 `local_templates` 表(見下方流程③)|
+|`moonlight-WatchUsers`|`username`|帳號|**雲端為主、本地為快取**:對應本地 `users` 表(見下方流程④)|
+
+---
+
+## 流程① 拍照/分析結果同步 —— 「Async Push」模式
+
+這是最主要、最常跑的同步路徑,對應 `WatchAnalysisResults` 表:
+
+本地拍照/分析完成
+  → 寫入 SQLite (image_assets / raw_images / analysis_results_v2 表, synced=0)
+        │  (這一步是同步、立即完成的,不等網路)
+        ▼
+CloudSyncManager 背景執行緒 (daemon thread)
+  → 每 ~2 秒輪詢一次 SQLite:SELECT * WHERE synced=0
+    (或呼叫 kick_sync_worker() 立刻喚醒,不用等 2 秒)
+        ▼
+對每一筆 pending 資料 (_sync_one_item):
+  1) 把本地檔案上傳到 S3 (Raw/<uuid>.ext 或 Analysis/<uuid>.ext)
+  2) 呼叫 CloudDatabaseManager.index_record()
+        ▼
+index_record() 把 metadata「攤平(flatten)」成一個 DynamoDB item:
+  {
+    "WatchID": watchid,          ← Partition Key
+    "sort_key": asset_id,        ← Sort Key (用 UUID)
+    "s3_key": ...,
+    "view_name": ..., "point_name": ..., "capture_id": ...,
+    "internalnum1": ..., "internalnum2": ...,
+    "metadata_raw": {...}        ← 完整 JSON 也保留一份
+  }
+        ▼
+S3 上傳 + DynamoDB 寫入都成功
+  → 才把 SQLite 那一列 UPDATE synced=1
+
+重點:**SQLite 這邊的一列,對應 DynamoDB 那邊的一個 item**——但欄位名稱、欄位數量完全不同,是靠 `index_record()` 這個 Python 函式手動做「欄位對映」轉換的,不是資料庫層級的自動同步。而且這條路徑目前**沒有上傳失敗次數上限**(unbounded retry),卡住的資料會一直重試到成功為止。
+
+---
+
+## 流程② 完整 watchentry 記錄 —— 「拆分成多個 item」
+
+一個 `watchentry`(一次完整檢測記錄,包含所有 view、材質、真偽鑑定結果)如果整包塞進一個 DynamoDB item,很容易超過 DynamoDB **單一 item 400KB 的硬限制**。所以 `core/watch_record_manager.py:103` 的 `save_full_record_to_cloud()` 把它拆開,寫進**同一張** `WatchAnalysisResults` 表,但用不同的 `sort_key` 前綴區分:
+
+|sort_key|內容|
+|---|---|
+|`INFO`|Brand/Model/Reference 等根層級欄位|
+|`VIEW#Front`、`VIEW#Back`...|每個 view 的檢測結果|
+|`MAT#CaseBody`、`MAT#BoxLidFront`...|每個材質部位的量測結果|
+|`AUTH`|真偽鑑定(authenticity)結果|
+
+所以同一個 `WatchID` 底下,`WatchAnalysisResults` 表裡其實混雜著**兩種完全不同形狀的 item**:一堆單張照片的 flat index item(流程①),加上幾筆這個 entry 本體的 split-key item(流程②)。之後如果要重組回完整的 watchentry,就用 `_reconstruct_split_aws_entries` 依 `sort_key` 前綴反向拼回去。
+
+這條路徑**不經過本地 SQLite 表**——`watchentry` 本體是直接被組成 DynamoDB item 送上雲端的,SQLite 這邊只留一份扁平化的搜尋快取在 `watch_metadata` 表(我們上次談過的)。
+
+---
+
+## 流程③ Template 同步 —— 雲端是「master」,本地只是 cache
+
+跟①②方向相反,Template 是**雲端優先**的設計(`helper/docs/06_domain_model/6.16_template_loading_and_saving.md`):
+
+儲存 (TemplateManager.save_template)
+  1) 先寫 DynamoDB WatchTemplates 表 (PK=TemplateID, SK=version)
+  2) 只有雲端寫入成功，才寫回本地 SQLite local_templates 表當快取
+     （如果雲端寫失敗，本地也不會更新——"fail together" 設計，
+       跟①②的"本地一定先成功、雲端是best-effort"完全相反）
+
+讀取 (TemplateManager.get_template)
+  1) 優先讀本地 SQLite local_templates（離線也能用）
+  2) 找不到才去雲端拉
+
+兩邊都各自有一份 `TEMPLATE_SYNC_BLOCKLIST`(拒絕把 `local_db_all_objects`、`local_watchentry_list` 這類匯出檔名當成真的 Template 存進去的防呆機制)——是**各自獨立實作**的相同邏輯,不是共用同一段程式碼,這點文件裡也特別點出是維護風險。
+
+---
+
+## 流程④ User 帳號同步 —— 整批覆寫快取
+
+`WatchUsers` 表跟本地 `users` 表的關係最簡單:`update_local_user_cache()` 把雲端整份使用者清單抓下來,整批 `INSERT OR REPLACE` 覆寫進 SQLite,讓站點離線時也能用密碼雜湊比對登入(`get_user_offline`)。這是**單向、批次**的快取更新,不是逐筆同步。
+
+---
+
+## 流程⑤ Command Log —— 跟 SQLite 完全無關的獨立通道
+
+`WatchCommandLog` 是遠端遙控(AWS IoT / MQTT)專用,`claim_command_once()` 用 DynamoDB 的 conditional update(`ConditionExpression`)做「這個指令只能被執行一次」的冪等判斷,直接雲端讀寫,**不透過本地 SQLite**,概念上跟前面幾條資料同步路徑完全獨立。
+
+---
+
+## 為什麼「型態不同」也能互動:關鍵在於資料轉換,不是資料庫互通
+
+1. **沒有 ORM 或跨資料庫同步工具**——就是 Python 函式手動把同一份 dict 資料,分別組成 `INSERT INTO ... VALUES (?,?,?)` 和 `table.put_item(Item={...})` 兩種呼叫。
+2. **型別轉換是手動處理的**:DynamoDB 不接受 Python 原生 `float`,所有數值寫入前都要跑 `_float_to_decimal()` 轉成 `Decimal`(且 `NaN`/`inf` 會被轉成 `None`,因為 DynamoDB 完全拒絕非有限數值)。SQLite 這邊反而簡單,直接把整包 JSON 字串塞進一個 `TEXT` 欄位就好。
+3. **兩邊「正規化程度」不同**:SQLite 傾向把常查詢的欄位拆成獨立 column(如 `watch_metadata.Brand/Model`),但大 JSON 直接整包存一欄；DynamoDB 則刻意把 asset 索引「攤平」成多個 top-level attribute(方便 Athena/GSI 查詢),但完整原始資料仍保留一份在 `metadata_raw`。
+4. **一致性模型不同且鬆散**:SQLite 寫入是同步、立即的;DynamoDB 是背景執行緒非同步輪詢推送過去的——中間會有幾秒到「不確定多久」的延遲(尤其是 S3 資料要等到 Athena/Glue catalog 抓到才能被 SQL 查到,這一段完全不受這套系統控制)。
+
+---
+
+## 值得注意的現況/風險(來自文件裡的既有發現)
+
+- 上傳失敗**沒有重試次數上限**,卡住的項目會一直在背景重試,沒有 dead-letter 機制。
+- `query_watches_by_gsi()`(依 Brand/Model 查詢)依賴一個名叫 `BrandModelIndex` 的 GSI,**必須手動在 AWS Console 建立**,程式本身不會自動建立這個索引。
+- `system.offline_mode = true` 時,`CloudDatabaseManager` 完全跳過連線,所有寫入雲端的呼叫都變成 no-op——這時候資料就只留在本地 SQLite,直到離線模式關閉才會補上傳。
+
+如果你想看某一條路徑(例如 template 同步或 watchentry 拆分/重組)更細部的程式碼片段,我可以再深入挖給你看。

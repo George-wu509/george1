@@ -10,7 +10,7 @@
 |                                                                 |     |
 | [[#### TemplateRun_213跟TemplateRun_213流程中的collision avoidance]] |     |
 |                                                                 |     |
-|                                                                 |     |
+| [[#### Strap 拍照流程——完整中文說明]]                                     |     |
 
 
 
@@ -3058,6 +3058,10 @@ Pipeline switch 在 [config/strap_macro_cam1_scan.yaml (line 7)](D:/Provenance P
 
 
 
+
+
+
+213 and 217 process 
 ```
 請根據你畫的utton 213：Front / 3-clock / Back拍照流程圖跟Button 217：9-clock拍照流程圖. 解釋用英文解釋每個單元方塊的作用以及functions, 尤其要很詳細解釋跟防撞有關的, 要附上所有相關的functions並詳細解釋
 ```
@@ -3087,7 +3091,7 @@ Therefore, the active production path is currently **macro_cam_2 + internalnum c
 
 # 1. Button 213: Front / 3-clock / Back
 
-````
+
 ```mermaid
 flowchart TD
     B1["213-1 Button 213 Clicked"]
@@ -3142,7 +3146,7 @@ flowchart TD
     B14 --> B15
     B15 --> B16
 ```
-````
+
 
 ## 213-1 — Button 213 Clicked
 
@@ -3612,7 +3616,7 @@ If component capture was started, `_finish_strap_component_capture_operation()` 
 
 # 2. Button 217: 9-clock
 
-````
+
 ```mermaid
 flowchart TD
     C1["217-1 Button 217 Clicked"]
@@ -3664,7 +3668,7 @@ flowchart TD
     C13 --> C14
     C14 --> C15
 ```
-````
+
 
 ## 217-1/2 — Click and Load Verification
 
@@ -3879,7 +3883,7 @@ After the reset/navigation sequence, the Strap motion audit is closed and saved.
 
 # 3. Complete Collision-Safety Call Chain
 
-````
+
 ```mermaid
 flowchart TD
     S1["Application Motion Request"]
@@ -3925,7 +3929,7 @@ flowchart TD
     S15 -->|Mismatch| HALT
     S15 --> SAFE
 ```
-````
+
 
 # 4. Detailed Safety Functions
 
@@ -4466,7 +4470,7 @@ These define where and in what order to capture. They do not authorize unsafe mo
 
 
 
-
+#### Strap 拍照流程——完整中文說明
 ```
 把英文詳細解釋的全部翻成中文
 ```
