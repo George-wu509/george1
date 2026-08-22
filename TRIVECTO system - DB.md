@@ -7,6 +7,8 @@
 | [[#### 「邊緣到雲端 (Edge-to-Cloud)」與「OLTP / OLAP 分離」架構]]                  |     |
 | [[#### 舉例解釋SQLite vs. DynamoDB的差別]]                                  |     |
 | [[#### 文詳細解釋 DB/watchDB.db的內部資料結構]]                                  |     |
+| [[#### DB/watchDB.db是如何跟AWS同步]]                                      |     |
+| [[#### DB browser for SQLite打開watchDB.db]]                           |     |
 |                                                                      |     |
 |                                                                      |     |
 |                                                                      |     |
@@ -5479,7 +5481,7 @@ This is just a background task finishing (the earlier `find` search for a Python
 
 
 
-
+#### DB/watchDB.db是如何跟AWS同步
 ```
 那請中文詳細解釋DB/watchDB.db是如何跟AWS同步, 而且watchDB.db是SQLite, 而AWS上的應該是有四個DynamoDB(目前有moonlight-WatchAnalysisResults, moonlight-WatchCommandLog, moonlight-WatchTemplates, moonlight-WatchUsers), 他們之間是怎麼互動? 怎麼由local的SQLite database跟AWS 不同型態database DynamoDB互動
 ```
@@ -5506,11 +5508,10 @@ This is just a background task finishing (the earlier `find` search for a Python
 |`moonlight-WatchUsers`|`username`|帳號|**雲端為主、本地為快取**:對應本地 `users` 表(見下方流程④)|
 
 ---
-
 ## 流程① 拍照/分析結果同步 —— 「Async Push」模式
 
 這是最主要、最常跑的同步路徑,對應 `WatchAnalysisResults` 表:
-
+```
 本地拍照/分析完成
   → 寫入 SQLite (image_assets / raw_images / analysis_results_v2 表, synced=0)
         │  (這一步是同步、立即完成的,不等網路)
@@ -5535,7 +5536,7 @@ index_record() 把 metadata「攤平(flatten)」成一個 DynamoDB item:
         ▼
 S3 上傳 + DynamoDB 寫入都成功
   → 才把 SQLite 那一列 UPDATE synced=1
-
+```
 重點:**SQLite 這邊的一列,對應 DynamoDB 那邊的一個 item**——但欄位名稱、欄位數量完全不同,是靠 `index_record()` 這個 Python 函式手動做「欄位對映」轉換的,不是資料庫層級的自動同步。而且這條路徑目前**沒有上傳失敗次數上限**(unbounded retry),卡住的資料會一直重試到成功為止。
 
 ---
@@ -5543,7 +5544,6 @@ S3 上傳 + DynamoDB 寫入都成功
 ## 流程② 完整 watchentry 記錄 —— 「拆分成多個 item」
 
 一個 `watchentry`(一次完整檢測記錄,包含所有 view、材質、真偽鑑定結果)如果整包塞進一個 DynamoDB item,很容易超過 DynamoDB **單一 item 400KB 的硬限制**。所以 `core/watch_record_manager.py:103` 的 `save_full_record_to_cloud()` 把它拆開,寫進**同一張** `WatchAnalysisResults` 表,但用不同的 `sort_key` 前綴區分:
-
 |sort_key|內容|
 |---|---|
 |`INFO`|Brand/Model/Reference 等根層級欄位|
@@ -5554,8 +5554,6 @@ S3 上傳 + DynamoDB 寫入都成功
 所以同一個 `WatchID` 底下,`WatchAnalysisResults` 表裡其實混雜著**兩種完全不同形狀的 item**:一堆單張照片的 flat index item(流程①),加上幾筆這個 entry 本體的 split-key item(流程②)。之後如果要重組回完整的 watchentry,就用 `_reconstruct_split_aws_entries` 依 `sort_key` 前綴反向拼回去。
 
 這條路徑**不經過本地 SQLite 表**——`watchentry` 本體是直接被組成 DynamoDB item 送上雲端的,SQLite 這邊只留一份扁平化的搜尋快取在 `watch_metadata` 表(我們上次談過的)。
-
----
 
 ## 流程③ Template 同步 —— 雲端是「master」,本地只是 cache
 
@@ -5573,8 +5571,6 @@ S3 上傳 + DynamoDB 寫入都成功
 
 兩邊都各自有一份 `TEMPLATE_SYNC_BLOCKLIST`(拒絕把 `local_db_all_objects`、`local_watchentry_list` 這類匯出檔名當成真的 Template 存進去的防呆機制)——是**各自獨立實作**的相同邏輯,不是共用同一段程式碼,這點文件裡也特別點出是維護風險。
 
----
-
 ## 流程④ User 帳號同步 —— 整批覆寫快取
 
 `WatchUsers` 表跟本地 `users` 表的關係最簡單:`update_local_user_cache()` 把雲端整份使用者清單抓下來,整批 `INSERT OR REPLACE` 覆寫進 SQLite,讓站點離線時也能用密碼雜湊比對登入(`get_user_offline`)。這是**單向、批次**的快取更新,不是逐筆同步。
@@ -5584,8 +5580,6 @@ S3 上傳 + DynamoDB 寫入都成功
 ## 流程⑤ Command Log —— 跟 SQLite 完全無關的獨立通道
 
 `WatchCommandLog` 是遠端遙控(AWS IoT / MQTT)專用,`claim_command_once()` 用 DynamoDB 的 conditional update(`ConditionExpression`)做「這個指令只能被執行一次」的冪等判斷,直接雲端讀寫,**不透過本地 SQLite**,概念上跟前面幾條資料同步路徑完全獨立。
-
----
 
 ## 為什麼「型態不同」也能互動:關鍵在於資料轉換,不是資料庫互通
 
@@ -5603,3 +5597,338 @@ S3 上傳 + DynamoDB 寫入都成功
 - `system.offline_mode = true` 時,`CloudDatabaseManager` 完全跳過連線,所有寫入雲端的呼叫都變成 no-op——這時候資料就只留在本地 SQLite,直到離線模式關閉才會補上傳。
 
 如果你想看某一條路徑(例如 template 同步或 watchentry 拆分/重組)更細部的程式碼片段,我可以再深入挖給你看。
+
+
+
+
+
+
+
+
+
+#### DB browser for SQLite打開watchDB.db
+```
+我用DB browser for SQLite打開watchDB.db, 看到裡面有13個tables - analysis_results_v2, capture_instances, experiment_results, image_assets, local_templates, point_instances, raw_images, sqlite_sequence, ui_asset_registry, users, watch_metadata, watch_registry, watch_runs, 以及四個indices - Idx_asset_cap_inst, Idx_asset_cap_internalnums, Idx_path, Idx_watch_meta_brand_model這些各是甚麼? 以及有沒有哪個是現在沒在用的. 我選local_templates並選Database Structure看到裡面有TemplateID, version, data, update_at. 這些各是甚麼? 然後選Browse Data看到有很多筆TemplateID譬如run_16613T(V3), test_hdr1, test_Josh...等. 那local_templates是怎麼把資料傳給AWS的DynamoDB - moonlight-WatchTemplates? 在裡面的data structure是怎麼樣的? 能否以實際例子譬如當local_template新創了一個template, 之後怎麼存到moonlight-WatchTemplates
+```
+我對照了 `DB/db_manager.py`、`DB/templates/template_manager.py:309`、`data_manager/cloud_db.py:325`、`DB/templates/template_structure.py`、`DB/templates/internalnum_config.py:1515` 的實際程式碼,並且用 grep 逐一確認了每張表/每個索引在整個專案裡「有沒有被真的呼叫到」,而不是只憑建表語法猜測。以下分三部分回答。
+
+---
+
+## 一、13 個表 + 4 個索引逐一說明,以及哪些沒在用
+
+|表名|用途|使用狀態(用 grep 實際驗證)|
+|---|---|---|
+|`raw_images`|每張照片一筆(舊版)|✅ **主力表**——`get_pending_uploads()` 就是從這裡 `WHERE synced=0` 撈出待上傳清單,是 CloudSyncManager 背景執行緒**實際輪詢的來源**|
+|`experiment_results`|每個分析結果一筆(舊版)|✅ 同上,`get_pending_uploads()` 也從這裡撈,同樣是真正驅動上傳的表|
+|`image_assets`|照片的「V3 正規化版」|✅ 有寫也有讀(`get_image_assets_for_point`、`get_preferred_raw_image_path`),但**不是**雲端上傳佇列的來源(下面細講)|
+|`analysis_results_v2`|分析結果的「V3 正規化版」|⚠️ **只寫不讀**——全專案沒有任何地方對它下 `SELECT`,寫進去後目前沒人讀回來|
+|`watch_runs`|一次拍攝流程(routine)的執行記錄|⚠️ **只寫不讀**——`start_watch_run()` 被 `core/workflow_manager.py`、`App/main.py` 呼叫寫入,但沒有任何查詢讀取它|
+|`point_instances`|每個拍攝點的執行實例|⚠️ **只寫不讀**,同上|
+|`capture_instances`|每次拍照的執行實例|⚠️ **只寫不讀**,同上|
+|`local_templates`|Template 快取(你的問題主角)|✅ 大量讀寫|
+|`watch_metadata`|Brand/Model/Reference 搜尋索引快取|⚠️ 只有 `upsert_watch_metadata()`(寫)被 `App/main.py:33065` 呼叫;對應的讀取函式 `search_watches_by_metadata()` **在全專案沒有任何呼叫者**——等於寫了但沒人查|
+|`ui_asset_registry`|UI 顯示用的路徑對照表|✅ 大量讀寫|
+|`users`|帳號本地快取|✅ 讀寫皆有(離線登入用)|
+|`watch_registry`|錶的首次/最後出現時間|❌ **完全死表**——`register_watch()` 這個方法本身除了自己定義那行之外,**全專案沒有任何地方呼叫它**,連寫入都沒發生|
+|`sqlite_sequence`|—|不是應用程式自己建的表,是 SQLite **內建系統表**——因為 `raw_images`/`experiment_results` 用了 `INTEGER PRIMARY KEY AUTOINCREMENT`,SQLite 會自動生出這張表來記錄各表目前的自動遞增計數器,DB Browser 才會列出來,不用管它|
+
+**索引部分**(對照 `DB/db_manager.py:55,63,85,97`):
+
+|索引|建在哪張表/欄位|有沒有被實際查詢用到|
+|---|---|---|
+|`idx_path`|`raw_images(local_path)`|✅ 有用——`get_image_record_by_path()` 用 `WHERE local_path=?` 精確比對會吃到這個索引|
+|`idx_watch_meta_brand_model`|`watch_metadata(Brand, Model)`|❌ **目前沒用到**——因為它服務的 `search_watches_by_metadata()` 本身就是死代碼,沒人呼叫,索引也就空轉|
+|`idx_asset_cap_inst`|`image_assets(capture_instance_id)`|❌ **目前沒用到**——我找了所有對 `image_assets` 下的查詢,沒有一個是用 `capture_instance_id` 當篩選條件(實際查詢都是用 `watchid`/`view_name`/`point_name`)|
+|`idx_asset_internalnums`|`image_assets(watchid, internalnum1, internalnum2)`|❌ **目前沒用到**——同樣沒有查詢用 `internalnum1`/`internalnum2` 當篩選條件|
+
+**小結,回答「有沒有現在沒在用的」**:有,而且不少——`watch_registry` 是完全的死表;`watch_runs`/`point_instances`/`capture_instances`/`analysis_results_v2` 是「持續累積但沒人讀回來」的單向紀錄表(可能是為未來報表/稽核功能預留,或只是設計時多做了正規化但 UI 端還沒接上);4 個索引裡有 3 個目前沒有任何查詢會用到它們,只有 `idx_path` 是真正有效的。這些空轉的索引/表不會造成錯誤,但每次寫入都要多付一點索引維護成本,是可以考慮清理的地方。
+
+---
+
+## 二、`local_templates` 的四個欄位
+
+CREATE TABLE local_templates (
+    TemplateID TEXT,
+    version    TEXT,
+    data       TEXT,
+    updated_at REAL,
+    PRIMARY KEY (TemplateID, version)
+)
+
+|欄位|說明|
+|---|---|
+|`TemplateID`|樣板的唯一識別碼(你看到的 `run_16613T(V3)`、`test_hdr1`、`test_Josh` 這些字串)。是複合主鍵的一半。|
+|`version`|同一個 `TemplateID` 可以有多個版本(`v1`, `v2`...)。`TemplateID` + `version` 兩者合起來才是唯一鍵——這就是為什麼你會看到同名 TemplateID 出現好幾筆,只是 version 不同。|
+|`data`|**整包 Template 內容的 JSON 字串**——不是攤平成很多欄位,而是把整個 Python `WatchTemplate` dataclass(所有 view、point、材質、量測設定…)序列化成一大串 JSON 文字塞進這一個 TEXT 欄位。你點開任一筆的 `data`,會看到一整包巢狀 JSON。|
+|`updated_at`|最後更新時間,epoch seconds(Unix timestamp,浮點數)|
+
+---
+
+## 三、`local_templates` 怎麼傳到 AWS `moonlight-WatchTemplates`——實際流程 + 具體範例
+
+### 關鍵:雲端優先寫,本地只在雲端成功後才寫
+
+跟你可能猜測的「本地先存,背景再同步過去」**不一樣**——Template 儲存是 `DB/templates/template_manager.py:309` 的 `save_template()` 這個函式**同步、順序**執行的,順序是「先雲端、後本地」:
+
+```
+def save_template(self, template_obj):
+    item = normalize_template_payload(
+        template_obj.to_dynamo_item(),
+        template_obj.TemplateID,
+        template_obj.version,
+        refresh_updated_at=True,
+    )
+    if self.cloud_db.save_template_cloud(item):        # ① 先寫 DynamoDB
+        self.local_db.save_local_template(              # ② 雲端成功才寫 SQLite
+            item["TemplateID"], item["version"], item
+        )
+        return True
+    else:
+        return False   # 雲端失敗 → 本地也不會存，整個操作視為失敗
+```
+
+### 具體例子:假設你在 UI 新建一個叫 `run_16613T` 的樣板(version `V3`)
+
+**步驟 1 —— 記憶體中的 Python 物件**
+
+UI 填完表單後,建立一個 `WatchTemplate` dataclass 實例,大致長這樣(欄位定義在 `DB/templates/template_structure.py:22`):
+
+```
+WatchTemplate(
+    templatename = "run_16613T",
+    TemplateID   = "run_16613T",
+    version      = "V3",
+    template_type= "watch",
+    schema_version = "3.1",
+    Brand = "Rolex", Reference = "16613", ...,
+    watchView = WatchView(Front=..., Back=..., ...),   # 巢狀物件
+    watchmaterial = WatchMaterialTemplate(...),
+    ...
+)
+```
+
+
+**步驟 2 —— `to_dynamo_item()` 轉成純 dict**
+
+`asdict(self)` 把整個 dataclass(含巢狀的 `watchView`/`watchmaterial`)攤成一個 Python `dict`,並且會**刪掉沒被實際填寫/確認過的 point 欄位**(避免空樣板佔太多空間),結果大概是:
+
+```
+{
+  "templatename": "run_16613T",
+  "TemplateID": "run_16613T",
+  "version": "V3",
+  "schema_version": "3.1",
+  "Brand": "Rolex", "Reference": "16613",
+  "watchView": {
+      "Front": {"Point1": {"pointID": "...", "complete": 1, ...}},
+      "Back":  {...}
+  },
+  "watchmaterial": {...},
+  "updated_at": 0.0
+}
+```
+
+**步驟 3 —— `normalize_template_payload(..., refresh_updated_at=True)`**
+
+補齊/修正一些欄位(`DB/templates/internalnum_config.py:1515`):把 `updated_at` 蓋成 `time.time()` 目前時間、確保 `TemplateID`/`version` 是乾淨字串、跑內部編號 schema migration、移除巨大的衍生欄位 `internalnum_manifest`(避免超過 DynamoDB 400KB item 上限)。
+
+**步驟 4a —— 寫進 DynamoDB `moonlight-WatchTemplates`**
+
+`data_manager/cloud_db.py:325` 的 `save_template_cloud()`:先把所有 `float` 轉成 `Decimal`(DynamoDB API 硬性要求),然後直接 `self.template_table.put_item(Item=safe_item)`。這一步寫進 DynamoDB 的**是一個原生的多屬性(multi-attribute)item**,結構大概像這樣(用 AWS 的 JSON 表示法):
+
+```
+{
+  "TemplateID": {"S": "run_16613T"},        ← Partition Key
+  "version":    {"S": "V3"},                 ← Sort Key
+  "templatename": {"S": "run_16613T"},
+  "Brand": {"S": "Rolex"},
+  "Reference": {"S": "16613"},
+  "watchView": {"M": {                       ← 巢狀 dict 存成 DynamoDB 的 "Map" 型別
+      "Front": {"M": {"Point1": {"M": {...}}}},
+      "Back":  {"M": {...}}
+  }},
+  "watchmaterial": {"M": {...}},
+  "updated_at": {"N": "1755840000.123"}
+}
+```
+
+**這是跟 SQLite 最大的結構差異**:同一包 Python dict,DynamoDB 是把**每個 top-level key 變成一個獨立的屬性(attribute)**,巢狀 dict/list 也保留原生的 Map/List 結構(可以直接對 `watchView.Front.Point1` 這種路徑做屬性層級查詢);而 SQLite 那邊完全不拆——整包直接 `json.dumps()` 變成一整串文字塞進**一個** `data` TEXT 欄位。
+
+**步驟 4b —— 雲端成功後,才寫回本地 `local_templates`**
+
+`DB/db_manager.py:519` 的 `save_local_template()`:
+
+INSERT OR REPLACE INTO local_templates (TemplateID, version, data, updated_at)
+VALUES ('run_16613T', 'V3', '{"templatename":"run_16613T","TemplateID":"run_16613T",...}', 1755840000.123)
+
+也就是你在 DB Browser 看到的那一列——`data` 欄位裡那一大串 JSON,其實就是**跟剛才寫進 DynamoDB 那個 item 完全同一份內容**,只是 DynamoDB 把它拆成多個原生屬性存,SQLite 把它整包序列化成一段文字存。
+
+### 如果雲端寫入失敗會怎樣?
+
+`save_template_cloud()` 回傳 `False`(可能是超過 380KB 軟限制、驗證沒過、或網路/AWS 認證失敗),`save_template()` 就直接 `return False`,**完全不會執行第 4b 步**——也就是說,你新建的樣板即使在畫面上看起來存好了,只要雲端那一步沒成功,SQLite `local_templates` 裡根本不會有這一筆。這跟你之前問的照片同步(先本地寫、雲端是背景 best-effort)剛好是相反的設計哲學,前面文件裡也特別點出這是刻意的「fail-together」設計。
+
+
+
+
+
+
+```
+以下是Moonlight system的建議的正式架構架構圖, 根據我的需求: "所以新的database不但要能夠執行以上提到的查詢跟分析, 而且我們可能有上千個watch系列, 十萬了watch. 跟你你設計的新database是否能否順暢的運行support這些功能性" 可以順暢支援，但必須採用「分層式 database architecture」。如果把十萬支 watch、數千萬 image assets 和數億筆 analysis values 全塞在單一 `watchDB.db`，最後一定會遇到檔案過大、寫入鎖、備份緩慢及 distribution 查詢過慢。 請深入分析這套系統的優缺點以及是否建議這樣設計或有更好的設計?為什麼 更詳細解釋各個單元以及其作用, 詳細解釋SQLite跟DynamoDB的差別, 以及這系統是怎麼運作的, 也以實際例子解釋你的新架構 flowchart LR App["App / CLI / Hardware"] --> Local["每台設備 Local SQLite V4"] Local --> Outbox["Transactional Sync Outbox"] Outbox --> Catalog["DynamoDB V4 Operational Catalog"] Outbox --> S3["S3 Artifact Storage"] Outbox --> Facts["Parquet / Iceberg Metric Facts"] Facts --> Athena["Athena Analytics"] Catalog --> API["UUID / Watch / Capture / Experiment API"] Athena --> Analysis["Distribution / Comparison / Statistics"]
+```
+# 深度分析:單站 SQLite + 四表 DynamoDB → 你提出的「分層式 V4 架構」
+
+我先講結論,再逐層拆解:**你朋友/團隊建議的方向是對的,而且跟現有系統相比不是「推倒重來」,而是「補齊現有系統本來就欠缺的那一塊(結構化分析層)」**。理由詳述如下。
+
+---
+
+## 一、先釐清一個容易誤解的地方:瓶頸在「本地端」還是「中央端」?
+
+這點很重要,因為它決定了你要優化的其實不是 `watchDB.db` 本身,而是雲端那一側。
+
+回顧上一輪我們確認過的架構:`watchDB.db` 是**每一台工作站各自一份**,角色是「本地寫入緩衝區 + 離線快取」,理論上資料一旦 `synced=1` 上傳成功,本地就沒有義務永久保留全部歷史(現有程式碼沒有主動清除機制,但架構設計的意圖是如此)。
+
+所以:
+
+- **如果需求只是「單站要能順暢拍照、離線也能跑」**——現有 SQLite 單機檔案完全夠用,十萬支錶的「總量」跟單一站點的本地檔案大小沒有直接關係,因為每支錶只會短暫停留在某一台站點的本地 DB,同步完就是雲端的事了。
+- **如果需求是「要能對全部十萬支錶、跨所有站點做統計分析/比對」**——瓶頸從來就不在 `watchDB.db`,而在**中央端**:目前系統唯一具備「集中式、可分析」能力的,是 DynamoDB(單筆查詢)+ Athena(直接掃 S3 上零散的 JSON/圖片 metadata)。而 Athena 直接掃描非結構化/半結構化的 S3 物件,在資料量到千萬、億級筆數時,查詢費用和延遲會急遽惡化——這才是你這次問題真正要解決的痛點。
+
+你提出的架構圖裡新增的 **Parquet/Iceberg Metric Facts** 這個節點,正是針對這個「中央端分析瓶頸」設計的,不是針對本地 SQLite。這是我認為這個提案抓對重點的地方。
+
+---
+
+## 二、SQLite 與 DynamoDB 的本質差異(這是理解整張圖為什麼要「分層」的基礎)
+
+|維度|SQLite|DynamoDB|
+|---|---|---|
+|資料模型|關聯式(Table + Schema,支援 JOIN)|NoSQL Key-Value/Document(PK/SK 為主,其餘欄位可自由增減,無強制 schema)|
+|查詢能力|完整 SQL:`JOIN`、`GROUP BY`、子查詢、聚合函數,由查詢優化器自動選索引|只能用 PK 做等值查詢,或 PK+SK 做 range 查詢;要用第二維度就得另外建 GSI(如 `BrandModelIndex`);**沒有原生 JOIN,沒有跨 item 的 `GROUP BY`/聚合**|
+|擴展性|單機檔案型,沒有原生水平擴展——要自己刻 sharding|雲端全託管,依 partition key 自動水平擴展,理論上可支撐近乎無限並發讀寫(前提是 key 設計均勻、不產生 hot partition)|
+|交易(Transaction)|完整 ACID,可跨多表交易|有 `TransactWriteItems`,但限制較多(單次最多 100 item、額外計費),不像關聯式資料庫那樣自然好用|
+|延遲/一致性|本地讀寫微秒~毫秒級,單機|個位數毫秒級,但要走網路;預設是最終一致性讀取,要付額外成本才有強一致性讀|
+|成本模型|幾乎零成本(就是一個檔案)|依讀寫容量單位(RCU/WCU)或 on-demand 計費 + 儲存費用|
+|適合場景|單機、需要複雜關聯查詢、離線優先|高並發、低延遲的「已知 key」點查詢(OLTP 型的 operational lookup)|
+|**分析型查詢(OLAP)能力**|可以用 SQL 做,但單機無法平行掃描 TB 級資料|**完全不適合**——沒有 `GROUP BY`,沒有跨 item 聚合,想做統計分析必須另外搭配 Athena/EMR/Redshift 之類的分析引擎|
+
+**這一行「分析型查詢能力」正是整套架構為什麼一定要多加一層 Athena(甚至 Parquet/Iceberg)的原因**——DynamoDB 天生就不是用來回答「這一萬支 Daytona 的 dial color 分布是什麼」這種問題的,無論資料量大小都一樣做不到,不是效能問題,是能力問題。
+
+---
+
+## 三、現有系統在「查詢跟分析」需求下,具體會卡在哪裡
+
+用你提到的十萬支錶、上千系列規模具體推算:
+
+- 假設每支錶平均 6 個 view × 5 個 point,每個 point 2~3 張照片 → 單支錶 **50~80 張影像資產**,十萬支錶就是 **500 萬~800 萬筆 `image_assets`**。
+- 每張照片跑 3~5 種演算法分析 → **上千萬~上億筆 analysis 結果**。
+
+現有架構下,這些資料最終落在 DynamoDB `WatchAnalysisResults` 表(flat item)+ S3(圖片/報表原始檔)。如果你要做「distribution/comparison/statistics」這類分析:
+
+1. DynamoDB 做不到——只能一筆一筆用 PK 查,或全表 `Scan`(非常慢且昂貴,DynamoDB 的 Scan 是逐頁讀取全部資料再在應用端過濾,完全不是為分析設計的)。
+2. 只能靠 Athena 直接對 S3 掃描。但目前 S3 上存的是**零散的原始 JSON/圖片**,沒有欄式(columnar)結構、沒有 partition 規劃——Athena 每次查詢都要整批掃過所有物件、解析 JSON,費用是按「掃描的資料量」計費,億級筆數規模下,一次查詢可能就要掃 TB 級資料,又慢又貴。
+3. 前面文件也提過:S3 → Athena/Glue catalog 抓到新資料**沒有主動 refresh 機制**,新寫入的資料要多久才查得到是不確定的——這在「即時分析」場景下是硬傷。
+
+這就是你提出的架構裡 **Parquet/Iceberg Metric Facts** 要解決的問題。
+
+---
+
+## 四、逐一解釋新架構每個節點的作用
+
+App/CLI/Hardware
+    │
+    ▼
+每台設備 Local SQLite V4  ──── 本地寫入緩衝區(跟現在角色相同,離線也能拍照/分析)
+    │
+    ▼
+Transactional Sync Outbox ──── 新增的可靠投遞層(關鍵改進點,見下方詳述)
+    │
+    ├──▶ DynamoDB V4 Operational Catalog ──▶ UUID/Watch/Capture/Experiment API
+    │         (單筆查詢用途:「這支錶現在狀態如何」「這次拍攝的 asset 有哪些」)
+    │
+    ├──▶ S3 Artifact Storage
+    │         (存放原始影像、報表等大型二進位檔案,跟現在角色相同)
+    │
+    └──▶ Parquet / Iceberg Metric Facts ──▶ Athena Analytics ──▶ Distribution/Comparison/Statistics
+              (結構化、欄式儲存的分析資料湖,這是新增的核心)
+
+### ① Local SQLite V4(每台設備)
+
+角色跟現在的 `watchDB.db` 一樣——本地寫入緩衝區。**這一層應該保留,不需要換掉**,因為離線可靠性、低延遲寫入的需求不會因為中央資料量變大而改變。差異只在於:V4 版本裡它應該更明確地只扮演「暫存」角色,同步完成後的資料應該有機制定期歸檔/清理,而不是無限累積在本地(這點現有系統目前沒有做,值得在新架構落地時一併補上)。
+
+### ② Transactional Sync Outbox(新增,關鍵改進)
+
+這是「Outbox Pattern」——一種分散式系統裡確保「本地資料寫入」和「對外發送同步事件」**要嘛一起成功、要嘛一起失敗**的標準做法。
+
+跟現有系統對比:現在的 `raw_images`/`experiment_results` 表其實已經是一種簡化版 outbox(用 `synced` 欄位當作「還沒送出去的佇列」),但我們上次分析時發現了它的弱點——**上傳失敗沒有重試次數上限,也沒有 dead-letter 機制**,卡住的項目會無限期在背景重試,沒人知道它卡住了。
+
+正式的 Outbox 設計會補上:
+
+- 獨立的 outbox 事件表,跟業務資料**在同一個本地 SQLite transaction 裡一起 commit**(保證不會發生「資料寫了但同步事件漏記」的情況)。
+- 一個獨立的 relay/dispatcher process,對每個下游目標(Catalog / S3 / Facts)分別追蹤送達狀態、重試次數,超過門檻就丟進 dead-letter 佇列讓人工介入,而不是無限重試。
+- 同一份本地資料**同時扇出(fan-out)給三個不同下游**,而不是像現在只有一條「上傳到 S3 + 寫 DynamoDB」的單一路徑。
+
+### ③ DynamoDB V4 Operational Catalog
+
+延續現在四張表的角色,但聚焦在「Operational」——也就是**只做它擅長的事**:單筆、已知 key 的高並發查詢(某支錶現在的狀態、某次拍攝的 asset 清單、某個指令的執行狀態)。不試圖用它做統計分析,這正是吸取了現有系統「把所有東西都塞進 DynamoDB,包括拆分後的完整 watchentry」這種設計的教訓。
+
+### ④ UUID/Watch/Capture/Experiment API
+
+在 DynamoDB 之上包一層 API,把底層儲存細節封裝起來。現有系統目前是 App 端直接用 `boto3` SDK 操作 DynamoDB(`data_manager/cloud_db.py`),這樣做的問題是:未來如果要換底層儲存、加快取層、或做存取權限控管,所有呼叫端都要跟著改。加一層 API 是好的工程實踐,值得採納。
+
+### ⑤ S3 Artifact Storage
+
+角色不變,存放原始影像、HDR 合成圖、PDF 報表這類大型二進位檔案——這向來是 S3 的強項(幾乎無限容量、低成本、高耐久),不需要換。
+
+### ⑥ Parquet/Iceberg Metric Facts(新增,整個架構的核心)
+
+這是解決「十萬支錶、億級分析數值要做統計/分佈/比對」問題的關鍵元件。需要說明兩個技術概念:
+
+- **Parquet**:一種「欄式(columnar)」檔案格式。跟現在 Athena 直接讀 JSON 的「列式(row-based)」相比,欄式儲存在做統計分析時效能差非常多——例如你只要 `dial_color` 這一欄做分布統計,Parquet 可以只讀這一欄,完全跳過其他幾十個欄位;而且每個欄位有自己的 min/max 統計值,可以直接跳過不相關的資料區塊(row group)。實務上同樣查詢,Parquet 通常比掃描原始 JSON 快 10~100 倍,Athena 費用也等比例下降(因為費用是按掃描量計費)。
+- **Iceberg**:架在 Parquet 之上的「table format」,提供 ACID 交易、schema 演進(以後加新欄位不用重寫整個資料湖)、time travel(查詢某個時間點的歷史快照)、以及自動化的 partition 管理和小檔案合併(compaction)。對於「資料會持續增長、schema 偶爾會變」的分析資料湖場景特別合適——你的系統本來就有「v1 到 v2 schema migration」這類經驗,Iceberg 的 schema evolution 正好對應這個需求。
+
+**重要提醒**:圖上「Outbox → Facts」這條線不是自動發生的,實務上需要一個 ETL/streaming 轉換元件(例如 AWS Glue ETL job、Kinesis Firehose、或定期跑的 batch job),把 DynamoDB/S3 上的原始 metadata 轉換、攤平、寫成 Parquet/Iceberg 格式,並依查詢模式設計 partition(例如依 `Brand`/`Model`/日期分區)。這是落地時容易被低估工作量的一塊。
+
+### ⑦ Athena Analytics + Distribution/Comparison/Statistics
+
+對 Parquet/Iceberg 資料做 SQL 分析,對應你最初提到的「查詢跟分析」需求本體。因為底層是結構化欄式資料且有 partition,查詢速度和成本相較「直接掃 S3 JSON」會有數量級的改善。
+
+---
+
+## 五、跟現有系統的對照表:保留 / 新增 / 取代
+
+|現有系統|新架構|變化|
+|---|---|---|
+|每站 `watchDB.db`(SQLite,write buffer)|每站 Local SQLite V4|**保留角色**,建議補上定期歸檔/清理機制|
+|`raw_images`/`experiment_results` 的 `synced=0` 輪詢|Transactional Sync Outbox|**升級**:同一 transaction 保證、多目標 fan-out、dead-letter 機制|
+|4 張 DynamoDB 表(`WatchAnalysisResults`/`WatchCommandLog`/`WatchTemplates`/`WatchUsers`)|DynamoDB V4 Operational Catalog|**保留但收斂角色**——只做單筆 operational 查詢,不再承載「完整 watchentry 用 split-key 塞進同一張表」這種混用分析/交易的設計|
+|App 直接用 boto3 呼叫 DynamoDB|UUID/Watch/Capture/Experiment API|**新增封裝層**|
+|S3 存原始影像|S3 Artifact Storage|**保留不變**|
+|Athena 直接掃 S3 上零散 JSON|Parquet/Iceberg Metric Facts + Athena|**新增結構化分析層**,這是解決你「查詢跟分析」+「十萬支錶規模」需求的核心|
+
+---
+
+## 六、兩個具體例子,走過新架構的兩條不同路徑
+
+**例子 1——「查某支特定錶(WatchID = RLX-16613-00042)現在的狀態跟已拍攝的 asset 清單」**
+
+這是「已知 key、單筆查詢」,走 **DynamoDB Catalog** 這條路:App 呼叫 `Watch API`,API 內部對 `WatchID` 做一次 `Query`(不是 Scan),個位數毫秒回應。**完全不會碰到 Athena/Parquet**,因為那條路是為分析設計的,拿來做單筆查詢反而更慢更貴。
+
+**例子 2——「過去一年所有 Rolex Daytona 系列,dial color 的分布統計,並跟 Submariner 系列比較」**
+
+這是「跨十萬支錶、要做 GROUP BY/統計」的分析型查詢,DynamoDB 做不到,走 **Parquet/Iceberg + Athena** 這條路:
+
+1. 資料已經依 `Brand=Rolex, Model=Daytona/Submariner` 做 partition,Athena 查詢時先做 partition pruning,只掃相關分區,完全跳過其他上千個系列的資料。
+2. Parquet 欄式儲存讓 Athena 只讀 `dial_color`、`Brand`、`Model` 這幾欄,不用把整包巢狀 JSON 全部解析出來。
+3. 查詢秒級內回應,費用只跟實際掃描的資料量(而不是整個資料湖)成正比。
+
+相較之下,如果現有架構要回答同一個問題,得讓 Athena 對 S3 上億筆零散 JSON 物件做全表掃描,解析每一筆的巢狀結構,查詢可能要跑數分鐘、掃描費用也高出一到兩個數量級。
+
+---
+
+## 七、我的建議:方向正確,但落地時要注意幾個風險點
+
+1. **Outbox 要真的做到「同 transaction」**——如果只是換個名字繼續用 polling + `synced` flag,沒有解決「無限重試無 dead-letter」的根本問題,那就只是換皮,沒有真正解決現有系統文件裡點出的可靠性缺口。
+2. **DynamoDB partition key 設計要避免 hot partition**——現有用 `WatchID` 當 PK 分散度還算合理,但如果新增的 Catalog 有「依系列批次查詢」的場景,要注意別讓某個熱門系列集中在少數 partition 上造成流量瓶頸。
+3. **Parquet/Iceberg 的小檔案問題(small file problem)**——如果 Outbox 是即時、逐筆把資料寫進資料湖,很容易產生大量小 Parquet 檔案,反而拖慢 Athena 查詢。建議搭配 Iceberg 的自動 compaction,或改用小批次(micro-batch)方式寫入。
+4. **需要明確定義 ETL 轉換邏輯**——目前現有系統裡類似 `normalize_template_payload` 這種「攤平巢狀資料」的邏輯,在新架構裡要在「Outbox → Facts」這一段重新設計一次(要決定哪些欄位攤平進 Parquet schema、怎麼處理 schema 演進)。
+5. **Local SQLite 的角色要跟現有系統一樣明確保持「暫存」而非「歷史庫」**——不然十萬支錶的規模問題依然可能悄悄回到本地端。
+
+**總結**:這套「本地 SQLite(OLTP write buffer)+ DynamoDB(operational catalog)+ S3(物件)+ Parquet/Iceberg + Athena(OLAP 分析)」的分層架構,是業界處理「高並發交易型讀寫 + 大規模分析型查詢」這兩種截然不同負載時的標準做法(關鍵字:OLTP/OLAP 分離、Lakehouse 架構)。以你們的規模(十萬支錶、上億筆分析值)來說,這是必要的演進方向,而不是過度設計。
