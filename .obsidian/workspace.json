@@ -4,24 +4,39 @@
     "type": "split",
     "children": [
       {
-        "id": "b36c6413f14cdd7c",
+        "id": "81b095466e5bd703",
         "type": "tabs",
         "children": [
           {
-            "id": "e5eb597070807699",
+            "id": "aaeb0b00520c2358",
             "type": "leaf",
             "state": {
               "type": "markdown",
               "state": {
-                "file": "TRIVECTO system - DB.md",
+                "file": "TRIVECTO system - collision avoidance.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "TRIVECTO system - DB"
+              "title": "TRIVECTO system - collision avoidance"
+            }
+          },
+          {
+            "id": "a46d44790b2a3616",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "TRIVECTO system - Strap active_plan.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "TRIVECTO system - Strap active_plan"
             }
           }
-        ]
+        ],
+        "currentTab": 1
       }
     ],
     "direction": "vertical"
@@ -173,10 +188,12 @@
       "table-editor-obsidian:Advanced Tables Toolbar": false
     }
   },
-  "active": "e5eb597070807699",
+  "active": "a46d44790b2a3616",
   "lastOpenFiles": [
     "TRIVECTO system - collision avoidance.md",
+    "TRIVECTO system - Strap active_plan.md",
     "TRIVECTO system - DB.md",
+    "TRIVECTO system - Authentication.md",
     "TRIVECTO system - file system.md",
     "TRIVECTO system - af mode.md",
     "主要防撞路徑.md",
@@ -198,8 +215,6 @@
     "Work - TRIVECTO Laboratories/TRIVECTO system - WatchQwen.md",
     "Work - TRIVECTO Laboratories/TRIVECTO system - Ethernet.md",
     "Work - TRIVECTO Laboratories/TRIVECTO system - DynamoDB.md",
-    "Work - TRIVECTO Laboratories/TRIVECTO system - design.md",
-    "Work - TRIVECTO Laboratories/Provenance - OCR compare.md",
-    "Work - TRIVECTO Laboratories/TRIVECTO system - matlab convert.md"
+    "Work - TRIVECTO Laboratories/TRIVECTO system - design.md"
   ]
 }

@@ -6214,3 +6214,3153 @@ micro_box:    {width: 0.0, length: 0.0}
 
 
 
+
+
+
+```
+請根據你畫的utton 213：Front / 3-clock / Back拍照流程圖跟Button 217：9-clock拍照流程圖. 解釋用英文解釋每個單元方塊的作用以及functions, 尤其要很詳細解釋跟防撞有關的, 要附上所有相關的functions並詳細解釋
+```
+# Strap Capture Flow — Detailed Function Explanation
+
+The current repository setting is:
+
+```
+use_macro_cam_1_pipeline: false
+```
+
+Therefore, the active production path is currently **macro_cam_2 + internalnum capture points + image stitching**. The macro_cam_1 branch is still explained because the UI can select and lock it before Button 213 starts.
+
+“Safety” below includes:
+
+- Wrong fixture/load prevention
+- Concurrent-motion prevention
+- Door/E-stop protection
+- Axis-limit validation
+- Strap collision-envelope validation
+- Safe transition planning
+- Segment and final-position readback
+- Failure recovery and safe retract
+
+---
+
+# 1. Button 213: Front / 3-clock / Back
+
+````
+```mermaid
+flowchart TD
+    B1["213-1 Button 213 Clicked"]
+    B2["213-2 Strap Load Verification"]
+    B3["213-3 Acquire Operation Guard"]
+    B4["213-4 Wait for Holder Motion"]
+    B5["213-5 Lock Pipeline and Start Audit"]
+    B6{"213-6 Pipeline Selection"}
+
+    B7["213-7A Detect Strap Extension"]
+    B8["213-8A Build Front / 3-clock / Back Groups"]
+    B9["213-9A Capture Configured Points"]
+
+    M7["213-7B Validate Macro-1 Configuration"]
+    M8["213-8B Detect Physical Endpoints"]
+    M9["213-9B Capture AF Anchors and Tiles"]
+
+    B10["213-10 Stitch Three Views"]
+    B11["213-11 Save Images and Metadata"]
+    B12["213-12 Safe Return to Holder"]
+    B13{"213-13 Components Selected?"}
+    B14["213-14 SAM and Component Capture"]
+    B15["213-15 Open 9-clock Load Page"]
+    B16["213-16 Release Operation Guard"]
+    STOP["Stop Safely"]
+
+    B1 --> B2
+    B2 -->|Rejected| STOP
+    B2 -->|Verified| B3
+    B3 -->|Busy| STOP
+    B3 --> B4
+    B4 --> B5
+    B5 --> B6
+
+    B6 -->|"macro_cam_2 - current"| B7
+    B7 --> B8
+    B8 --> B9
+    B9 --> B10
+
+    B6 -->|"macro_cam_1 - optional"| M7
+    M7 -->|Invalid| STOP
+    M7 --> M8
+    M8 --> M9
+    M9 --> B10
+
+    B10 --> B11
+    B11 --> B12
+    B12 -->|Move failed| STOP
+    B12 --> B13
+    B13 -->|Yes| B14
+    B13 -->|No| B15
+    B14 --> B15
+    B15 --> B16
+```
+````
+
+## 213-1 — Button 213 Clicked
+
+Purpose: receive the operator’s “Bracelet Loaded” action on `page_template_new_strap_pre`.
+
+Functions:
+
+- [`_batch_connect()` (line 10361)](D:/Provenance Project/ImagingLibWatch/App/main.py:10361)
+- [`_strap_probe_stitch_or_create()` (line 24905)](D:/Provenance Project/ImagingLibWatch/App/main.py:24905)
+
+`_batch_connect()` does not connect Button 213 directly to the capture function. Because Button 213 appears in `_LOAD_VERIFICATION_BUTTON_VIEWS`, it wraps the callback with Strap load verification:
+
+```
+Button 213
+  -> _verify_loaded_fixture_then("strap", callback)
+  -> _strap_probe_stitch_or_create()
+```
+
+This wrapper is important: the capture callback is not allowed to run until load verification succeeds.
+
+---
+
+## 213-2 — Strap Load Verification
+
+Purpose: confirm that the object loaded on the holder is a Strap, rather than a box or incorrect fixture.
+
+Functions:
+
+- [`_verify_loaded_fixture_then()` (line 10472)](D:/Provenance Project/ImagingLibWatch/App/main.py:10472)
+- [`verify_loaded_fixture()` (line 296)](D:/Provenance Project/ImagingLibWatch/Controller/load_fixture_verifier.py:296)
+- [`_detection_sequence()` (line 70)](D:/Provenance Project/ImagingLibWatch/Controller/load_fixture_verifier.py:70)
+- [`_center_out_grid()` (line 124)](D:/Provenance Project/ImagingLibWatch/Controller/load_fixture_verifier.py:124)
+- [`_safe_move()` (line 221)](D:/Provenance Project/ImagingLibWatch/Controller/load_fixture_verifier.py:221)
+- [`_read_out1()` (line 196)](D:/Provenance Project/ImagingLibWatch/Controller/load_fixture_verifier.py:196)
+- [`_out1_is_valid()` (line 215)](D:/Provenance Project/ImagingLibWatch/Controller/load_fixture_verifier.py:215)
+
+Important behavior:
+
+1. `_verify_loaded_fixture_then()` acquires a temporary camera-operation token.
+2. It starts `verify_loaded_fixture()` inside a serialized hardware worker.
+3. `verify_loaded_fixture()` reads the canonical `SafetyRule.load_verification` configuration.
+4. The verifier checks detection tiers from the taller fixture downward.
+5. For the Strap tier, it may use the configured center-out XY grid.
+6. Every probe position is sent through `_safe_move()`.
+7. `_safe_move()` requires `UnifiedHardwareDriver.move_compound()`. There is no raw-Zaber fallback.
+8. Keyence `OUT1` is converted into inferred fixture height.
+9. The Strap is accepted only when the detected tier and configured Strap requirement match.
+
+Current Strap verification uses a minimum inferred-Z rule:
+
+```
+inferred Z > 50 mm
+```
+
+If verification fails, the real Button 213 callback is never called.
+
+In simulation mode, this load-verification phase is skipped.
+
+---
+
+## 213-3 — Acquire Operation Guard
+
+Purpose: prevent Button 213, Button 217, or another capture button from starting an overlapping workflow.
+
+Functions:
+
+- [`_begin_camera_operation()` (line 10532)](D:/Provenance Project/ImagingLibWatch/App/main.py:10532)
+- [`_camera_operation_is_current()` (line 10562)](D:/Provenance Project/ImagingLibWatch/App/main.py:10562)
+- [`_finish_camera_operation()` (line 10568)](D:/Provenance Project/ImagingLibWatch/App/main.py:10568)
+
+Important detail: load verification and actual capture use separate operation tokens.
+
+```
+Load-verification token
+  -> verification finishes
+  -> token released
+  -> actual Button 213 callback starts
+  -> new Button 213 token acquired
+```
+
+When `_begin_camera_operation()` succeeds, it disables all capture-entry buttons listed in `_CAMERA_OPERATION_BUTTONS`.
+
+If another operation already owns the guard, the request is ignored before hardware movement begins.
+
+---
+
+## 213-4 — Wait for Holder Motion
+
+Purpose: prevent a Strap capture worker from starting while the holder is still moving.
+
+Functions:
+
+- `_is_holder_move_running()`
+- `_start_holder_move_async()`
+- [`_start_workflow_task()` (line 10642)](D:/Provenance Project/ImagingLibWatch/App/main.py:10642)
+
+`_strap_probe_stitch_or_create()` checks for an active holder-move worker. If one exists, it queues its continuation and waits.
+
+`_start_workflow_task(..., hardware=True)` provides a second hardware-level check:
+
+- No holder move may be active.
+- No other hardware workflow worker may be active.
+
+This is a concurrency interlock, not geometric collision detection, but it prevents two safe planners from commanding the same hardware simultaneously.
+
+---
+
+## 213-5 — Lock Pipeline and Start Audit
+
+Purpose:
+
+- Freeze the camera pipeline across Button 213 and Button 217.
+- Start a persistent record of Strap movements.
+
+Functions:
+
+- [`_lock_strap_pipeline_for_session()` (line 37066)](D:/Provenance Project/ImagingLibWatch/App/main.py:37066)
+- [`_load_strap_macro1_scan_config()` (line 37082)](D:/Provenance Project/ImagingLibWatch/App/main.py:37082)
+- [`_strap_macro1_scan_enabled()` (line 37092)](D:/Provenance Project/ImagingLibWatch/App/main.py:37092)
+- [`_start_strap_motion_recording()` (line 3845)](D:/Provenance Project/ImagingLibWatch/App/main.py:3845)
+- `_attach_strap_motion_observer()`
+- `_record_strap_motion_event()`
+
+`_lock_strap_pipeline_for_session()`:
+
+1. Reads the Wide-field or Macro Camera checkbox.
+2. Writes the selected state to `strap_macro_cam1_scan.yaml`.
+3. Stores the selection in `_strap_pipeline_session_use_macro1`.
+4. Disables both pipeline checkboxes.
+
+Button 217 must use the same locked selection.
+
+Important distinction: `StrapMotionRecorder` is an audit/diagnostic mechanism. It records requested moves, completed moves, capture poses and page transitions, but it does not itself reject dangerous motion.
+
+---
+
+## 213-6 — Pipeline Selection
+
+Purpose: choose the implementation used to create the first three views.
+
+Functions:
+
+- [`_start_strap_213_workflow()` (line 39955)](D:/Provenance Project/ImagingLibWatch/App/main.py:39955)
+- [`_run_strap_213_workflow_core()` (line 39876)](D:/Provenance Project/ImagingLibWatch/App/main.py:39876)
+
+`_start_strap_213_workflow()` creates a retained hardware worker. UI changes are handled in its completion callback; hardware operations run in `_run_strap_213_workflow_core()`.
+
+Branches:
+
+- `macro_cam_2`: configured internalnum points are captured and stitched.
+- `macro_cam_1`: Strap endpoints are measured, dynamic raw tiles are captured, and those tiles are stitched.
+
+Any uncaught worker error goes to the failure callback, which:
+
+- Resets progress
+- Shows “Strap scan stopped safely”
+- Releases the operation guard
+- Does not continue to the 9-clock page
+
+---
+
+## 213-7A — Detect Strap Extension: macro_cam_2
+
+Purpose: determine whether additional capture points are required at the left or right end.
+
+Functions:
+
+- [`_detect_strap_extension_flags()` (line 40337)](D:/Provenance Project/ImagingLibWatch/App/main.py:40337)
+- `_run_single_strap_extension_probe()`
+- [`_move_strap_keyence_probe_pose()` (line 40206)](D:/Provenance Project/ImagingLibWatch/App/main.py:40206)
+- `_read_strap_keyence_out1()`
+- `_strap_keyence_out1_valid()`
+
+For each configured probe position:
+
+```
+_move_strap_keyence_probe_pose()
+  -> check_safety_lock()
+  -> move_compound()
+  -> target validation
+  -> transition planning
+  -> segmented move
+  -> readback verification
+```
+
+If `move_compound()` is unavailable, the probe fails. Raw `zaber.move_axis()` is intentionally not used as a compatibility fallback.
+
+The resulting `strap_left_ext` and `strap_right_ext` flags control which additional images appear in the dynamic stitch groups.
+
+---
+
+## 213-8A — Build Front / 3-clock / Back Groups
+
+Purpose: translate the extension result into ordered image-capture groups.
+
+Functions:
+
+- [`_build_dynamic_strap_stitch_groups()` (line 40463)](D:/Provenance Project/ImagingLibWatch/App/main.py:40463)
+- `_apply_strap_stitch_group_overrides()`
+- `_apply_strap_stitch_source_config()`
+- `_strap_capture_order_for_group()`
+- [`_strap_scan_positions_ready()` (line 41403)](D:/Provenance Project/ImagingLibWatch/App/main.py:41403)
+
+The three normal groups are:
+
+1. `strap_right_front`
+2. `strap_right_side` — 3-clock
+3. `strap_right_back`
+
+`_strap_scan_positions_ready()` performs a fail-closed preflight in production. It rejects the scan if any required point:
+
+- Does not exist
+- Contains invalid XYZ values
+- Has XYZ all equal to zero
+
+The actual capture poses come from the point/internalnum configuration, while the safety layer independently decides whether those poses are allowed.
+
+---
+
+## 213-9A — Capture Configured Points
+
+Purpose: move to every configured Strap point, autofocus, capture and save its source image.
+
+Functions:
+
+- [`_capture_and_show_strap_stitched_views()` (line 42036)](D:/Provenance Project/ImagingLibWatch/App/main.py:42036)
+- [`_capture_strap_stitch_source_image()` (line 41431)](D:/Provenance Project/ImagingLibWatch/App/main.py:41431)
+- [`_execute_prepared_point_capture()` (line 9132)](D:/Provenance Project/ImagingLibWatch/App/main.py:9132)
+- [`execute_template_point()` (line 9762)](D:/Provenance Project/ImagingLibWatch/Controller/hardware_drivers/unified_driver.py:9762)
+
+Call chain:
+
+```
+_capture_and_show_strap_stitched_views()
+  -> for each group
+     -> for each capture item
+        -> _capture_strap_stitch_source_image()
+           -> _execute_prepared_point_capture()
+              -> execute_template_point()
+```
+
+`_execute_prepared_point_capture()` builds the complete hardware payload:
+
+- XYZ
+- R_X and R_Z
+- Camera selection
+- Internal numbers
+- Exposure and gain
+- Lighting
+- Mechanical autofocus settings
+- Liquid-lens autofocus settings
+- HDR settings
+- Semantic target with `fixture_profile="strap"`
+
+`execute_template_point()` checks the safety lock at entry. Its initial pose, autofocus corrections, Keyence moves, HDR Z positions and final approach are routed through the shared safety planner.
+
+---
+
+## 213-7B — Validate macro_cam_1 Configuration
+
+Purpose: prevent dynamic raw-tile scanning unless all required macro_cam_1 calibration and safety requirements are present.
+
+Functions:
+
+- [`_validate_strap_macro1_scan_for_run()` (line 37102)](D:/Provenance Project/ImagingLibWatch/App/main.py:37102)
+- `_strap_macro1_validate_pose()`
+- `validate_scan_config()`
+- [`validate_safety_rule()` (line 417)](D:/Provenance Project/ImagingLibWatch/Controller/safety_rules.py:417)
+
+Production validation checks include:
+
+- `safety.calibration_confirmed`
+- Front, side, back and 9-clock pose limits
+- Availability of `move_compound()`
+- Required safety planner
+- Camera-to-Keyence calibration consistency
+- Endpoint configuration
+- Focus configuration
+- Canonical SafetyRule values injected into the scan configuration
+
+The macro_cam_1 YAML controls scan calibration and capture behavior. It does not replace the canonical safety controls in `hardware_config.yaml`.
+
+---
+
+## 213-8B — Detect Physical Endpoints
+
+Purpose: measure the actual left and right Strap boundaries instead of assuming a fixed number of tiles.
+
+Functions:
+
+- [`_detect_strap_macro1_endpoints()` (line 37474)](D:/Provenance Project/ImagingLibWatch/App/main.py:37474)
+- `_select_strap_macro1_keyence_probe_y_offset()`
+- `_resolve_strap_macro1_endpoint_report()`
+- [`_strap_macro1_transition_to_pose()` (line 37447)](D:/Provenance Project/ImagingLibWatch/App/main.py:37447)
+- [`_strap_macro1_safe_compound_move()` (line 37373)](D:/Provenance Project/ImagingLibWatch/App/main.py:37373)
+
+Endpoint detection moves the Keyence probe through the same collision-aware planner. Each endpoint search may include:
+
+- Seed position
+- Coarse X probes
+- Fine X refinement
+- Small calibrated Y retries
+- Consecutive invalid readings to confirm the physical edge
+
+`_strap_macro1_safe_compound_move()` requires:
+
+- A hardware driver
+- `move_compound()`
+- An unlocked safety state
+- A validated target pose
+
+It also passes the measured worst-case Strap span into the semantic target. The target validator may increase the assumed half-length, but it cannot reduce the canonical minimum.
+
+---
+
+## 213-9B — Capture AF Anchors and Raw Tiles
+
+Purpose: capture dynamic macro_cam_1 images across the measured Strap span.
+
+Functions:
+
+- [`_capture_strap_macro1_views()` (line 39460)](D:/Provenance Project/ImagingLibWatch/App/main.py:39460)
+- [`_capture_strap_macro1_view()` (line 38495)](D:/Provenance Project/ImagingLibWatch/App/main.py:38495)
+- [`_strap_macro1_capture_frame()` (line 38113)](D:/Provenance Project/ImagingLibWatch/App/main.py:38113)
+- `_strap_macro1_focus_result_ok()`
+- `_strap_macro1_locked_current()`
+- `_strap_macro1_stitch_view()`
+
+The normal macro_cam_1 strategy is:
+
+1. Calculate tile X positions from measured endpoints.
+2. Select five autofocus anchors.
+3. At each anchor, measure Keyence height and obtain a liquid-lens lock.
+4. Capture and retain the anchor image.
+5. Interpolate focus values for non-anchor tiles.
+6. Capture remaining tiles.
+7. Stitch the ordered raw tiles.
+
+Every stage move still passes through `_strap_macro1_transition_to_pose()` or internal safe XYZ motion.
+
+---
+
+## 213-10 — Stitch Three Views
+
+Purpose: convert all source images into one stitched image per view.
+
+Functions:
+
+- [`WatchBandStitcher.stitch_group()` (line 578)](D:/Provenance Project/ImagingLibWatch/algorithms/watchband_stitcher.py:578)
+- `_strap_stitch_ordered_image_items()`
+- `_strap_macro1_stitch_view()`
+- [`_compose_strap_stitched_preview()` (line 41709)](D:/Provenance Project/ImagingLibWatch/App/main.py:41709)
+
+The legacy pipeline stitches one group at a time. If any required source image is missing, the group is not stitched and the workflow stops.
+
+The three completed views are ordered as:
+
+```
+Front -> 3-clock -> Back
+```
+
+Image stitching itself does not move hardware and therefore does not trigger collision rules.
+
+---
+
+## 213-11 — Save Images and Metadata
+
+Purpose: persist enough information to display, analyze and audit the scan.
+
+Functions:
+
+- `_save_strap_stitched_output_images()`
+- [`_save_strap_precapture_artifacts()` (line 41937)](D:/Provenance Project/ImagingLibWatch/App/main.py:41937)
+- `_save_strap_stitched_overview_metadata()`
+- [`_remember_strap_stitched_pre_capture_result()` (line 40546)](D:/Provenance Project/ImagingLibWatch/App/main.py:40546)
+- `_remember_strap_macro1_pre_capture_result()`
+
+Saved data includes:
+
+- Individual stitched views
+- Frame-82 overview image
+- Segment/display geometry
+- Stitch reports
+- Extension or endpoint report
+- Capture poses
+- Process YAML
+- Raw-image manifests for macro_cam_1
+- Source-camera information
+
+This block is storage-only. It does not command the motion system.
+
+---
+
+## 213-12 — Safe Return to Holder
+
+Purpose: move the machine back to the operator-accessible holder/start position before asking the operator to flip/reload the Strap.
+
+Functions:
+
+- `_move_zaber_to_start_pos()`
+- [`_move_zaber_to_safe_strap_pose()` (line 10106)](D:/Provenance Project/ImagingLibWatch/App/main.py:10106)
+- `_strap_macro1_transition_to_pose()`
+- [`move_compound()` (line 646)](D:/Provenance Project/ImagingLibWatch/Controller/hardware_drivers/unified_driver.py:646)
+
+Configured destination:
+
+```
+X=0, Y=292, Z=150, R_X=0, R_Z=0
+```
+
+This is not a direct five-axis jump. `move_compound()` converts it into safe segments using `StrapTransitionGuard`.
+
+If the return fails, the workflow stops and does not show the 9-clock load page.
+
+---
+
+## 213-13/14 — Optional SAM and Component Capture
+
+Purpose: capture selected Strap components after the overview is available.
+
+Functions:
+
+- [`_start_automatic_strap_component_capture()` (line 14499)](D:/Provenance Project/ImagingLibWatch/App/main.py:14499)
+- [`_start_strap_precapture_auto_analysis()` (line 14701)](D:/Provenance Project/ImagingLibWatch/App/main.py:14701)
+- `_resume_pending_strap_component_capture()`
+- `_on_strap_link_analysis_ready()`
+- [`_preflight_strap_component_capture_routes()` (line 16557)](D:/Provenance Project/ImagingLibWatch/App/main.py:16557)
+- [`_execute_strap_component_capture_plan()` (line 16671)](D:/Provenance Project/ImagingLibWatch/App/main.py:16671)
+- [`_run_strap_component_capture_plan_core()` (line 16785)](D:/Provenance Project/ImagingLibWatch/App/main.py:16785)
+- [`_move_zaber_to_strap_safe_retract()` (line 3949)](D:/Provenance Project/ImagingLibWatch/App/main.py:3949)
+- [`_finish_strap_component_capture_operation()` (line 17790)](D:/Provenance Project/ImagingLibWatch/App/main.py:17790)
+
+Safety behavior:
+
+1. Only components selected for phase 213 are included.
+2. Motion waits for saved, current-session SAM coordinates.
+3. Macro and micro phases are independently preflighted.
+4. Preflight runs the candidate poses through the Digital Twin and shared motion planner.
+5. Each actual point uses the normal `execute_template_point()` path.
+6. If one point fails, the next point may run only after `_move_zaber_to_strap_safe_retract()` reaches and verifies the safe retract pose.
+7. The macro phase must safely retract before macro-image screw analysis begins.
+8. The `finally` block performs a safe retract on both success and exception paths.
+9. Retract failure is fatal; the component pipeline does not continue.
+
+---
+
+## 213-15/16 — Open 9-clock Page and Release Guard
+
+Purpose: finish Button 213 and request the 9-clock load.
+
+Functions:
+
+- [`_show_strap_9clock_load_page()` (line 40634)](D:/Provenance Project/ImagingLibWatch/App/main.py:40634)
+- `_finish_camera_operation()`
+
+Destination:
+
+```
+page_template_new_strap_pre2
+```
+
+If no components were selected, the operation guard is released immediately after navigation.
+
+If component capture was started, `_finish_strap_component_capture_operation()` releases the guard and then calls the navigation callback.
+
+---
+
+# 2. Button 217: 9-clock
+
+````
+```mermaid
+flowchart TD
+    C1["217-1 Button 217 Clicked"]
+    C2["217-2 Strap Load Verification"]
+    C3["217-3 Acquire Operation Guard"]
+    C4["217-4 Validate Pipeline and Previous Views"]
+    C5{"217-5 Pipeline Selection"}
+
+    C6["217-6A Build Dynamic 9-clock Group"]
+    C7["217-7A Safe Move to First Capture Point"]
+    C8["217-8A Capture and Stitch 9-clock"]
+
+    M6["217-6B Independent Endpoint Detection"]
+    M7["217-7B Capture AF Anchors and Tiles"]
+    M8["217-8B Stitch 9-clock"]
+
+    C9["217-9 Combine Four Views and Save"]
+    C10["217-10 Safe Return to Watch Center"]
+    C11{"217-11 Components Selected?"}
+    C12["217-12 SAM and Component Capture"]
+    C13["217-13 Open Final Strap Page"]
+    C14["217-14 Release Operation Guard"]
+    C15["217-15 Leaving Page: Reset R_X"]
+    STOP["Stop Safely"]
+
+    C1 --> C2
+    C2 -->|Rejected| STOP
+    C2 -->|Verified| C3
+    C3 --> C4
+    C4 -->|Mismatch or missing views| STOP
+    C4 --> C5
+
+    C5 -->|"macro_cam_2 - current"| C6
+    C6 --> C7
+    C7 --> C8
+    C8 --> C9
+
+    C5 -->|"macro_cam_1 - optional"| M6
+    M6 --> M7
+    M7 --> M8
+    M8 --> C9
+
+    C9 --> C10
+    C10 -->|Move failed| STOP
+    C10 --> C11
+    C11 -->|Yes| C12
+    C11 -->|No| C13
+    C12 --> C13
+    C13 --> C14
+    C14 --> C15
+```
+````
+
+## 217-1/2 — Click and Load Verification
+
+Functions:
+
+- `_batch_connect()`
+- [`_start_strap_9clock_pre_capture()` (line 40747)](D:/Provenance Project/ImagingLibWatch/App/main.py:40747)
+- `_verify_loaded_fixture_then()`
+- `verify_loaded_fixture()`
+
+Button 217 is wrapped by exactly the same Strap load-verification mechanism as Button 213.
+
+This second verification matters because the operator has handled or flipped the Strap between the two phases.
+
+---
+
+## 217-3 — Acquire Operation Guard
+
+Functions:
+
+- `_begin_camera_operation()`
+- `_camera_operation_is_current()`
+- `_start_workflow_task()`
+
+The guard prevents Button 217 from starting while:
+
+- Another capture operation exists
+- The holder is moving
+- Another hardware worker is active
+
+The operation key is:
+
+```
+template_pre_capture:strap_9clock
+```
+
+---
+
+## 217-4 — Validate Pipeline and Previous Views
+
+Purpose: ensure Button 217 continues the exact session created by Button 213.
+
+Functions:
+
+- [`_start_strap_217_workflow()` (line 41037)](D:/Provenance Project/ImagingLibWatch/App/main.py:41037)
+- `_strap_macro1_scan_enabled()`
+- `_strap_primary_stitched_views()`
+
+Validation rules:
+
+- If Button 213 used macro_cam_1 and the switch is now false, stop.
+- If Button 213 used macro_cam_2 and the switch is now true, stop.
+- macro_cam_2 requires three stored stitched views.
+- macro_cam_1 requires three stored raw-view records.
+- Missing previous views stop the 9-clock workflow before motion.
+
+This prevents mixing images with different optics, calibration systems or coordinate mappings.
+
+---
+
+## 217-5/6A — Build Dynamic 9-clock Group
+
+Functions:
+
+- [`_build_dynamic_strap_9clock_stitch_groups()` (line 40503)](D:/Provenance Project/ImagingLibWatch/App/main.py:40503)
+- `_strap_primary_stitched_views()`
+
+The legacy 9-clock group is generated using the extension report saved by Button 213.
+
+It normally selects the required range from the configured `4022–4028` capture-point family.
+
+---
+
+## 217-7A — Safe Move to First 9-clock Point
+
+Purpose: explicitly pre-position the hardware through the safety planner before the group capture begins.
+
+Functions:
+
+- [`_move_strap_capture_group_start()` (line 40659)](D:/Provenance Project/ImagingLibWatch/App/main.py:40659)
+- `_materialize_strap_scan_point()`
+- `_move_zaber_to_safe_strap_pose()`
+- `move_compound()`
+
+The function:
+
+1. Finds the first item in capture order.
+2. Resolves its configured five-axis pose.
+3. Records a motion-audit event.
+4. Calls `_move_zaber_to_safe_strap_pose()`.
+5. Starts no photo task if the safe move is rejected.
+
+This is an additional entry pre-position. Each later image still performs its own safety validation.
+
+---
+
+## 217-8A — Capture and Stitch 9-clock
+
+Functions:
+
+- [`_run_strap_217_workflow_core()` (line 40950)](D:/Provenance Project/ImagingLibWatch/App/main.py:40950)
+- `_capture_and_show_strap_stitched_views()`
+- `_capture_strap_stitch_source_image()`
+- `_execute_prepared_point_capture()`
+- `execute_template_point()`
+- `WatchBandStitcher.stitch_group()`
+
+The previous three views are passed as `existing_stitched_views`. Only the new 9-clock group is captured and stitched.
+
+---
+
+## 217-6B/7B/8B — macro_cam_1 9-clock
+
+Functions:
+
+- `_capture_strap_macro1_views(["9clock"], ...)`
+- `_detect_strap_macro1_endpoints()`
+- `_capture_strap_macro1_view()`
+- `_strap_macro1_capture_frame()`
+- `_strap_macro1_stitch_view()`
+
+The 9-clock endpoint measurement is independent because the Strap has been flipped. It must not silently reuse the Button 213 endpoint report when the current configuration requires a new measurement.
+
+The same anchor autofocus, interpolation and tile-capture logic is then used for the 9-clock view.
+
+---
+
+## 217-9 — Combine Four Views and Save
+
+Functions:
+
+- `_ordered_strap_stitched_views()`
+- `_compose_strap_stitched_preview()`
+- `_save_strap_precapture_artifacts()`
+- `_remember_strap_stitched_pre_capture_result()`
+- `_remember_strap_macro1_pre_capture_result()`
+
+Final display order:
+
+```
+Front -> 3-clock -> Back -> 9-clock
+```
+
+The result now satisfies `_strap_four_view_capture_complete()`.
+
+---
+
+## 217-10 — Safe Return to Watch Center
+
+Functions:
+
+- `_move_zaber_to_center_pos()`
+- `_move_zaber_to_safe_strap_pose()`
+- `_strap_macro1_transition_to_pose()`
+- `move_compound()`
+
+The destination is `hardware.zaber.home_positions.watch`.
+
+Like the holder return, it is planned as a guarded multi-segment transition. If it fails, the result is not advanced to the final Strap page.
+
+---
+
+## 217-11/12 — Optional Component Capture
+
+This uses the same component pipeline as Button 213, but only components assigned to phase 217 are selected.
+
+Safety rules are identical:
+
+- Current-session SAM coordinates are mandatory.
+- Macro and micro routes are preflighted independently.
+- Each capture uses `execute_template_point()`.
+- Failed points require verified safe retract before continuation.
+- Final retract occurs in `finally`.
+
+---
+
+## 217-13/14 — Final Page and Guard Release
+
+Functions:
+
+- `_load_new_template_data()`
+- `_show_template_name_create_page()`
+- `_show_precaptured_in_frame()`
+- `_finish_camera_operation()`
+
+Destination depends on the template state:
+
+- New scratch template: go to the template naming/source page.
+- Existing template: go directly to `page_template_new_strap`.
+
+The four-view overview is displayed in `frame_82`.
+
+---
+
+## 217-15 — Leaving the Final Strap Page
+
+Purpose: avoid leaving the camera arm deployed when navigating away.
+
+Functions:
+
+- [`go_to_page()` (line 31115)](D:/Provenance Project/ImagingLibWatch/App/main.py:31115)
+- [`_force_rx_to_zero()` (line 19800)](D:/Provenance Project/ImagingLibWatch/App/main.py:19800)
+- [`WorkflowManager.manual_move()` (line 3066)](D:/Provenance Project/ImagingLibWatch/core/workflow_manager.py:3066)
+- `move_compound()`
+- [`_finish_strap_motion_recording()` (line 3896)](D:/Provenance Project/ImagingLibWatch/App/main.py:3896)
+
+`_force_rx_to_zero()` does not directly call a raw Zaber axis operation in the production workflow. It calls `WorkflowManager.manual_move()`, which requires `move_compound()`.
+
+After the reset/navigation sequence, the Strap motion audit is closed and saved.
+
+---
+
+# 3. Complete Collision-Safety Call Chain
+
+````
+```mermaid
+flowchart TD
+    S1["Application Motion Request"]
+    S2["check_safety_lock"]
+    S3["move_compound or execute_template_point"]
+    S4["Resolve Strap Safety Profile"]
+    S5["Validate Axis Limits"]
+    S6["Digital Twin Target Prediction"]
+    S7["StrapTargetValidator.validate"]
+    S8["StrapTransitionGuard.plan"]
+    S9["Ordered Motion Segments"]
+    S10["Check E-stop Before Segment"]
+    S11["Verify Rotation / Large-X Staging"]
+    S12["Execute One Segment"]
+    S13["Verify Segment Readback"]
+    S14{"More Segments?"}
+    S15["Verify Final Five-axis Pose"]
+    SAFE["Move Completed"]
+    HALT["Reject / Stop Motion"]
+
+    S1 --> S2
+    S2 -->|Locked| HALT
+    S2 --> S3
+    S3 --> S4
+    S4 --> S5
+    S5 -->|Outside limits| HALT
+    S5 --> S6
+    S6 -->|Collision predicted| HALT
+    S6 --> S7
+    S7 -->|Target rejected| HALT
+    S7 --> S8
+    S8 --> S9
+    S9 --> S10
+    S10 -->|Locked| HALT
+    S10 --> S11
+    S11 -->|Staging incorrect| HALT
+    S11 --> S12
+    S12 --> S13
+    S13 -->|Mismatch| HALT
+    S13 --> S14
+    S14 -->|Yes| S10
+    S14 -->|No| S15
+    S15 -->|Mismatch| HALT
+    S15 --> SAFE
+```
+````
+
+# 4. Detailed Safety Functions
+
+## 4.1 Safety configuration accessors
+
+File: [`Controller/safety_rules.py`](D:/Provenance Project/ImagingLibWatch/Controller/safety_rules.py)
+
+### `safety_rule()`
+
+Returns the canonical `hardware.zaber.SafetyRule` tree.
+
+### `resolve_safety_profile()`
+
+Determines whether a target uses:
+
+- `watch`
+- `strap`
+- `box`
+
+An explicit fixture profile is authoritative. Otherwise, the semantic target’s view and part names are inspected.
+
+### `axis_limit_config()`
+
+Returns the permitted axis range for the selected profile.
+
+Current Strap limits:
+
+```
+X:   0 .. 435 mm
+Y:   0 .. 292 mm
+Z:   0 .. 150 mm
+R_X: 0 .. 90 degrees
+R_Z: continuous
+```
+
+An empty R_Z limit means continuous rotation, not unrestricted transition behavior. The Transition Guard still controls how R_Z may change.
+
+### `door_estop_config()`
+
+Returns MQTT topic, DI channel, open-door value and fail-closed behavior.
+
+### `kinematics_config()` and `collision_envelope_config()`
+
+Provide Digital Twin arm geometry and collision-box dimensions.
+
+### `strap_safety_config()`
+
+Returns the Strap-specific:
+
+- Target validator settings
+- Transition guard settings
+- Safe staging positions
+- Validated exceptions
+- Readback tolerances
+
+### `validate_safety_rule()`
+
+Checks the SafetyRule schema before motion use, including required profiles, limits and load-verification fields.
+
+---
+
+## 4.2 Door and E-stop functions
+
+### [`SafetyManager` (line 4571)](D:/Provenance Project/ImagingLibWatch/Controller/hardware_managers.py:4571)
+
+In production, it subscribes to the configured MQTT door-sensor topic.
+
+### [`SafetyManager._on_message()` (line 4640)](D:/Provenance Project/ImagingLibWatch/Controller/hardware_managers.py:4640)
+
+Triggers the E-stop callback when:
+
+- The configured door channel reports “open”
+- MQTT payload parsing fails and `fail_closed_on_payload_error=true`
+
+### [`trigger_emergency_stop()` (line 5383)](D:/Provenance Project/ImagingLibWatch/Controller/hardware_drivers/unified_driver.py:5383)
+
+It:
+
+1. Latches `_system_locked=True`.
+2. Stops all Zaber axes.
+3. Shuts down lighting.
+4. Stops camera streaming.
+5. Requires a manual reset.
+
+### [`check_safety_lock()` (line 5375)](D:/Provenance Project/ImagingLibWatch/Controller/hardware_drivers/unified_driver.py:5375)
+
+Called:
+
+- At `move_compound()` entry
+- At `execute_template_point()` entry
+- Before internal XYZ movement
+- Before every planned motion segment
+- Before load and extension probe motion
+
+If the system is latched, it raises immediately.
+
+### [`manual_safety_reset()` (line 5411)](D:/Provenance Project/ImagingLibWatch/Controller/hardware_drivers/unified_driver.py:5411)
+
+Attempts hardware recovery and clears the latch only when all recovery results succeed.
+
+---
+
+## 4.3 Central motion-planning functions
+
+### [`move_compound()` (line 646)](D:/Provenance Project/ImagingLibWatch/Controller/hardware_drivers/unified_driver.py:646)
+
+This is the main five-axis safety entry point.
+
+It:
+
+1. Checks the E-stop latch.
+2. Reads the current five-axis pose.
+3. Resolves missing target axes to their current values.
+4. Applies optional kinematic compensation.
+5. Calls Digital Twin prediction.
+6. Calls `_plan_motion_segments()`.
+7. Executes the planned segments.
+8. Saves the failure reason in `_last_move_error`.
+
+The function returns `False` if any safety stage rejects the move.
+
+### [`execute_template_point()` (line 9762)](D:/Provenance Project/ImagingLibWatch/Controller/hardware_drivers/unified_driver.py:9762)
+
+This is the complete capture entry point.
+
+It covers:
+
+- Initial capture-pose movement
+- Mechanical autofocus
+- Keyence probes
+- Liquid autofocus
+- HDR Z-bucket movement
+- Final approach
+- Camera capture
+
+Its internal motion corrections are not exempt from safety rules.
+
+### [`_move_xyz_with_safety()` (line 971)](D:/Provenance Project/ImagingLibWatch/Controller/hardware_drivers/unified_driver.py:971)
+
+Used for internal XYZ adjustments such as:
+
+- Autofocus movement
+- Keyence searches
+- HDR Z changes
+- Final approach
+- Focus correction
+
+It preserves the current rotation axes, rebuilds a full five-axis target and runs it through the same planner.
+
+### [`_plan_motion_segments()` (line 1018)](D:/Provenance Project/ImagingLibWatch/Controller/hardware_drivers/unified_driver.py:1018)
+
+This is the shared planner.
+
+For Strap targets it performs:
+
+1. Fixture-profile resolution
+2. Finite-number validation
+3. Axis-limit validation
+4. Digital Twin target check
+5. `StrapTargetValidator.validate()`
+6. `StrapTransitionGuard.plan()`
+
+### [`_is_strap_semantic_target()` (line 3745)](D:/Provenance Project/ImagingLibWatch/Controller/hardware_drivers/unified_driver.py:3745)
+
+Determines whether Strap-specific validation is required.
+
+A target is treated as Strap when:
+
+- `fixture_profile == "strap"`, or
+- Semantic view/part text contains Strap identifiers
+
+The Button 213/217 payloads explicitly provide Strap semantics, so they enter the Strap validator.
+
+---
+
+# 5. StrapTargetValidator — Final Pose Safety
+
+Function: [`StrapTargetValidator.validate()` (line 816)](D:/Provenance Project/ImagingLibWatch/Controller/safety_rules.py:816)
+
+This validator answers:
+
+> “Is the requested final five-axis pose physically allowed?”
+
+It does not decide the route. That is handled by `StrapTransitionGuard`.
+
+## 5.1 Finite five-axis requirement
+
+Every target must provide finite:
+
+```
+X, Y, Z, R_X, R_Z
+```
+
+NaN, infinity or non-numeric values are rejected.
+
+## 5.2 Minimum stage Y
+
+For ordinary non-exception targets:
+
+```
+Y >= 30 mm
+```
+
+A lower Y target is rejected.
+
+## 5.3 Strap wall-envelope rule
+
+When:
+
+```
+abs(R_X) >= 30 degrees
+```
+
+the validator calculates wall clearance:
+
+```
+clearance =
+    target Y
+    - wall Y
+    - strap half length * abs(sin(R_Z))
+```
+
+Current canonical values:
+
+```
+Strap full span:       240 mm
+Strap half length:     120 mm
+Minimum clearance:      30 mm
+Wall Y:                  0 mm
+Tolerance:            0.05 mm
+```
+
+The target is accepted only when clearance is greater than the required minimum.
+
+A macro_cam_1 request may provide a measured or maximum Strap half-length. The validator uses the larger value; the caller cannot weaken the canonical envelope.
+
+## 5.4 Hazardous R_Z rule
+
+A normal target requires a validated exception when all are true:
+
+```
+abs(R_X) >= 30 degrees
+R_Z is within 20 degrees of 90 or 270 degrees
+Y < 160 mm
+```
+
+This prevents an arbitrary deployed Strap pose from being commanded near the wall/camera frame.
+
+## 5.5 Validated exception poses
+
+Current exact validated exceptions:
+
+- `4029`
+- `4030`
+- `4031`
+- `4032`
+
+An exception is accepted only when:
+
+- The semantic `internalnum1` matches
+- The final XYZ matches the configured pose
+- R_X matches
+- R_Z matches using canonical angular distance
+- All values are within configured readback tolerance
+
+The general safety rule is not a wildcard. A target that merely uses `internalnum1=4029` but does not match the configured pose is rejected.
+
+Additional narrow exceptions exist for:
+
+- 4029/4030 Keyence probe X/Z envelopes
+- 4029/4030 autofocus Y corridors
+
+These allow only the specifically calibrated axis variation while preserving the other axes.
+
+---
+
+# 6. StrapTransitionGuard — Safe Route Planning
+
+Function: [`StrapTransitionGuard.plan()` (line 1394)](D:/Provenance Project/ImagingLibWatch/Controller/safety_rules.py:1394)
+
+This guard answers:
+
+> “Given an accepted target, in what order may the axes move?”
+
+## 6.1 Normal staging values
+
+```
+Safe Y:   160 mm minimum
+Safe Z:    70 mm exact staging plane
+Safe R_X:   0 degrees
+```
+
+If current Y is already greater than 160 mm, the planner does not lower it to 160 mm because the larger Y provides more clearance.
+
+## 6.2 Special 4029/4030 staging
+
+Entering or leaving 4029/4030 uses:
+
+```
+Safe Y: 190 mm minimum
+Safe Z:  70 mm
+```
+
+This protects the long Strap/endlink orientation.
+
+## 6.3 When staging is forced
+
+Staging is forced for:
+
+- Deployed Strap motion
+- Any R_X change
+- Any R_Z change
+- Entering or leaving a validated exception
+- Keyence transition
+- Oversized fixed-angle translation
+
+## 6.4 R_Z change order
+
+For an R_Z change, the planned order is:
+
+```
+1. Raise Y to safe clearance
+2. Move Z to safe staging plane
+3. Fold R_X to 0 degrees
+4. Rotate R_Z at clearance
+5. Deploy R_X to target angle
+6. Move X to target
+7. Move Z to target
+8. Move Y to target
+```
+
+R_Z is never supposed to rotate while R_X remains deployed unless the route is an explicitly qualified local case.
+
+## 6.5 Large top-down translation rule
+
+Direct translation limits:
+
+```
+Maximum direct X delta: 14.25 mm
+Maximum direct Y delta:  6.10 mm
+Maximum direct Z delta:  3.00 mm
+```
+
+If a fixed-angle top-down move exceeds any limit, staging is required before translation.
+
+Functions:
+
+- [`top_down_translation_contract()` (line 1074)](D:/Provenance Project/ImagingLibWatch/Controller/safety_rules.py:1074)
+- [`top_down_translation_staging_required()` (line 1147)](D:/Provenance Project/ImagingLibWatch/Controller/safety_rules.py:1147)
+
+## 6.6 Same-view local translation
+
+A direct local translation is permitted only when all requirements pass:
+
+- Caller explicitly marks `strap_same_view_local_move`
+- It is not a Keyence transition
+- No special `internalnum1` is involved
+- R_X and R_Z do not change
+- R_Z is near 0° or 180°
+- XYZ deltas remain within limits
+- Minimum Y remains valid
+- Wall clearance remains valid
+- Target validation already succeeded
+
+## 6.7 Endlink Keyence local scan
+
+A narrow local X/Z path is allowed only inside the configured 4029/4030 probe envelope.
+
+The current and target poses must preserve:
+
+- Calibrated Y
+- Calibrated R_X
+- Calibrated R_Z
+- X/Z inside the configured probe half-range
+
+## 6.8 X-only optimization
+
+An X-only optimization exists in code, but the current configuration has:
+
+```
+x_only_optimization:
+  enabled: false
+```
+
+Therefore it is not active in the current Strap workflow.
+
+---
+
+# 7. Segment Execution and Readback
+
+Function: [`_execute_motion_segments()` (line 765)](D:/Provenance Project/ImagingLibWatch/Controller/hardware_drivers/unified_driver.py:765)
+
+This is where planned safety becomes hardware enforcement.
+
+## Before every segment
+
+It calls `check_safety_lock()` again. A door opening between two segments stops the next segment.
+
+## Before a Strap rotation
+
+Functions:
+
+- [`_verify_strap_rotation_staging()` (line 3835)](D:/Provenance Project/ImagingLibWatch/Controller/hardware_drivers/unified_driver.py:3835)
+- [`_verify_strap_rz_fold_readback()` (line 3854)](D:/Provenance Project/ImagingLibWatch/Controller/hardware_drivers/unified_driver.py:3854)
+- `_strap_segment_has_rotation_delta()`
+
+They verify that:
+
+- Live Y is at or beyond safe clearance.
+- Live Z matches the safe staging plane.
+- R_X has actually reached the required folded angle before R_Z moves.
+
+## Before a large X segment
+
+The function reads live X/Y/Z.
+
+If the requested X delta exceeds 14.25 mm, it requires:
+
+```
+live Y >= safe Y
+live Z == safe Z within tolerance
+```
+
+The X command is not sent if live readback does not prove clearance.
+
+## After every segment
+
+Function:
+
+- [`_verify_strap_keyence_pose_readback()` (line 3905)](D:/Provenance Project/ImagingLibWatch/Controller/hardware_drivers/unified_driver.py:3905)
+
+Current tolerances:
+
+```
+XYZ tolerance:   0.05 mm
+Angle tolerance: 0.5 degrees
+```
+
+The next segment does not start if the previous segment failed to reach its commanded position.
+
+## Final pose
+
+The complete five-axis final pose is verified again after all segments.
+
+## Asynchronous movement restriction
+
+Guarded Strap routes require `wait=True`. A caller cannot request asynchronous multi-segment motion because that would bypass the required between-segment readback contract.
+
+---
+
+# 8. Digital Twin Collision Prediction
+
+Functions:
+
+- [`DigitalTwinGuard` (line 7)](D:/Provenance Project/ImagingLibWatch/Controller/kinematics/digital_twin_guard.py:7)
+- [`predict_collision()` (line 62)](D:/Provenance Project/ImagingLibWatch/Controller/kinematics/digital_twin_guard.py:62)
+- `kinematics_config()`
+- `collision_envelope_config()`
+
+It calculates:
+
+- Rotated platform bounding box
+- Camera-arm bounding box
+- Axis-aligned overlap between them
+
+It is called both by `move_compound()` and the shared motion planner.
+
+Important current limitation: all three configured collision envelopes currently have zero dimensions:
+
+```
+platform_box: {width: 0.0, depth: 0.0, height: 0.0}
+macro_box:    {width: 0.0, length: 0.0}
+micro_box:    {width: 0.0, length: 0.0}
+```
+
+Therefore, although `predict_collision()` is executed, it is not currently a meaningful calibrated volumetric collision layer.
+
+The currently effective protections are primarily:
+
+- Door/E-stop
+- Axis limits
+- StrapTargetValidator
+- StrapTransitionGuard
+- Large-X live-clearance check
+- Rotation staging readback
+- Per-segment readback
+- Final-pose readback
+
+---
+
+# 9. Authoritative Control Files
+
+## Canonical SafetyRule
+
+[config/hardware_config.yaml (line 94)](D:/Provenance Project/ImagingLibWatch/config/hardware_config.yaml:94)
+
+Important sections:
+
+- Door/E-stop: line 97
+- Axis limits: line 104
+- Load verification: line 134
+- Digital Twin: line 284
+- Collision envelopes: line 297
+- Strap target validator: line 359
+- Validated exceptions: approximately line 371
+- Strap transition guard: line 402
+- Large-translation readback: line 441
+- Segment/final readback: line 444
+- Holder/start pose: line 465
+- Watch-center pose: line 473
+
+## Pipeline and macro_cam_1 scan calibration
+
+[config/strap_macro_cam1_scan.yaml (line 7)](D:/Provenance Project/ImagingLibWatch/config/strap_macro_cam1_scan.yaml:7)
+
+Controls:
+
+- Camera-pipeline selection
+- Endpoint scan
+- Tile spacing
+- Autofocus anchors
+- Camera-to-Keyence calibration
+- Per-view capture poses
+- Camera exposure and lighting
+- Stitching behavior
+
+It does not own the canonical wall envelope, transition staging or readback tolerances; those values are injected from `hardware_config.yaml`.
+
+## Legacy scan points and stitch groups
+
+- [`config/internalnum_config.yaml`](D:/Provenance Project/ImagingLibWatch/config/internalnum_config.yaml)
+- [`config/watchband_stitch.yaml`](D:/Provenance Project/ImagingLibWatch/config/watchband_stitch.yaml)
+
+These define where and in what order to capture. They do not authorize unsafe motion: every resulting pose must still pass the canonical SafetyRule.
+
+2:25 PM
+
+
+```
+把上面的英文詳細解釋全都翻成中文
+```
+# Strap 拍照流程——完整中文說明
+
+目前 repository 的設定為：
+
+```
+use_macro_cam_1_pipeline: false
+```
+
+因此，目前實際使用的 production 流程是：
+
+```
+macro_cam_2
+→ 依照 internalnum 拍攝各個點位
+→ 將照片拼接成 Strap overview
+```
+
+程式中仍然保留 `macro_cam_1` 動態掃描流程，所以以下也會一併說明。
+
+本文所稱的「Safety」包含：
+
+- 防止載入錯誤治具或錯誤物件
+- 防止多個硬體流程同時移動
+- 安全門與緊急停止
+- 軸向行程限制
+- Strap 最終位置防撞檢查
+- Strap 移動路徑規劃
+- 每一段移動後的位置回讀確認
+- 發生錯誤後的安全退回
+- 最終回到安全位置
+
+---
+
+# 1. Button 213：Front / 3-clock / Back
+
+````
+```mermaid
+flowchart TD
+    B1["213-1 按下 Button 213"]
+    B2["213-2 Strap 載入確認"]
+    B3["213-3 取得拍照流程鎖"]
+    B4["213-4 等待 Holder 移動完成"]
+    B5["213-5 鎖定相機流程並開始動作紀錄"]
+    B6{"213-6 選擇拍照流程"}
+
+    B7["213-7A 偵測 Strap 左右延伸"]
+    B8["213-8A 建立 Front / 3-clock / Back 群組"]
+    B9["213-9A 拍攝設定點位"]
+
+    M7["213-7B 驗證 macro_cam_1 設定"]
+    M8["213-8B 偵測 Strap 實際端點"]
+    M9["213-9B 拍攝 AF Anchor 與 Tiles"]
+
+    B10["213-10 拼接三個 View"]
+    B11["213-11 儲存影像與 Metadata"]
+    B12["213-12 安全回到 Holder"]
+    B13{"213-13 是否選擇 Component?"}
+    B14["213-14 SAM 分析與 Component 拍照"]
+    B15["213-15 進入 9-clock 載入頁面"]
+    B16["213-16 釋放拍照流程鎖"]
+    STOP["安全停止"]
+
+    B1 --> B2
+    B2 -->|確認失敗| STOP
+    B2 -->|確認成功| B3
+    B3 -->|硬體忙碌| STOP
+    B3 --> B4
+    B4 --> B5
+    B5 --> B6
+
+    B6 -->|"macro_cam_2，目前使用"| B7
+    B7 --> B8
+    B8 --> B9
+    B9 --> B10
+
+    B6 -->|"macro_cam_1，可選流程"| M7
+    M7 -->|設定無效| STOP
+    M7 --> M8
+    M8 --> M9
+    M9 --> B10
+
+    B10 --> B11
+    B11 --> B12
+    B12 -->|移動失敗| STOP
+    B12 --> B13
+    B13 -->|是| B14
+    B13 -->|否| B15
+    B14 --> B15
+    B15 --> B16
+```
+````
+
+## 213-1——按下 Button 213
+
+作用：接收操作員在 `page_template_new_strap_pre` 頁面按下「Bracelet Loaded」的操作。
+
+相關 functions：
+
+- [`_batch_connect()` (line 10361)](D:/Provenance Project/ImagingLibWatch/App/main.py:10361)
+- [`_strap_probe_stitch_or_create()` (line 24905)](D:/Provenance Project/ImagingLibWatch/App/main.py:24905)
+
+`_batch_connect()` 並不是直接把 Button 213 連接到拍照 function。
+
+因為 Button 213 存在於 `_LOAD_VERIFICATION_BUTTON_VIEWS`，所以實際連接方式是：
+
+```
+Button 213
+  → _verify_loaded_fixture_then("strap", callback)
+  → _strap_probe_stitch_or_create()
+```
+
+也就是說，在 Strap 載入確認成功以前，真正的 Button 213 拍照 callback 不會被執行。
+
+---
+
+## 213-2——Strap 載入確認
+
+作用：確認目前放在 Holder 上的物件確實是 Strap，而不是 Box、Watch 或錯誤的治具。
+
+相關 functions：
+
+- [`_verify_loaded_fixture_then()` (line 10472)](D:/Provenance Project/ImagingLibWatch/App/main.py:10472)
+- [`verify_loaded_fixture()` (line 296)](D:/Provenance Project/ImagingLibWatch/Controller/load_fixture_verifier.py:296)
+- [`_detection_sequence()` (line 70)](D:/Provenance Project/ImagingLibWatch/Controller/load_fixture_verifier.py:70)
+- [`_center_out_grid()` (line 124)](D:/Provenance Project/ImagingLibWatch/Controller/load_fixture_verifier.py:124)
+- [`_safe_move()` (line 221)](D:/Provenance Project/ImagingLibWatch/Controller/load_fixture_verifier.py:221)
+- [`_read_out1()` (line 196)](D:/Provenance Project/ImagingLibWatch/Controller/load_fixture_verifier.py:196)
+- [`_out1_is_valid()` (line 215)](D:/Provenance Project/ImagingLibWatch/Controller/load_fixture_verifier.py:215)
+
+執行流程：
+
+1. `_verify_loaded_fixture_then()` 先取得一個暫時性的拍照流程 token。
+2. 它在獨立且序列化的 hardware worker 中執行 `verify_loaded_fixture()`。
+3. `verify_loaded_fixture()` 讀取 canonical `SafetyRule.load_verification` 設定。
+4. 系統從較高的治具開始，依序檢查不同高度層級。
+5. 到 Strap 層級時，可能會使用設定好的中心向外 XY 搜尋網格。
+6. 每一個 Keyence 探測位置都必須經過 `_safe_move()`。
+7. `_safe_move()` 強制要求使用 `UnifiedHardwareDriver.move_compound()`。
+8. 不允許退回到直接呼叫原始 Zaber 移動的方式。
+9. Keyence `OUT1` 會被轉換成推算出的治具高度。
+10. 只有偵測到的治具層級符合 Strap 條件時，才會繼續執行 Button 213。
+
+目前 Strap 驗證使用的主要條件為：
+
+```
+推算出的 Z > 50 mm
+```
+
+如果驗證失敗：
+
+```
+Button 213 真正的拍照 callback 不會被呼叫
+```
+
+在 simulation mode 中，這個載入確認步驟會被略過。
+
+---
+
+## 213-3——取得拍照流程鎖
+
+作用：防止 Button 213、Button 217 或其他拍照按鈕同時啟動重疊的硬體流程。
+
+相關 functions：
+
+- [`_begin_camera_operation()` (line 10532)](D:/Provenance Project/ImagingLibWatch/App/main.py:10532)
+- `_camera_operation_is_current()`
+- [`_finish_camera_operation()` (line 10568)](D:/Provenance Project/ImagingLibWatch/App/main.py:10568)
+
+一個重要細節是：
+
+載入確認和正式拍照使用的是不同 operation token。
+
+```
+載入確認 token
+  → 載入確認完成
+  → 釋放 token
+  → 執行真正的 Button 213 callback
+  → 取得新的 Button 213 token
+```
+
+當 `_begin_camera_operation()` 成功時，它會停用 `_CAMERA_OPERATION_BUTTONS` 中列出的所有拍照入口按鈕。
+
+如果另一個 operation 已經持有流程鎖：
+
+```
+新的拍照請求會在硬體開始移動以前被拒絕
+```
+
+---
+
+## 213-4——等待 Holder 移動完成
+
+作用：防止 Holder 還在移動時，又啟動 Strap 拍照 worker。
+
+相關 functions：
+
+- `_is_holder_move_running()`
+- `_start_holder_move_async()`
+- [`_start_workflow_task()` (line 10642)](D:/Provenance Project/ImagingLibWatch/App/main.py:10642)
+
+`_strap_probe_stitch_or_create()` 會先確認 Holder move worker 是否仍在執行。
+
+如果 Holder 還在移動，系統會：
+
+1. 將 Strap 拍照 continuation 加入等待序列。
+2. 等待 Holder 移動完成。
+3. Holder 完成後才重新進入 Button 213 流程。
+
+`_start_workflow_task(..., hardware=True)` 還會再做一次硬體層級檢查：
+
+- 不可以有 Holder move 正在執行。
+- 不可以有其他 hardware workflow worker 正在執行。
+
+這個機制本身不是幾何防撞演算法，但它可以防止兩個安全規劃器同時控制相同硬體。
+
+---
+
+## 213-5——鎖定拍照流程並開始動作紀錄
+
+作用：
+
+- 鎖定 Button 213 到 Button 217 之間所使用的相機流程。
+- 開始記錄整個 Strap 流程中的移動與拍照資訊。
+
+相關 functions：
+
+- [`_lock_strap_pipeline_for_session()` (line 37066)](D:/Provenance Project/ImagingLibWatch/App/main.py:37066)
+- [`_load_strap_macro1_scan_config()` (line 37082)](D:/Provenance Project/ImagingLibWatch/App/main.py:37082)
+- [`_strap_macro1_scan_enabled()` (line 37092)](D:/Provenance Project/ImagingLibWatch/App/main.py:37092)
+- [`_start_strap_motion_recording()` (line 3845)](D:/Provenance Project/ImagingLibWatch/App/main.py:3845)
+- `_attach_strap_motion_observer()`
+- `_record_strap_motion_event()`
+
+`_lock_strap_pipeline_for_session()` 會：
+
+1. 讀取 Wide-field Camera 或 Macro Camera checkbox。
+2. 將選擇結果寫入 `strap_macro_cam1_scan.yaml`。
+3. 將結果儲存在 `_strap_pipeline_session_use_macro1`。
+4. 停用兩個 pipeline checkbox。
+5. 確保 Button 217 只能延續 Button 213 使用的相同 pipeline。
+
+重要區別：
+
+`StrapMotionRecorder` 是稽核與診斷工具，不是防撞判斷器。
+
+它會記錄：
+
+- 移動要求
+- 移動完成事件
+- 拍照位置
+- Holder/center return
+- 頁面切換
+- 發生錯誤的位置
+
+但它本身不會拒絕危險動作。
+
+---
+
+## 213-6——選擇拍照流程
+
+作用：選擇建立前三個 Strap view 的實作方式。
+
+相關 functions：
+
+- [`_start_strap_213_workflow()` (line 39955)](D:/Provenance Project/ImagingLibWatch/App/main.py:39955)
+- [`_run_strap_213_workflow_core()` (line 39876)](D:/Provenance Project/ImagingLibWatch/App/main.py:39876)
+
+`_start_strap_213_workflow()` 建立一個保留中的 hardware worker。
+
+UI 更新在完成 callback 中執行；真正的硬體工作在 `_run_strap_213_workflow_core()` 中執行。
+
+兩條分支：
+
+```
+macro_cam_2：
+使用設定好的 internalnum 點位拍照，再做影像拼接。
+
+macro_cam_1：
+先量測 Strap 左右端點，再動態產生 raw tile 拍照位置並拼接。
+```
+
+如果 worker 中出現未處理的錯誤，failure callback 會：
+
+- 將進度歸零
+- 顯示「Strap scan stopped safely」
+- 釋放 operation guard
+- 不進入 9-clock 頁面
+
+---
+
+## 213-7A——偵測 Strap 延伸：macro_cam_2
+
+作用：判斷 Strap 左側或右側是否需要增加額外拍照點。
+
+相關 functions：
+
+- [`_detect_strap_extension_flags()` (line 40337)](D:/Provenance Project/ImagingLibWatch/App/main.py:40337)
+- `_run_single_strap_extension_probe()`
+- [`_move_strap_keyence_probe_pose()` (line 40206)](D:/Provenance Project/ImagingLibWatch/App/main.py:40206)
+- `_read_strap_keyence_out1()`
+- `_strap_keyence_out1_valid()`
+
+每一個 Keyence 探測位置的呼叫鏈為：
+
+```
+_move_strap_keyence_probe_pose()
+  → check_safety_lock()
+  → move_compound()
+  → 最終位置驗證
+  → 安全路徑規劃
+  → 分段移動
+  → 位置回讀確認
+```
+
+如果 `move_compound()` 不存在，探測流程會直接失敗。
+
+程式不允許用：
+
+```
+zaber.move_axis()
+```
+
+作為 production compatibility fallback。
+
+最後產生的：
+
+```
+strap_left_ext
+strap_right_ext
+```
+
+會決定動態拼接群組中是否需要加入額外影像。
+
+---
+
+## 213-8A——建立 Front / 3-clock / Back 群組
+
+作用：根據左右延伸結果，建立有順序的拍照群組。
+
+相關 functions：
+
+- [`_build_dynamic_strap_stitch_groups()` (line 40463)](D:/Provenance Project/ImagingLibWatch/App/main.py:40463)
+- `_apply_strap_stitch_group_overrides()`
+- `_apply_strap_stitch_source_config()`
+- `_strap_capture_order_for_group()`
+- [`_strap_scan_positions_ready()` (line 41403)](D:/Provenance Project/ImagingLibWatch/App/main.py:41403)
+
+三個正常群組為：
+
+1. `strap_right_front`
+2. `strap_right_side`，也就是 3-clock
+3. `strap_right_back`
+
+在 production mode 中，`_strap_scan_positions_ready()` 會做 fail-closed 檢查。
+
+以下情況會拒絕開始掃描：
+
+- 必要的 point 不存在
+- XYZ 無法轉換成有效數字
+- XYZ 全部等於零
+
+實際拍照位置由 point/internalnum 設定提供，但這些位置仍然必須通過獨立的 SafetyRule。
+
+設定檔只描述「想去哪裡」；SafetyRule 決定「能不能去」以及「要怎麼去」。
+
+---
+
+## 213-9A——拍攝設定點位
+
+作用：移動到每一個 Strap 點位、執行 autofocus、拍照並儲存來源影像。
+
+相關 functions：
+
+- [`_capture_and_show_strap_stitched_views()` (line 42036)](D:/Provenance Project/ImagingLibWatch/App/main.py:42036)
+- [`_capture_strap_stitch_source_image()` (line 41431)](D:/Provenance Project/ImagingLibWatch/App/main.py:41431)
+- [`_execute_prepared_point_capture()` (line 9132)](D:/Provenance Project/ImagingLibWatch/App/main.py:9132)
+- [`execute_template_point()` (line 9762)](D:/Provenance Project/ImagingLibWatch/Controller/hardware_drivers/unified_driver.py:9762)
+
+完整呼叫鏈：
+
+```
+_capture_and_show_strap_stitched_views()
+  → 對每一個 group
+     → 對每一個 capture item
+        → _capture_strap_stitch_source_image()
+           → _execute_prepared_point_capture()
+              → execute_template_point()
+```
+
+`_execute_prepared_point_capture()` 會建立完整的硬體參數：
+
+- X、Y、Z
+- R_X、R_Z
+- 相機選擇
+- internalnum1 / internalnum2
+- 曝光時間
+- Gain
+- Lighting
+- Mechanical autofocus
+- Liquid-lens autofocus
+- HDR 設定
+- `fixture_profile="strap"` 的 semantic target
+
+`execute_template_point()` 一進入就會檢查 safety lock。
+
+它內部包含的以下動作都必須經過共用 safety planner：
+
+- 初始拍照位置移動
+- Mechanical autofocus
+- Keyence 探測
+- Liquid autofocus
+- HDR Z 位置移動
+- Final approach
+- 最終拍照位置
+
+---
+
+## 213-7B——驗證 macro_cam_1 設定
+
+作用：在動態 raw-tile 掃描開始前，確認所有 macro_cam_1 校正與 safety 條件完整。
+
+相關 functions：
+
+- [`_validate_strap_macro1_scan_for_run()` (line 37102)](D:/Provenance Project/ImagingLibWatch/App/main.py:37102)
+- `_strap_macro1_validate_pose()`
+- `validate_scan_config()`
+- [`validate_safety_rule()` (line 417)](D:/Provenance Project/ImagingLibWatch/Controller/safety_rules.py:417)
+
+Production 驗證內容包含：
+
+- `safety.calibration_confirmed`
+- Front、side、back、9-clock 的位置限制
+- `move_compound()` 是否存在
+- Hardware safety planner 是否存在
+- Camera-to-Keyence calibration 是否一致
+- Endpoint detection 設定
+- Focus 設定
+- Canonical SafetyRule 是否已注入 scan config
+
+`strap_macro_cam1_scan.yaml` 負責：
+
+- 掃描校正
+- Tile 間距
+- AF anchor
+- Endpoint detection
+- 拍照設定
+- Stitch 設定
+
+但 canonical 防撞設定仍然來自：
+
+```
+config/hardware_config.yaml
+```
+
+---
+
+## 213-8B——偵測 Strap 實際端點
+
+作用：量測 Strap 左右實際邊界，而不是假設固定數量的 tiles。
+
+相關 functions：
+
+- [`_detect_strap_macro1_endpoints()` (line 37474)](D:/Provenance Project/ImagingLibWatch/App/main.py:37474)
+- `_select_strap_macro1_keyence_probe_y_offset()`
+- `_resolve_strap_macro1_endpoint_report()`
+- [`_strap_macro1_transition_to_pose()` (line 37447)](D:/Provenance Project/ImagingLibWatch/App/main.py:37447)
+- [`_strap_macro1_safe_compound_move()` (line 37373)](D:/Provenance Project/ImagingLibWatch/App/main.py:37373)
+
+Endpoint detection 可能包含：
+
+- Seed position
+- 粗略 X 方向探測
+- 精細 X 方向搜尋
+- 小範圍 Y retry
+- 連續無效 Keyence reading，用來確認實際邊界
+
+`_strap_macro1_safe_compound_move()` 強制要求：
+
+- Hardware driver 必須存在
+- `move_compound()` 必須存在
+- Safety lock 沒有被鎖住
+- Target pose 必須通過驗證
+
+它也會將量測到的最大 Strap span 傳入 semantic target。
+
+如果 caller 提供的 Strap half-length 大於 canonical 設定，validator 會使用較大的值；caller 不能藉由傳入較小值降低安全標準。
+
+---
+
+## 213-9B——拍攝 AF Anchor 與 Raw Tiles
+
+作用：在量測到的 Strap 範圍中，使用 macro_cam_1 拍攝動態 raw images。
+
+相關 functions：
+
+- [`_capture_strap_macro1_views()` (line 39460)](D:/Provenance Project/ImagingLibWatch/App/main.py:39460)
+- [`_capture_strap_macro1_view()` (line 38495)](D:/Provenance Project/ImagingLibWatch/App/main.py:38495)
+- [`_strap_macro1_capture_frame()` (line 38113)](D:/Provenance Project/ImagingLibWatch/App/main.py:38113)
+- `_strap_macro1_focus_result_ok()`
+- `_strap_macro1_locked_current()`
+- `_strap_macro1_stitch_view()`
+
+一般 macro_cam_1 流程：
+
+1. 根據左右 endpoint 計算 tile X 位置。
+2. 選出五個 autofocus anchor。
+3. 每一個 anchor 執行 Keyence 高度量測。
+4. 每一個 anchor 執行 liquid-lens autofocus。
+5. 保留 anchor image。
+6. 對非 anchor tile 內插 focus 值。
+7. 拍攝其他 tiles。
+8. 按順序拼接 raw tiles。
+
+每一個 stage move 仍然會經過：
+
+```
+_strap_macro1_transition_to_pose()
+```
+
+或 driver 內部的安全 XYZ 移動。
+
+---
+
+## 213-10——拼接三個 View
+
+作用：將每一個群組的來源照片拼接成一張完整 view。
+
+相關 functions：
+
+- [`WatchBandStitcher.stitch_group()` (line 578)](D:/Provenance Project/ImagingLibWatch/algorithms/watchband_stitcher.py:578)
+- `_strap_stitch_ordered_image_items()`
+- `_strap_macro1_stitch_view()`
+- [`_compose_strap_stitched_preview()` (line 41709)](D:/Provenance Project/ImagingLibWatch/App/main.py:41709)
+
+Legacy pipeline 會逐一拼接每個 group。
+
+只要任何必要來源影像缺少：
+
+```
+該 group 不會繼續 stitch
+整個 workflow 會停止
+```
+
+完成後的前三個 view 順序為：
+
+```
+Front → 3-clock → Back
+```
+
+影像 stitch 本身不會移動硬體，因此不會觸發 motion collision rules。
+
+---
+
+## 213-11——儲存影像與 Metadata
+
+作用：儲存足夠的資料，供 UI 顯示、後續 SAM 分析與 audit 使用。
+
+相關 functions：
+
+- `_save_strap_stitched_output_images()`
+- [`_save_strap_precapture_artifacts()` (line 41937)](D:/Provenance Project/ImagingLibWatch/App/main.py:41937)
+- `_save_strap_stitched_overview_metadata()`
+- [`_remember_strap_stitched_pre_capture_result()` (line 40546)](D:/Provenance Project/ImagingLibWatch/App/main.py:40546)
+- `_remember_strap_macro1_pre_capture_result()`
+
+儲存內容包括：
+
+- 每一個 stitched view
+- Frame 82 overview
+- Segment/display geometry
+- Stitch reports
+- Extension report 或 endpoint report
+- 拍照位置
+- Process YAML
+- macro_cam_1 raw-image manifest
+- Source camera 資訊
+
+這個區塊只處理資料儲存，不會控制硬體移動。
+
+---
+
+## 213-12——安全回到 Holder
+
+作用：在要求操作員翻面或重新裝載 Strap 前，先將機器移動到方便操作的 Holder/start position。
+
+相關 functions：
+
+- `_move_zaber_to_start_pos()`
+- [`_move_zaber_to_safe_strap_pose()` (line 10106)](D:/Provenance Project/ImagingLibWatch/App/main.py:10106)
+- `_strap_macro1_transition_to_pose()`
+- [`move_compound()` (line 646)](D:/Provenance Project/ImagingLibWatch/Controller/hardware_drivers/unified_driver.py:646)
+
+目前設定的 Holder/start destination 為：
+
+```
+X   = 0
+Y   = 292
+Z   = 150
+R_X = 0
+R_Z = 0
+```
+
+這不是一次直接的五軸跳躍。
+
+`move_compound()` 會透過 `StrapTransitionGuard` 將它拆成安全的分段路徑。
+
+如果回 Holder 失敗：
+
+- 顯示錯誤
+- 不進入 9-clock 載入頁面
+- 要求操作員先檢查硬體
+
+---
+
+## 213-13/14——選擇性 SAM 與 Component 拍照
+
+作用：在 overview 完成後，拍攝使用者選擇的 Strap components。
+
+相關 functions：
+
+- [`_start_automatic_strap_component_capture()` (line 14499)](D:/Provenance Project/ImagingLibWatch/App/main.py:14499)
+- [`_start_strap_precapture_auto_analysis()` (line 14701)](D:/Provenance Project/ImagingLibWatch/App/main.py:14701)
+- `_resume_pending_strap_component_capture()`
+- `_on_strap_link_analysis_ready()`
+- [`_preflight_strap_component_capture_routes()` (line 16557)](D:/Provenance Project/ImagingLibWatch/App/main.py:16557)
+- [`_execute_strap_component_capture_plan()` (line 16671)](D:/Provenance Project/ImagingLibWatch/App/main.py:16671)
+- [`_run_strap_component_capture_plan_core()` (line 16785)](D:/Provenance Project/ImagingLibWatch/App/main.py:16785)
+- [`_move_zaber_to_strap_safe_retract()` (line 3949)](D:/Provenance Project/ImagingLibWatch/App/main.py:3949)
+- [`_finish_strap_component_capture_operation()` (line 17790)](D:/Provenance Project/ImagingLibWatch/App/main.py:17790)
+
+Safety 行為：
+
+1. 只處理屬於 phase 213 且被選取的 components。
+2. 必須先得到目前 Strap session 已儲存的 SAM coordinates。
+3. Macro 與 micro phase 分別做 route preflight。
+4. Preflight 會將 candidate pose 送入 Digital Twin 與共用 motion planner。
+5. 每一個實際 point 仍然透過 `execute_template_point()`。
+6. 如果某個 point 失敗，系統必須先執行 `_move_zaber_to_strap_safe_retract()`。
+7. 只有確認回到 safe retract pose，下一個 point 才能繼續。
+8. Macro phase 完成後，開始 macro-image screw analysis 前也必須先安全退回。
+9. `finally` 區塊會在成功或例外時執行 safe retract。
+10. 如果 retract 失敗，該錯誤是 fatal，component pipeline 不可繼續。
+
+---
+
+## 213-15/16——進入 9-clock 頁面並釋放流程鎖
+
+作用：完成 Button 213 並要求操作員載入 9-clock view。
+
+相關 functions：
+
+- [`_show_strap_9clock_load_page()` (line 40634)](D:/Provenance Project/ImagingLibWatch/App/main.py:40634)
+- `_finish_camera_operation()`
+
+目的頁面：
+
+```
+page_template_new_strap_pre2
+```
+
+如果沒有選擇 components：
+
+```
+頁面切換完成後立即釋放 operation guard
+```
+
+如果有啟動 component capture：
+
+```
+_finish_strap_component_capture_operation()
+  → 釋放 operation guard
+  → 呼叫頁面 navigation callback
+```
+
+---
+
+# 2. Button 217：9-clock
+
+````
+```mermaid
+flowchart TD
+    C1["217-1 按下 Button 217"]
+    C2["217-2 Strap 載入確認"]
+    C3["217-3 取得拍照流程鎖"]
+    C4["217-4 驗證 Pipeline 與前三個 View"]
+    C5{"217-5 選擇拍照流程"}
+
+    C6["217-6A 建立動態 9-clock 群組"]
+    C7["217-7A 安全移動到第一個拍照點"]
+    C8["217-8A 拍攝並拼接 9-clock"]
+
+    M6["217-6B 獨立偵測 9-clock 端點"]
+    M7["217-7B 拍攝 AF Anchor 與 Tiles"]
+    M8["217-8B 拼接 9-clock"]
+
+    C9["217-9 合併四個 View 並儲存"]
+    C10["217-10 安全回到 Watch Center"]
+    C11{"217-11 是否選擇 Component?"}
+    C12["217-12 SAM 分析與 Component 拍照"]
+    C13["217-13 進入最終 Strap 頁面"]
+    C14["217-14 釋放拍照流程鎖"]
+    C15["217-15 離開頁面時將 R_X 歸零"]
+    STOP["安全停止"]
+
+    C1 --> C2
+    C2 -->|確認失敗| STOP
+    C2 -->|確認成功| C3
+    C3 --> C4
+    C4 -->|Pipeline 不一致或缺少 View| STOP
+    C4 --> C5
+
+    C5 -->|"macro_cam_2，目前使用"| C6
+    C6 --> C7
+    C7 --> C8
+    C8 --> C9
+
+    C5 -->|"macro_cam_1，可選流程"| M6
+    M6 --> M7
+    M7 --> M8
+    M8 --> C9
+
+    C9 --> C10
+    C10 -->|移動失敗| STOP
+    C10 --> C11
+    C11 -->|是| C12
+    C11 -->|否| C13
+    C12 --> C13
+    C13 --> C14
+    C14 --> C15
+```
+````
+
+## 217-1/2——按下按鈕與載入確認
+
+相關 functions：
+
+- `_batch_connect()`
+- [`_start_strap_9clock_pre_capture()` (line 40747)](D:/Provenance Project/ImagingLibWatch/App/main.py:40747)
+- `_verify_loaded_fixture_then()`
+- `verify_loaded_fixture()`
+
+Button 217 使用與 Button 213 相同的 Strap load-verification mechanism。
+
+第二次驗證很重要，因為操作員在 Button 213 和 Button 217 之間已經：
+
+- 取下 Strap
+- 翻轉 Strap
+- 重新裝載 Strap
+
+因此不能直接假設目前載入狀態仍然正確。
+
+---
+
+## 217-3——取得拍照流程鎖
+
+相關 functions：
+
+- `_begin_camera_operation()`
+- `_camera_operation_is_current()`
+- `_start_workflow_task()`
+
+這個 guard 防止 Button 217 在以下情況啟動：
+
+- 另一個拍照 operation 尚未完成
+- Holder 還在移動
+- 另一個 hardware worker 還在執行
+
+Button 217 使用的 operation key 為：
+
+```
+template_pre_capture:strap_9clock
+```
+
+---
+
+## 217-4——驗證 Pipeline 與前三個 View
+
+作用：確認 Button 217 延續的是 Button 213 建立的同一個 session。
+
+相關 functions：
+
+- [`_start_strap_217_workflow()` (line 41037)](D:/Provenance Project/ImagingLibWatch/App/main.py:41037)
+- `_strap_macro1_scan_enabled()`
+- `_strap_primary_stitched_views()`
+
+驗證規則：
+
+- Button 213 使用 macro_cam_1，但現在 switch 變成 false：停止。
+- Button 213 使用 macro_cam_2，但現在 switch 變成 true：停止。
+- macro_cam_2 流程必須存在三張 stitched views。
+- macro_cam_1 流程必須存在三筆 raw-view records。
+- 缺少 Button 213 的前三個 view 時，在硬體移動前停止。
+
+這可以避免在同一個四面 overview 中混用：
+
+- 不同相機
+- 不同光學倍率
+- 不同 calibration
+- 不同 coordinate mapping
+
+---
+
+## 217-5/6A——建立動態 9-clock 群組
+
+相關 functions：
+
+- [`_build_dynamic_strap_9clock_stitch_groups()` (line 40503)](D:/Provenance Project/ImagingLibWatch/App/main.py:40503)
+- `_strap_primary_stitched_views()`
+
+Legacy 9-clock group 使用 Button 213 儲存的 extension report 建立。
+
+它通常從設定好的：
+
+```
+4022–4028
+```
+
+點位範圍中選出必要的拍照點。
+
+---
+
+## 217-7A——安全移動到第一個 9-clock 點
+
+作用：在 group capture 正式開始以前，先明確透過 safety planner 移動到第一個拍照點。
+
+相關 functions：
+
+- [`_move_strap_capture_group_start()` (line 40659)](D:/Provenance Project/ImagingLibWatch/App/main.py:40659)
+- `_materialize_strap_scan_point()`
+- `_move_zaber_to_safe_strap_pose()`
+- `move_compound()`
+
+這個 function 會：
+
+1. 找出 capture order 中的第一個 item。
+2. 解析它的五軸位置。
+3. 記錄 motion audit event。
+4. 呼叫 `_move_zaber_to_safe_strap_pose()`。
+5. 如果安全移動被拒絕，就不啟動任何拍照 task。
+
+這只是額外的進入點預定位。
+
+後面的每一張照片仍然會各自執行完整 safety validation。
+
+---
+
+## 217-8A——拍攝並拼接 9-clock
+
+相關 functions：
+
+- [`_run_strap_217_workflow_core()` (line 40950)](D:/Provenance Project/ImagingLibWatch/App/main.py:40950)
+- `_capture_and_show_strap_stitched_views()`
+- `_capture_strap_stitch_source_image()`
+- `_execute_prepared_point_capture()`
+- `execute_template_point()`
+- `WatchBandStitcher.stitch_group()`
+
+前三張 view 會透過：
+
+```
+existing_stitched_views
+```
+
+傳入。
+
+Button 217 只會重新拍攝並拼接新的 9-clock group，不會重拍前三張。
+
+---
+
+## 217-6B/7B/8B——macro_cam_1 的 9-clock
+
+相關 functions：
+
+- `_capture_strap_macro1_views(["9clock"], ...)`
+- `_detect_strap_macro1_endpoints()`
+- `_capture_strap_macro1_view()`
+- `_strap_macro1_capture_frame()`
+- `_strap_macro1_stitch_view()`
+
+9-clock 的 endpoint measurement 是獨立量測，因為 Strap 已經被操作員翻面。
+
+當設定要求重新量測時，Button 217 不可以直接沿用 Button 213 的 endpoint report。
+
+完成 endpoint detection 後，系統會再次執行：
+
+- Anchor autofocus
+- Focus interpolation
+- Tile capture
+- Tile stitching
+
+---
+
+## 217-9——合併四個 View 並儲存
+
+相關 functions：
+
+- `_ordered_strap_stitched_views()`
+- `_compose_strap_stitched_preview()`
+- `_save_strap_precapture_artifacts()`
+- `_remember_strap_stitched_pre_capture_result()`
+- `_remember_strap_macro1_pre_capture_result()`
+
+最終顯示順序：
+
+```
+Front → 3-clock → Back → 9-clock
+```
+
+完成後，`_strap_four_view_capture_complete()` 應該會回傳 `True`。
+
+---
+
+## 217-10——安全回到 Watch Center
+
+相關 functions：
+
+- `_move_zaber_to_center_pos()`
+- `_move_zaber_to_safe_strap_pose()`
+- `_strap_macro1_transition_to_pose()`
+- `move_compound()`
+
+目的位置來自：
+
+```
+hardware.zaber.home_positions.watch
+```
+
+和回 Holder 一樣，這不是直接五軸跳躍。
+
+它會經過：
+
+- Axis limits
+- Digital Twin
+- StrapTargetValidator
+- StrapTransitionGuard
+- Segment readback
+- Final pose readback
+
+如果 center return 失敗，系統不會進入最終 Strap 頁面。
+
+---
+
+## 217-11/12——選擇性 Component 拍照
+
+這裡使用和 Button 213 相同的 component pipeline，但只處理 phase 217 對應的 components。
+
+Safety 規則相同：
+
+- 必須有目前 session 的 SAM coordinates。
+- Macro 和 micro route 分開 preflight。
+- 每一個 capture 使用 `execute_template_point()`。
+- Point 失敗後必須先成功 safe retract。
+- `finally` 中必須再執行一次最終 safe retract。
+
+---
+
+## 217-13/14——進入最終頁面並釋放流程鎖
+
+相關 functions：
+
+- `_load_new_template_data()`
+- `_show_template_name_create_page()`
+- `_show_precaptured_in_frame()`
+- `_finish_camera_operation()`
+
+目的頁面取決於 template 狀態：
+
+```
+全新的 scratch template：
+進入 template naming/source 頁面。
+
+既有 template：
+直接進入 page_template_new_strap。
+```
+
+四張 stitched overview 會顯示在：
+
+```
+frame_82
+```
+
+---
+
+## 217-15——離開最終 Strap 頁面
+
+作用：避免離開頁面後，camera arm 仍然維持展開狀態。
+
+相關 functions：
+
+- [`go_to_page()` (line 31115)](D:/Provenance Project/ImagingLibWatch/App/main.py:31115)
+- [`_force_rx_to_zero()` (line 19800)](D:/Provenance Project/ImagingLibWatch/App/main.py:19800)
+- [`WorkflowManager.manual_move()` (line 3066)](D:/Provenance Project/ImagingLibWatch/core/workflow_manager.py:3066)
+- `move_compound()`
+- [`_finish_strap_motion_recording()` (line 3896)](D:/Provenance Project/ImagingLibWatch/App/main.py:3896)
+
+`_force_rx_to_zero()` 在 production workflow 中不會直接呼叫原始 Zaber axis move。
+
+它的呼叫鏈是：
+
+```
+_force_rx_to_zero()
+  → WorkflowManager.manual_move()
+  → UnifiedHardwareDriver.move_compound()
+  → Safety planner
+```
+
+完成 R_X reset 或頁面切換後，Strap motion audit 會被關閉並儲存。
+
+---
+
+# 3. 完整防撞 Safety 呼叫鏈
+
+````
+```mermaid
+flowchart TD
+    S1["App 提出硬體移動要求"]
+    S2["檢查 Safety Lock"]
+    S3["進入 move_compound 或 execute_template_point"]
+    S4["判斷 Strap Safety Profile"]
+    S5["檢查各軸行程限制"]
+    S6["Digital Twin 目標位置預測"]
+    S7["StrapTargetValidator 驗證最終位置"]
+    S8["StrapTransitionGuard 規劃安全路徑"]
+    S9["產生有順序的移動 Segments"]
+    S10["每個 Segment 前再次檢查 E-stop"]
+    S11["確認旋轉或大距離 X 移動的安全位置"]
+    S12["執行單一 Segment"]
+    S13["確認 Segment 位置回讀"]
+    S14{"還有下一個 Segment?"}
+    S15["確認最終五軸位置"]
+    SAFE["移動完成"]
+    HALT["拒絕或停止移動"]
+
+    S1 --> S2
+    S2 -->|系統已鎖定| HALT
+    S2 --> S3
+    S3 --> S4
+    S4 --> S5
+    S5 -->|超出行程| HALT
+    S5 --> S6
+    S6 -->|預測碰撞| HALT
+    S6 --> S7
+    S7 -->|目標位置不安全| HALT
+    S7 --> S8
+    S8 --> S9
+    S9 --> S10
+    S10 -->|系統已鎖定| HALT
+    S10 --> S11
+    S11 -->|安全退讓位置不正確| HALT
+    S11 --> S12
+    S12 --> S13
+    S13 -->|位置誤差超標| HALT
+    S13 --> S14
+    S14 -->|是| S10
+    S14 -->|否| S15
+    S15 -->|位置誤差超標| HALT
+    S15 --> SAFE
+```
+````
+
+---
+
+# 4. Safety Functions 詳細說明
+
+## 4.1 Safety 設定存取 functions
+
+檔案：[`Controller/safety_rules.py`](D:/Provenance Project/ImagingLibWatch/Controller/safety_rules.py)
+
+### `safety_rule()`
+
+取得 canonical：
+
+```
+hardware.zaber.SafetyRule
+```
+
+整棵設定樹。
+
+這是目前 motion/collision safety 的主要設定來源。
+
+### `resolve_safety_profile()`
+
+判斷目前 target 應該使用哪個 safety profile：
+
+- `watch`
+- `strap`
+- `box`
+
+如果 semantic target 明確指定 `fixture_profile`，就優先使用該值。
+
+否則會從以下欄位判斷：
+
+- `view_mode`
+- `view_name`
+- `part_name`
+- `point_name`
+
+### `axis_limit_config()`
+
+取得所選 profile 的軸向行程限制。
+
+目前 Strap 限制：
+
+```
+X：   0 ～ 435 mm
+Y：   0 ～ 292 mm
+Z：   0 ～ 150 mm
+R_X： 0 ～ 90°
+R_Z： Continuous
+```
+
+R_Z 設定為空陣列表示它是 continuous rotation axis。
+
+這不代表 R_Z 可以隨意旋轉；`StrapTransitionGuard` 仍會控制旋轉順序。
+
+### `door_estop_config()`
+
+取得：
+
+- MQTT broker
+- MQTT topic
+- Door sensor DI channel
+- Door open value
+- Payload error 是否 fail closed
+
+### `kinematics_config()`
+
+取得 Digital Twin 的：
+
+- Pivot position
+- Camera arm 長度
+- Rotation center
+- Axis direction
+
+### `collision_envelope_config()`
+
+取得 Digital Twin 使用的：
+
+- Platform box
+- Macro camera box
+- Micro camera box
+
+### `strap_safety_config()`
+
+取得 Strap 專用：
+
+- Target validator
+- Wall envelope
+- Minimum Y
+- Validated exceptions
+- Transition guard
+- Safe staging positions
+- Readback tolerance
+
+### `validate_safety_rule()`
+
+檢查 SafetyRule schema 是否完整，包括：
+
+- SafetyRule version
+- Door/E-stop fields
+- 每一個 profile 的 axis limits
+- Load-verification fields
+- Strap safety structure
+
+---
+
+# 5. Door 與 E-stop Functions
+
+## [`SafetyManager` (line 4571)](D:/Provenance Project/ImagingLibWatch/Controller/hardware_managers.py:4571)
+
+在 production mode 中，它會訂閱設定好的 MQTT door-sensor topic。
+
+## [`SafetyManager._on_message()` (line 4640)](D:/Provenance Project/ImagingLibWatch/Controller/hardware_managers.py:4640)
+
+以下情況會觸發 E-stop callback：
+
+- Door sensor channel 回報「門已開啟」
+- MQTT payload 無法解析，而且 `fail_closed_on_payload_error=true`
+
+## [`trigger_emergency_stop()` (line 5383)](D:/Provenance Project/ImagingLibWatch/Controller/hardware_drivers/unified_driver.py:5383)
+
+執行順序：
+
+1. 設定 `_system_locked=True`。
+2. 緊急停止所有 Zaber axes。
+3. 關閉所有 lighting。
+4. 停止 camera stream。
+5. 保持 locked 狀態，直到人工 reset。
+
+## [`check_safety_lock()` (line 5375)](D:/Provenance Project/ImagingLibWatch/Controller/hardware_drivers/unified_driver.py:5375)
+
+它會在以下時機被呼叫：
+
+- `move_compound()` 入口
+- `execute_template_point()` 入口
+- 內部 XYZ 移動以前
+- 每一個 motion segment 執行以前
+- Load probe 以前
+- Extension probe 以前
+
+如果 `_system_locked=True`，立即拋出錯誤，不允許下一步移動。
+
+## [`manual_safety_reset()` (line 5411)](D:/Provenance Project/ImagingLibWatch/Controller/hardware_drivers/unified_driver.py:5411)
+
+嘗試恢復硬體狀態。
+
+只有全部 recovery result 成功時，才會清除 `_system_locked`。
+
+---
+
+# 6. 中央 Motion Planner Functions
+
+## [`move_compound()` (line 646)](D:/Provenance Project/ImagingLibWatch/Controller/hardware_drivers/unified_driver.py:646)
+
+這是主要五軸安全移動入口。
+
+它會：
+
+1. 檢查 E-stop lock。
+2. 讀取目前五軸位置。
+3. 未指定的 target axis 使用目前值。
+4. 必要時套用 kinematic compensation。
+5. 執行 Digital Twin target prediction。
+6. 呼叫 `_plan_motion_segments()`。
+7. 執行規劃出的 segments。
+8. 發生錯誤時，把原因寫入 `_last_move_error`。
+
+如果任何 safety stage 拒絕移動，`move_compound()` 會回傳：
+
+```
+False
+```
+
+## [`execute_template_point()` (line 9762)](D:/Provenance Project/ImagingLibWatch/Controller/hardware_drivers/unified_driver.py:9762)
+
+這是完整拍照流程的硬體入口。
+
+它處理：
+
+- 初始 capture pose
+- Mechanical autofocus
+- Keyence autofocus
+- Liquid-lens autofocus
+- HDR Z movement
+- Final approach
+- Camera capture
+
+內部的小幅移動不會跳過 SafetyRule。
+
+## [`_move_xyz_with_safety()` (line 971)](D:/Provenance Project/ImagingLibWatch/Controller/hardware_drivers/unified_driver.py:971)
+
+用於內部 XYZ 修正，例如：
+
+- Autofocus
+- Keyence 搜尋
+- HDR Z bucket
+- Final approach
+- Focus correction
+
+它會：
+
+1. 保留目前 R_X/R_Z。
+2. 組成完整五軸 target。
+3. 再次執行 `_plan_motion_segments()`。
+4. 執行分段移動。
+5. 驗證位置回讀。
+
+## [`_plan_motion_segments()` (line 1018)](D:/Provenance Project/ImagingLibWatch/Controller/hardware_drivers/unified_driver.py:1018)
+
+這是共用路徑規劃器。
+
+對 Strap target，它會依序執行：
+
+1. 判斷 fixture profile。
+2. 確認五軸值都是 finite number。
+3. 檢查 axis limits。
+4. 執行 Digital Twin。
+5. 執行 `StrapTargetValidator.validate()`。
+6. 執行 `StrapTransitionGuard.plan()`。
+
+## [`_is_strap_semantic_target()` (line 3745)](D:/Provenance Project/ImagingLibWatch/Controller/hardware_drivers/unified_driver.py:3745)
+
+判斷 target 是否需要套用 Strap-specific safety。
+
+以下任一條件成立，就視為 Strap：
+
+```
+fixture_profile == "strap"
+```
+
+或 semantic text 中包含：
+
+- `strap`
+- `straprightside`
+- `strap_right_side`
+
+Button 213/217 的 payload 會明確傳入 Strap semantic，因此會進入 Strap validator。
+
+---
+
+# 7. StrapTargetValidator——最終位置 Safety
+
+主要 function：
+
+[`StrapTargetValidator.validate()` (line 816)](D:/Provenance Project/ImagingLibWatch/Controller/safety_rules.py:816)
+
+它回答的問題是：
+
+> 要求的最終五軸位置是否安全？
+
+它不負責決定路徑；路徑由 `StrapTransitionGuard` 負責。
+
+## 7.1 五軸值必須有效
+
+Target 必須包含有效且有限的：
+
+```
+X
+Y
+Z
+R_X
+R_Z
+```
+
+以下情況會直接拒絕：
+
+- NaN
+- Infinity
+- 非數字
+- 缺少必要 axis
+
+## 7.2 Minimum Stage Y
+
+對一般、非 exception 的 target：
+
+```
+Y 必須 >= 30 mm
+```
+
+低於 30 mm 會被拒絕。
+
+## 7.3 Strap Wall Envelope
+
+當：
+
+```
+abs(R_X) >= 30°
+```
+
+validator 會計算 Strap 與 wall/camera frame 的 clearance：
+
+```
+clearance =
+    target Y
+    - wall Y
+    - Strap half length × abs(sin(R_Z))
+```
+
+目前 canonical 設定：
+
+```
+Strap 最大完整長度：240 mm
+Strap half length： 120 mm
+最小 clearance：     30 mm
+Wall Y：               0 mm
+Tolerance：         0.05 mm
+```
+
+只有 clearance 大於要求值時，target 才能被接受。
+
+macro_cam_1 可以提供實際量測或最大 Strap half-length。
+
+Validator 會使用 canonical 與 caller value 中較大的值，因此 caller 無法降低安全標準。
+
+## 7.4 危險 R_Z 規則
+
+當以下三個條件全部成立：
+
+```
+abs(R_X) >= 30°
+R_Z 位於 90° 或 270° 附近 ±20°
+Y < 160 mm
+```
+
+一般 target 必須是已驗證的 exception，否則拒絕。
+
+這防止長 Strap 在展開狀態下，被任意移到 wall/camera frame 附近。
+
+## 7.5 Validated Exception Poses
+
+目前設定的 exception：
+
+- `4029`
+- `4030`
+- `4031`
+- `4032`
+
+Exception 只有在以下條件全部符合時才成立：
+
+- Semantic `internalnum1` 正確
+- XYZ 符合設定位置
+- R_X 符合設定角度
+- R_Z 經過 canonical angle 比較後符合
+- 所有誤差都在 tolerance 內
+
+因此不是只要設定：
+
+```
+internalnum1=4029
+```
+
+就可以任意移動。
+
+如果位置與設定的五軸 pose 不符，仍然會被拒絕。
+
+另外，4029/4030 還有窄範圍 exception：
+
+- Keyence probe X/Z envelope
+- Autofocus Y corridor
+
+這些 exception 只允許經過校正的特定 axis 變化，其他 axes 必須保持固定。
+
+---
+
+# 8. StrapTransitionGuard——安全移動路徑
+
+主要 function：
+
+[`StrapTransitionGuard.plan()` (line 1394)](D:/Provenance Project/ImagingLibWatch/Controller/safety_rules.py:1394)
+
+它回答的問題是：
+
+> 已經確認安全的 target，應該用什麼軸向順序移動過去？
+
+## 8.1 一般安全退讓位置
+
+目前一般 staging values：
+
+```
+Safe Y：   至少 160 mm
+Safe Z：   70 mm，必須到指定平面
+Safe R_X： 0°
+```
+
+如果目前 Y 已經大於 160 mm，planner 不會把 Y 降回 160 mm。
+
+原因是：
+
+```
+更大的 Y 通常代表離 wall/camera frame 更遠
+```
+
+## 8.2 4029/4030 特殊 Staging
+
+進入或離開 4029/4030 時使用：
+
+```
+Safe Y：至少 190 mm
+Safe Z：70 mm
+```
+
+這是因為 Endlink/reference pose 可能使完整 Strap 朝向 camera/light frame 延伸。
+
+## 8.3 何時強制 Staging
+
+以下情況會強制先到安全退讓位置：
+
+- Strap 已經展開
+- R_X 發生變化
+- R_Z 發生變化
+- 進入 validated exception
+- 離開 validated exception
+- Keyence transition
+- 固定角度下的大距離 translation
+
+## 8.4 R_Z 改變時的移動順序
+
+當 R_Z 需要改變時，安全順序為：
+
+```
+1. Y 移到安全 clearance
+2. Z 移到安全 staging plane
+3. R_X 收回到 0°
+4. 在安全位置旋轉 R_Z
+5. R_X 展開到 target angle
+6. X 移到 target
+7. Z 移到 target
+8. Y 最後移到 target
+```
+
+一般情況下，不允許 R_X 還在展開時直接旋轉 R_Z。
+
+只有非常明確、已校正的 local path 才可能例外。
+
+## 8.5 大距離 Top-down Translation
+
+直接移動的最大差值：
+
+```
+X：14.25 mm
+Y： 6.10 mm
+Z： 3.00 mm
+```
+
+如果固定角度的 top-down move 超過任一限制，必須先做 staging。
+
+相關 functions：
+
+- [`top_down_translation_contract()` (line 1074)](D:/Provenance Project/ImagingLibWatch/Controller/safety_rules.py:1074)
+- [`top_down_translation_staging_required()` (line 1147)](D:/Provenance Project/ImagingLibWatch/Controller/safety_rules.py:1147)
+
+## 8.6 Same-view Local Translation
+
+只有以下條件全部通過，才允許直接 local translation：
+
+- Caller 明確設定 `strap_same_view_local_move`
+- 不是 Keyence transition
+- 沒有 special `internalnum1`
+- R_X 不變
+- R_Z 不變
+- R_Z 接近 0° 或 180°
+- XYZ 差值沒有超過限制
+- Y 沒有低於 minimum Y
+- Wall clearance 仍然安全
+- Target 已通過 validator
+
+## 8.7 Endlink Keyence Local Scan
+
+只有在 4029/4030 設定的 probe envelope 內，才允許窄範圍 X/Z local scan。
+
+Current pose 與 target pose 必須維持：
+
+- 校正好的 Y
+- 校正好的 R_X
+- 校正好的 R_Z
+- X/Z 位於設定好的 probe range 內
+
+## 8.8 X-only Optimization
+
+程式中存在 X-only optimization，但目前設定為：
+
+```
+x_only_optimization:
+  enabled: false
+```
+
+所以目前 Strap workflow 不會使用這個 optimization。
+
+---
+
+# 9. Segment 執行與位置回讀
+
+主要 function：
+
+[`_execute_motion_segments()` (line 765)](D:/Provenance Project/ImagingLibWatch/Controller/hardware_drivers/unified_driver.py:765)
+
+這裡是安全規劃真正轉換成硬體命令的位置。
+
+## 每個 Segment 以前
+
+會再次執行：
+
+```
+check_safety_lock()
+```
+
+如果安全門在兩個 segments 中間被開啟，下一個 segment 不會開始。
+
+## Strap 旋轉以前
+
+相關 functions：
+
+- [`_verify_strap_rotation_staging()` (line 3835)](D:/Provenance Project/ImagingLibWatch/Controller/hardware_drivers/unified_driver.py:3835)
+- [`_verify_strap_rz_fold_readback()` (line 3854)](D:/Provenance Project/ImagingLibWatch/Controller/hardware_drivers/unified_driver.py:3854)
+- `_strap_segment_has_rotation_delta()`
+
+它們會確認：
+
+- Live Y 已到達或超過安全 clearance。
+- Live Z 位於安全 staging plane。
+- 在 R_Z 移動以前，R_X 已實際收回到要求角度。
+
+## 大距離 X Segment 以前
+
+系統會讀取 live：
+
+- X
+- Y
+- Z
+
+如果要求的 X delta 大於 14.25 mm，必須滿足：
+
+```
+Live Y >= Safe Y
+Live Z == Safe Z，且誤差在 tolerance 內
+```
+
+如果 readback 無法證明目前已到 clearance pose，X command 不會被送出。
+
+## 每一個 Segment 完成後
+
+相關 function：
+
+- [`_verify_strap_keyence_pose_readback()` (line 3905)](D:/Provenance Project/ImagingLibWatch/Controller/hardware_drivers/unified_driver.py:3905)
+
+目前 tolerance：
+
+```
+XYZ tolerance：   0.05 mm
+Angle tolerance： 0.5°
+```
+
+如果前一個 segment 沒有到達 command position，下一個 segment 不會開始。
+
+## 最終位置
+
+全部 segments 完成後，系統會再次驗證完整五軸 final pose。
+
+## 禁止非同步 Guarded Move
+
+Guarded Strap route 必須使用：
+
+```
+wait=True
+```
+
+Caller 不可以要求非同步 multi-segment move，因為那樣無法保證每個 segment 之間的 readback contract。
+
+---
+
+# 10. Digital Twin Collision Prediction
+
+相關 functions：
+
+- [`DigitalTwinGuard` (line 7)](D:/Provenance Project/ImagingLibWatch/Controller/kinematics/digital_twin_guard.py:7)
+- [`predict_collision()` (line 62)](D:/Provenance Project/ImagingLibWatch/Controller/kinematics/digital_twin_guard.py:62)
+- `kinematics_config()`
+- `collision_envelope_config()`
+
+它會計算：
+
+- 旋轉後的 platform bounding box
+- Camera arm bounding box
+- 兩個 axis-aligned bounding boxes 是否重疊
+
+`predict_collision()` 會在以下位置被呼叫：
+
+- `move_compound()`
+- `_plan_motion_segments()`
+- Component route preflight
+
+但目前有一個很重要的限制：
+
+```
+platform_box: {width: 0.0, depth: 0.0, height: 0.0}
+macro_box:    {width: 0.0, length: 0.0}
+micro_box:    {width: 0.0, length: 0.0}
+```
+
+也就是說，目前 collision envelopes 的尺寸都是零。
+
+因此，雖然程式確實執行 `predict_collision()`，但目前還不能把它視為已完成校正的實體體積防撞層。
+
+目前真正有效的主要保護是：
+
+- Door/E-stop
+- Axis limits
+- StrapTargetValidator
+- StrapTransitionGuard
+- 大距離 X 的 live-clearance check
+- 旋轉前 staging readback
+- 每個 segment 的 readback
+- 最終位置 readback
+
+---
+
+# 11. 主要控制設定檔
+
+## Canonical SafetyRule
+
+[config/hardware_config.yaml (line 94)](D:/Provenance Project/ImagingLibWatch/config/hardware_config.yaml:94)
+
+重要區塊：
+
+- Door/E-stop：line 97
+- Axis limits：line 104
+- Load verification：line 134
+- Digital Twin：line 284
+- Collision envelopes：line 297
+- Strap target validator：line 359
+- Validated exceptions：約 line 371
+- Strap transition guard：line 402
+- Large-translation readback：line 441
+- Segment/final readback：line 444
+- Holder/start pose：line 465
+- Watch-center pose：line 473
+
+## Pipeline 與 macro_cam_1 掃描校正
+
+[config/strap_macro_cam1_scan.yaml (line 7)](D:/Provenance Project/ImagingLibWatch/config/strap_macro_cam1_scan.yaml:7)
+
+控制內容：
+
+- Camera pipeline selection
+- Endpoint scan
+- Tile spacing
+- Autofocus anchors
+- Camera-to-Keyence calibration
+- 每個 view 的拍照位置
+- 曝光與 lighting
+- Stitching behavior
+
+它不負責 canonical：
+
+- Wall envelope
+- Transition staging
+- Axis limits
+- Readback tolerance
+
+這些值仍然來自 `hardware_config.yaml`。
+
+## Legacy 掃描點與 Stitch Groups
+
+- [`config/internalnum_config.yaml`](D:/Provenance Project/ImagingLibWatch/config/internalnum_config.yaml)
+- [`config/watchband_stitch.yaml`](D:/Provenance Project/ImagingLibWatch/config/watchband_stitch.yaml)
+
+這些設定檔描述：
+
+- 要拍哪些點
+- 每個點的位置
+- 拍照順序
+- 拼接順序
+- 必要來源影像
+
+但它們不能直接授權危險位置。
+
+每一個由這些設定產生的 target pose，仍然必須通過 canonical SafetyRule。
+
+
+

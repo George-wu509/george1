@@ -9,7 +9,11 @@
 | [[#### 文詳細解釋 DB/watchDB.db的內部資料結構]]                                  |     |
 | [[#### DB/watchDB.db是如何跟AWS同步]]                                      |     |
 | [[#### DB browser for SQLite打開watchDB.db]]                           |     |
-|                                                                      |     |
+| [[#### Claude分析新DB架構]]                                               |     |
+| [[#### 給Codex具體修改計畫]]                                                |     |
+| [[#### 簡單解釋Sync Outbox跟Parquet / Iceberg Metric Facts]]              |     |
+| [[#### 詳細解釋Sync Outbox跟Parquet / Iceberg Metric Facts]]              |     |
+| [[#### 開通那些AWS服務]]                                                   |     |
 |                                                                      |     |
 |                                                                      |     |
 
@@ -2262,3150 +2266,7 @@ quality_status
 
 
 
-```
-請根據你畫的utton 213：Front / 3-clock / Back拍照流程圖跟Button 217：9-clock拍照流程圖. 解釋用英文解釋每個單元方塊的作用以及functions, 尤其要很詳細解釋跟防撞有關的, 要附上所有相關的functions並詳細解釋
-```
-# Strap Capture Flow — Detailed Function Explanation
 
-The current repository setting is:
-
-```
-use_macro_cam_1_pipeline: false
-```
-
-Therefore, the active production path is currently **macro_cam_2 + internalnum capture points + image stitching**. The macro_cam_1 branch is still explained because the UI can select and lock it before Button 213 starts.
-
-“Safety” below includes:
-
-- Wrong fixture/load prevention
-- Concurrent-motion prevention
-- Door/E-stop protection
-- Axis-limit validation
-- Strap collision-envelope validation
-- Safe transition planning
-- Segment and final-position readback
-- Failure recovery and safe retract
-
----
-
-# 1. Button 213: Front / 3-clock / Back
-
-````
-```mermaid
-flowchart TD
-    B1["213-1 Button 213 Clicked"]
-    B2["213-2 Strap Load Verification"]
-    B3["213-3 Acquire Operation Guard"]
-    B4["213-4 Wait for Holder Motion"]
-    B5["213-5 Lock Pipeline and Start Audit"]
-    B6{"213-6 Pipeline Selection"}
-
-    B7["213-7A Detect Strap Extension"]
-    B8["213-8A Build Front / 3-clock / Back Groups"]
-    B9["213-9A Capture Configured Points"]
-
-    M7["213-7B Validate Macro-1 Configuration"]
-    M8["213-8B Detect Physical Endpoints"]
-    M9["213-9B Capture AF Anchors and Tiles"]
-
-    B10["213-10 Stitch Three Views"]
-    B11["213-11 Save Images and Metadata"]
-    B12["213-12 Safe Return to Holder"]
-    B13{"213-13 Components Selected?"}
-    B14["213-14 SAM and Component Capture"]
-    B15["213-15 Open 9-clock Load Page"]
-    B16["213-16 Release Operation Guard"]
-    STOP["Stop Safely"]
-
-    B1 --> B2
-    B2 -->|Rejected| STOP
-    B2 -->|Verified| B3
-    B3 -->|Busy| STOP
-    B3 --> B4
-    B4 --> B5
-    B5 --> B6
-
-    B6 -->|"macro_cam_2 - current"| B7
-    B7 --> B8
-    B8 --> B9
-    B9 --> B10
-
-    B6 -->|"macro_cam_1 - optional"| M7
-    M7 -->|Invalid| STOP
-    M7 --> M8
-    M8 --> M9
-    M9 --> B10
-
-    B10 --> B11
-    B11 --> B12
-    B12 -->|Move failed| STOP
-    B12 --> B13
-    B13 -->|Yes| B14
-    B13 -->|No| B15
-    B14 --> B15
-    B15 --> B16
-```
-````
-
-## 213-1 — Button 213 Clicked
-
-Purpose: receive the operator’s “Bracelet Loaded” action on `page_template_new_strap_pre`.
-
-Functions:
-
-- [`_batch_connect()` (line 10361)](D:/Provenance Project/ImagingLibWatch/App/main.py:10361)
-- [`_strap_probe_stitch_or_create()` (line 24905)](D:/Provenance Project/ImagingLibWatch/App/main.py:24905)
-
-`_batch_connect()` does not connect Button 213 directly to the capture function. Because Button 213 appears in `_LOAD_VERIFICATION_BUTTON_VIEWS`, it wraps the callback with Strap load verification:
-
-```
-Button 213
-  -> _verify_loaded_fixture_then("strap", callback)
-  -> _strap_probe_stitch_or_create()
-```
-
-This wrapper is important: the capture callback is not allowed to run until load verification succeeds.
-
----
-
-## 213-2 — Strap Load Verification
-
-Purpose: confirm that the object loaded on the holder is a Strap, rather than a box or incorrect fixture.
-
-Functions:
-
-- [`_verify_loaded_fixture_then()` (line 10472)](D:/Provenance Project/ImagingLibWatch/App/main.py:10472)
-- [`verify_loaded_fixture()` (line 296)](D:/Provenance Project/ImagingLibWatch/Controller/load_fixture_verifier.py:296)
-- [`_detection_sequence()` (line 70)](D:/Provenance Project/ImagingLibWatch/Controller/load_fixture_verifier.py:70)
-- [`_center_out_grid()` (line 124)](D:/Provenance Project/ImagingLibWatch/Controller/load_fixture_verifier.py:124)
-- [`_safe_move()` (line 221)](D:/Provenance Project/ImagingLibWatch/Controller/load_fixture_verifier.py:221)
-- [`_read_out1()` (line 196)](D:/Provenance Project/ImagingLibWatch/Controller/load_fixture_verifier.py:196)
-- [`_out1_is_valid()` (line 215)](D:/Provenance Project/ImagingLibWatch/Controller/load_fixture_verifier.py:215)
-
-Important behavior:
-
-1. `_verify_loaded_fixture_then()` acquires a temporary camera-operation token.
-2. It starts `verify_loaded_fixture()` inside a serialized hardware worker.
-3. `verify_loaded_fixture()` reads the canonical `SafetyRule.load_verification` configuration.
-4. The verifier checks detection tiers from the taller fixture downward.
-5. For the Strap tier, it may use the configured center-out XY grid.
-6. Every probe position is sent through `_safe_move()`.
-7. `_safe_move()` requires `UnifiedHardwareDriver.move_compound()`. There is no raw-Zaber fallback.
-8. Keyence `OUT1` is converted into inferred fixture height.
-9. The Strap is accepted only when the detected tier and configured Strap requirement match.
-
-Current Strap verification uses a minimum inferred-Z rule:
-
-```
-inferred Z > 50 mm
-```
-
-If verification fails, the real Button 213 callback is never called.
-
-In simulation mode, this load-verification phase is skipped.
-
----
-
-## 213-3 — Acquire Operation Guard
-
-Purpose: prevent Button 213, Button 217, or another capture button from starting an overlapping workflow.
-
-Functions:
-
-- [`_begin_camera_operation()` (line 10532)](D:/Provenance Project/ImagingLibWatch/App/main.py:10532)
-- [`_camera_operation_is_current()` (line 10562)](D:/Provenance Project/ImagingLibWatch/App/main.py:10562)
-- [`_finish_camera_operation()` (line 10568)](D:/Provenance Project/ImagingLibWatch/App/main.py:10568)
-
-Important detail: load verification and actual capture use separate operation tokens.
-
-```
-Load-verification token
-  -> verification finishes
-  -> token released
-  -> actual Button 213 callback starts
-  -> new Button 213 token acquired
-```
-
-When `_begin_camera_operation()` succeeds, it disables all capture-entry buttons listed in `_CAMERA_OPERATION_BUTTONS`.
-
-If another operation already owns the guard, the request is ignored before hardware movement begins.
-
----
-
-## 213-4 — Wait for Holder Motion
-
-Purpose: prevent a Strap capture worker from starting while the holder is still moving.
-
-Functions:
-
-- `_is_holder_move_running()`
-- `_start_holder_move_async()`
-- [`_start_workflow_task()` (line 10642)](D:/Provenance Project/ImagingLibWatch/App/main.py:10642)
-
-`_strap_probe_stitch_or_create()` checks for an active holder-move worker. If one exists, it queues its continuation and waits.
-
-`_start_workflow_task(..., hardware=True)` provides a second hardware-level check:
-
-- No holder move may be active.
-- No other hardware workflow worker may be active.
-
-This is a concurrency interlock, not geometric collision detection, but it prevents two safe planners from commanding the same hardware simultaneously.
-
----
-
-## 213-5 — Lock Pipeline and Start Audit
-
-Purpose:
-
-- Freeze the camera pipeline across Button 213 and Button 217.
-- Start a persistent record of Strap movements.
-
-Functions:
-
-- [`_lock_strap_pipeline_for_session()` (line 37066)](D:/Provenance Project/ImagingLibWatch/App/main.py:37066)
-- [`_load_strap_macro1_scan_config()` (line 37082)](D:/Provenance Project/ImagingLibWatch/App/main.py:37082)
-- [`_strap_macro1_scan_enabled()` (line 37092)](D:/Provenance Project/ImagingLibWatch/App/main.py:37092)
-- [`_start_strap_motion_recording()` (line 3845)](D:/Provenance Project/ImagingLibWatch/App/main.py:3845)
-- `_attach_strap_motion_observer()`
-- `_record_strap_motion_event()`
-
-`_lock_strap_pipeline_for_session()`:
-
-1. Reads the Wide-field or Macro Camera checkbox.
-2. Writes the selected state to `strap_macro_cam1_scan.yaml`.
-3. Stores the selection in `_strap_pipeline_session_use_macro1`.
-4. Disables both pipeline checkboxes.
-
-Button 217 must use the same locked selection.
-
-Important distinction: `StrapMotionRecorder` is an audit/diagnostic mechanism. It records requested moves, completed moves, capture poses and page transitions, but it does not itself reject dangerous motion.
-
----
-
-## 213-6 — Pipeline Selection
-
-Purpose: choose the implementation used to create the first three views.
-
-Functions:
-
-- [`_start_strap_213_workflow()` (line 39955)](D:/Provenance Project/ImagingLibWatch/App/main.py:39955)
-- [`_run_strap_213_workflow_core()` (line 39876)](D:/Provenance Project/ImagingLibWatch/App/main.py:39876)
-
-`_start_strap_213_workflow()` creates a retained hardware worker. UI changes are handled in its completion callback; hardware operations run in `_run_strap_213_workflow_core()`.
-
-Branches:
-
-- `macro_cam_2`: configured internalnum points are captured and stitched.
-- `macro_cam_1`: Strap endpoints are measured, dynamic raw tiles are captured, and those tiles are stitched.
-
-Any uncaught worker error goes to the failure callback, which:
-
-- Resets progress
-- Shows “Strap scan stopped safely”
-- Releases the operation guard
-- Does not continue to the 9-clock page
-
----
-
-## 213-7A — Detect Strap Extension: macro_cam_2
-
-Purpose: determine whether additional capture points are required at the left or right end.
-
-Functions:
-
-- [`_detect_strap_extension_flags()` (line 40337)](D:/Provenance Project/ImagingLibWatch/App/main.py:40337)
-- `_run_single_strap_extension_probe()`
-- [`_move_strap_keyence_probe_pose()` (line 40206)](D:/Provenance Project/ImagingLibWatch/App/main.py:40206)
-- `_read_strap_keyence_out1()`
-- `_strap_keyence_out1_valid()`
-
-For each configured probe position:
-
-```
-_move_strap_keyence_probe_pose()
-  -> check_safety_lock()
-  -> move_compound()
-  -> target validation
-  -> transition planning
-  -> segmented move
-  -> readback verification
-```
-
-If `move_compound()` is unavailable, the probe fails. Raw `zaber.move_axis()` is intentionally not used as a compatibility fallback.
-
-The resulting `strap_left_ext` and `strap_right_ext` flags control which additional images appear in the dynamic stitch groups.
-
----
-
-## 213-8A — Build Front / 3-clock / Back Groups
-
-Purpose: translate the extension result into ordered image-capture groups.
-
-Functions:
-
-- [`_build_dynamic_strap_stitch_groups()` (line 40463)](D:/Provenance Project/ImagingLibWatch/App/main.py:40463)
-- `_apply_strap_stitch_group_overrides()`
-- `_apply_strap_stitch_source_config()`
-- `_strap_capture_order_for_group()`
-- [`_strap_scan_positions_ready()` (line 41403)](D:/Provenance Project/ImagingLibWatch/App/main.py:41403)
-
-The three normal groups are:
-
-1. `strap_right_front`
-2. `strap_right_side` — 3-clock
-3. `strap_right_back`
-
-`_strap_scan_positions_ready()` performs a fail-closed preflight in production. It rejects the scan if any required point:
-
-- Does not exist
-- Contains invalid XYZ values
-- Has XYZ all equal to zero
-
-The actual capture poses come from the point/internalnum configuration, while the safety layer independently decides whether those poses are allowed.
-
----
-
-## 213-9A — Capture Configured Points
-
-Purpose: move to every configured Strap point, autofocus, capture and save its source image.
-
-Functions:
-
-- [`_capture_and_show_strap_stitched_views()` (line 42036)](D:/Provenance Project/ImagingLibWatch/App/main.py:42036)
-- [`_capture_strap_stitch_source_image()` (line 41431)](D:/Provenance Project/ImagingLibWatch/App/main.py:41431)
-- [`_execute_prepared_point_capture()` (line 9132)](D:/Provenance Project/ImagingLibWatch/App/main.py:9132)
-- [`execute_template_point()` (line 9762)](D:/Provenance Project/ImagingLibWatch/Controller/hardware_drivers/unified_driver.py:9762)
-
-Call chain:
-
-```
-_capture_and_show_strap_stitched_views()
-  -> for each group
-     -> for each capture item
-        -> _capture_strap_stitch_source_image()
-           -> _execute_prepared_point_capture()
-              -> execute_template_point()
-```
-
-`_execute_prepared_point_capture()` builds the complete hardware payload:
-
-- XYZ
-- R_X and R_Z
-- Camera selection
-- Internal numbers
-- Exposure and gain
-- Lighting
-- Mechanical autofocus settings
-- Liquid-lens autofocus settings
-- HDR settings
-- Semantic target with `fixture_profile="strap"`
-
-`execute_template_point()` checks the safety lock at entry. Its initial pose, autofocus corrections, Keyence moves, HDR Z positions and final approach are routed through the shared safety planner.
-
----
-
-## 213-7B — Validate macro_cam_1 Configuration
-
-Purpose: prevent dynamic raw-tile scanning unless all required macro_cam_1 calibration and safety requirements are present.
-
-Functions:
-
-- [`_validate_strap_macro1_scan_for_run()` (line 37102)](D:/Provenance Project/ImagingLibWatch/App/main.py:37102)
-- `_strap_macro1_validate_pose()`
-- `validate_scan_config()`
-- [`validate_safety_rule()` (line 417)](D:/Provenance Project/ImagingLibWatch/Controller/safety_rules.py:417)
-
-Production validation checks include:
-
-- `safety.calibration_confirmed`
-- Front, side, back and 9-clock pose limits
-- Availability of `move_compound()`
-- Required safety planner
-- Camera-to-Keyence calibration consistency
-- Endpoint configuration
-- Focus configuration
-- Canonical SafetyRule values injected into the scan configuration
-
-The macro_cam_1 YAML controls scan calibration and capture behavior. It does not replace the canonical safety controls in `hardware_config.yaml`.
-
----
-
-## 213-8B — Detect Physical Endpoints
-
-Purpose: measure the actual left and right Strap boundaries instead of assuming a fixed number of tiles.
-
-Functions:
-
-- [`_detect_strap_macro1_endpoints()` (line 37474)](D:/Provenance Project/ImagingLibWatch/App/main.py:37474)
-- `_select_strap_macro1_keyence_probe_y_offset()`
-- `_resolve_strap_macro1_endpoint_report()`
-- [`_strap_macro1_transition_to_pose()` (line 37447)](D:/Provenance Project/ImagingLibWatch/App/main.py:37447)
-- [`_strap_macro1_safe_compound_move()` (line 37373)](D:/Provenance Project/ImagingLibWatch/App/main.py:37373)
-
-Endpoint detection moves the Keyence probe through the same collision-aware planner. Each endpoint search may include:
-
-- Seed position
-- Coarse X probes
-- Fine X refinement
-- Small calibrated Y retries
-- Consecutive invalid readings to confirm the physical edge
-
-`_strap_macro1_safe_compound_move()` requires:
-
-- A hardware driver
-- `move_compound()`
-- An unlocked safety state
-- A validated target pose
-
-It also passes the measured worst-case Strap span into the semantic target. The target validator may increase the assumed half-length, but it cannot reduce the canonical minimum.
-
----
-
-## 213-9B — Capture AF Anchors and Raw Tiles
-
-Purpose: capture dynamic macro_cam_1 images across the measured Strap span.
-
-Functions:
-
-- [`_capture_strap_macro1_views()` (line 39460)](D:/Provenance Project/ImagingLibWatch/App/main.py:39460)
-- [`_capture_strap_macro1_view()` (line 38495)](D:/Provenance Project/ImagingLibWatch/App/main.py:38495)
-- [`_strap_macro1_capture_frame()` (line 38113)](D:/Provenance Project/ImagingLibWatch/App/main.py:38113)
-- `_strap_macro1_focus_result_ok()`
-- `_strap_macro1_locked_current()`
-- `_strap_macro1_stitch_view()`
-
-The normal macro_cam_1 strategy is:
-
-1. Calculate tile X positions from measured endpoints.
-2. Select five autofocus anchors.
-3. At each anchor, measure Keyence height and obtain a liquid-lens lock.
-4. Capture and retain the anchor image.
-5. Interpolate focus values for non-anchor tiles.
-6. Capture remaining tiles.
-7. Stitch the ordered raw tiles.
-
-Every stage move still passes through `_strap_macro1_transition_to_pose()` or internal safe XYZ motion.
-
----
-
-## 213-10 — Stitch Three Views
-
-Purpose: convert all source images into one stitched image per view.
-
-Functions:
-
-- [`WatchBandStitcher.stitch_group()` (line 578)](D:/Provenance Project/ImagingLibWatch/algorithms/watchband_stitcher.py:578)
-- `_strap_stitch_ordered_image_items()`
-- `_strap_macro1_stitch_view()`
-- [`_compose_strap_stitched_preview()` (line 41709)](D:/Provenance Project/ImagingLibWatch/App/main.py:41709)
-
-The legacy pipeline stitches one group at a time. If any required source image is missing, the group is not stitched and the workflow stops.
-
-The three completed views are ordered as:
-
-```
-Front -> 3-clock -> Back
-```
-
-Image stitching itself does not move hardware and therefore does not trigger collision rules.
-
----
-
-## 213-11 — Save Images and Metadata
-
-Purpose: persist enough information to display, analyze and audit the scan.
-
-Functions:
-
-- `_save_strap_stitched_output_images()`
-- [`_save_strap_precapture_artifacts()` (line 41937)](D:/Provenance Project/ImagingLibWatch/App/main.py:41937)
-- `_save_strap_stitched_overview_metadata()`
-- [`_remember_strap_stitched_pre_capture_result()` (line 40546)](D:/Provenance Project/ImagingLibWatch/App/main.py:40546)
-- `_remember_strap_macro1_pre_capture_result()`
-
-Saved data includes:
-
-- Individual stitched views
-- Frame-82 overview image
-- Segment/display geometry
-- Stitch reports
-- Extension or endpoint report
-- Capture poses
-- Process YAML
-- Raw-image manifests for macro_cam_1
-- Source-camera information
-
-This block is storage-only. It does not command the motion system.
-
----
-
-## 213-12 — Safe Return to Holder
-
-Purpose: move the machine back to the operator-accessible holder/start position before asking the operator to flip/reload the Strap.
-
-Functions:
-
-- `_move_zaber_to_start_pos()`
-- [`_move_zaber_to_safe_strap_pose()` (line 10106)](D:/Provenance Project/ImagingLibWatch/App/main.py:10106)
-- `_strap_macro1_transition_to_pose()`
-- [`move_compound()` (line 646)](D:/Provenance Project/ImagingLibWatch/Controller/hardware_drivers/unified_driver.py:646)
-
-Configured destination:
-
-```
-X=0, Y=292, Z=150, R_X=0, R_Z=0
-```
-
-This is not a direct five-axis jump. `move_compound()` converts it into safe segments using `StrapTransitionGuard`.
-
-If the return fails, the workflow stops and does not show the 9-clock load page.
-
----
-
-## 213-13/14 — Optional SAM and Component Capture
-
-Purpose: capture selected Strap components after the overview is available.
-
-Functions:
-
-- [`_start_automatic_strap_component_capture()` (line 14499)](D:/Provenance Project/ImagingLibWatch/App/main.py:14499)
-- [`_start_strap_precapture_auto_analysis()` (line 14701)](D:/Provenance Project/ImagingLibWatch/App/main.py:14701)
-- `_resume_pending_strap_component_capture()`
-- `_on_strap_link_analysis_ready()`
-- [`_preflight_strap_component_capture_routes()` (line 16557)](D:/Provenance Project/ImagingLibWatch/App/main.py:16557)
-- [`_execute_strap_component_capture_plan()` (line 16671)](D:/Provenance Project/ImagingLibWatch/App/main.py:16671)
-- [`_run_strap_component_capture_plan_core()` (line 16785)](D:/Provenance Project/ImagingLibWatch/App/main.py:16785)
-- [`_move_zaber_to_strap_safe_retract()` (line 3949)](D:/Provenance Project/ImagingLibWatch/App/main.py:3949)
-- [`_finish_strap_component_capture_operation()` (line 17790)](D:/Provenance Project/ImagingLibWatch/App/main.py:17790)
-
-Safety behavior:
-
-1. Only components selected for phase 213 are included.
-2. Motion waits for saved, current-session SAM coordinates.
-3. Macro and micro phases are independently preflighted.
-4. Preflight runs the candidate poses through the Digital Twin and shared motion planner.
-5. Each actual point uses the normal `execute_template_point()` path.
-6. If one point fails, the next point may run only after `_move_zaber_to_strap_safe_retract()` reaches and verifies the safe retract pose.
-7. The macro phase must safely retract before macro-image screw analysis begins.
-8. The `finally` block performs a safe retract on both success and exception paths.
-9. Retract failure is fatal; the component pipeline does not continue.
-
----
-
-## 213-15/16 — Open 9-clock Page and Release Guard
-
-Purpose: finish Button 213 and request the 9-clock load.
-
-Functions:
-
-- [`_show_strap_9clock_load_page()` (line 40634)](D:/Provenance Project/ImagingLibWatch/App/main.py:40634)
-- `_finish_camera_operation()`
-
-Destination:
-
-```
-page_template_new_strap_pre2
-```
-
-If no components were selected, the operation guard is released immediately after navigation.
-
-If component capture was started, `_finish_strap_component_capture_operation()` releases the guard and then calls the navigation callback.
-
----
-
-# 2. Button 217: 9-clock
-
-````
-```mermaid
-flowchart TD
-    C1["217-1 Button 217 Clicked"]
-    C2["217-2 Strap Load Verification"]
-    C3["217-3 Acquire Operation Guard"]
-    C4["217-4 Validate Pipeline and Previous Views"]
-    C5{"217-5 Pipeline Selection"}
-
-    C6["217-6A Build Dynamic 9-clock Group"]
-    C7["217-7A Safe Move to First Capture Point"]
-    C8["217-8A Capture and Stitch 9-clock"]
-
-    M6["217-6B Independent Endpoint Detection"]
-    M7["217-7B Capture AF Anchors and Tiles"]
-    M8["217-8B Stitch 9-clock"]
-
-    C9["217-9 Combine Four Views and Save"]
-    C10["217-10 Safe Return to Watch Center"]
-    C11{"217-11 Components Selected?"}
-    C12["217-12 SAM and Component Capture"]
-    C13["217-13 Open Final Strap Page"]
-    C14["217-14 Release Operation Guard"]
-    C15["217-15 Leaving Page: Reset R_X"]
-    STOP["Stop Safely"]
-
-    C1 --> C2
-    C2 -->|Rejected| STOP
-    C2 -->|Verified| C3
-    C3 --> C4
-    C4 -->|Mismatch or missing views| STOP
-    C4 --> C5
-
-    C5 -->|"macro_cam_2 - current"| C6
-    C6 --> C7
-    C7 --> C8
-    C8 --> C9
-
-    C5 -->|"macro_cam_1 - optional"| M6
-    M6 --> M7
-    M7 --> M8
-    M8 --> C9
-
-    C9 --> C10
-    C10 -->|Move failed| STOP
-    C10 --> C11
-    C11 -->|Yes| C12
-    C11 -->|No| C13
-    C12 --> C13
-    C13 --> C14
-    C14 --> C15
-```
-````
-
-## 217-1/2 — Click and Load Verification
-
-Functions:
-
-- `_batch_connect()`
-- [`_start_strap_9clock_pre_capture()` (line 40747)](D:/Provenance Project/ImagingLibWatch/App/main.py:40747)
-- `_verify_loaded_fixture_then()`
-- `verify_loaded_fixture()`
-
-Button 217 is wrapped by exactly the same Strap load-verification mechanism as Button 213.
-
-This second verification matters because the operator has handled or flipped the Strap between the two phases.
-
----
-
-## 217-3 — Acquire Operation Guard
-
-Functions:
-
-- `_begin_camera_operation()`
-- `_camera_operation_is_current()`
-- `_start_workflow_task()`
-
-The guard prevents Button 217 from starting while:
-
-- Another capture operation exists
-- The holder is moving
-- Another hardware worker is active
-
-The operation key is:
-
-```
-template_pre_capture:strap_9clock
-```
-
----
-
-## 217-4 — Validate Pipeline and Previous Views
-
-Purpose: ensure Button 217 continues the exact session created by Button 213.
-
-Functions:
-
-- [`_start_strap_217_workflow()` (line 41037)](D:/Provenance Project/ImagingLibWatch/App/main.py:41037)
-- `_strap_macro1_scan_enabled()`
-- `_strap_primary_stitched_views()`
-
-Validation rules:
-
-- If Button 213 used macro_cam_1 and the switch is now false, stop.
-- If Button 213 used macro_cam_2 and the switch is now true, stop.
-- macro_cam_2 requires three stored stitched views.
-- macro_cam_1 requires three stored raw-view records.
-- Missing previous views stop the 9-clock workflow before motion.
-
-This prevents mixing images with different optics, calibration systems or coordinate mappings.
-
----
-
-## 217-5/6A — Build Dynamic 9-clock Group
-
-Functions:
-
-- [`_build_dynamic_strap_9clock_stitch_groups()` (line 40503)](D:/Provenance Project/ImagingLibWatch/App/main.py:40503)
-- `_strap_primary_stitched_views()`
-
-The legacy 9-clock group is generated using the extension report saved by Button 213.
-
-It normally selects the required range from the configured `4022–4028` capture-point family.
-
----
-
-## 217-7A — Safe Move to First 9-clock Point
-
-Purpose: explicitly pre-position the hardware through the safety planner before the group capture begins.
-
-Functions:
-
-- [`_move_strap_capture_group_start()` (line 40659)](D:/Provenance Project/ImagingLibWatch/App/main.py:40659)
-- `_materialize_strap_scan_point()`
-- `_move_zaber_to_safe_strap_pose()`
-- `move_compound()`
-
-The function:
-
-1. Finds the first item in capture order.
-2. Resolves its configured five-axis pose.
-3. Records a motion-audit event.
-4. Calls `_move_zaber_to_safe_strap_pose()`.
-5. Starts no photo task if the safe move is rejected.
-
-This is an additional entry pre-position. Each later image still performs its own safety validation.
-
----
-
-## 217-8A — Capture and Stitch 9-clock
-
-Functions:
-
-- [`_run_strap_217_workflow_core()` (line 40950)](D:/Provenance Project/ImagingLibWatch/App/main.py:40950)
-- `_capture_and_show_strap_stitched_views()`
-- `_capture_strap_stitch_source_image()`
-- `_execute_prepared_point_capture()`
-- `execute_template_point()`
-- `WatchBandStitcher.stitch_group()`
-
-The previous three views are passed as `existing_stitched_views`. Only the new 9-clock group is captured and stitched.
-
----
-
-## 217-6B/7B/8B — macro_cam_1 9-clock
-
-Functions:
-
-- `_capture_strap_macro1_views(["9clock"], ...)`
-- `_detect_strap_macro1_endpoints()`
-- `_capture_strap_macro1_view()`
-- `_strap_macro1_capture_frame()`
-- `_strap_macro1_stitch_view()`
-
-The 9-clock endpoint measurement is independent because the Strap has been flipped. It must not silently reuse the Button 213 endpoint report when the current configuration requires a new measurement.
-
-The same anchor autofocus, interpolation and tile-capture logic is then used for the 9-clock view.
-
----
-
-## 217-9 — Combine Four Views and Save
-
-Functions:
-
-- `_ordered_strap_stitched_views()`
-- `_compose_strap_stitched_preview()`
-- `_save_strap_precapture_artifacts()`
-- `_remember_strap_stitched_pre_capture_result()`
-- `_remember_strap_macro1_pre_capture_result()`
-
-Final display order:
-
-```
-Front -> 3-clock -> Back -> 9-clock
-```
-
-The result now satisfies `_strap_four_view_capture_complete()`.
-
----
-
-## 217-10 — Safe Return to Watch Center
-
-Functions:
-
-- `_move_zaber_to_center_pos()`
-- `_move_zaber_to_safe_strap_pose()`
-- `_strap_macro1_transition_to_pose()`
-- `move_compound()`
-
-The destination is `hardware.zaber.home_positions.watch`.
-
-Like the holder return, it is planned as a guarded multi-segment transition. If it fails, the result is not advanced to the final Strap page.
-
----
-
-## 217-11/12 — Optional Component Capture
-
-This uses the same component pipeline as Button 213, but only components assigned to phase 217 are selected.
-
-Safety rules are identical:
-
-- Current-session SAM coordinates are mandatory.
-- Macro and micro routes are preflighted independently.
-- Each capture uses `execute_template_point()`.
-- Failed points require verified safe retract before continuation.
-- Final retract occurs in `finally`.
-
----
-
-## 217-13/14 — Final Page and Guard Release
-
-Functions:
-
-- `_load_new_template_data()`
-- `_show_template_name_create_page()`
-- `_show_precaptured_in_frame()`
-- `_finish_camera_operation()`
-
-Destination depends on the template state:
-
-- New scratch template: go to the template naming/source page.
-- Existing template: go directly to `page_template_new_strap`.
-
-The four-view overview is displayed in `frame_82`.
-
----
-
-## 217-15 — Leaving the Final Strap Page
-
-Purpose: avoid leaving the camera arm deployed when navigating away.
-
-Functions:
-
-- [`go_to_page()` (line 31115)](D:/Provenance Project/ImagingLibWatch/App/main.py:31115)
-- [`_force_rx_to_zero()` (line 19800)](D:/Provenance Project/ImagingLibWatch/App/main.py:19800)
-- [`WorkflowManager.manual_move()` (line 3066)](D:/Provenance Project/ImagingLibWatch/core/workflow_manager.py:3066)
-- `move_compound()`
-- [`_finish_strap_motion_recording()` (line 3896)](D:/Provenance Project/ImagingLibWatch/App/main.py:3896)
-
-`_force_rx_to_zero()` does not directly call a raw Zaber axis operation in the production workflow. It calls `WorkflowManager.manual_move()`, which requires `move_compound()`.
-
-After the reset/navigation sequence, the Strap motion audit is closed and saved.
-
----
-
-# 3. Complete Collision-Safety Call Chain
-
-````
-```mermaid
-flowchart TD
-    S1["Application Motion Request"]
-    S2["check_safety_lock"]
-    S3["move_compound or execute_template_point"]
-    S4["Resolve Strap Safety Profile"]
-    S5["Validate Axis Limits"]
-    S6["Digital Twin Target Prediction"]
-    S7["StrapTargetValidator.validate"]
-    S8["StrapTransitionGuard.plan"]
-    S9["Ordered Motion Segments"]
-    S10["Check E-stop Before Segment"]
-    S11["Verify Rotation / Large-X Staging"]
-    S12["Execute One Segment"]
-    S13["Verify Segment Readback"]
-    S14{"More Segments?"}
-    S15["Verify Final Five-axis Pose"]
-    SAFE["Move Completed"]
-    HALT["Reject / Stop Motion"]
-
-    S1 --> S2
-    S2 -->|Locked| HALT
-    S2 --> S3
-    S3 --> S4
-    S4 --> S5
-    S5 -->|Outside limits| HALT
-    S5 --> S6
-    S6 -->|Collision predicted| HALT
-    S6 --> S7
-    S7 -->|Target rejected| HALT
-    S7 --> S8
-    S8 --> S9
-    S9 --> S10
-    S10 -->|Locked| HALT
-    S10 --> S11
-    S11 -->|Staging incorrect| HALT
-    S11 --> S12
-    S12 --> S13
-    S13 -->|Mismatch| HALT
-    S13 --> S14
-    S14 -->|Yes| S10
-    S14 -->|No| S15
-    S15 -->|Mismatch| HALT
-    S15 --> SAFE
-```
-````
-
-# 4. Detailed Safety Functions
-
-## 4.1 Safety configuration accessors
-
-File: [`Controller/safety_rules.py`](D:/Provenance Project/ImagingLibWatch/Controller/safety_rules.py)
-
-### `safety_rule()`
-
-Returns the canonical `hardware.zaber.SafetyRule` tree.
-
-### `resolve_safety_profile()`
-
-Determines whether a target uses:
-
-- `watch`
-- `strap`
-- `box`
-
-An explicit fixture profile is authoritative. Otherwise, the semantic target’s view and part names are inspected.
-
-### `axis_limit_config()`
-
-Returns the permitted axis range for the selected profile.
-
-Current Strap limits:
-
-```
-X:   0 .. 435 mm
-Y:   0 .. 292 mm
-Z:   0 .. 150 mm
-R_X: 0 .. 90 degrees
-R_Z: continuous
-```
-
-An empty R_Z limit means continuous rotation, not unrestricted transition behavior. The Transition Guard still controls how R_Z may change.
-
-### `door_estop_config()`
-
-Returns MQTT topic, DI channel, open-door value and fail-closed behavior.
-
-### `kinematics_config()` and `collision_envelope_config()`
-
-Provide Digital Twin arm geometry and collision-box dimensions.
-
-### `strap_safety_config()`
-
-Returns the Strap-specific:
-
-- Target validator settings
-- Transition guard settings
-- Safe staging positions
-- Validated exceptions
-- Readback tolerances
-
-### `validate_safety_rule()`
-
-Checks the SafetyRule schema before motion use, including required profiles, limits and load-verification fields.
-
----
-
-## 4.2 Door and E-stop functions
-
-### [`SafetyManager` (line 4571)](D:/Provenance Project/ImagingLibWatch/Controller/hardware_managers.py:4571)
-
-In production, it subscribes to the configured MQTT door-sensor topic.
-
-### [`SafetyManager._on_message()` (line 4640)](D:/Provenance Project/ImagingLibWatch/Controller/hardware_managers.py:4640)
-
-Triggers the E-stop callback when:
-
-- The configured door channel reports “open”
-- MQTT payload parsing fails and `fail_closed_on_payload_error=true`
-
-### [`trigger_emergency_stop()` (line 5383)](D:/Provenance Project/ImagingLibWatch/Controller/hardware_drivers/unified_driver.py:5383)
-
-It:
-
-1. Latches `_system_locked=True`.
-2. Stops all Zaber axes.
-3. Shuts down lighting.
-4. Stops camera streaming.
-5. Requires a manual reset.
-
-### [`check_safety_lock()` (line 5375)](D:/Provenance Project/ImagingLibWatch/Controller/hardware_drivers/unified_driver.py:5375)
-
-Called:
-
-- At `move_compound()` entry
-- At `execute_template_point()` entry
-- Before internal XYZ movement
-- Before every planned motion segment
-- Before load and extension probe motion
-
-If the system is latched, it raises immediately.
-
-### [`manual_safety_reset()` (line 5411)](D:/Provenance Project/ImagingLibWatch/Controller/hardware_drivers/unified_driver.py:5411)
-
-Attempts hardware recovery and clears the latch only when all recovery results succeed.
-
----
-
-## 4.3 Central motion-planning functions
-
-### [`move_compound()` (line 646)](D:/Provenance Project/ImagingLibWatch/Controller/hardware_drivers/unified_driver.py:646)
-
-This is the main five-axis safety entry point.
-
-It:
-
-1. Checks the E-stop latch.
-2. Reads the current five-axis pose.
-3. Resolves missing target axes to their current values.
-4. Applies optional kinematic compensation.
-5. Calls Digital Twin prediction.
-6. Calls `_plan_motion_segments()`.
-7. Executes the planned segments.
-8. Saves the failure reason in `_last_move_error`.
-
-The function returns `False` if any safety stage rejects the move.
-
-### [`execute_template_point()` (line 9762)](D:/Provenance Project/ImagingLibWatch/Controller/hardware_drivers/unified_driver.py:9762)
-
-This is the complete capture entry point.
-
-It covers:
-
-- Initial capture-pose movement
-- Mechanical autofocus
-- Keyence probes
-- Liquid autofocus
-- HDR Z-bucket movement
-- Final approach
-- Camera capture
-
-Its internal motion corrections are not exempt from safety rules.
-
-### [`_move_xyz_with_safety()` (line 971)](D:/Provenance Project/ImagingLibWatch/Controller/hardware_drivers/unified_driver.py:971)
-
-Used for internal XYZ adjustments such as:
-
-- Autofocus movement
-- Keyence searches
-- HDR Z changes
-- Final approach
-- Focus correction
-
-It preserves the current rotation axes, rebuilds a full five-axis target and runs it through the same planner.
-
-### [`_plan_motion_segments()` (line 1018)](D:/Provenance Project/ImagingLibWatch/Controller/hardware_drivers/unified_driver.py:1018)
-
-This is the shared planner.
-
-For Strap targets it performs:
-
-1. Fixture-profile resolution
-2. Finite-number validation
-3. Axis-limit validation
-4. Digital Twin target check
-5. `StrapTargetValidator.validate()`
-6. `StrapTransitionGuard.plan()`
-
-### [`_is_strap_semantic_target()` (line 3745)](D:/Provenance Project/ImagingLibWatch/Controller/hardware_drivers/unified_driver.py:3745)
-
-Determines whether Strap-specific validation is required.
-
-A target is treated as Strap when:
-
-- `fixture_profile == "strap"`, or
-- Semantic view/part text contains Strap identifiers
-
-The Button 213/217 payloads explicitly provide Strap semantics, so they enter the Strap validator.
-
----
-
-# 5. StrapTargetValidator — Final Pose Safety
-
-Function: [`StrapTargetValidator.validate()` (line 816)](D:/Provenance Project/ImagingLibWatch/Controller/safety_rules.py:816)
-
-This validator answers:
-
-> “Is the requested final five-axis pose physically allowed?”
-
-It does not decide the route. That is handled by `StrapTransitionGuard`.
-
-## 5.1 Finite five-axis requirement
-
-Every target must provide finite:
-
-```
-X, Y, Z, R_X, R_Z
-```
-
-NaN, infinity or non-numeric values are rejected.
-
-## 5.2 Minimum stage Y
-
-For ordinary non-exception targets:
-
-```
-Y >= 30 mm
-```
-
-A lower Y target is rejected.
-
-## 5.3 Strap wall-envelope rule
-
-When:
-
-```
-abs(R_X) >= 30 degrees
-```
-
-the validator calculates wall clearance:
-
-```
-clearance =
-    target Y
-    - wall Y
-    - strap half length * abs(sin(R_Z))
-```
-
-Current canonical values:
-
-```
-Strap full span:       240 mm
-Strap half length:     120 mm
-Minimum clearance:      30 mm
-Wall Y:                  0 mm
-Tolerance:            0.05 mm
-```
-
-The target is accepted only when clearance is greater than the required minimum.
-
-A macro_cam_1 request may provide a measured or maximum Strap half-length. The validator uses the larger value; the caller cannot weaken the canonical envelope.
-
-## 5.4 Hazardous R_Z rule
-
-A normal target requires a validated exception when all are true:
-
-```
-abs(R_X) >= 30 degrees
-R_Z is within 20 degrees of 90 or 270 degrees
-Y < 160 mm
-```
-
-This prevents an arbitrary deployed Strap pose from being commanded near the wall/camera frame.
-
-## 5.5 Validated exception poses
-
-Current exact validated exceptions:
-
-- `4029`
-- `4030`
-- `4031`
-- `4032`
-
-An exception is accepted only when:
-
-- The semantic `internalnum1` matches
-- The final XYZ matches the configured pose
-- R_X matches
-- R_Z matches using canonical angular distance
-- All values are within configured readback tolerance
-
-The general safety rule is not a wildcard. A target that merely uses `internalnum1=4029` but does not match the configured pose is rejected.
-
-Additional narrow exceptions exist for:
-
-- 4029/4030 Keyence probe X/Z envelopes
-- 4029/4030 autofocus Y corridors
-
-These allow only the specifically calibrated axis variation while preserving the other axes.
-
----
-
-# 6. StrapTransitionGuard — Safe Route Planning
-
-Function: [`StrapTransitionGuard.plan()` (line 1394)](D:/Provenance Project/ImagingLibWatch/Controller/safety_rules.py:1394)
-
-This guard answers:
-
-> “Given an accepted target, in what order may the axes move?”
-
-## 6.1 Normal staging values
-
-```
-Safe Y:   160 mm minimum
-Safe Z:    70 mm exact staging plane
-Safe R_X:   0 degrees
-```
-
-If current Y is already greater than 160 mm, the planner does not lower it to 160 mm because the larger Y provides more clearance.
-
-## 6.2 Special 4029/4030 staging
-
-Entering or leaving 4029/4030 uses:
-
-```
-Safe Y: 190 mm minimum
-Safe Z:  70 mm
-```
-
-This protects the long Strap/endlink orientation.
-
-## 6.3 When staging is forced
-
-Staging is forced for:
-
-- Deployed Strap motion
-- Any R_X change
-- Any R_Z change
-- Entering or leaving a validated exception
-- Keyence transition
-- Oversized fixed-angle translation
-
-## 6.4 R_Z change order
-
-For an R_Z change, the planned order is:
-
-```
-1. Raise Y to safe clearance
-2. Move Z to safe staging plane
-3. Fold R_X to 0 degrees
-4. Rotate R_Z at clearance
-5. Deploy R_X to target angle
-6. Move X to target
-7. Move Z to target
-8. Move Y to target
-```
-
-R_Z is never supposed to rotate while R_X remains deployed unless the route is an explicitly qualified local case.
-
-## 6.5 Large top-down translation rule
-
-Direct translation limits:
-
-```
-Maximum direct X delta: 14.25 mm
-Maximum direct Y delta:  6.10 mm
-Maximum direct Z delta:  3.00 mm
-```
-
-If a fixed-angle top-down move exceeds any limit, staging is required before translation.
-
-Functions:
-
-- [`top_down_translation_contract()` (line 1074)](D:/Provenance Project/ImagingLibWatch/Controller/safety_rules.py:1074)
-- [`top_down_translation_staging_required()` (line 1147)](D:/Provenance Project/ImagingLibWatch/Controller/safety_rules.py:1147)
-
-## 6.6 Same-view local translation
-
-A direct local translation is permitted only when all requirements pass:
-
-- Caller explicitly marks `strap_same_view_local_move`
-- It is not a Keyence transition
-- No special `internalnum1` is involved
-- R_X and R_Z do not change
-- R_Z is near 0° or 180°
-- XYZ deltas remain within limits
-- Minimum Y remains valid
-- Wall clearance remains valid
-- Target validation already succeeded
-
-## 6.7 Endlink Keyence local scan
-
-A narrow local X/Z path is allowed only inside the configured 4029/4030 probe envelope.
-
-The current and target poses must preserve:
-
-- Calibrated Y
-- Calibrated R_X
-- Calibrated R_Z
-- X/Z inside the configured probe half-range
-
-## 6.8 X-only optimization
-
-An X-only optimization exists in code, but the current configuration has:
-
-```
-x_only_optimization:
-  enabled: false
-```
-
-Therefore it is not active in the current Strap workflow.
-
----
-
-# 7. Segment Execution and Readback
-
-Function: [`_execute_motion_segments()` (line 765)](D:/Provenance Project/ImagingLibWatch/Controller/hardware_drivers/unified_driver.py:765)
-
-This is where planned safety becomes hardware enforcement.
-
-## Before every segment
-
-It calls `check_safety_lock()` again. A door opening between two segments stops the next segment.
-
-## Before a Strap rotation
-
-Functions:
-
-- [`_verify_strap_rotation_staging()` (line 3835)](D:/Provenance Project/ImagingLibWatch/Controller/hardware_drivers/unified_driver.py:3835)
-- [`_verify_strap_rz_fold_readback()` (line 3854)](D:/Provenance Project/ImagingLibWatch/Controller/hardware_drivers/unified_driver.py:3854)
-- `_strap_segment_has_rotation_delta()`
-
-They verify that:
-
-- Live Y is at or beyond safe clearance.
-- Live Z matches the safe staging plane.
-- R_X has actually reached the required folded angle before R_Z moves.
-
-## Before a large X segment
-
-The function reads live X/Y/Z.
-
-If the requested X delta exceeds 14.25 mm, it requires:
-
-```
-live Y >= safe Y
-live Z == safe Z within tolerance
-```
-
-The X command is not sent if live readback does not prove clearance.
-
-## After every segment
-
-Function:
-
-- [`_verify_strap_keyence_pose_readback()` (line 3905)](D:/Provenance Project/ImagingLibWatch/Controller/hardware_drivers/unified_driver.py:3905)
-
-Current tolerances:
-
-```
-XYZ tolerance:   0.05 mm
-Angle tolerance: 0.5 degrees
-```
-
-The next segment does not start if the previous segment failed to reach its commanded position.
-
-## Final pose
-
-The complete five-axis final pose is verified again after all segments.
-
-## Asynchronous movement restriction
-
-Guarded Strap routes require `wait=True`. A caller cannot request asynchronous multi-segment motion because that would bypass the required between-segment readback contract.
-
----
-
-# 8. Digital Twin Collision Prediction
-
-Functions:
-
-- [`DigitalTwinGuard` (line 7)](D:/Provenance Project/ImagingLibWatch/Controller/kinematics/digital_twin_guard.py:7)
-- [`predict_collision()` (line 62)](D:/Provenance Project/ImagingLibWatch/Controller/kinematics/digital_twin_guard.py:62)
-- `kinematics_config()`
-- `collision_envelope_config()`
-
-It calculates:
-
-- Rotated platform bounding box
-- Camera-arm bounding box
-- Axis-aligned overlap between them
-
-It is called both by `move_compound()` and the shared motion planner.
-
-Important current limitation: all three configured collision envelopes currently have zero dimensions:
-
-```
-platform_box: {width: 0.0, depth: 0.0, height: 0.0}
-macro_box:    {width: 0.0, length: 0.0}
-micro_box:    {width: 0.0, length: 0.0}
-```
-
-Therefore, although `predict_collision()` is executed, it is not currently a meaningful calibrated volumetric collision layer.
-
-The currently effective protections are primarily:
-
-- Door/E-stop
-- Axis limits
-- StrapTargetValidator
-- StrapTransitionGuard
-- Large-X live-clearance check
-- Rotation staging readback
-- Per-segment readback
-- Final-pose readback
-
----
-
-# 9. Authoritative Control Files
-
-## Canonical SafetyRule
-
-[config/hardware_config.yaml (line 94)](D:/Provenance Project/ImagingLibWatch/config/hardware_config.yaml:94)
-
-Important sections:
-
-- Door/E-stop: line 97
-- Axis limits: line 104
-- Load verification: line 134
-- Digital Twin: line 284
-- Collision envelopes: line 297
-- Strap target validator: line 359
-- Validated exceptions: approximately line 371
-- Strap transition guard: line 402
-- Large-translation readback: line 441
-- Segment/final readback: line 444
-- Holder/start pose: line 465
-- Watch-center pose: line 473
-
-## Pipeline and macro_cam_1 scan calibration
-
-[config/strap_macro_cam1_scan.yaml (line 7)](D:/Provenance Project/ImagingLibWatch/config/strap_macro_cam1_scan.yaml:7)
-
-Controls:
-
-- Camera-pipeline selection
-- Endpoint scan
-- Tile spacing
-- Autofocus anchors
-- Camera-to-Keyence calibration
-- Per-view capture poses
-- Camera exposure and lighting
-- Stitching behavior
-
-It does not own the canonical wall envelope, transition staging or readback tolerances; those values are injected from `hardware_config.yaml`.
-
-## Legacy scan points and stitch groups
-
-- [`config/internalnum_config.yaml`](D:/Provenance Project/ImagingLibWatch/config/internalnum_config.yaml)
-- [`config/watchband_stitch.yaml`](D:/Provenance Project/ImagingLibWatch/config/watchband_stitch.yaml)
-
-These define where and in what order to capture. They do not authorize unsafe motion: every resulting pose must still pass the canonical SafetyRule.
-
-2:25 PM
-
-
-```
-把上面的英文詳細解釋全都翻成中文
-```
-# Strap 拍照流程——完整中文說明
-
-目前 repository 的設定為：
-
-```
-use_macro_cam_1_pipeline: false
-```
-
-因此，目前實際使用的 production 流程是：
-
-```
-macro_cam_2
-→ 依照 internalnum 拍攝各個點位
-→ 將照片拼接成 Strap overview
-```
-
-程式中仍然保留 `macro_cam_1` 動態掃描流程，所以以下也會一併說明。
-
-本文所稱的「Safety」包含：
-
-- 防止載入錯誤治具或錯誤物件
-- 防止多個硬體流程同時移動
-- 安全門與緊急停止
-- 軸向行程限制
-- Strap 最終位置防撞檢查
-- Strap 移動路徑規劃
-- 每一段移動後的位置回讀確認
-- 發生錯誤後的安全退回
-- 最終回到安全位置
-
----
-
-# 1. Button 213：Front / 3-clock / Back
-
-````
-```mermaid
-flowchart TD
-    B1["213-1 按下 Button 213"]
-    B2["213-2 Strap 載入確認"]
-    B3["213-3 取得拍照流程鎖"]
-    B4["213-4 等待 Holder 移動完成"]
-    B5["213-5 鎖定相機流程並開始動作紀錄"]
-    B6{"213-6 選擇拍照流程"}
-
-    B7["213-7A 偵測 Strap 左右延伸"]
-    B8["213-8A 建立 Front / 3-clock / Back 群組"]
-    B9["213-9A 拍攝設定點位"]
-
-    M7["213-7B 驗證 macro_cam_1 設定"]
-    M8["213-8B 偵測 Strap 實際端點"]
-    M9["213-9B 拍攝 AF Anchor 與 Tiles"]
-
-    B10["213-10 拼接三個 View"]
-    B11["213-11 儲存影像與 Metadata"]
-    B12["213-12 安全回到 Holder"]
-    B13{"213-13 是否選擇 Component?"}
-    B14["213-14 SAM 分析與 Component 拍照"]
-    B15["213-15 進入 9-clock 載入頁面"]
-    B16["213-16 釋放拍照流程鎖"]
-    STOP["安全停止"]
-
-    B1 --> B2
-    B2 -->|確認失敗| STOP
-    B2 -->|確認成功| B3
-    B3 -->|硬體忙碌| STOP
-    B3 --> B4
-    B4 --> B5
-    B5 --> B6
-
-    B6 -->|"macro_cam_2，目前使用"| B7
-    B7 --> B8
-    B8 --> B9
-    B9 --> B10
-
-    B6 -->|"macro_cam_1，可選流程"| M7
-    M7 -->|設定無效| STOP
-    M7 --> M8
-    M8 --> M9
-    M9 --> B10
-
-    B10 --> B11
-    B11 --> B12
-    B12 -->|移動失敗| STOP
-    B12 --> B13
-    B13 -->|是| B14
-    B13 -->|否| B15
-    B14 --> B15
-    B15 --> B16
-```
-````
-
-## 213-1——按下 Button 213
-
-作用：接收操作員在 `page_template_new_strap_pre` 頁面按下「Bracelet Loaded」的操作。
-
-相關 functions：
-
-- [`_batch_connect()` (line 10361)](D:/Provenance Project/ImagingLibWatch/App/main.py:10361)
-- [`_strap_probe_stitch_or_create()` (line 24905)](D:/Provenance Project/ImagingLibWatch/App/main.py:24905)
-
-`_batch_connect()` 並不是直接把 Button 213 連接到拍照 function。
-
-因為 Button 213 存在於 `_LOAD_VERIFICATION_BUTTON_VIEWS`，所以實際連接方式是：
-
-```
-Button 213
-  → _verify_loaded_fixture_then("strap", callback)
-  → _strap_probe_stitch_or_create()
-```
-
-也就是說，在 Strap 載入確認成功以前，真正的 Button 213 拍照 callback 不會被執行。
-
----
-
-## 213-2——Strap 載入確認
-
-作用：確認目前放在 Holder 上的物件確實是 Strap，而不是 Box、Watch 或錯誤的治具。
-
-相關 functions：
-
-- [`_verify_loaded_fixture_then()` (line 10472)](D:/Provenance Project/ImagingLibWatch/App/main.py:10472)
-- [`verify_loaded_fixture()` (line 296)](D:/Provenance Project/ImagingLibWatch/Controller/load_fixture_verifier.py:296)
-- [`_detection_sequence()` (line 70)](D:/Provenance Project/ImagingLibWatch/Controller/load_fixture_verifier.py:70)
-- [`_center_out_grid()` (line 124)](D:/Provenance Project/ImagingLibWatch/Controller/load_fixture_verifier.py:124)
-- [`_safe_move()` (line 221)](D:/Provenance Project/ImagingLibWatch/Controller/load_fixture_verifier.py:221)
-- [`_read_out1()` (line 196)](D:/Provenance Project/ImagingLibWatch/Controller/load_fixture_verifier.py:196)
-- [`_out1_is_valid()` (line 215)](D:/Provenance Project/ImagingLibWatch/Controller/load_fixture_verifier.py:215)
-
-執行流程：
-
-1. `_verify_loaded_fixture_then()` 先取得一個暫時性的拍照流程 token。
-2. 它在獨立且序列化的 hardware worker 中執行 `verify_loaded_fixture()`。
-3. `verify_loaded_fixture()` 讀取 canonical `SafetyRule.load_verification` 設定。
-4. 系統從較高的治具開始，依序檢查不同高度層級。
-5. 到 Strap 層級時，可能會使用設定好的中心向外 XY 搜尋網格。
-6. 每一個 Keyence 探測位置都必須經過 `_safe_move()`。
-7. `_safe_move()` 強制要求使用 `UnifiedHardwareDriver.move_compound()`。
-8. 不允許退回到直接呼叫原始 Zaber 移動的方式。
-9. Keyence `OUT1` 會被轉換成推算出的治具高度。
-10. 只有偵測到的治具層級符合 Strap 條件時，才會繼續執行 Button 213。
-
-目前 Strap 驗證使用的主要條件為：
-
-```
-推算出的 Z > 50 mm
-```
-
-如果驗證失敗：
-
-```
-Button 213 真正的拍照 callback 不會被呼叫
-```
-
-在 simulation mode 中，這個載入確認步驟會被略過。
-
----
-
-## 213-3——取得拍照流程鎖
-
-作用：防止 Button 213、Button 217 或其他拍照按鈕同時啟動重疊的硬體流程。
-
-相關 functions：
-
-- [`_begin_camera_operation()` (line 10532)](D:/Provenance Project/ImagingLibWatch/App/main.py:10532)
-- `_camera_operation_is_current()`
-- [`_finish_camera_operation()` (line 10568)](D:/Provenance Project/ImagingLibWatch/App/main.py:10568)
-
-一個重要細節是：
-
-載入確認和正式拍照使用的是不同 operation token。
-
-```
-載入確認 token
-  → 載入確認完成
-  → 釋放 token
-  → 執行真正的 Button 213 callback
-  → 取得新的 Button 213 token
-```
-
-當 `_begin_camera_operation()` 成功時，它會停用 `_CAMERA_OPERATION_BUTTONS` 中列出的所有拍照入口按鈕。
-
-如果另一個 operation 已經持有流程鎖：
-
-```
-新的拍照請求會在硬體開始移動以前被拒絕
-```
-
----
-
-## 213-4——等待 Holder 移動完成
-
-作用：防止 Holder 還在移動時，又啟動 Strap 拍照 worker。
-
-相關 functions：
-
-- `_is_holder_move_running()`
-- `_start_holder_move_async()`
-- [`_start_workflow_task()` (line 10642)](D:/Provenance Project/ImagingLibWatch/App/main.py:10642)
-
-`_strap_probe_stitch_or_create()` 會先確認 Holder move worker 是否仍在執行。
-
-如果 Holder 還在移動，系統會：
-
-1. 將 Strap 拍照 continuation 加入等待序列。
-2. 等待 Holder 移動完成。
-3. Holder 完成後才重新進入 Button 213 流程。
-
-`_start_workflow_task(..., hardware=True)` 還會再做一次硬體層級檢查：
-
-- 不可以有 Holder move 正在執行。
-- 不可以有其他 hardware workflow worker 正在執行。
-
-這個機制本身不是幾何防撞演算法，但它可以防止兩個安全規劃器同時控制相同硬體。
-
----
-
-## 213-5——鎖定拍照流程並開始動作紀錄
-
-作用：
-
-- 鎖定 Button 213 到 Button 217 之間所使用的相機流程。
-- 開始記錄整個 Strap 流程中的移動與拍照資訊。
-
-相關 functions：
-
-- [`_lock_strap_pipeline_for_session()` (line 37066)](D:/Provenance Project/ImagingLibWatch/App/main.py:37066)
-- [`_load_strap_macro1_scan_config()` (line 37082)](D:/Provenance Project/ImagingLibWatch/App/main.py:37082)
-- [`_strap_macro1_scan_enabled()` (line 37092)](D:/Provenance Project/ImagingLibWatch/App/main.py:37092)
-- [`_start_strap_motion_recording()` (line 3845)](D:/Provenance Project/ImagingLibWatch/App/main.py:3845)
-- `_attach_strap_motion_observer()`
-- `_record_strap_motion_event()`
-
-`_lock_strap_pipeline_for_session()` 會：
-
-1. 讀取 Wide-field Camera 或 Macro Camera checkbox。
-2. 將選擇結果寫入 `strap_macro_cam1_scan.yaml`。
-3. 將結果儲存在 `_strap_pipeline_session_use_macro1`。
-4. 停用兩個 pipeline checkbox。
-5. 確保 Button 217 只能延續 Button 213 使用的相同 pipeline。
-
-重要區別：
-
-`StrapMotionRecorder` 是稽核與診斷工具，不是防撞判斷器。
-
-它會記錄：
-
-- 移動要求
-- 移動完成事件
-- 拍照位置
-- Holder/center return
-- 頁面切換
-- 發生錯誤的位置
-
-但它本身不會拒絕危險動作。
-
----
-
-## 213-6——選擇拍照流程
-
-作用：選擇建立前三個 Strap view 的實作方式。
-
-相關 functions：
-
-- [`_start_strap_213_workflow()` (line 39955)](D:/Provenance Project/ImagingLibWatch/App/main.py:39955)
-- [`_run_strap_213_workflow_core()` (line 39876)](D:/Provenance Project/ImagingLibWatch/App/main.py:39876)
-
-`_start_strap_213_workflow()` 建立一個保留中的 hardware worker。
-
-UI 更新在完成 callback 中執行；真正的硬體工作在 `_run_strap_213_workflow_core()` 中執行。
-
-兩條分支：
-
-```
-macro_cam_2：
-使用設定好的 internalnum 點位拍照，再做影像拼接。
-
-macro_cam_1：
-先量測 Strap 左右端點，再動態產生 raw tile 拍照位置並拼接。
-```
-
-如果 worker 中出現未處理的錯誤，failure callback 會：
-
-- 將進度歸零
-- 顯示「Strap scan stopped safely」
-- 釋放 operation guard
-- 不進入 9-clock 頁面
-
----
-
-## 213-7A——偵測 Strap 延伸：macro_cam_2
-
-作用：判斷 Strap 左側或右側是否需要增加額外拍照點。
-
-相關 functions：
-
-- [`_detect_strap_extension_flags()` (line 40337)](D:/Provenance Project/ImagingLibWatch/App/main.py:40337)
-- `_run_single_strap_extension_probe()`
-- [`_move_strap_keyence_probe_pose()` (line 40206)](D:/Provenance Project/ImagingLibWatch/App/main.py:40206)
-- `_read_strap_keyence_out1()`
-- `_strap_keyence_out1_valid()`
-
-每一個 Keyence 探測位置的呼叫鏈為：
-
-```
-_move_strap_keyence_probe_pose()
-  → check_safety_lock()
-  → move_compound()
-  → 最終位置驗證
-  → 安全路徑規劃
-  → 分段移動
-  → 位置回讀確認
-```
-
-如果 `move_compound()` 不存在，探測流程會直接失敗。
-
-程式不允許用：
-
-```
-zaber.move_axis()
-```
-
-作為 production compatibility fallback。
-
-最後產生的：
-
-```
-strap_left_ext
-strap_right_ext
-```
-
-會決定動態拼接群組中是否需要加入額外影像。
-
----
-
-## 213-8A——建立 Front / 3-clock / Back 群組
-
-作用：根據左右延伸結果，建立有順序的拍照群組。
-
-相關 functions：
-
-- [`_build_dynamic_strap_stitch_groups()` (line 40463)](D:/Provenance Project/ImagingLibWatch/App/main.py:40463)
-- `_apply_strap_stitch_group_overrides()`
-- `_apply_strap_stitch_source_config()`
-- `_strap_capture_order_for_group()`
-- [`_strap_scan_positions_ready()` (line 41403)](D:/Provenance Project/ImagingLibWatch/App/main.py:41403)
-
-三個正常群組為：
-
-1. `strap_right_front`
-2. `strap_right_side`，也就是 3-clock
-3. `strap_right_back`
-
-在 production mode 中，`_strap_scan_positions_ready()` 會做 fail-closed 檢查。
-
-以下情況會拒絕開始掃描：
-
-- 必要的 point 不存在
-- XYZ 無法轉換成有效數字
-- XYZ 全部等於零
-
-實際拍照位置由 point/internalnum 設定提供，但這些位置仍然必須通過獨立的 SafetyRule。
-
-設定檔只描述「想去哪裡」；SafetyRule 決定「能不能去」以及「要怎麼去」。
-
----
-
-## 213-9A——拍攝設定點位
-
-作用：移動到每一個 Strap 點位、執行 autofocus、拍照並儲存來源影像。
-
-相關 functions：
-
-- [`_capture_and_show_strap_stitched_views()` (line 42036)](D:/Provenance Project/ImagingLibWatch/App/main.py:42036)
-- [`_capture_strap_stitch_source_image()` (line 41431)](D:/Provenance Project/ImagingLibWatch/App/main.py:41431)
-- [`_execute_prepared_point_capture()` (line 9132)](D:/Provenance Project/ImagingLibWatch/App/main.py:9132)
-- [`execute_template_point()` (line 9762)](D:/Provenance Project/ImagingLibWatch/Controller/hardware_drivers/unified_driver.py:9762)
-
-完整呼叫鏈：
-
-```
-_capture_and_show_strap_stitched_views()
-  → 對每一個 group
-     → 對每一個 capture item
-        → _capture_strap_stitch_source_image()
-           → _execute_prepared_point_capture()
-              → execute_template_point()
-```
-
-`_execute_prepared_point_capture()` 會建立完整的硬體參數：
-
-- X、Y、Z
-- R_X、R_Z
-- 相機選擇
-- internalnum1 / internalnum2
-- 曝光時間
-- Gain
-- Lighting
-- Mechanical autofocus
-- Liquid-lens autofocus
-- HDR 設定
-- `fixture_profile="strap"` 的 semantic target
-
-`execute_template_point()` 一進入就會檢查 safety lock。
-
-它內部包含的以下動作都必須經過共用 safety planner：
-
-- 初始拍照位置移動
-- Mechanical autofocus
-- Keyence 探測
-- Liquid autofocus
-- HDR Z 位置移動
-- Final approach
-- 最終拍照位置
-
----
-
-## 213-7B——驗證 macro_cam_1 設定
-
-作用：在動態 raw-tile 掃描開始前，確認所有 macro_cam_1 校正與 safety 條件完整。
-
-相關 functions：
-
-- [`_validate_strap_macro1_scan_for_run()` (line 37102)](D:/Provenance Project/ImagingLibWatch/App/main.py:37102)
-- `_strap_macro1_validate_pose()`
-- `validate_scan_config()`
-- [`validate_safety_rule()` (line 417)](D:/Provenance Project/ImagingLibWatch/Controller/safety_rules.py:417)
-
-Production 驗證內容包含：
-
-- `safety.calibration_confirmed`
-- Front、side、back、9-clock 的位置限制
-- `move_compound()` 是否存在
-- Hardware safety planner 是否存在
-- Camera-to-Keyence calibration 是否一致
-- Endpoint detection 設定
-- Focus 設定
-- Canonical SafetyRule 是否已注入 scan config
-
-`strap_macro_cam1_scan.yaml` 負責：
-
-- 掃描校正
-- Tile 間距
-- AF anchor
-- Endpoint detection
-- 拍照設定
-- Stitch 設定
-
-但 canonical 防撞設定仍然來自：
-
-```
-config/hardware_config.yaml
-```
-
----
-
-## 213-8B——偵測 Strap 實際端點
-
-作用：量測 Strap 左右實際邊界，而不是假設固定數量的 tiles。
-
-相關 functions：
-
-- [`_detect_strap_macro1_endpoints()` (line 37474)](D:/Provenance Project/ImagingLibWatch/App/main.py:37474)
-- `_select_strap_macro1_keyence_probe_y_offset()`
-- `_resolve_strap_macro1_endpoint_report()`
-- [`_strap_macro1_transition_to_pose()` (line 37447)](D:/Provenance Project/ImagingLibWatch/App/main.py:37447)
-- [`_strap_macro1_safe_compound_move()` (line 37373)](D:/Provenance Project/ImagingLibWatch/App/main.py:37373)
-
-Endpoint detection 可能包含：
-
-- Seed position
-- 粗略 X 方向探測
-- 精細 X 方向搜尋
-- 小範圍 Y retry
-- 連續無效 Keyence reading，用來確認實際邊界
-
-`_strap_macro1_safe_compound_move()` 強制要求：
-
-- Hardware driver 必須存在
-- `move_compound()` 必須存在
-- Safety lock 沒有被鎖住
-- Target pose 必須通過驗證
-
-它也會將量測到的最大 Strap span 傳入 semantic target。
-
-如果 caller 提供的 Strap half-length 大於 canonical 設定，validator 會使用較大的值；caller 不能藉由傳入較小值降低安全標準。
-
----
-
-## 213-9B——拍攝 AF Anchor 與 Raw Tiles
-
-作用：在量測到的 Strap 範圍中，使用 macro_cam_1 拍攝動態 raw images。
-
-相關 functions：
-
-- [`_capture_strap_macro1_views()` (line 39460)](D:/Provenance Project/ImagingLibWatch/App/main.py:39460)
-- [`_capture_strap_macro1_view()` (line 38495)](D:/Provenance Project/ImagingLibWatch/App/main.py:38495)
-- [`_strap_macro1_capture_frame()` (line 38113)](D:/Provenance Project/ImagingLibWatch/App/main.py:38113)
-- `_strap_macro1_focus_result_ok()`
-- `_strap_macro1_locked_current()`
-- `_strap_macro1_stitch_view()`
-
-一般 macro_cam_1 流程：
-
-1. 根據左右 endpoint 計算 tile X 位置。
-2. 選出五個 autofocus anchor。
-3. 每一個 anchor 執行 Keyence 高度量測。
-4. 每一個 anchor 執行 liquid-lens autofocus。
-5. 保留 anchor image。
-6. 對非 anchor tile 內插 focus 值。
-7. 拍攝其他 tiles。
-8. 按順序拼接 raw tiles。
-
-每一個 stage move 仍然會經過：
-
-```
-_strap_macro1_transition_to_pose()
-```
-
-或 driver 內部的安全 XYZ 移動。
-
----
-
-## 213-10——拼接三個 View
-
-作用：將每一個群組的來源照片拼接成一張完整 view。
-
-相關 functions：
-
-- [`WatchBandStitcher.stitch_group()` (line 578)](D:/Provenance Project/ImagingLibWatch/algorithms/watchband_stitcher.py:578)
-- `_strap_stitch_ordered_image_items()`
-- `_strap_macro1_stitch_view()`
-- [`_compose_strap_stitched_preview()` (line 41709)](D:/Provenance Project/ImagingLibWatch/App/main.py:41709)
-
-Legacy pipeline 會逐一拼接每個 group。
-
-只要任何必要來源影像缺少：
-
-```
-該 group 不會繼續 stitch
-整個 workflow 會停止
-```
-
-完成後的前三個 view 順序為：
-
-```
-Front → 3-clock → Back
-```
-
-影像 stitch 本身不會移動硬體，因此不會觸發 motion collision rules。
-
----
-
-## 213-11——儲存影像與 Metadata
-
-作用：儲存足夠的資料，供 UI 顯示、後續 SAM 分析與 audit 使用。
-
-相關 functions：
-
-- `_save_strap_stitched_output_images()`
-- [`_save_strap_precapture_artifacts()` (line 41937)](D:/Provenance Project/ImagingLibWatch/App/main.py:41937)
-- `_save_strap_stitched_overview_metadata()`
-- [`_remember_strap_stitched_pre_capture_result()` (line 40546)](D:/Provenance Project/ImagingLibWatch/App/main.py:40546)
-- `_remember_strap_macro1_pre_capture_result()`
-
-儲存內容包括：
-
-- 每一個 stitched view
-- Frame 82 overview
-- Segment/display geometry
-- Stitch reports
-- Extension report 或 endpoint report
-- 拍照位置
-- Process YAML
-- macro_cam_1 raw-image manifest
-- Source camera 資訊
-
-這個區塊只處理資料儲存，不會控制硬體移動。
-
----
-
-## 213-12——安全回到 Holder
-
-作用：在要求操作員翻面或重新裝載 Strap 前，先將機器移動到方便操作的 Holder/start position。
-
-相關 functions：
-
-- `_move_zaber_to_start_pos()`
-- [`_move_zaber_to_safe_strap_pose()` (line 10106)](D:/Provenance Project/ImagingLibWatch/App/main.py:10106)
-- `_strap_macro1_transition_to_pose()`
-- [`move_compound()` (line 646)](D:/Provenance Project/ImagingLibWatch/Controller/hardware_drivers/unified_driver.py:646)
-
-目前設定的 Holder/start destination 為：
-
-```
-X   = 0
-Y   = 292
-Z   = 150
-R_X = 0
-R_Z = 0
-```
-
-這不是一次直接的五軸跳躍。
-
-`move_compound()` 會透過 `StrapTransitionGuard` 將它拆成安全的分段路徑。
-
-如果回 Holder 失敗：
-
-- 顯示錯誤
-- 不進入 9-clock 載入頁面
-- 要求操作員先檢查硬體
-
----
-
-## 213-13/14——選擇性 SAM 與 Component 拍照
-
-作用：在 overview 完成後，拍攝使用者選擇的 Strap components。
-
-相關 functions：
-
-- [`_start_automatic_strap_component_capture()` (line 14499)](D:/Provenance Project/ImagingLibWatch/App/main.py:14499)
-- [`_start_strap_precapture_auto_analysis()` (line 14701)](D:/Provenance Project/ImagingLibWatch/App/main.py:14701)
-- `_resume_pending_strap_component_capture()`
-- `_on_strap_link_analysis_ready()`
-- [`_preflight_strap_component_capture_routes()` (line 16557)](D:/Provenance Project/ImagingLibWatch/App/main.py:16557)
-- [`_execute_strap_component_capture_plan()` (line 16671)](D:/Provenance Project/ImagingLibWatch/App/main.py:16671)
-- [`_run_strap_component_capture_plan_core()` (line 16785)](D:/Provenance Project/ImagingLibWatch/App/main.py:16785)
-- [`_move_zaber_to_strap_safe_retract()` (line 3949)](D:/Provenance Project/ImagingLibWatch/App/main.py:3949)
-- [`_finish_strap_component_capture_operation()` (line 17790)](D:/Provenance Project/ImagingLibWatch/App/main.py:17790)
-
-Safety 行為：
-
-1. 只處理屬於 phase 213 且被選取的 components。
-2. 必須先得到目前 Strap session 已儲存的 SAM coordinates。
-3. Macro 與 micro phase 分別做 route preflight。
-4. Preflight 會將 candidate pose 送入 Digital Twin 與共用 motion planner。
-5. 每一個實際 point 仍然透過 `execute_template_point()`。
-6. 如果某個 point 失敗，系統必須先執行 `_move_zaber_to_strap_safe_retract()`。
-7. 只有確認回到 safe retract pose，下一個 point 才能繼續。
-8. Macro phase 完成後，開始 macro-image screw analysis 前也必須先安全退回。
-9. `finally` 區塊會在成功或例外時執行 safe retract。
-10. 如果 retract 失敗，該錯誤是 fatal，component pipeline 不可繼續。
-
----
-
-## 213-15/16——進入 9-clock 頁面並釋放流程鎖
-
-作用：完成 Button 213 並要求操作員載入 9-clock view。
-
-相關 functions：
-
-- [`_show_strap_9clock_load_page()` (line 40634)](D:/Provenance Project/ImagingLibWatch/App/main.py:40634)
-- `_finish_camera_operation()`
-
-目的頁面：
-
-```
-page_template_new_strap_pre2
-```
-
-如果沒有選擇 components：
-
-```
-頁面切換完成後立即釋放 operation guard
-```
-
-如果有啟動 component capture：
-
-```
-_finish_strap_component_capture_operation()
-  → 釋放 operation guard
-  → 呼叫頁面 navigation callback
-```
-
----
-
-# 2. Button 217：9-clock
-
-````
-```mermaid
-flowchart TD
-    C1["217-1 按下 Button 217"]
-    C2["217-2 Strap 載入確認"]
-    C3["217-3 取得拍照流程鎖"]
-    C4["217-4 驗證 Pipeline 與前三個 View"]
-    C5{"217-5 選擇拍照流程"}
-
-    C6["217-6A 建立動態 9-clock 群組"]
-    C7["217-7A 安全移動到第一個拍照點"]
-    C8["217-8A 拍攝並拼接 9-clock"]
-
-    M6["217-6B 獨立偵測 9-clock 端點"]
-    M7["217-7B 拍攝 AF Anchor 與 Tiles"]
-    M8["217-8B 拼接 9-clock"]
-
-    C9["217-9 合併四個 View 並儲存"]
-    C10["217-10 安全回到 Watch Center"]
-    C11{"217-11 是否選擇 Component?"}
-    C12["217-12 SAM 分析與 Component 拍照"]
-    C13["217-13 進入最終 Strap 頁面"]
-    C14["217-14 釋放拍照流程鎖"]
-    C15["217-15 離開頁面時將 R_X 歸零"]
-    STOP["安全停止"]
-
-    C1 --> C2
-    C2 -->|確認失敗| STOP
-    C2 -->|確認成功| C3
-    C3 --> C4
-    C4 -->|Pipeline 不一致或缺少 View| STOP
-    C4 --> C5
-
-    C5 -->|"macro_cam_2，目前使用"| C6
-    C6 --> C7
-    C7 --> C8
-    C8 --> C9
-
-    C5 -->|"macro_cam_1，可選流程"| M6
-    M6 --> M7
-    M7 --> M8
-    M8 --> C9
-
-    C9 --> C10
-    C10 -->|移動失敗| STOP
-    C10 --> C11
-    C11 -->|是| C12
-    C11 -->|否| C13
-    C12 --> C13
-    C13 --> C14
-    C14 --> C15
-```
-````
-
-## 217-1/2——按下按鈕與載入確認
-
-相關 functions：
-
-- `_batch_connect()`
-- [`_start_strap_9clock_pre_capture()` (line 40747)](D:/Provenance Project/ImagingLibWatch/App/main.py:40747)
-- `_verify_loaded_fixture_then()`
-- `verify_loaded_fixture()`
-
-Button 217 使用與 Button 213 相同的 Strap load-verification mechanism。
-
-第二次驗證很重要，因為操作員在 Button 213 和 Button 217 之間已經：
-
-- 取下 Strap
-- 翻轉 Strap
-- 重新裝載 Strap
-
-因此不能直接假設目前載入狀態仍然正確。
-
----
-
-## 217-3——取得拍照流程鎖
-
-相關 functions：
-
-- `_begin_camera_operation()`
-- `_camera_operation_is_current()`
-- `_start_workflow_task()`
-
-這個 guard 防止 Button 217 在以下情況啟動：
-
-- 另一個拍照 operation 尚未完成
-- Holder 還在移動
-- 另一個 hardware worker 還在執行
-
-Button 217 使用的 operation key 為：
-
-```
-template_pre_capture:strap_9clock
-```
-
----
-
-## 217-4——驗證 Pipeline 與前三個 View
-
-作用：確認 Button 217 延續的是 Button 213 建立的同一個 session。
-
-相關 functions：
-
-- [`_start_strap_217_workflow()` (line 41037)](D:/Provenance Project/ImagingLibWatch/App/main.py:41037)
-- `_strap_macro1_scan_enabled()`
-- `_strap_primary_stitched_views()`
-
-驗證規則：
-
-- Button 213 使用 macro_cam_1，但現在 switch 變成 false：停止。
-- Button 213 使用 macro_cam_2，但現在 switch 變成 true：停止。
-- macro_cam_2 流程必須存在三張 stitched views。
-- macro_cam_1 流程必須存在三筆 raw-view records。
-- 缺少 Button 213 的前三個 view 時，在硬體移動前停止。
-
-這可以避免在同一個四面 overview 中混用：
-
-- 不同相機
-- 不同光學倍率
-- 不同 calibration
-- 不同 coordinate mapping
-
----
-
-## 217-5/6A——建立動態 9-clock 群組
-
-相關 functions：
-
-- [`_build_dynamic_strap_9clock_stitch_groups()` (line 40503)](D:/Provenance Project/ImagingLibWatch/App/main.py:40503)
-- `_strap_primary_stitched_views()`
-
-Legacy 9-clock group 使用 Button 213 儲存的 extension report 建立。
-
-它通常從設定好的：
-
-```
-4022–4028
-```
-
-點位範圍中選出必要的拍照點。
-
----
-
-## 217-7A——安全移動到第一個 9-clock 點
-
-作用：在 group capture 正式開始以前，先明確透過 safety planner 移動到第一個拍照點。
-
-相關 functions：
-
-- [`_move_strap_capture_group_start()` (line 40659)](D:/Provenance Project/ImagingLibWatch/App/main.py:40659)
-- `_materialize_strap_scan_point()`
-- `_move_zaber_to_safe_strap_pose()`
-- `move_compound()`
-
-這個 function 會：
-
-1. 找出 capture order 中的第一個 item。
-2. 解析它的五軸位置。
-3. 記錄 motion audit event。
-4. 呼叫 `_move_zaber_to_safe_strap_pose()`。
-5. 如果安全移動被拒絕，就不啟動任何拍照 task。
-
-這只是額外的進入點預定位。
-
-後面的每一張照片仍然會各自執行完整 safety validation。
-
----
-
-## 217-8A——拍攝並拼接 9-clock
-
-相關 functions：
-
-- [`_run_strap_217_workflow_core()` (line 40950)](D:/Provenance Project/ImagingLibWatch/App/main.py:40950)
-- `_capture_and_show_strap_stitched_views()`
-- `_capture_strap_stitch_source_image()`
-- `_execute_prepared_point_capture()`
-- `execute_template_point()`
-- `WatchBandStitcher.stitch_group()`
-
-前三張 view 會透過：
-
-```
-existing_stitched_views
-```
-
-傳入。
-
-Button 217 只會重新拍攝並拼接新的 9-clock group，不會重拍前三張。
-
----
-
-## 217-6B/7B/8B——macro_cam_1 的 9-clock
-
-相關 functions：
-
-- `_capture_strap_macro1_views(["9clock"], ...)`
-- `_detect_strap_macro1_endpoints()`
-- `_capture_strap_macro1_view()`
-- `_strap_macro1_capture_frame()`
-- `_strap_macro1_stitch_view()`
-
-9-clock 的 endpoint measurement 是獨立量測，因為 Strap 已經被操作員翻面。
-
-當設定要求重新量測時，Button 217 不可以直接沿用 Button 213 的 endpoint report。
-
-完成 endpoint detection 後，系統會再次執行：
-
-- Anchor autofocus
-- Focus interpolation
-- Tile capture
-- Tile stitching
-
----
-
-## 217-9——合併四個 View 並儲存
-
-相關 functions：
-
-- `_ordered_strap_stitched_views()`
-- `_compose_strap_stitched_preview()`
-- `_save_strap_precapture_artifacts()`
-- `_remember_strap_stitched_pre_capture_result()`
-- `_remember_strap_macro1_pre_capture_result()`
-
-最終顯示順序：
-
-```
-Front → 3-clock → Back → 9-clock
-```
-
-完成後，`_strap_four_view_capture_complete()` 應該會回傳 `True`。
-
----
-
-## 217-10——安全回到 Watch Center
-
-相關 functions：
-
-- `_move_zaber_to_center_pos()`
-- `_move_zaber_to_safe_strap_pose()`
-- `_strap_macro1_transition_to_pose()`
-- `move_compound()`
-
-目的位置來自：
-
-```
-hardware.zaber.home_positions.watch
-```
-
-和回 Holder 一樣，這不是直接五軸跳躍。
-
-它會經過：
-
-- Axis limits
-- Digital Twin
-- StrapTargetValidator
-- StrapTransitionGuard
-- Segment readback
-- Final pose readback
-
-如果 center return 失敗，系統不會進入最終 Strap 頁面。
-
----
-
-## 217-11/12——選擇性 Component 拍照
-
-這裡使用和 Button 213 相同的 component pipeline，但只處理 phase 217 對應的 components。
-
-Safety 規則相同：
-
-- 必須有目前 session 的 SAM coordinates。
-- Macro 和 micro route 分開 preflight。
-- 每一個 capture 使用 `execute_template_point()`。
-- Point 失敗後必須先成功 safe retract。
-- `finally` 中必須再執行一次最終 safe retract。
-
----
-
-## 217-13/14——進入最終頁面並釋放流程鎖
-
-相關 functions：
-
-- `_load_new_template_data()`
-- `_show_template_name_create_page()`
-- `_show_precaptured_in_frame()`
-- `_finish_camera_operation()`
-
-目的頁面取決於 template 狀態：
-
-```
-全新的 scratch template：
-進入 template naming/source 頁面。
-
-既有 template：
-直接進入 page_template_new_strap。
-```
-
-四張 stitched overview 會顯示在：
-
-```
-frame_82
-```
-
----
-
-## 217-15——離開最終 Strap 頁面
-
-作用：避免離開頁面後，camera arm 仍然維持展開狀態。
-
-相關 functions：
-
-- [`go_to_page()` (line 31115)](D:/Provenance Project/ImagingLibWatch/App/main.py:31115)
-- [`_force_rx_to_zero()` (line 19800)](D:/Provenance Project/ImagingLibWatch/App/main.py:19800)
-- [`WorkflowManager.manual_move()` (line 3066)](D:/Provenance Project/ImagingLibWatch/core/workflow_manager.py:3066)
-- `move_compound()`
-- [`_finish_strap_motion_recording()` (line 3896)](D:/Provenance Project/ImagingLibWatch/App/main.py:3896)
-
-`_force_rx_to_zero()` 在 production workflow 中不會直接呼叫原始 Zaber axis move。
-
-它的呼叫鏈是：
-
-```
-_force_rx_to_zero()
-  → WorkflowManager.manual_move()
-  → UnifiedHardwareDriver.move_compound()
-  → Safety planner
-```
-
-完成 R_X reset 或頁面切換後，Strap motion audit 會被關閉並儲存。
-
----
-
-# 3. 完整防撞 Safety 呼叫鏈
-
-````
-```mermaid
-flowchart TD
-    S1["App 提出硬體移動要求"]
-    S2["檢查 Safety Lock"]
-    S3["進入 move_compound 或 execute_template_point"]
-    S4["判斷 Strap Safety Profile"]
-    S5["檢查各軸行程限制"]
-    S6["Digital Twin 目標位置預測"]
-    S7["StrapTargetValidator 驗證最終位置"]
-    S8["StrapTransitionGuard 規劃安全路徑"]
-    S9["產生有順序的移動 Segments"]
-    S10["每個 Segment 前再次檢查 E-stop"]
-    S11["確認旋轉或大距離 X 移動的安全位置"]
-    S12["執行單一 Segment"]
-    S13["確認 Segment 位置回讀"]
-    S14{"還有下一個 Segment?"}
-    S15["確認最終五軸位置"]
-    SAFE["移動完成"]
-    HALT["拒絕或停止移動"]
-
-    S1 --> S2
-    S2 -->|系統已鎖定| HALT
-    S2 --> S3
-    S3 --> S4
-    S4 --> S5
-    S5 -->|超出行程| HALT
-    S5 --> S6
-    S6 -->|預測碰撞| HALT
-    S6 --> S7
-    S7 -->|目標位置不安全| HALT
-    S7 --> S8
-    S8 --> S9
-    S9 --> S10
-    S10 -->|系統已鎖定| HALT
-    S10 --> S11
-    S11 -->|安全退讓位置不正確| HALT
-    S11 --> S12
-    S12 --> S13
-    S13 -->|位置誤差超標| HALT
-    S13 --> S14
-    S14 -->|是| S10
-    S14 -->|否| S15
-    S15 -->|位置誤差超標| HALT
-    S15 --> SAFE
-```
-````
-
----
-
-# 4. Safety Functions 詳細說明
-
-## 4.1 Safety 設定存取 functions
-
-檔案：[`Controller/safety_rules.py`](D:/Provenance Project/ImagingLibWatch/Controller/safety_rules.py)
-
-### `safety_rule()`
-
-取得 canonical：
-
-```
-hardware.zaber.SafetyRule
-```
-
-整棵設定樹。
-
-這是目前 motion/collision safety 的主要設定來源。
-
-### `resolve_safety_profile()`
-
-判斷目前 target 應該使用哪個 safety profile：
-
-- `watch`
-- `strap`
-- `box`
-
-如果 semantic target 明確指定 `fixture_profile`，就優先使用該值。
-
-否則會從以下欄位判斷：
-
-- `view_mode`
-- `view_name`
-- `part_name`
-- `point_name`
-
-### `axis_limit_config()`
-
-取得所選 profile 的軸向行程限制。
-
-目前 Strap 限制：
-
-```
-X：   0 ～ 435 mm
-Y：   0 ～ 292 mm
-Z：   0 ～ 150 mm
-R_X： 0 ～ 90°
-R_Z： Continuous
-```
-
-R_Z 設定為空陣列表示它是 continuous rotation axis。
-
-這不代表 R_Z 可以隨意旋轉；`StrapTransitionGuard` 仍會控制旋轉順序。
-
-### `door_estop_config()`
-
-取得：
-
-- MQTT broker
-- MQTT topic
-- Door sensor DI channel
-- Door open value
-- Payload error 是否 fail closed
-
-### `kinematics_config()`
-
-取得 Digital Twin 的：
-
-- Pivot position
-- Camera arm 長度
-- Rotation center
-- Axis direction
-
-### `collision_envelope_config()`
-
-取得 Digital Twin 使用的：
-
-- Platform box
-- Macro camera box
-- Micro camera box
-
-### `strap_safety_config()`
-
-取得 Strap 專用：
-
-- Target validator
-- Wall envelope
-- Minimum Y
-- Validated exceptions
-- Transition guard
-- Safe staging positions
-- Readback tolerance
-
-### `validate_safety_rule()`
-
-檢查 SafetyRule schema 是否完整，包括：
-
-- SafetyRule version
-- Door/E-stop fields
-- 每一個 profile 的 axis limits
-- Load-verification fields
-- Strap safety structure
-
----
-
-# 5. Door 與 E-stop Functions
-
-## [`SafetyManager` (line 4571)](D:/Provenance Project/ImagingLibWatch/Controller/hardware_managers.py:4571)
-
-在 production mode 中，它會訂閱設定好的 MQTT door-sensor topic。
-
-## [`SafetyManager._on_message()` (line 4640)](D:/Provenance Project/ImagingLibWatch/Controller/hardware_managers.py:4640)
-
-以下情況會觸發 E-stop callback：
-
-- Door sensor channel 回報「門已開啟」
-- MQTT payload 無法解析，而且 `fail_closed_on_payload_error=true`
-
-## [`trigger_emergency_stop()` (line 5383)](D:/Provenance Project/ImagingLibWatch/Controller/hardware_drivers/unified_driver.py:5383)
-
-執行順序：
-
-1. 設定 `_system_locked=True`。
-2. 緊急停止所有 Zaber axes。
-3. 關閉所有 lighting。
-4. 停止 camera stream。
-5. 保持 locked 狀態，直到人工 reset。
-
-## [`check_safety_lock()` (line 5375)](D:/Provenance Project/ImagingLibWatch/Controller/hardware_drivers/unified_driver.py:5375)
-
-它會在以下時機被呼叫：
-
-- `move_compound()` 入口
-- `execute_template_point()` 入口
-- 內部 XYZ 移動以前
-- 每一個 motion segment 執行以前
-- Load probe 以前
-- Extension probe 以前
-
-如果 `_system_locked=True`，立即拋出錯誤，不允許下一步移動。
-
-## [`manual_safety_reset()` (line 5411)](D:/Provenance Project/ImagingLibWatch/Controller/hardware_drivers/unified_driver.py:5411)
-
-嘗試恢復硬體狀態。
-
-只有全部 recovery result 成功時，才會清除 `_system_locked`。
-
----
-
-# 6. 中央 Motion Planner Functions
-
-## [`move_compound()` (line 646)](D:/Provenance Project/ImagingLibWatch/Controller/hardware_drivers/unified_driver.py:646)
-
-這是主要五軸安全移動入口。
-
-它會：
-
-1. 檢查 E-stop lock。
-2. 讀取目前五軸位置。
-3. 未指定的 target axis 使用目前值。
-4. 必要時套用 kinematic compensation。
-5. 執行 Digital Twin target prediction。
-6. 呼叫 `_plan_motion_segments()`。
-7. 執行規劃出的 segments。
-8. 發生錯誤時，把原因寫入 `_last_move_error`。
-
-如果任何 safety stage 拒絕移動，`move_compound()` 會回傳：
-
-```
-False
-```
-
-## [`execute_template_point()` (line 9762)](D:/Provenance Project/ImagingLibWatch/Controller/hardware_drivers/unified_driver.py:9762)
-
-這是完整拍照流程的硬體入口。
-
-它處理：
-
-- 初始 capture pose
-- Mechanical autofocus
-- Keyence autofocus
-- Liquid-lens autofocus
-- HDR Z movement
-- Final approach
-- Camera capture
-
-內部的小幅移動不會跳過 SafetyRule。
-
-## [`_move_xyz_with_safety()` (line 971)](D:/Provenance Project/ImagingLibWatch/Controller/hardware_drivers/unified_driver.py:971)
-
-用於內部 XYZ 修正，例如：
-
-- Autofocus
-- Keyence 搜尋
-- HDR Z bucket
-- Final approach
-- Focus correction
-
-它會：
-
-1. 保留目前 R_X/R_Z。
-2. 組成完整五軸 target。
-3. 再次執行 `_plan_motion_segments()`。
-4. 執行分段移動。
-5. 驗證位置回讀。
-
-## [`_plan_motion_segments()` (line 1018)](D:/Provenance Project/ImagingLibWatch/Controller/hardware_drivers/unified_driver.py:1018)
-
-這是共用路徑規劃器。
-
-對 Strap target，它會依序執行：
-
-1. 判斷 fixture profile。
-2. 確認五軸值都是 finite number。
-3. 檢查 axis limits。
-4. 執行 Digital Twin。
-5. 執行 `StrapTargetValidator.validate()`。
-6. 執行 `StrapTransitionGuard.plan()`。
-
-## [`_is_strap_semantic_target()` (line 3745)](D:/Provenance Project/ImagingLibWatch/Controller/hardware_drivers/unified_driver.py:3745)
-
-判斷 target 是否需要套用 Strap-specific safety。
-
-以下任一條件成立，就視為 Strap：
-
-```
-fixture_profile == "strap"
-```
-
-或 semantic text 中包含：
-
-- `strap`
-- `straprightside`
-- `strap_right_side`
-
-Button 213/217 的 payload 會明確傳入 Strap semantic，因此會進入 Strap validator。
-
----
-
-# 7. StrapTargetValidator——最終位置 Safety
-
-主要 function：
-
-[`StrapTargetValidator.validate()` (line 816)](D:/Provenance Project/ImagingLibWatch/Controller/safety_rules.py:816)
-
-它回答的問題是：
-
-> 要求的最終五軸位置是否安全？
-
-它不負責決定路徑；路徑由 `StrapTransitionGuard` 負責。
-
-## 7.1 五軸值必須有效
-
-Target 必須包含有效且有限的：
-
-```
-X
-Y
-Z
-R_X
-R_Z
-```
-
-以下情況會直接拒絕：
-
-- NaN
-- Infinity
-- 非數字
-- 缺少必要 axis
-
-## 7.2 Minimum Stage Y
-
-對一般、非 exception 的 target：
-
-```
-Y 必須 >= 30 mm
-```
-
-低於 30 mm 會被拒絕。
-
-## 7.3 Strap Wall Envelope
-
-當：
-
-```
-abs(R_X) >= 30°
-```
-
-validator 會計算 Strap 與 wall/camera frame 的 clearance：
-
-```
-clearance =
-    target Y
-    - wall Y
-    - Strap half length × abs(sin(R_Z))
-```
-
-目前 canonical 設定：
-
-```
-Strap 最大完整長度：240 mm
-Strap half length： 120 mm
-最小 clearance：     30 mm
-Wall Y：               0 mm
-Tolerance：         0.05 mm
-```
-
-只有 clearance 大於要求值時，target 才能被接受。
-
-macro_cam_1 可以提供實際量測或最大 Strap half-length。
-
-Validator 會使用 canonical 與 caller value 中較大的值，因此 caller 無法降低安全標準。
-
-## 7.4 危險 R_Z 規則
-
-當以下三個條件全部成立：
-
-```
-abs(R_X) >= 30°
-R_Z 位於 90° 或 270° 附近 ±20°
-Y < 160 mm
-```
-
-一般 target 必須是已驗證的 exception，否則拒絕。
-
-這防止長 Strap 在展開狀態下，被任意移到 wall/camera frame 附近。
-
-## 7.5 Validated Exception Poses
-
-目前設定的 exception：
-
-- `4029`
-- `4030`
-- `4031`
-- `4032`
-
-Exception 只有在以下條件全部符合時才成立：
-
-- Semantic `internalnum1` 正確
-- XYZ 符合設定位置
-- R_X 符合設定角度
-- R_Z 經過 canonical angle 比較後符合
-- 所有誤差都在 tolerance 內
-
-因此不是只要設定：
-
-```
-internalnum1=4029
-```
-
-就可以任意移動。
-
-如果位置與設定的五軸 pose 不符，仍然會被拒絕。
-
-另外，4029/4030 還有窄範圍 exception：
-
-- Keyence probe X/Z envelope
-- Autofocus Y corridor
-
-這些 exception 只允許經過校正的特定 axis 變化，其他 axes 必須保持固定。
-
----
-
-# 8. StrapTransitionGuard——安全移動路徑
-
-主要 function：
-
-[`StrapTransitionGuard.plan()` (line 1394)](D:/Provenance Project/ImagingLibWatch/Controller/safety_rules.py:1394)
-
-它回答的問題是：
-
-> 已經確認安全的 target，應該用什麼軸向順序移動過去？
-
-## 8.1 一般安全退讓位置
-
-目前一般 staging values：
-
-```
-Safe Y：   至少 160 mm
-Safe Z：   70 mm，必須到指定平面
-Safe R_X： 0°
-```
-
-如果目前 Y 已經大於 160 mm，planner 不會把 Y 降回 160 mm。
-
-原因是：
-
-```
-更大的 Y 通常代表離 wall/camera frame 更遠
-```
-
-## 8.2 4029/4030 特殊 Staging
-
-進入或離開 4029/4030 時使用：
-
-```
-Safe Y：至少 190 mm
-Safe Z：70 mm
-```
-
-這是因為 Endlink/reference pose 可能使完整 Strap 朝向 camera/light frame 延伸。
-
-## 8.3 何時強制 Staging
-
-以下情況會強制先到安全退讓位置：
-
-- Strap 已經展開
-- R_X 發生變化
-- R_Z 發生變化
-- 進入 validated exception
-- 離開 validated exception
-- Keyence transition
-- 固定角度下的大距離 translation
-
-## 8.4 R_Z 改變時的移動順序
-
-當 R_Z 需要改變時，安全順序為：
-
-```
-1. Y 移到安全 clearance
-2. Z 移到安全 staging plane
-3. R_X 收回到 0°
-4. 在安全位置旋轉 R_Z
-5. R_X 展開到 target angle
-6. X 移到 target
-7. Z 移到 target
-8. Y 最後移到 target
-```
-
-一般情況下，不允許 R_X 還在展開時直接旋轉 R_Z。
-
-只有非常明確、已校正的 local path 才可能例外。
-
-## 8.5 大距離 Top-down Translation
-
-直接移動的最大差值：
-
-```
-X：14.25 mm
-Y： 6.10 mm
-Z： 3.00 mm
-```
-
-如果固定角度的 top-down move 超過任一限制，必須先做 staging。
-
-相關 functions：
-
-- [`top_down_translation_contract()` (line 1074)](D:/Provenance Project/ImagingLibWatch/Controller/safety_rules.py:1074)
-- [`top_down_translation_staging_required()` (line 1147)](D:/Provenance Project/ImagingLibWatch/Controller/safety_rules.py:1147)
-
-## 8.6 Same-view Local Translation
-
-只有以下條件全部通過，才允許直接 local translation：
-
-- Caller 明確設定 `strap_same_view_local_move`
-- 不是 Keyence transition
-- 沒有 special `internalnum1`
-- R_X 不變
-- R_Z 不變
-- R_Z 接近 0° 或 180°
-- XYZ 差值沒有超過限制
-- Y 沒有低於 minimum Y
-- Wall clearance 仍然安全
-- Target 已通過 validator
-
-## 8.7 Endlink Keyence Local Scan
-
-只有在 4029/4030 設定的 probe envelope 內，才允許窄範圍 X/Z local scan。
-
-Current pose 與 target pose 必須維持：
-
-- 校正好的 Y
-- 校正好的 R_X
-- 校正好的 R_Z
-- X/Z 位於設定好的 probe range 內
-
-## 8.8 X-only Optimization
-
-程式中存在 X-only optimization，但目前設定為：
-
-```
-x_only_optimization:
-  enabled: false
-```
-
-所以目前 Strap workflow 不會使用這個 optimization。
-
----
-
-# 9. Segment 執行與位置回讀
-
-主要 function：
-
-[`_execute_motion_segments()` (line 765)](D:/Provenance Project/ImagingLibWatch/Controller/hardware_drivers/unified_driver.py:765)
-
-這裡是安全規劃真正轉換成硬體命令的位置。
-
-## 每個 Segment 以前
-
-會再次執行：
-
-```
-check_safety_lock()
-```
-
-如果安全門在兩個 segments 中間被開啟，下一個 segment 不會開始。
-
-## Strap 旋轉以前
-
-相關 functions：
-
-- [`_verify_strap_rotation_staging()` (line 3835)](D:/Provenance Project/ImagingLibWatch/Controller/hardware_drivers/unified_driver.py:3835)
-- [`_verify_strap_rz_fold_readback()` (line 3854)](D:/Provenance Project/ImagingLibWatch/Controller/hardware_drivers/unified_driver.py:3854)
-- `_strap_segment_has_rotation_delta()`
-
-它們會確認：
-
-- Live Y 已到達或超過安全 clearance。
-- Live Z 位於安全 staging plane。
-- 在 R_Z 移動以前，R_X 已實際收回到要求角度。
-
-## 大距離 X Segment 以前
-
-系統會讀取 live：
-
-- X
-- Y
-- Z
-
-如果要求的 X delta 大於 14.25 mm，必須滿足：
-
-```
-Live Y >= Safe Y
-Live Z == Safe Z，且誤差在 tolerance 內
-```
-
-如果 readback 無法證明目前已到 clearance pose，X command 不會被送出。
-
-## 每一個 Segment 完成後
-
-相關 function：
-
-- [`_verify_strap_keyence_pose_readback()` (line 3905)](D:/Provenance Project/ImagingLibWatch/Controller/hardware_drivers/unified_driver.py:3905)
-
-目前 tolerance：
-
-```
-XYZ tolerance：   0.05 mm
-Angle tolerance： 0.5°
-```
-
-如果前一個 segment 沒有到達 command position，下一個 segment 不會開始。
-
-## 最終位置
-
-全部 segments 完成後，系統會再次驗證完整五軸 final pose。
-
-## 禁止非同步 Guarded Move
-
-Guarded Strap route 必須使用：
-
-```
-wait=True
-```
-
-Caller 不可以要求非同步 multi-segment move，因為那樣無法保證每個 segment 之間的 readback contract。
-
----
-
-# 10. Digital Twin Collision Prediction
-
-相關 functions：
-
-- [`DigitalTwinGuard` (line 7)](D:/Provenance Project/ImagingLibWatch/Controller/kinematics/digital_twin_guard.py:7)
-- [`predict_collision()` (line 62)](D:/Provenance Project/ImagingLibWatch/Controller/kinematics/digital_twin_guard.py:62)
-- `kinematics_config()`
-- `collision_envelope_config()`
-
-它會計算：
-
-- 旋轉後的 platform bounding box
-- Camera arm bounding box
-- 兩個 axis-aligned bounding boxes 是否重疊
-
-`predict_collision()` 會在以下位置被呼叫：
-
-- `move_compound()`
-- `_plan_motion_segments()`
-- Component route preflight
-
-但目前有一個很重要的限制：
-
-```
-platform_box: {width: 0.0, depth: 0.0, height: 0.0}
-macro_box:    {width: 0.0, length: 0.0}
-micro_box:    {width: 0.0, length: 0.0}
-```
-
-也就是說，目前 collision envelopes 的尺寸都是零。
-
-因此，雖然程式確實執行 `predict_collision()`，但目前還不能把它視為已完成校正的實體體積防撞層。
-
-目前真正有效的主要保護是：
-
-- Door/E-stop
-- Axis limits
-- StrapTargetValidator
-- StrapTransitionGuard
-- 大距離 X 的 live-clearance check
-- 旋轉前 staging readback
-- 每個 segment 的 readback
-- 最終位置 readback
-
----
-
-# 11. 主要控制設定檔
-
-## Canonical SafetyRule
-
-[config/hardware_config.yaml (line 94)](D:/Provenance Project/ImagingLibWatch/config/hardware_config.yaml:94)
-
-重要區塊：
-
-- Door/E-stop：line 97
-- Axis limits：line 104
-- Load verification：line 134
-- Digital Twin：line 284
-- Collision envelopes：line 297
-- Strap target validator：line 359
-- Validated exceptions：約 line 371
-- Strap transition guard：line 402
-- Large-translation readback：line 441
-- Segment/final readback：line 444
-- Holder/start pose：line 465
-- Watch-center pose：line 473
-
-## Pipeline 與 macro_cam_1 掃描校正
-
-[config/strap_macro_cam1_scan.yaml (line 7)](D:/Provenance Project/ImagingLibWatch/config/strap_macro_cam1_scan.yaml:7)
-
-控制內容：
-
-- Camera pipeline selection
-- Endpoint scan
-- Tile spacing
-- Autofocus anchors
-- Camera-to-Keyence calibration
-- 每個 view 的拍照位置
-- 曝光與 lighting
-- Stitching behavior
-
-它不負責 canonical：
-
-- Wall envelope
-- Transition staging
-- Axis limits
-- Readback tolerance
-
-這些值仍然來自 `hardware_config.yaml`。
-
-## Legacy 掃描點與 Stitch Groups
-
-- [`config/internalnum_config.yaml`](D:/Provenance Project/ImagingLibWatch/config/internalnum_config.yaml)
-- [`config/watchband_stitch.yaml`](D:/Provenance Project/ImagingLibWatch/config/watchband_stitch.yaml)
-
-這些設定檔描述：
-
-- 要拍哪些點
-- 每個點的位置
-- 拍照順序
-- 拼接順序
-- 必要來源影像
-
-但它們不能直接授權危險位置。
-
-每一個由這些設定產生的 target pose，仍然必須通過 canonical SafetyRule。
 
 
 
@@ -5771,7 +2632,7 @@ VALUES ('run_16613T', 'V3', '{"templatename":"run_16613T","TemplateID":"run_1661
 
 
 
-
+#### Claude分析新DB架構
 ```
 以下是Moonlight system的建議的正式架構架構圖, 根據我的需求: "所以新的database不但要能夠執行以上提到的查詢跟分析, 而且我們可能有上千個watch系列, 十萬了watch. 跟你你設計的新database是否能否順暢的運行support這些功能性" 可以順暢支援，但必須採用「分層式 database architecture」。如果把十萬支 watch、數千萬 image assets 和數億筆 analysis values 全塞在單一 `watchDB.db`，最後一定會遇到檔案過大、寫入鎖、備份緩慢及 distribution 查詢過慢。 請深入分析這套系統的優缺點以及是否建議這樣設計或有更好的設計?為什麼 更詳細解釋各個單元以及其作用, 詳細解釋SQLite跟DynamoDB的差別, 以及這系統是怎麼運作的, 也以實際例子解釋你的新架構 flowchart LR App["App / CLI / Hardware"] --> Local["每台設備 Local SQLite V4"] Local --> Outbox["Transactional Sync Outbox"] Outbox --> Catalog["DynamoDB V4 Operational Catalog"] Outbox --> S3["S3 Artifact Storage"] Outbox --> Facts["Parquet / Iceberg Metric Facts"] Facts --> Athena["Athena Analytics"] Catalog --> API["UUID / Watch / Capture / Experiment API"] Athena --> Analysis["Distribution / Comparison / Statistics"]
 ```
@@ -5932,3 +2793,513 @@ Transactional Sync Outbox ──── 新增的可靠投遞層(關鍵改進點,
 5. **Local SQLite 的角色要跟現有系統一樣明確保持「暫存」而非「歷史庫」**——不然十萬支錶的規模問題依然可能悄悄回到本地端。
 
 **總結**:這套「本地 SQLite(OLTP write buffer)+ DynamoDB(operational catalog)+ S3(物件)+ Parquet/Iceberg + Athena(OLAP 分析)」的分層架構,是業界處理「高並發交易型讀寫 + 大規模分析型查詢」這兩種截然不同負載時的標準做法(關鍵字:OLTP/OLAP 分離、Lakehouse 架構)。以你們的規模(十萬支錶、上億筆分析值)來說,這是必要的演進方向,而不是過度設計。
+
+
+
+
+
+#### 給Codex具體修改計畫
+```
+請將你的建議化成具體修改計畫, 並提供給Codex的prompt, 如果有需要在AWS設定的也詳細說明
+```
+# V4 架構導入計畫:具體修改步驟 + AWS 設定 + Codex Prompts
+
+我把上一輪的建議拆成一個**分階段、風險可控**的落地計畫。原則是:**每個階段都是「新增」而非「取代」,舊路徑先保留、新路徑跑通驗證過再切換**,避免大改一次全部壞掉。
+
+---
+
+## 一、總體導入策略(4 個階段)
+
+|階段|目標|風險|現有系統是否受影響|
+|---|---|---|---|
+|Phase 0|本地 Transactional Outbox|低——純新增表 + 新 dispatcher,舊 `raw_images`/`experiment_results` 輪詢先並行(shadow mode)|不影響現有讀寫|
+|Phase 1|DynamoDB Catalog 收斂 + API 層|中——需要重構 `cloud_db.py` 的呼叫端|影響 App 端呼叫方式,但可用 API 層做相容包裝|
+|Phase 2|Parquet/Iceberg 資料湖 + ETL|中——需要新 AWS 資源 + 批次/增量 ETL job|不影響現有讀寫,純新增|
+|Phase 3|Athena on Iceberg + 分析查詢層|低——在 Phase 2 資料湖之上做查詢,不動舊資料|不影響現有讀寫|
+
+建議順序:**0 → 2/3(可平行做,因為互不依賴) → 1(最後做,因為風險最高、牽動最多呼叫端)**。
+
+---
+
+## 二、具體修改計畫(逐階段對應實際檔案)
+
+### Phase 0:Transactional Sync Outbox
+
+**要解決的問題**:現有 `data_manager/cloud_sync.py` 的 `get_pending_uploads()` 直接輪詢 `raw_images`/`experiment_results` 的 `synced=0`,沒有重試上限、沒有 dead-letter,而且只有單一「上傳到 S3 + 寫 DynamoDB」路徑,沒辦法同時扇出給未來的資料湖 ETL。
+
+**修改內容**:
+
+1. `DB/db_manager.py` 新增一張表:
+
+```
+CREATE TABLE sync_outbox (
+    outbox_id TEXT PRIMARY KEY,      -- uuid
+    source_table TEXT,               -- 'image_assets' / 'analysis_results_v2' / 'local_templates'
+    source_id TEXT,                  -- 對應來源表的主鍵
+    target TEXT,                     -- 'catalog' / 's3' / 'lake'
+    payload TEXT,                    -- JSON snapshot
+    status TEXT DEFAULT 'pending',   -- pending / in_flight / done / dead_letter
+    attempt_count INTEGER DEFAULT 0,
+    last_error TEXT,
+    created_at REAL,
+    updated_at REAL
+)
+CREATE INDEX idx_outbox_status ON sync_outbox(status, target)
+```
+
+2. 修改 `register_image_asset()`、`register_analysis_result_v2()`、`save_local_template()`:在**同一個 SQLite transaction** 裡,除了寫業務表,也 `INSERT` 一筆(或多筆,依 target 數量)`sync_outbox` 記錄——這是 Outbox Pattern 的核心保證。
+3. 新增 `data_manager/outbox_dispatcher.py`:取代 `cloud_sync.py` 目前的 `_worker_loop` 輪詢方式,改成讀 `sync_outbox WHERE status='pending'`,依 `target` 分派給不同下游 handler(S3 upload / DynamoDB catalog / 未來的 lake ETL),失敗時累加 `attempt_count`,超過門檻(例如 5 次)轉 `dead_letter` 並發告警,而不是無限重試。
+4. `cloud_sync.py` 的舊輪詢邏輯**先保留、不刪**,兩條路徑並行跑一段時間(shadow mode),用 log 比對兩邊上傳結果是否一致,確認新路徑穩定後再讓舊路徑 no-op。
+
+---
+
+### Phase 2:Parquet/Iceberg 資料湖 + ETL
+
+**要解決的問題**:分析數值資料目前只以零散 JSON 存在 S3/DynamoDB `metadata_raw` 裡,Athena 查詢要整批掃描解析,無法做高效的 distribution/comparison 分析。
+
+**修改內容**:
+
+1. 新增 `data_manager/lake_etl.py`:一個獨立的 batch job(可以先寫成本機可跑的 Python script,之後包成 AWS Glue Python Shell job 或 Lambda),職責:
+    - 讀取 `sync_outbox WHERE target='lake' AND status='pending'`
+    - 把 `analysis_results_v2`/`image_assets` 的 metadata 攤平成固定 schema(例如:`watch_id, brand, model, reference, view_name, point_name, algo_task_name, result_key, result_value, captured_at, dt`)
+    - 寫成 Parquet 檔,依 `brand`(或 `dt` 日期)做 partition,上傳到 `s3://moonlight-system-v2/lake/analysis_facts/brand=.../dt=.../*.parquet`
+    - 成功後把對應 outbox 記錄標記 `done`
+2. 一次性 backfill script:把現有 DynamoDB `WatchAnalysisResults` 裡累積的歷史資料,批次匯出轉成同樣的 Parquet schema,補進資料湖(只做一次)。
+3. 小檔案問題處理:ETL job 用**批次(例如每 5 分鐘或每累積 1000 筆)**寫一次 Parquet,而不是逐筆即時寫,避免小檔案氾濫;搭配 Iceberg 的 compaction(見 AWS 設定章節)。
+
+---
+
+### Phase 3:Athena on Iceberg + 查詢層
+
+**修改內容**:
+
+1. 在 Athena 建立 Iceberg table(DDL 見下方 AWS 設定章節)。
+2. 新增 `data_manager/analytics_query.py`,包裝常用的分析查詢(取代/擴充現有的 `data_manager/athena_query.py`):
+    - `get_distribution(brand, model, field)` → 對應「dial color 分布統計」這類需求
+    - `compare_series(brand_a, model_a, brand_b, model_b, field)` → 對應「兩系列比較」
+3. 對應到你的架構圖裡的「Distribution/Comparison/Statistics」這個應用層節點。
+
+---
+
+### Phase 1:DynamoDB Catalog 收斂 + API 層(放最後做)
+
+**修改內容**:
+
+1. 新增 `api/catalog_api.py`(建議用 FastAPI,因為系統已經有 `helper/docs/04_developer_onboarding/4.7_http_fastapi_...` 提到 FastAPI 相關基礎):包裝 `data_manager/cloud_db.py` 的讀取方法,對外提供 `GET /watch/{watch_id}`、`GET /watch/{watch_id}/assets`、`GET /experiment/{experiment_id}` 這類 REST 端點。
+2. App 端(`App/main.py`)原本直接 `import boto3` 呼叫 DynamoDB 的地方,逐步改成呼叫這層 API——**這步影響面最大,建議留到最後、且用 feature flag 逐步切換**。
+
+---
+
+## 三、AWS 設定步驟(詳細)
+
+以下每一步我會註明是「主控台手動設定」還是「可以用 CLI/IaC 自動化」。
+
+### 1. S3 資料湖路徑規劃
+
+沿用現有 bucket `moonlight-system-v2`(見 `config/system_config.yaml:57`),新增一個獨立前綴,跟現有 `Raw/`、`Analysis/` 分開,避免 Glue Crawler 掃到不相關的物件:
+```
+s3://moonlight-system-v2/lake/analysis_facts/brand=Rolex/dt=2026-08-25/part-0001.parquet
+s3://moonlight-system-v2/lake/analysis_facts/_iceberg_metadata/...   ← Iceberg 自動管理的 metadata
+```
+這一步不需要主控台操作,ETL job 寫入時自動建立路徑。
+
+### 2. 建立 Glue Database
+
+主控台操作(AWS Glue → Databases → Add database),或用 CLI:
+
+aws glue create-database --database-input '{"Name":"moonlight_lake"}'
+
+### 3. 用 Athena 建立 Iceberg Table
+
+在 Athena Query Editor 執行(這是**主控台/CLI 皆可**,推薦用 Athena 而不是手動建 Glue table,因為 Iceberg table 由 Athena 建立會自動處理好 table format metadata):
+
+```
+CREATE TABLE moonlight_lake.analysis_facts (
+    watch_id string,
+    brand string,
+    model string,
+    reference string,
+    view_name string,
+    point_name string,
+    algo_task_name string,
+    result_key string,
+    result_value double,
+    captured_at timestamp,
+    dt date
+)
+PARTITIONED BY (brand, dt)
+LOCATION 's3://moonlight-system-v2/lake/analysis_facts/'
+TBLPROPERTIES (
+    'table_type' = 'ICEBERG',
+    'format' = 'parquet',
+    'optimize_rewrite_delete_file_threshold' = '10'
+);
+```
+
+
+### 4. Athena Workgroup(建議跟現有查詢隔離,避免互相搶資源/混費用)
+
+主控台:Athena → Workgroups → Create workgroup,名稱建議 `moonlight-analytics-v4`,設定:
+
+- Query result location:`s3://moonlight-system-v2/athena-results/v4/`
+- 開啟 "Query result reuse"(相同查詢短期內重複執行可省錢)
+- 設定 Data usage control(每次查詢掃描上限,例如 5GB,避免誤用全表掃描炸費用)
+
+### 5. IAM 權限(ETL job 用的角色)
+
+新增一個 IAM Role(例如 `moonlight-lake-etl-role`),附加最小權限 policy:
+
+```
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": ["s3:GetObject", "s3:PutObject", "s3:ListBucket"],
+      "Resource": [
+        "arn:aws:s3:::moonlight-system-v2/lake/*",
+        "arn:aws:s3:::moonlight-system-v2"
+      ]
+    },
+    {
+      "Effect": "Allow",
+      "Action": ["dynamodb:Query", "dynamodb:Scan", "dynamodb:GetItem"],
+      "Resource": "arn:aws:dynamodb:*:*:table/moonlight-WatchAnalysisResults*"
+    },
+    {
+      "Effect": "Allow",
+      "Action": ["glue:GetTable", "glue:GetDatabase", "glue:UpdateTable"],
+      "Resource": "*"
+    }
+  ]
+}
+```
+
+主控台:IAM → Roles → Create role,選 "Glue" 或 "Lambda" 作為信任的服務(依你選 Glue Python Shell job 還是 Lambda 執行 ETL 而定),掛上這個 policy。
+
+### 6. ETL 排程(Glue Job 或 EventBridge + Lambda)
+
+如果用 Glue Python Shell Job(建議,因為系統已經在用 boto3/Python 生態):
+
+- 主控台:AWS Glue → Jobs → Create job → Python Shell
+- 上傳 `data_manager/lake_etl.py`
+- 設定觸發排程(Glue Trigger,例如每 15 分鐘跑一次)
+
+### 7. DynamoDB GSI 確認
+
+你系統文件裡已經提過 `BrandModelIndex` **需要手動在 AWS Console 建立**,程式不會自動建立。如果 Phase 1 的 Catalog API 要支援「依 Brand/Model 查詢」,要確認這個 GSI 已存在:
+
+主控台:DynamoDB → Tables → `moonlight-WatchAnalysisResults` → Indexes → Create index
+
+- Partition key:`GSI1_PK`(String)
+- Sort key:`GSI1_SK`(String)
+- Index name:`BrandModelIndex`
+
+### 8. 成本控管(現有系統文件提過這塊幾乎沒做,建議這次一併補上)
+
+- Athena workgroup 設定每查詢資料掃描上限(見步驟 4)
+- S3 生命週期規則:`lake/` 前綴下,舊 partition 超過 N 天可轉 S3 Glacier(如果冷資料不常查)
+- CloudWatch 告警:ETL job 失敗次數、`sync_outbox` 表 `dead_letter` 累積數量超過門檻時告警
+
+---
+
+## 四、給 Codex 的 Prompt(分階段,可直接複製貼上)
+
+> 這幾個 prompt 是設計成**依序、獨立的工作階段**餵給 Codex(或其他 coding agent),每個 prompt 都是自包含的(不假設 Codex 記得前一個階段的對話)。建議一次只跑一個階段,驗證通過再進下一個。
+
+### Prompt 1 —— Phase 0:Transactional Outbox
+
+你正在修改一個 Python 專案(位於 D:\Provenance Laboratories projects\ImagingLibWatch），這是一套手錶鑑定/檢測站的本地 SQLite + AWS 雲端同步系統。
+
+背景：
+- DB/db_manager.py 的 DatabaseManager 類別管理本地 SQLite (DB/watchDB.db)，其中 register_image_asset()、register_analysis_result_v2()、save_local_template() 這幾個方法目前分別直接寫入 image_assets / analysis_results_v2 / local_templates 表。
+- data_manager/cloud_sync.py 的 CloudSyncManager 目前用 db.get_pending_uploads() 輪詢 raw_images/experiment_results 表的 synced=0 欄位來找出待上傳項目，上傳到 S3 後呼叫 CloudDatabaseManager.index_record() 寫入 DynamoDB。這個機制沒有重試次數上限、沒有 dead-letter，失敗項目會無限期重試。
+
+任務：實作 Transactional Outbox Pattern，取代現有輪詢機制，具體要求：
+
+1. 在 DB/db_manager.py 的 _init_db() 新增一張表：
+   sync_outbox(outbox_id TEXT PRIMARY KEY, source_table TEXT, source_id TEXT,
+   target TEXT, payload TEXT, status TEXT DEFAULT 'pending',
+   attempt_count INTEGER DEFAULT 0, last_error TEXT,
+   created_at REAL, updated_at REAL)
+   並建立 idx_outbox_status ON sync_outbox(status, target) 索引。
+
+2. 修改 register_image_asset()、register_analysis_result_v2()、save_local_template()：
+   在同一個 SQLite connection/transaction 裡（也就是同一次 conn.commit() 之前），
+   額外 INSERT 對應的 sync_outbox 記錄：
+   - image_asset 寫入時，插入 target='s3' 和 target='catalog' 兩筆 outbox 記錄
+   - analysis_result 寫入時，插入 target='s3', target='catalog', target='lake' 三筆
+   - template 寫入時，插入 target='catalog' 一筆
+   payload 欄位存這筆來源資料的 JSON snapshot（不要之後再回頭查一次來源表）。
+   如果任何一步失敗，整個 transaction 要 rollback（不能只有業務表寫入成功而 outbox 遺漏）。
+
+3. 新增 data_manager/outbox_dispatcher.py，定義 OutboxDispatcher 類別：
+   - 建構子接收 db_manager、cloud_db_manager、s3_client（或既有的 CloudSyncManager 依賴）
+   - dispatch_pending(batch_size=32) 方法：查詢 sync_outbox WHERE status='pending' ORDER BY created_at LIMIT batch_size，依 target 分派到對應 handler：
+     - target='s3'：呼叫現有 S3 上傳邏輯（可以複用 cloud_sync.py 裡既有的上傳程式碼，抽成共用函式）
+     - target='catalog'：呼叫 cloud_db_manager 對應方法（index_record 或 save_template_cloud）
+     - target='lake'：先實作成 no-op（TODO: Phase 2 補上），只把狀態標記處理過
+   - 每筆處理成功後 UPDATE status='done'；失敗則 attempt_count += 1，若 attempt_count >= 5 則 status='dead_letter' 並記錄 last_error，否則維持 pending 讓下次輪詢重試（可加一個簡單的 exponential backoff：下次處理時間 = created_at + 2^attempt_count 秒，用 updated_at 欄位判斷是否已到重試時間）
+   - 提供 start_background_worker()：daemon thread，每 2 秒呼叫一次 dispatch_pending()（架構參考現有 CloudSyncManager 的 _worker_loop 寫法）
+   - 提供 get_dead_letter_items() 方便之後做告警或人工檢視
+
+4. 不要刪除或修改 cloud_sync.py 現有的輪詢邏輯——它要跟新的 OutboxDispatcher 並行執行一段時間（shadow mode），方便日後比對兩邊行為是否一致。只需要在檔案開頭加上註解說明這是舊路徑，新路徑是 outbox_dispatcher.py。
+
+5. 幫我寫對應的單元測試（可以用 pytest + 一個暫存的 SQLite 檔案），至少涵蓋：
+   - 寫入 image_asset 時確認同一 transaction 內 outbox 記錄有一起寫入
+   - dispatch_pending 成功處理一筆並標記 done
+   - 模擬 handler 拋例外，確認 attempt_count 遞增，超過 5 次後變成 dead_letter
+
+請先讀過 DB/db_manager.py 和 data_manager/cloud_sync.py 的完整內容再開始修改，維持現有的 code style（例如 logger 用法、connection 管理方式 self._get_conn()）。修改完後跑一次現有測試（如果有的話）確保沒有破壞既有功能。
+
+### Prompt 2 —— Phase 2:Parquet/Iceberg ETL
+
+你正在修改同一個專案（D:\Provenance Laboratories projects\ImagingLibWatch），延續 Phase 0 已經完成的 Transactional Outbox（DB/db_manager.py 的 sync_outbox 表、data_manager/outbox_dispatcher.py 的 OutboxDispatcher）。
+
+背景：sync_outbox 表裡 target='lake' 的記錄目前是 no-op，需要真正實作把資料寫進一個 S3 上的 Iceberg 資料湖，供 Athena 做統計分析用。
+
+AWS 端已經準備好：
+- S3 bucket: moonlight-system-v2，資料湖路徑前綴 lake/analysis_facts/
+- Glue database: moonlight_lake
+- Athena 已建立 Iceberg table moonlight_lake.analysis_facts，schema 為：
+  watch_id string, brand string, model string, reference string,
+  view_name string, point_name string, algo_task_name string,
+  result_key string, result_value double, captured_at timestamp, dt date
+  PARTITIONED BY (brand, dt)
+
+任務：
+```
+1. 新增 data_manager/lake_etl.py，實作 LakeETLJob 類別：
+   - 建構子接收 db_manager（本地 SQLite）、aws config（bucket 名稱、region）
+   - run_batch(limit=1000) 方法：
+     a. 查詢 sync_outbox WHERE target='lake' AND status='pending' ORDER BY created_at LIMIT limit
+     b. 對每筆記錄，解析 payload JSON（這是 analysis_results_v2 或相關表的資料快照），
+        攤平成符合上面 Iceberg schema 的欄位（watch_id, brand, model, reference,
+        view_name, point_name, algo_task_name, result_key, result_value, captured_at, dt）
+        注意：一筆 analysis_results_v2 的 data_json 裡可能包含多個 result_key/result_value
+        （例如同時有 diameter_mm、weight_g 等），需要展開成多列（每個 key-value 一列）
+     c. 用 pyarrow 或 pandas 把這批展開後的資料寫成一個 Parquet 檔案，
+        依 brand 和 dt 分區寫到 s3://moonlight-system-v2/lake/analysis_facts/brand=<brand>/dt=<date>/
+        （檔名用 uuid 避免衝突，例如 part-<uuid>.parquet）
+     d. 成功後把這批 sync_outbox 記錄 status 改成 'done'
+     e. 任何一步失敗，這批記錄要維持 pending（不要標記 done），並記錄錯誤 log
+   - 提供 run_forever(interval_seconds=300)：每 5 分鐘跑一次 run_batch，用於本機測試或未來包成排程 job
+```
+
+
+1. 新增一次性 backfill script：DB/DB_test/backfill_lake_from_dynamodb.py
+   - 用 boto3 分頁 Scan（或 Query，如果能依 WatchID 分批）現有 DynamoDB moonlight-WatchAnalysisResults 表
+   - 只處理 record_type 為分析結果類型的 item（過濾掉純 asset index 或 split-key 的 INFO/VIEW#/MAT#/AUTH 項目，除非你判斷這些也該納入 lake，需要的話請在程式裡明確列出納入哪些 record_type）
+   - 用跟 run_batch 一樣的攤平/寫 Parquet 邏輯，把歷史資料一次性補進資料湖
+   - 加上 --dry-run 參數，先印出會處理幾筆、會產生幾個 Parquet 檔案，不真的寫入，方便先確認範圍再正式執行
+
+3. 依賴套件：如果專案目前沒有 pyarrow，請加進 requirements.txt（或對應的依賴管理檔案，先檢查專案用的是什麼）
+
+4. 寫單元測試：至少測試「一筆包含多個 result_key 的 analysis_results_v2 payload，正確展開成多列」的攤平邏輯，可以不用真的連 S3（用 mock 或本地檔案系統模擬）。
+
+請先讀過 DB/db_manager.py 的 sync_outbox 表結構和 register_analysis_result_v2() 的 payload 實際格式，再開始寫攤平邏輯，確保欄位對應正確。
+
+### Prompt 3 —— Phase 3:分析查詢層
+
+你正在修改同一個專案，延續 Phase 2 已經建好的 Iceberg 資料湖表 moonlight_lake.analysis_facts
+（schema: watch_id, brand, model, reference, view_name, point_name, algo_task_name,
+result_key, result_value, captured_at, dt，依 brand/dt 分區）。
+
+現有專案已經有 data_manager/athena_query.py，裡面有一個 AthenaQueryEngine 類別
+（負責送 Athena 查詢、輪詢查詢狀態、取回結果，你可以先讀過這個檔案理解現有的呼叫模式）。
+
+任務：新增 data_manager/analytics_query.py，實作 AnalyticsQueryService 類別，
+包裝針對 moonlight_lake.analysis_facts 的統計分析查詢，複用 AthenaQueryEngine 的送查詢/取結果邏輯：
+
+1. get_distribution(brand: str, model: str = None, result_key: str = None,
+   date_from: str = None, date_to: str = None) -> list[dict]
+   對指定 brand（可選 model）在指定日期區間內，某個 result_key（例如 'dial_color' 或
+   'diameter_mm'）的數值分布。回傳每個 distinct value（若是數值型則自動分桶/bucket）
+   及其出現次數，SQL 大致邏輯：
+   SELECT result_key, result_value, COUNT(*) as cnt
+   FROM moonlight_lake.analysis_facts
+   WHERE brand = ? [AND model = ?] AND result_key = ? [AND dt BETWEEN ? AND ?]
+   GROUP BY result_key, result_value ORDER BY cnt DESC
+
+2. compare_series(series_a: tuple[str, str], series_b: tuple[str, str],
+   result_key: str) -> dict
+   比較兩個系列（各自是 (brand, model) tuple）在同一個 result_key 上的統計量
+   （count、avg、min、max、標準差），用一次 SQL 或兩次查詢都可以，回傳結構清楚標示
+   哪個統計量屬於哪個系列。
+
+3. 兩個方法都要：
+   - 用參數化查詢方式組 SQL（避免字串直接拼接使用者輸入造成 SQL injection，
+     Athena 的 boto3 SDK 本身不支援 bind parameter，所以請對輸入做白名單/型別檢查，
+     例如 brand/model 只允許英數字與空白，result_key 檢查是否在允許清單內）
+   - 查詢送出後如果 Athena 回傳 QueryExecutionState 是 FAILED 或 CANCELLED，
+     要拋出明確的例外並附上 Athena 回傳的錯誤訊息
+   - 加上查詢逾時控制（例如最多輪詢 30 秒沒有結果就拋 TimeoutError）
+
+4. 寫幾個範例呼叫，證明可以回答這兩個具體問題：
+   - 「Rolex Daytona 系列的 dial_color 分布」
+   - 「Rolex Daytona vs Rolex Submariner 的 diameter_mm 比較」
+   可以寫成一個 DB/DB_test/test_analytics_query.py 的手動驗證腳本（不一定要是自動化 pytest，
+   因為需要真的連 Athena，但至少要能被人手動執行來驗證功能）。
+
+請先讀過 data_manager/athena_query.py 的完整內容，複用它現有的 boto3 Athena client
+設定和查詢輪詢邏輯，不要重複造輪子。
+
+---
+## 五、風險與驗收標準(交給 Codex 前先確認)
+
+在跑上述任何一個 Prompt 之前,建議先確認:
+
+1. **每個 Phase 都先在 `dev` 分支上跑**,不要直接對 `main` 動手——你目前在 `dev` 分支上,這點是符合的。
+2. **Phase 0 完成後的驗收**:寫一筆新的 `image_asset`,確認 `sync_outbox` 裡同時出現對應記錄;手動讓 handler 拋例外 5 次,確認變成 `dead_letter` 而不是無限重試。
+3. **Phase 2 完成後的驗收**:跑 `backfill_lake_from_dynamodb.py --dry-run`,先看預估筆數是否合理(對照你在 DynamoDB 主控台看到的表項目數量級),確認沒問題再正式執行。
+4. **AWS 費用護欄**:在 Phase 2/3 正式對接生產資料前,先在 Athena workgroup 設好查詢掃描上限(前面 AWS 設定步驟 4),避免一次不小心的 `SELECT *` 全表掃描產生意外費用。
+
+這幾個 Prompt 我刻意保持「先讀現有程式碼再動手」「不要刪除舊路徑」「要有測試」這幾條規則,是因為現有系統的文件裡多次提到「兩邊各自獨立實作同一段防呆邏輯」「上傳無限重試」這類技術債,新架構如果重蹈覆轍(讓 Codex 自由發揮又沒有明確邊界),很容易複製同樣的問題。
+
+
+
+#### 簡單解釋Sync Outbox跟Parquet / Iceberg Metric Facts
+```
+這是目前Moonlight system database架構圖. 是基於這些需求重新設計的
+用你提到的十萬支錶、上千系列規模具體推算:
+
+假設每支錶平均 6 個 view × 5 個 point,每個 point 2~3 張照片 → 單支錶 50~80 張影像資產,十萬支錶就是 500 萬~800 萬筆 image_assets。
+每張照片跑 3~5 種演算法分析 → 上千萬~上億筆 analysis 結果。
+
+現有架構下,這些資料最終落在 DynamoDB WatchAnalysisResults 表(flat item)+ S3(圖片/報表原始檔)。如果你要做「distribution/comparison/statistics」這類分析:
+
+DynamoDB 做不到——只能一筆一筆用 PK 查,或全表 Scan(非常慢且昂貴,DynamoDB 的 Scan 是逐頁讀取全部資料再在應用端過濾,完全不是為分析設計的)。
+只能靠 Athena 直接對 S3 掃描。但目前 S3 上存的是零散的原始 JSON/圖片,沒有欄式(columnar)結構、沒有 partition 規劃——Athena 每次查詢都要整批掃過所有物件、解析 JSON,費用是按「掃描的資料量」計費,億級筆數規模下,一次查詢可能就要掃 TB 級資料,又慢又貴。
+前面文件也提過:S3 → Athena/Glue catalog 抓到新資料沒有主動 refresh 機制,新寫入的資料要多久才查得到是不確定的——這在「即時分析」場景下是硬傷。
+
+先假設我是對database不了解的人. 請非常詳細解釋Transactional Sync Outbox是甚麼, 以及在這裡扮演的作用. 請非常詳細解釋Parquet / Iceberg Metric Facts是甚麼, 以及在這裡扮演的作用. 
+```
+這是一張非常經典且解決了實際痛點的現代資料架構圖。從你提供的 `structure.png` 可以看出來，這個設計完全是針對「海量資料的高效能分析」與「系統穩定性」量身打造的。
+
+對於不熟悉資料庫底層運作的人來說，這些名詞聽起來很像火星文。別擔心，我們拋開生硬的技術術語，用日常生活的比喻來拆解這兩個關鍵核心。
+
+### 一、 Transactional Sync Outbox（新增的可靠投遞層）
+
+你可以把 **Transactional Sync Outbox** 想像成一個「超級可靠的郵局發送中心」。
+
+- **痛點在哪裡？** 在舊架構或沒有這個設計的情況下，設備（SQLite）拍完照、做完分析後，必須自己「同時」把資料寫入 DynamoDB、上傳圖片到 S3，還要送到分析系統。萬一遇到網路不穩，可能圖片傳上 S3 了，但 DynamoDB 沒寫入成功。這會導致資料「對不起來」（有圖片卻沒紀錄），這在工程上叫做「資料不一致」。
+    
+- **它是什麼？**
+    
+    - **Transactional（交易性）：** 意思是「要嘛全部成功，要嘛全部失敗，沒有中間值」。
+        
+    - **Outbox（寄件匣）：** 就像電子郵件的寄件匣。
+        
+- **它在這裡扮演的作用：** 如 `structure.png` 所示，設備現在只需要把資料交給這個「郵局發送中心」，設備的任務就結束了（可以繼續去拍下一支錶）。這個 Outbox 會負責把資料**分發到三個不同的地方**：
+    
+    1. 把單筆查詢用的資料送進 **DynamoDB**。
+        
+    2. 把原始大檔案送進 **S3**。
+        
+    3. 把分析用的數據送進 **Parquet / Iceberg**。 如果途中某個環節失敗了，Outbox 會記住並自動重試，保證三邊的資料最終一定會完美同步，徹底解決了跨資料庫寫入的風險。
+        
+
+### 二、 Parquet / Iceberg Metric Facts（結構化、欄式儲存的分析資料湖）
+
+你可以把這個組合想像成一座「擁有超強索引系統的現代化圖書館」。
+
+- **痛點在哪裡？** 過去你們把原始 JSON 檔案丟在 S3，這就像把幾億張寫著數據的「便條紙」全部堆在一個大倉庫裡。當你想查「某個特定演算法的平均值」時，Athena 必須把幾億張便條紙**全部讀過一遍**才能算出來，這就是為什麼每次查詢都要掃描 TB 級資料，既慢又燒錢。
+    
+- **它是什麼？**
+    
+    - **Parquet（欄式儲存格式）：** 這是一種檔案格式。傳統資料是一列一列存的（像發票明細），Parquet 則是一欄一欄存的。當分析師只想查「總金額」這一欄時，系統只會讀取「總金額」的資料，完全跳過其他不相關的資訊。這能將讀取量縮減 90% 以上。
+        
+    - **Iceberg（資料表格式）：** 這是一個智慧型目錄與索引系統。它會精準記錄每一筆新資料放在哪裡。
+        
+    - **Metric Facts（事實數據）：** 指的就是你們那上千萬到上億筆的演算法分析結果。
+        
+- **它在這裡扮演的作用：** 如 `structure.png` 所示，這是為「Distribution/Comparison/Statistics」量身打造的核心。當資料進入這裡後，Iceberg 會立刻更新目錄（解決了你提到「S3 不知道何時才有新資料」的硬傷，實現即時分析）。當 Athena 要做統計時，Iceberg 會直接告訴 Athena：「你要的數據在第 3 到第 5 號櫃子的第二層」，然後 Athena 利用 Parquet 的特性，只抽出需要的「那一欄」來算。 **結果就是：查詢時間從幾分鐘變成幾秒鐘，掃描費用也大幅暴跌。**
+    
+
+這個架構非常精準地解決了「單筆查詢（DynamoDB）」與「宏觀大數據分析（Iceberg）」無法共用同一種資料庫的矛盾。
+
+目前在看這張架構圖時，針對這三個資料流的分發機制，你們團隊有打算使用哪種雲端服務（例如 AWS SQS, Kinesis 或 EventBridge）來實作這個 Outbox 嗎？
+
+
+
+
+#### 詳細解釋Sync Outbox跟Parquet / Iceberg Metric Facts
+```
+現在假設我是對database了解的engineer. 請更仔細非常詳細解釋Transactional Sync Outbox是甚麼, 以及在這裡扮演的作用. 請更仔細非常詳細解釋Parquet / Iceberg Metric Facts是甚麼, 以及在這裡扮演的作用.
+```
+
+既然切換到工程師視角，我們就直接從 System Design、分散式架構與 Data Lakehouse 的底層機制來拆解 `structure.png` 中這兩個關鍵元件的實作細節與價值。這個設計非常漂亮地融合了 CQRS (Command Query Responsibility Segregation) 與 Event-Driven 概念。
+
+### Transactional Sync Outbox：解決 Dual-Write 與解耦
+
+在微服務或邊緣運算架構中，最怕的就是「Dual-Write (雙重寫入)」問題。過去設備可能要同時呼叫 DynamoDB API 與 S3 API，一旦中途遇到 Network Partition，就會產生髒資料 (Dirty Data) 或狀態不一致。
+
+- **ACID 本地保證：** 設備端的 Local SQLite 實作了 Transactional Outbox Pattern。當寫入一筆 Watch Analysis 紀錄時，會在同一個 DB Transaction 內將業務資料更新，同時 Insert 一筆 Event 到本地的 Outbox 表。這保證了「業務操作」與「事件生成」的原子性 (Atomicity)。
+    
+- **非同步的 At-Least-Once 投遞：** 系統背景會有一個 Sync Daemon (或 CDC worker) 輪詢/監聽這個 Outbox 表。它負責將 Event 拋到雲端的 Message Broker (如 Kinesis, EventBridge 或 SQS)。只有當雲端確認接收 (ACK) 後，本地 Outbox 的紀錄才會被標記完成或刪除。這容忍了設備的離線狀態，並保證資料不遺失。
+    
+- **Fan-out 與寫入隔離：** 如 `structure.png` 所示，Outbox 成為資料上雲的單一入口。後端的訂閱者再將事件 Fan-out 到 DynamoDB (供 UUID 快速 Point Query) 與 S3 (存放 Binary Artifact)。這將邊緣設備的寫入壓力與雲端三個異質 Data Sink 完全解耦。
+    
+
+### Parquet / Iceberg Metric Facts：具備 ACID 的現代化湖倉
+
+這是將傳統 Data Lake 升級為 Data Lakehouse 的核心，專門解決上億筆資料在 S3 上做 OLAP (線上分析處理) 時，I/O 成本失控與 Data Staleness (資料延遲) 的硬傷。
+
+- **Columnar I/O 與 Predicate Pushdown (Parquet)：** 捨棄 JSON 的 Row-based 儲存。Parquet 的欄式結構與 Dictionary Encoding 讓資料緊密壓縮。當 Athena 查詢特定維度的統計 (例如 `SELECT AVG(score) FROM metrics WHERE defect_type='scratch'`) 時，底層引擎只需要讀取該 Column 的 Chunk，並利用 Parquet footer 的 min/max 統計值直接略過不相關的 Block，將掃描量從 TB 級驟降至 MB 級。
+    
+- **Atomic Commits 與 Snapshot Isolation (Iceberg)：** Iceberg 是 Open Table Format 的中介資料層 (Metadata Layer)。它透過 Manifest files 來管理 S3 上龐大的 Parquet 檔案群。當 Outbox 將新批次的分析資料寫入時，Iceberg 會執行 Atomic Commit 產生新的 Snapshot。這徹底解決了過去 Glue Catalog 緩慢且不同步的問題，實現近乎即時的 Read-After-Write Consistency。
+    
+- **Hidden Partitioning：** 面對破億筆資料，Iceberg 可以動態管理 Partition (例如依據 `ingest_time` 或 `watch_model`)，而不需要改變使用者的查詢 SQL。這讓 Athena 的 Query Planner 能精準執行 Partition Pruning，避免了毀滅性的全表 Scan。
+    
+
+這個架構徹底把 OLTP (DynamoDB 單筆查詢) 與 OLAP (Iceberg 大量聚合) 的物理儲存分開了。
+
+針對 Transactional Sync Outbox 的實作，你們目前的邊緣設備是打算採用哪一種機制來實作 Outbox 的 polling 與上傳 (例如自建的背景 Cron Job 還是使用像 Debezium 這類的 CDC 工具) 呢？
+
+
+
+
+
+#### 開通那些AWS服務
+```
+我目前已經開啟AWS Athena, DynamoDB, IAM, S3, IoT Core服務, 那如果要實現新的database架構包含Parquet, iceberg, outbox, 需要在開通那些AWS服務? 請一步步解釋如何開通那些服務
+```
+為了實現包含 Iceberg 資料湖與 Transactional Sync Outbox 的現代化架構，你需要補齊中介資料目錄與雲端非同步處理的運算資源。
+
+**AWS Glue (必備：Iceberg 的核心目錄)** Athena 無法自己記住 S3 上千百個 Parquet 檔案的狀態，它必須依賴 AWS Glue Data Catalog 作為 Iceberg 的 Metastore，用來追蹤 Snapshot 與 Schema 演化。
+
+- **建立 Database：** 進入 AWS Glue 主控台，在左側導覽列選擇 Data Catalog > Databases，點擊 Add database（例如命名為 `moonlight_lake`）。
+    
+- **無伺服器配置：** Glue Catalog 是完全 Serverless 的服務，建立目錄不需要開啟實體伺服器。
+    
+- **權限設定：** 確保你現有的 IAM 策略中，允許後續處理資料的應用程式具備 `glue:CreateTable`, `glue:UpdateTable`, `glue:GetTable` 權限。
+    
+
+**AWS Lambda (必備：Outbox 的雲端處理工廠)** 本地機台 SQLite Outbox 的資料上雲後，需要一個無狀態的運算單元來執行 `lake_etl.py` 的邏輯：將狀態寫入 DynamoDB、將影像特徵轉為 Parquet，並透過 PyIceberg 呼叫 Glue 完成 Snapshot Commit。
+
+- **建立 Function：** 進入 Lambda 主控台，點選 Create function，選擇 Python 執行環境。
+    
+- **綁定 IAM 角色：** 為該 Lambda 賦予能夠同時存取 S3、DynamoDB 與 Glue 的執行角色 (Execution Role)。
+    
+- **建立 Layer：** Iceberg 寫入需要依賴 `pyarrow` 與 `pyiceberg` 套件，必須將這些依賴庫打包成 Lambda Layer 才能順利執行。
+    
+
+**Amazon SQS (強烈建議：Outbox 的雲端避震器)** 當洛杉磯的遠端測試機台進行高頻率的光學檢測時，瞬間產生的巨量 Outbox 訊息若直接打向資料庫，容易引發寫入衝突或 API 限流。SQS 能作為可靠的雲端緩衝區。
+
+- **建立 Queue：** 進入 SQS 主控台，建立一個 Standard Queue。
+    
+- **對接現有路由：** 在你已開通的 IoT Core 中，新增一條 Message Routing Rule，設定當機台透過 MQTT 發布 Outbox 訊息時，直接轉發進此 SQS 佇列。
+    
+- **設定觸發器：** 在 SQS 設定頁面中，將剛才建立的 Lambda 設為觸發器 (Event Source)。Lambda 就會依照系統負載，平穩地從佇列抓取資料並寫入 Iceberg 與 DynamoDB。
+    
+
+對於邊緣機台將 Outbox 實體資料拋上雲端的第一步，目前是打算直接呼叫 AWS API Gateway，還是沿用既有的 MQTT 協定透過 IoT Core 傳輸？
+
+
+
+
+
+
+
+
+
