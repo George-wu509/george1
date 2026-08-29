@@ -1308,6 +1308,7 @@ has_glass = false
 
 
 
+
 ```
 也請幫我分析所有的af_mode的keyence autofocus跟liquid lens autofocus為什麼比預期的更慢? 我使用官方的ITALA View 使用liquid lens都非常快都少於1sec, 但這裡都很慢, 請深入分析並提供優化建議
 ```
@@ -1323,18 +1324,18 @@ has_glass = false
 
 #### 1.1 單次呼叫的硬編碼 sleep 鏈(我已逐行核對)
 
-|位置|Sleep|說明|
-|---|---|---|
-|hardware_managers.py:2938,3087|80ms|重置 lens 電流為 0|
-|hardware_managers.py:3104|50ms|關閉 `oeLiquidLensAutofocusEnable` 後|
-|hardware_managers.py:3115|50ms|設定 `CurrentMode` 後|
-|hardware_managers.py:3684|**150ms**|關閉 `TriggerMode` 讓 FPGA free-run 後|
-|hardware_managers.py:3687-3692|最多100ms|清空舊 frame buffer|
-|hardware_managers.py:3707|50ms|啟用 `oeLiquidLensAutofocusEnable` 後|
-|hardware_managers.py:3905|**150ms**|下達 `AutofocusStart` 指令後(確認過,這行就是 `time.sleep(0.15)`)|
-|輪詢迴圈 hardware_managers.py:3924-3936|每輪 20ms drain + 讀 status + 讀電流|見下 1.2|
-|hardware_managers.py:3951,3982-3983|50+20+30ms|AF 成功後 latch 電流|
-|Fallback 逾時路徑|最多 **2.0s**|`status_fallback_wait_s`,只有輪詢逾時才會走到|
+| 位置                                  | Sleep                          | 說明                                                   |
+| ----------------------------------- | ------------------------------ | ---------------------------------------------------- |
+| hardware_managers.py:2938,3087      | 80ms                           | 重置 lens 電流為 0                                        |
+| hardware_managers.py:3104           | 50ms                           | 關閉 `oeLiquidLensAutofocusEnable` 後                   |
+| hardware_managers.py:3115           | 50ms                           | 設定 `CurrentMode` 後                                   |
+| hardware_managers.py:3684           | **150ms**                      | 關閉 `TriggerMode` 讓 FPGA free-run 後                   |
+| hardware_managers.py:3687-3692      | 最多100ms                        | 清空舊 frame buffer                                     |
+| hardware_managers.py:3707           | 50ms                           | 啟用 `oeLiquidLensAutofocusEnable` 後                   |
+| hardware_managers.py:3905           | **150ms**                      | 下達 `AutofocusStart` 指令後(確認過,這行就是 `time.sleep(0.15)`) |
+| 輪詢迴圈 hardware_managers.py:3924-3936 | 每輪 20ms drain + 讀 status + 讀電流 | 見下 1.2                                               |
+| hardware_managers.py:3951,3982-3983 | 50+20+30ms                     | AF 成功後 latch 電流                                      |
+| Fallback 逾時路徑                       | 最多 **2.0s**                    | `status_fallback_wait_s`,只有輪詢逾時才會走到                  |
 
 **光是不含輪詢迭代的固定 sleep 就有 ~0.6–0.8 秒**,這還沒算 FPGA 內部真正掃描電流所花的時間。使用者提到 ITALA View 全程 <1 秒,這代表軟體層的"儀式性等待"幾乎吃掉了整個時間預算。
 
@@ -1412,11 +1413,11 @@ unified_driver.py:8705 `_run_hardware_af_attempt` 包住上面整套 ~0.7-0.9 �
 
 系統其實**已經有**跟 ITALA View 一樣的硬體原生路徑,但實務上經常走到慢路徑:
 
-|路徑|機制|每次操作成本|速度|
-|---|---|---|---|
-|**硬體 FPGA AF**  <br>Controller/hardware_managers.py:2914|寫入 GenICam node 下單一 AF 指令,然後 50ms 週期 poll 狀態|由 FPGA 內部掃描時間決定,基本上等同 ITALA View|**快**(<1~2s 級)|
-|**軟體逐點掃描 AF**  <br>Controller/hardware_managers.py:2688|Python for 迴圈跑 **61 個(最多到 121 個,af_mode 14)** 鏡頭電流值,每個位置真的觸發拍一張圖算清晰度|61 × (settle 25ms + `capture_image` 完整觸發/曝光/fetch 流程)|**慢**(數秒到數十秒)|
-|**Side-Zaber 合併掃描**  <br>(af_mode 7/8/10,側面視角)  <br>Controller/hardware_drivers/unified_driver.py:7466|Y 軸機械移動(預設 4 點,最多 11 點)× 鏡頭電流(預設 11 點)× 每點拍 3 張|預設 **4×11×3 = 132 次拍照**,每次前面還有 Zaber 物理移動|**最慢**|
+| 路徑                                                                                                     | 機制                                                                   | 每次操作成本                                                | 速度             |
+| ------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------- | ----------------------------------------------------- | -------------- |
+| **硬體 FPGA AF**  <br>Controller/hardware_managers.py:2914                                               | 寫入 GenICam node 下單一 AF 指令,然後 50ms 週期 poll 狀態                         | 由 FPGA 內部掃描時間決定,基本上等同 ITALA View                      | **快**(<1~2s 級) |
+| **軟體逐點掃描 AF**  <br>Controller/hardware_managers.py:2688                                                | Python for 迴圈跑 **61 個(最多到 121 個,af_mode 14)** 鏡頭電流值,每個位置真的觸發拍一張圖算清晰度 | 61 × (settle 25ms + `capture_image` 完整觸發/曝光/fetch 流程) | **慢**(數秒到數十秒)  |
+| **Side-Zaber 合併掃描**  <br>(af_mode 7/8/10,側面視角)  <br>Controller/hardware_drivers/unified_driver.py:7466 | Y 軸機械移動(預設 4 點,最多 11 點)× 鏡頭電流(預設 11 點)× 每點拍 3 張                      | 預設 **4×11×3 = 132 次拍照**,每次前面還有 Zaber 物理移動             | **最慢**         |
 
 關鍵程式碼(Controller/hardware_managers.py:2770):
 
@@ -1771,15 +1772,15 @@ SAM/screw ML 推論(可能 CPU-only,取決於有沒有 CUDA)如果真的是 CPU 
 
 ### 三、AF 之外還能砍哪裡(依影響力排序)
 
-|排名|項目|現況|建議|預估影響|
-|---|---|---|---|---|
-|1|**固定 1.0s capture settle**|Controller/hardware_drivers/unified_driver.py:12310 每次拍照無條件 sleep 1.0s,Strap 沒有覆寫這個值(禁用中的 macro_cam_1 fast pipeline 已證明 0.25s 可行,config/strap_macro_cam1_scan.yaml:21)|幫 Strap component 拍照路徑加一個專屬 override,降到 0.25-0.3s|~30+ 次拍照 × 0.7s 節省 ≈ **20-25s**|
-|2|**`keyence_policy: every_physical_point`**|Plan 4 對全部 ~30 個 component 點都做完整 Keyence+liquid AF;Plan 2/3 只在 5 個錨點做完整 AF,其餘插值|評估是否所有位置都需要完整 AF精度,若可以改回錨點+插值(但保留每個點都拍照)|**最大槓桿**,但需要良率/精度團隊確認,不是免費午餐|
-|3|**前/後 view 轉場做了兩次**|stitch 順序是 側→前→後,component 順序卻是 後→前→側(相反)(core/strap_workflow/plan4.py:142)→ 需要**兩趟**完整 RX/RZ 轉場,每趟約 17s|檢查能否讓 component 順序跟 stitch 順序一致,只轉場一次|~**17-34s**,**但這個順序是刻意改的**(commit 訊息「strap plan4 reorder - err2 fix」暗示是修 bug 才改的,動之前務必先搞清楚原因,別引入舊 bug|
-|4|**表面幾何掃描站數(~55-65站)**|逐點量測,無插值|改錨點+插值(同第一節 Keyence 建議)|~**15-20s**|
-|5|**Y-offset 重試迴圈**|[`focus_y_search_offsets_mm`] 側面訊號不佳時最多重試到 8 個 offset,每次都要重新移動+settle+拍照|先加 log 統計實際觸發頻率,若常觸發,代表初始定位/校正需要改善(治本),而不是單純縮短重試列表(治標可能犧牲良率)|依觸發率而定,可能是隱藏的大成本|
-|6|**每段動作前後的 Zaber 讀值**|每個 motion segment 都有獨立多軸序列讀值(Controller/hardware_drivers/unified_driver.py:11356 等多處)|評估哪些讀值是防禦性/非必要,改成抽查而非每站必讀|每站省 0.1-0.2s,累積 ~90 站 ≈ **10-15s**|
-|7|**後處理與下一站移動重疊**|目前色彩校正/旋轉是同步阻塞(Controller/hardware_drivers/unified_driver.py:12349)|背景執行緒重疊(見上節)|視處理時間而定,可能隱藏掉這整段|
+| 排名  | 項目                                         | 現況                                                                                                                                                                     | 建議                                                           | 預估影響                                                                                                  |
+| --- | ------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------- |
+| 1   | **固定 1.0s capture settle**                 | Controller/hardware_drivers/unified_driver.py:12310 每次拍照無條件 sleep 1.0s,Strap 沒有覆寫這個值(禁用中的 macro_cam_1 fast pipeline 已證明 0.25s 可行,config/strap_macro_cam1_scan.yaml:21) | 幫 Strap component 拍照路徑加一個專屬 override,降到 0.25-0.3s            | ~30+ 次拍照 × 0.7s 節省 ≈ **20-25s**                                                                       |
+| 2   | **`keyence_policy: every_physical_point`** | Plan 4 對全部 ~30 個 component 點都做完整 Keyence+liquid AF;Plan 2/3 只在 5 個錨點做完整 AF,其餘插值                                                                                        | 評估是否所有位置都需要完整 AF精度,若可以改回錨點+插值(但保留每個點都拍照)                     | **最大槓桿**,但需要良率/精度團隊確認,不是免費午餐                                                                          |
+| 3   | **前/後 view 轉場做了兩次**                        | stitch 順序是 側→前→後,component 順序卻是 後→前→側(相反)(core/strap_workflow/plan4.py:142)→ 需要**兩趟**完整 RX/RZ 轉場,每趟約 17s                                                               | 檢查能否讓 component 順序跟 stitch 順序一致,只轉場一次                        | ~**17-34s**,**但這個順序是刻意改的**(commit 訊息「strap plan4 reorder - err2 fix」暗示是修 bug 才改的,動之前務必先搞清楚原因,別引入舊 bug |
+| 4   | **表面幾何掃描站數(~55-65站)**                      | 逐點量測,無插值                                                                                                                                                               | 改錨點+插值(同第一節 Keyence 建議)                                      | ~**15-20s**                                                                                           |
+| 5   | **Y-offset 重試迴圈**                          | [`focus_y_search_offsets_mm`] 側面訊號不佳時最多重試到 8 個 offset,每次都要重新移動+settle+拍照                                                                                               | 先加 log 統計實際觸發頻率,若常觸發,代表初始定位/校正需要改善(治本),而不是單純縮短重試列表(治標可能犧牲良率) | 依觸發率而定,可能是隱藏的大成本                                                                                      |
+| 6   | **每段動作前後的 Zaber 讀值**                       | 每個 motion segment 都有獨立多軸序列讀值(Controller/hardware_drivers/unified_driver.py:11356 等多處)                                                                                  | 評估哪些讀值是防禦性/非必要,改成抽查而非每站必讀                                    | 每站省 0.1-0.2s,累積 ~90 站 ≈ **10-15s**                                                                    |
+| 7   | **後處理與下一站移動重疊**                            | 目前色彩校正/旋轉是同步阻塞(Controller/hardware_drivers/unified_driver.py:12349)                                                                                                    | 背景執行緒重疊(見上節)                                                 | 視處理時間而定,可能隱藏掉這整段                                                                                      |
 
 ---
 
@@ -1818,13 +1819,251 @@ SAM/screw ML 推論(可能 CPU-only,取決於有沒有 CUDA)如果真的是 CPU 
 
 
 
-```
 
 ```
+了解, 那在以修改python code的前提下根據你的統一優化的 Liquid Lens AF 設計的建議, 是否會影響到其他不是strap的watch的autofocus? 是否有風險讓原本已經正確對焦的image變成out of focus? 另外除了autofocus之外, 在其他zaber, light, 或流程上還有其他可以縮短running time的任何地方? 或許是拍照流程, 等待時間, 或image傳輸或程式life cycle等等因為目前瓶頸就是running time大大超出需求5倍以上, 所以這是第一需求, 而其次是不要影響到其他autofocus除非可以確定可以縮短time但不會有out of focus風險, 請深入分析
+```
+### 一、優化的 Liquid Lens AF 設計是否會影響 Watch AF——結論:架構上安全,但有兩個關鍵前提要處理
 
+#### 好消息:config 隔離機制本身是乾淨的
+
+我讓 agent 追蹤了 `af_mode_id` 從「哪個capture模板讀出來」到「怎麼合併成最終設定」的完整路徑,結論很明確:
+
+# unified_driver.py:10058-10072  _effective_config_for_af_mode()
+cfg = copy.deepcopy(self.config)                # 每次都從乾淨的 base config 複製
+self._apply_af_mode_overrides_to_config(cfg, overrides)  # 只套用「這一個」mode 的 override
+
+**每次 AF 呼叫都是「複製一份乾淨 base config + 只套用當下這個 af_mode 的 override」,不會累積、不會互相污染。** `af_mode_id` 本身也是每個 capture 模板自己帶的值(`unified_driver.py:10764`),Watch 的 capture 模板不可能意外拿到 Strap 的 af_mode 設定。**所以只要新設定只加在正確的 af_mode 裡,理論上不會動到 Watch。**
+
+#### 但有一個關鍵地雷:**mode 8 不是 Strap 專屬**
+
+我原本假設的「seed from previous point」適用範圍需要修正——追查後發現 **mode 8 同時被 Watch 跟 Strap 使用**:
+
+- Watch:config/internalnum_config.yaml 裡 Front `0039`-`0050`(側邊 40° 拍攝點)明確用 `af_mode_id: 8`
+- Strap:`strap_macro_cam1_scan.yaml:318`、`strap_component_autofocus.yaml:27` 的「非錨點/tile 掃描」也用 mode 8
+
+**這代表:如果你把「窄範圍種子掃描」這個優化加在 mode 8 上,會同時改到 Watch Front 0039-0050 的對焦行為。** 這是唯一一個真正有風險的交集點,必須避開。
+
+#### 另一個要修正的前提:4001-4028 目前根本沒在跑 two-stage
+
+我原本以為 Strap link 位置(4001-4028)用的是 two-stage 雙掃描——實際查證發現**不是**:這些點用的是 mode 3,mode 3 的 override 只碰 Keyence 的 Y/Z,**沒有設定 `hardware_two_stage_enable`**,而 base config 裡這個值預設也是 `False`。也就是說 **4001-4028 目前本來就已經是「單次」FPGA 掃描**(±10mA、40幀)。所以我們要優化的目標不是「拿掉 two-stage」,而是「把這個單次掃描的範圍,從固定 ±10mA 收窄成用前一點種子值 ±3-5mA」。
+
+#### 安全的實作方式:嚴格 opt-in,只加在確認為 Strap 專屬的 mode
+
+# 沿用現有 unified_driver.py 裡其他可選旋鈕(如 liquid_af_extensionN)的模式
+effective_robust_cfg.get("liquid_af_seed_from_previous_locked_current", False)  # 預設 False
+effective_robust_cfg.get("liquid_af_seed_half_range_ma", 5.0)
+
+**這兩個新 key 只加進 mode 3、12、13、14、16 的 override 區塊,絕對不加進 mode 8。** 因為隔離機制是「每個 mode 各自 merge」,沒設定這個新 key 的所有其他 mode(包含 mode 8、以及全部 Watch 用的 mode)**設定值會跟現在一模一樣,行為完全不變**。這是這個 config 架構的優點——加新旋鈕本身不會動到既有行為。
+
+#### 真正的風險不在 config,在「新邏輯本身」——這裡才是會不會 out of focus 的關鍵
+
+有兩個必須處理的工程細節,這兩個沒做好,才是真正會讓對焦跑掉的地方:
+
+1. **目前沒有跨呼叫的「前一點鎖定電流」狀態**:`self._last_liquid_af_report` 是單一個 instance attribute,會被任何相機、任何點的 AF 呼叫覆蓋掉,不是按 internalnum/相機分開存的。要做這個功能,需要新增一個真正的「按位置索引」的快取,而且要確認 capture 迴圈**真的是嚴格按 4001→4002→...→4028 順序跑**(不是被 retry 或多相機交錯打亂順序)——如果順序不保證,種子就可能對錯位置,反而害後面的點對焦跑掉。
+2. **窄範圍掃描如果種子錯了,可能找到局部最亮點而不是真正焦點**——這才是「image變成out of focus」的真實風險機制。**解法**:窄範圍掃描結果如果落在邊界(boundary),必須自動觸發 `liquid_af_extensionN` 擴大範圍重掃(這個保護機制現在就有,不用新建),絕對不能讓窄範圍掃描的結果「無條件被接受」。只要保留這個 fallback,最壞情況也只是「這一點多花一點時間重掃」,不會變成「安靜地鎖錯焦」。
+
+**結論:這個優化架構上可以做到不影響 Watch,但要正確實作「種子快取 + 邊界擴展保護」這兩個機制,不是單純改幾個 config 值就結束。** 建議先在 Strap 專屬的 mode(3/12/13/14/16)上小範圍試,並保留完整的邊界擴展 fallback 當安全網。
+
+---
+
+### 二、AF 之外的新發現——這批對「5倍超標」這個當前最優先問題可能影響更大
+
+這輪深挖找到幾個**之前完全沒分析過**的地方,而且有幾個看起來影響不小:
+
+#### 🔴 最大新發現:**燈光每個拍照點都關再開,每次開關是 30-60 次同步 Modbus 網路通訊**
+
+`apply_lights`(Controller/hardware_drivers/unified_driver.py:11286)**每個拍照點都無條件執行**,一個點最多循環 ON→OFF 2-4 次。而每一次 `apply_lights("ON")` 實際上是 **9 次獨立的同步阻塞 Modbus TCP 交易**(2 個 ring light × 3 個暫存器寫入 + 2 個 spot light + 1 個 side light,Controller/hardware_managers.py:4284),每一次 `apply_lights("OFF")`(`emergency_stop`)又是至少 4 次交易。**這代表單一個拍照點,光是燈光控制就要跑 30-60 次同步網路來回**,而且程式碼裡**完全沒有比對「這次要設定的燈光值,跟上一點是不是一樣」**——連續兩個用同樣燈光設定的 Strap link 點(例如 4001→4002),也會整套重新關燈開燈。我沒找到任何「必須每點重新校正燈光(例如防閃爍/熱漂移)」的註解或說明。
+
+**這是目前為止找到、風險最低但潛在影響可能最大的一項**——只要加一個「跟上一點燈光設定比對,一樣就跳過」的判斷,理論上不會動到任何對焦邏輯,純粹是省掉不必要的硬體通訊。**強烈建議優先處理**,但**建議跟你確認一下燈光每次都重開是不是有你們知道、但沒寫在程式碼裡的硬體理由**(例如燈具需要重新歸零校正)——如果沒有,這是免費的午餐。
+
+#### 🟠 `af_mode_config.yaml`(542行)每次 AF 判斷都重新讀檔+重新解析 YAML,完全沒有快取
+
+Controller/hardware_drivers/unified_driver.py:9994 的 `_load_af_mode_config` **每次呼叫都重新開檔+重新 `yaml.safe_load`**,而單一個 capture 點內部就會呼叫到這個函式**最多 7-8 次**(`unified_driver.py:10775,11449,11463,11486,11799,11855,11920,11932`)。這是**純粹的效能問題,不影響對焦正確性**——加一個 mtime-based 快取(檔案沒變就用記憶體裡的結果),邏輯完全不變,零風險,是最安全的第一個優化項目。
+
+#### 🟠 拍照後的圖片存檔是同步阻塞,擋住下一站的移動
+
+App/main.py:7020-7050 的 `_save_scratch_template_image` 直接同步呼叫 `cv2.imwrite`,沒有背景執行緒/queue。下一站的移動要等這次寫檔完成才能開始。建議改成背景寫入佇列(這也是零風險,純粹排程調整,不影響對焦邏輯或畫質)。
+
+#### 🟡 效能記錄(perf log)也是同步寫檔,單一 capture 可能觸發 5-10 次
+
+`RuntimePerformanceRecorder.record()`(core/workflow_manager.py:61)每次都是「開檔→寫入→關檔」,雖然是小檔案 append,單次可能很快,但頻率高(單一拍照可能觸發 5-10 次)。建議改成緩衝批次寫入。
+
+#### ✅ 好消息:Zaber 多軸移動、影像傳輸/Bayer 解碼,都已經是乾淨、正確的實作
+
+- **多軸移動確實是同時發出、同時等待完成**(`move_axes_absolute`,Controller/hardware_managers.py:582),不是你可能擔心的「一軸一軸依序等待」,這部分沒有額外可省的時間。
+- **影像格式轉換(Bayer demosaic)用的是 `cv2.cvtColor` 原生實作**,沒有多餘的複製或轉換——GenTL buffer 只複製一次(而且是必要的,因為底層 buffer 馬上要被回收重用)。這部分沒有隱藏的浪費。
+
+---
+
+### 三、建議優先順序(針對「5倍超標」這個第一優先目標,且都不影響對焦正確性)
+
+|順序|項目|風險|預期效益|
+|---|---|---|---|
+|1|**燈光同配置跳過重複開關**|極低(純比對邏輯,除非有隱藏硬體理由需先跟你確認)|**可能是這輪找到影響最大的一項**——每點省下 30-60 次網路交易裡的絕大部分|
+|2|**`af_mode_config.yaml` 加 mtime 快取**|零(純 I/O 快取,不改變任何解析結果)|每點省 7-8 次檔案 I/O+YAML 解析|
+|3|**圖片存檔改背景佇列**|低(純排程,不影響畫質/內容)|讓下一站移動不用等寫檔完成|
+|4|**perf log 改批次寫入**|低|視觸發頻率而定|
+|5|**Liquid lens AF 種子快取(前述設計)**|中(需要正確實作快取索引+邊界擴展保護,只加在 mode 3/12/13/14/16,避開 mode 8)|單次掃描張數可望減半以上|
+
+建議先做 1-4(都跟 AF/對焦邏輯完全無關,可以放心先動,累積起來對「5倍超標」的貢獻可能不小於單獨優化 AF),同時要求量測實際數字驗證效果;AF 種子快取這項因為牽涉到對焦正確性,建議排在後面,而且需要先加 timing/成功率 telemetry,確認前面幾項優化後還有多少落差需要靠它補。
 
 
 
 ```
+了解, 那請幫我根據你之前提的統一優化的 Liquid Lens AF 設計的建議提出完整的修改code計畫修改plan2, plan3, plan4, 儘量侷限在strap所以如果有同時在watch及strap都適用的可以定義新的af_mode, 除非確定不會對對焦有影響只影響到time, 譬如running time.
 
+在liquid lens autofocus方面都使用單次硬體 FPGA不要額外輪詢迭代, 不要做`_dump_af_diagnostics()`, `self.logger.info, 或其他. 也使用`hardware_two_stage_enable: false`以及`liquid_af_extensionN: 1`, 不要軟體逐點掃描 fallback、不要多點信心度驗證重試, **把 lens 移動的 settle 時間跟上一步的 sharpness 運算重疊**(pipeline 化):目前是完全序列的` set_liquid_lens_raw → sleep(settle) → capture → sharpness`,可以用一條背景 thread 讓「移動下一個電流值+settle」跟「算上一張圖的清晰度」同時進行
+
+而且分析單次呼叫的硬編碼 sleep 鏈是否還有可以優化的地方(單次呼叫的硬編碼 sleep 鏈->關閉 `oeLiquidLensAutofocusEnable` 後->設定 `CurrentMode` 後->關閉 `TriggerMode` 讓 FPGA free-run 後->清空舊 frame buffer->啟用 `oeLiquidLensAutofocusEnable` 後->下達 `AutofocusStart` 指令後(確認過,這行就是 `time.sleep(0.15)`)->每輪 20ms drain + 讀 status + 讀電流->AF 成功後 latch 電流->`status_fallback_wait_s`,只有輪詢逾時才會走到)儘量優化, 重新檢視 FPGA AF 前後那串 50/80/150ms 的固定 sleep
+
+在Keyence autofocus方面檢查是否有zaber重複行為或其他異常行為, 譬如每次讀 OUT1 都是5 次序列式 TCP 往返這是正常的測量媽還是重複五次? read_out3_for_debug=True是否真的打兩次?因為strap絕對是no glass所以strap測量不需要out3. `_af_keyence_matlab_like`裡面是否有重複移動了一次到同一座標?
+
+而拍照時每次 capture_image()都會重新 arm software trigger 並 drain buffer 最多 150ms這是正常的嗎還是是多餘的? unified_driver.py:12298-12310:AF 完成後、每次擷取影像前,無條件time.sleep(min(capture_settle_time_s, 10.0))這是正常的嗎還是是多餘的?
+
+在Strap的autofocus即使liquid lens af失敗也不fallback軟體逐點掃描, 如果沒有特別設定失敗要使用的方法則預設用current=0.
+
+而在strap的zaber移動除了下一步是要在camera position拍照, 不然不要刻意放慢機械移動, 以及固定 1.0s strap capture settle改成0.25-0.3s
 ```
+## Strap Liquid Lens / Keyence AF 優化——完整修改計畫
+
+### 設計原則(貫穿全部修改)
+
+1. **能用「只針對特定 af_mode 的 config override」解決的,絕不碰共用程式碼的預設行為**——因為 `_effective_config_for_af_mode` 每次都是「深copy base config + 只套用該 af_mode 的 override」(前輪已驗證),所以只要新 key 只加在 Strap 專屬的 mode(3/12/13/14/16),Watch 用的 mode(0/1/2/5/6/8/9/10/11)行為完全不變。
+2. **必須改共用函式硬編碼常數的地方(FPGA sleep chain、Keyence 5x取樣),一律改成「可由 config 覆寫,預設值=現狀」**——這樣程式碼變動本身不改變任何人的行為,只有 Strap mode 顯式覆寫新 key 才會生效。
+3. **唯一允許「全域套用、不特別限制在 Strap」的例外**:Keyence 重複移動的 bug fix(第四節)——因為修正後最終停留座標完全相同,只是省略掉多餘的移動指令,可以證明「只影響時間、不影響對焦結果」,符合你設的判斷標準,所以我建議全域套用而不是只給 Strap。
+
+---
+
+### 一、Liquid Lens AF 統一快速路徑——mode 3 / 12 / 13 / 14 / 16 的 config 改動
+
+不需要新增 af_mode——mode 12/13/14 目前雖然透過 `<<: *af_mode_8_overrides`/`<<: *af_mode_3_overrides` 繼承共用 mode 的設定,但**它們自己的 override 區塊已經在後面重新覆寫過所有關鍵 key**(現有程式碼就是這個 pattern,例如 mode 13 已經重新設定 `hardware_two_stage_enable` 等等),所以我們只要在 mode 3/12/13/14/16 自己的 override 裡加上/改成你要的值即可,**完全不用動 mode 8**。
+
+#### 各 mode 要改的 key(對照 config/af_mode_config.yaml 現況)
+
+# mode 13(前/後 component)—— 現況 hardware_two_stage_enable: true, liquid_af_extensionN: 0
+# 改為:
+hardware.autofocus.cameras.macro_cam_1.liquid_af.hardware_two_stage_enable: false      # 現況 true → 改 false
+hardware.autofocus.cameras.macro_cam_1.liquid_af.liquid_af_extensionN: 1               # 現況 0 → 改 1(單次邊界重試,不是雙倍兩段掃描)
+hardware.autofocus.cameras.macro_cam_1.liquid_af.fpga_af_baseline_validation_enable: false   # 移除多點信心度驗證重試
+hardware.autofocus.cameras.macro_cam_1.liquid_af.fpga_af_baseline_fallback_enable: false
+hardware.autofocus.cameras.macro_cam_1.liquid_af.best_effort_current_fallback_enable: false  # 不要额外的 best-effort fallback
+hardware.autofocus.cameras.macro_cam_1.liquid_af.software_fallback_enable: false       # 現況已經是 false,保留
+hardware.autofocus.af_settings.read_out3_for_debug: false   # 新增:Strap 無玻璃,關掉 OUT3(見第三節)
+
+# mode 14(側面 component)—— 現況 hardware_two_stage_enable: true, extensionN: 2, baseline_validation: true, software_fallback: true
+# 改為:
+hardware.autofocus.cameras.macro_cam_1.liquid_af.hardware_two_stage_enable: false      # 現況 true → 改 false
+hardware.autofocus.cameras.macro_cam_1.liquid_af.liquid_af_extensionN: 1               # 現況 2 → 改 1
+hardware.autofocus.cameras.macro_cam_1.liquid_af.fpga_af_baseline_validation_enable: false   # 現況 true → 改 false
+hardware.autofocus.cameras.macro_cam_1.liquid_af.fpga_af_baseline_fallback_enable: false     # 現況已 false,保留
+hardware.autofocus.cameras.macro_cam_1.liquid_af.best_effort_current_fallback_enable: false  # 現況已 false,保留
+hardware.autofocus.cameras.macro_cam_1.liquid_af.software_fallback_enable: false       # 現況 true → 改 false(移除 121 步軟體 fallback)
+hardware.autofocus.af_settings.read_out3_for_debug: false
+# 移除(或保留但改小)電流範圍:目前 -60..60(121步),既然不再靠軟體掃描救援弱鎖定,
+# 建議收斂回跟 mode 13 一致的 -20..20,避免單次硬體掃描本身變慢(frame_count 隨範圍線性增加)
+hardware.autofocus.cameras.macro_cam_1.liquid_af.hardware_start_current: -20.0
+hardware.autofocus.cameras.macro_cam_1.liquid_af.hardware_stop_current: 20.0
+hardware.autofocus.cameras.macro_cam_1.liquid_af.hardware_frame_count: 30
+
+# mode 3(4001-4028 link 位置的 Keyence Y/Z override)—— 目前沒碰 liquid_af,只需加:
+hardware.autofocus.af_settings.read_out3_for_debug: false
+
+# mode 12(側面 macro_cam_1 Keyence,繼承 mode 8 tree)—— 同 mode 13 邏輯:
+hardware.autofocus.cameras.macro_cam_1.liquid_af.hardware_two_stage_enable: false
+hardware.autofocus.cameras.macro_cam_1.liquid_af.liquid_af_extensionN: 1
+hardware.autofocus.af_settings.read_out3_for_debug: false
+
+# mode 16(fast liquid-lens-only)—— 現況已經是 hardware_two_stage_enable: false,
+# liquid_af_extensionN: 0 → 改成 1(你要求的值),其餘已經符合:
+hardware.autofocus.cameras.macro_cam_1.liquid_af.liquid_af_extensionN: 1               # 現況 0 → 改 1
+hardware.autofocus.af_settings.read_out3_for_debug: false
+
+**重要提醒**:mode 14 目前開 `software_fallback_enable: true` 是因為 mode 14 的 comment 明確記載了「Point 93」這個真實案例(弱 FPGA lock 但整張圖模糊)。**移除它之後,弱鎖定的風險不會消失,只是不再有軟體掃描去攔截它**。你在需求裡說「Strap 即使 liquid lens AF 失敗也不 fallback 軟體掃描,沒設定就用 current=0」——這代表你是接受這個風險、選擇用「明確失敗 + current=0」取代「軟體掃描硬救」。這個取捨我會照做,但**強烈建議你們良率團隊知情且同意**,因為這是唯一一項會實質改變失敗時行為(而不只是時間)的修改。
+
+---
+
+### 二、FPGA 單次呼叫的 sleep chain——逐項分析與建議
+
+我把 `trigger_hardware_liquid_af`(Controller/hardware_managers.py:2914)裡**成功路徑上**的每一個 sleep 都列出來了,並標註哪些有硬體理由、哪些是防禦性緩衝:
+
+|#|位置|現值|有無硬體理由註解|建議|
+|---|---|---|---|---|
+|1|reset settle(2547-2548)|0.08s(config `af_reset_settle_ms`)|無,但已經是 config 可調|已可調,建議 Strap mode 收到 0.05s(需驗證)|
+|2|關閉殘留 AF-enable node 後(3104)|**0.05s**|只有「Give the hardware a moment」這種通用註解|**改成 config-driven,Strap 收到 0.02s**|
+|3|設定 CurrentMode 後(3115)|**0.05s**|無|**改成 config-driven,Strap 收到 0.02s**|
+|4|關閉 TriggerMode 讓 FPGA free-run 後(3684)|**0.15s**|無量化理由,但這是最大宗、也最可能有真實 pipeline 反應時間需求的一個|**不建議在沒有實測驗證前縮短**——這是風險/效益比最差的一項|
+|5a|清空舊 frame buffer(3688)|上限 0.1s,實際通常遠低於此(空 buffer 時第一次 fetch 就跳出)|—|不用動,已經是自我限速|
+|6|重新啟用 AF-enable node 後(3707)|**0.05s**|無|**改成 config-driven,Strap 收到 0.02s**|
+|7|下達 AutofocusStart 後(你確認的行)|**0.15s(line 3905)**|無量化理由,同樣是關鍵風險項|**不建議在沒有實測前縮短**|
+|8|輪詢迴圈每輪(4084)|0.05s + 0.02s drain sub-loop|輪詢頻率,不是正確性風險|**改成 config-driven,Strap 收到 0.03s**(輕度縮短,只影響狀態偵測解析度,不影響最終鎖定電流)|
+|9|Latch 電流(成功後)(3951/3982)|0.05s + 0.02s|無|**改成 config-driven,Strap 收到各 0.02s/0.01s**|
+|10|最終 settle current(2547-2548透過`settle_time_s=0.03`)|0.03s|無|保留(數值已經很小)|
+
+**加總估算**:項目 2/3/6/8/9 這幾個「無明確硬體理由」的緩衝,現況合計約 0.3-0.4s,如果驗證後能收斂到 Strap 建議值,大約可以省下 **0.15-0.2s / 次成功呼叫**。項目 4 跟 7(各 0.15s,合計 0.3s)是**風險最高、效益未知**的兩項——我的建議是**先不動**,除非你們願意在實驗室用示波器/實測驗證 FPGA 真正需要多少反應時間,盲目縮短這兩個有較高機率造成 AF 失敗率上升(進而觸發更多 boundary/timeout,反而更慢)。
+
+**實作方式**:把每一個 `time.sleep(0.05)` 這種硬編碼常數,改成 `time.sleep(af_cfg.get("hw_af_<step_name>_sleep_s", 0.05))`,預設值維持現狀不變。Strap mode 的 override 再顯式設定較小的值。**這個改動本身(把常數變成可設定)不影響任何人的行為**,是最安全的第一步。
+
+---
+
+### 三、Keyence AF——你問的四個問題,答案都確認了
+
+1. **OUT1 是不是真的 5 次序列式往返?** 確認是——`read_stable_channel(channel, samples=5, delay=0.01)`(Controller/hardware_managers.py:4474),內部真的是 5 次獨立 socket 往返,取 median。這是真的抗雜訊機制,但**找不到任何註解說明為什麼是 5 次而不是 3 次**。我的建議:改成 config-driven(`keyence_out1_read_samples`,預設 5 保留現狀),Strap 先保守改成 3,**但這項需要你們拿實際訊號做驗證**,因為這會改變量測噪聲,跟前面「只影響時間」的安全項目不同,屬於「可能有 out-of-focus 風險」類別,我不會自作主張改成 1。
+2. **`read_out3_for_debug=True` 是不是真的打兩次?** **確認是,而且是個真正的 bug 等級浪費**——同一次測量裡,OUT3 被讀了兩次:一次在診斷 dump 裡(Controller/hardware_drivers/unified_driver.py:3116,不管 `do_z_af` 是不是 true 都會跑),一次在真正的 Z-AF 分支裡明確又讀一次(Controller/hardware_drivers/unified_driver.py:3179)。**好消息是這兩處都已經被同一個既有的 `read_out3_for_debug` config 開關控制**,不需要改程式碼——**Strap mode 直接把 `hardware.autofocus.af_settings.read_out3_for_debug` 設成 `false`,兩次 OUT3 讀取就都會消失,而且因為是透過 af_mode override 機制套用,不會影響 Watch。** 這是這次分析裡風險最低、最快就能拿到效果的一項。
+3. **`_af_keyence_matlab_like` 是不是真的移動到同一座標兩次?** **確認是,而且比你想的更多**——非 angle-aware 路徑(Strap 預設走這條):先移動到 `keyence_pose`,接著呼叫的 `_read_keyence_absolute_output_with_expansion` 內部又對同一個 Z 做一次 Z-only 移動(Controller/hardware_drivers/unified_driver.py:5691),然後又對同一個 XY 做一次 XY-only 移動(Controller/hardware_drivers/unified_driver.py:5402)——**每次量測都有 2 次多餘的移動指令,而且每個都帶著完整的 safety/collision-check/route-planning 開銷**,不是輕量操作。Angle-aware 路徑(非 Strap 預設,但其他 mode 可能用到)甚至有 3 次移動到同一姿態。**這個修正符合你的「確定不影響對焦、只影響時間」標準——因為目標座標完全相同,修正後最終停留位置一模一樣**,所以我建議這項**全域套用**(不限 Strap),做法是在 `_move_keyence_probe_pose`/`_move_xyz_with_safety`/`_move_keyence_probe_xy` 加一個「目標座標跟已知目前座標在誤差範圍內(例如 0.001mm)就跳過實際移動指令」的短路判斷,但安全鎖檢查(`check_safety_lock()`)保留。
+
+---
+
+### 四、拍照流程——你問的兩個 sleep 是不是多餘
+
+1. **`capture_image` 每次都重新 arm+drain(最多150ms)是正常的嗎?** 確認**沒有找到任何「自從上次拍照後 TriggerMode 有沒有被動過」的狀態旗標**,所以確實是每次都無條件跑一遍。但實測邏輯上這個開銷本身**已經是自我限速的**:`_arm_software_trigger` 如果 node 值本來就對就不會真的寫入(Controller/hardware_managers.py:2071),`_drain_camera_buffers` 沒有殘留 frame 時通常在 ~5ms 內就跳出,不是真的每次都吃滿 150ms。**唯一真正每次都固定發生的,是沒有 `TriggerArmed` node 的相機上那個無條件 0.02s sleep**(Controller/hardware_managers.py:2119)。這個項目**不是主要目標**,可以先不動,效益有限。
+2. **`unified_driver.py:12298-12310` 那個無條件 `time.sleep(capture_settle_time_s)` 是正常的嗎?** **這才是真正的大目標**——我確認它跟上面 `capture_image` 內部的 arm/drain **是完全不同、額外疊加的機制**,發生在呼叫 `capture_image` **之前**,而且**附近完全沒有任何註解說明這個 1.0 秒是為了什麼**(不是機構穩定、不是曝光穩定,程式碼旁邊的註解只解釋「數值 clamp 邏輯」,不是「為什麼要等」)。既然找不到任何有記載的理由,而你也已經確認要改成 0.25-0.3s,這個改動風險相對可控——**建議做法是新增 Strap 專屬 override**(不改全域預設 1.0s,避免影響 Watch):
+
+# unified_driver.py:12299 附近,capture_settle_time_s 目前讀 hardware.zaber.capture_settle_time_s(全域,1.0s)
+# 改為:優先讀 per-af_mode override,沒有才 fallback 到全域值
+
+# 在 mode 3/12/13/14/16 的 override 加:
+hardware.zaber.capture_settle_time_s: 0.3
+
+---
+
+### 五、Zaber 移動——好消息,你要求的行為現況已經大致符合
+
+我確認過 `z_focus` profile 現在就是 **80mm/s,跟 `default` 一樣**,程式碼裡的註解甚至明講「不要用不對稱的慢速 motor profile,Keyence 精度靠的是 step/range 配置跟同步讀值,不是靠刻意放慢」——這部分**已經是你要的狀態,不用改**。唯一比 default 慢的兩處都**確實只發生在最後靠近拍照姿態的收尾段**:`capture` profile(20mm/s)只用在最後 ~1mm/0.3mm 的精準逼近(Controller/hardware_drivers/unified_driver.py:5764),以及一個非常局部的例外(`endlink_4030_low_y`,40mm/s,只在 internalnum=4030、af_mode=15、Y 在 140-150mm 這個已驗證安全走廊內生效)。**我沒有找到任何 Keyence 表面掃描站、side-Zaber Y 移動、或轉場移動被刻意放慢的地方**——這部分你要求的「非到拍照位置前不要刻意放慢」現況已經符合,不需要修改。
+
+---
+
+### 六、關於「pipeline 化 settle + sharpness」的澄清
+
+你提到的「`set_liquid_lens_raw → sleep(settle) → capture → sharpness` 用背景 thread 重疊」這個技巧,**在這輪修改後,Strap 的 component AF 主流程已經不會再出現這個 pattern 了**——因為 `hardware_two_stage_enable: false` + 移除軟體逐點掃描 fallback,component 對焦變成單次 FPGA 呼叫,不再有 Python 迴圈逐步調電流拍照。
+
+**唯一還會出現這個 pattern 的地方,是 mode 7 的 side-Zaber 探測迴圈**(`_capture_sharpness`,Controller/hardware_drivers/unified_driver.py:7631,用於側面 Y 軸粗掃時逐一測試 11 個電流值)——這次你的需求沒有提到 mode 7,所以我沒有把它排進這輪修改範圍。**如果你也想套用這個 pipeline 化技巧,需要另外告訴我,我會把它排進 mode 7 的修改裡**,做法是背景 thread 提前送出下一個電流值的 `set_liquid_lens_raw` + settle,同時主執行緒對上一張已經拍好的圖算 sharpness。
+
+---
+
+### 七、失敗時 fallback 政策——current=0
+
+現況追蹤下來,`af_reset_current` 預設本來就是 `0.0`,失敗路徑上多處都會 reset 回這個值。要讓「沒特別設定就是 current=0」這件事**明確、不依賴隱含的多層 fallback鏈**,建議在 mode 3/12/13/14/16 統一顯式設定:
+
+hardware.autofocus.cameras.macro_cam_1.liquid_af.best_effort_current_fallback_enable: false
+hardware.autofocus.cameras.macro_cam_1.liquid_af.af_reset_current: 0.0   # 顯式寫出,不依賴預設值隱含生效
+hardware.autofocus.cameras.macro_cam_1.liquid_af.use_manual_cammag_on_af_failure: false
+
+**例外**:mode 15(4029/4030 endlink 參考點)目前設定 `continue_capture_on_liquid_af_failure: false`——也就是「這兩個特定安全關鍵參考點,對焦失敗就整個不拍」。這是刻意的嚴格設計,我不會動它,除非你確認也要放寬。
+
+---
+
+### 八、修改檔案總表
+
+|檔案|修改內容|風險|
+|---|---|---|
+|config/af_mode_config.yaml|mode 3/12/13/14/16 override 區塊(第一、三、四、七節列出的 key)|低(config-only,已驗證隔離機制)|
+|Controller/hardware_managers.py|`trigger_hardware_liquid_af` 內 5 處 sleep 常數改成 `af_cfg.get(..., 現狀預設值)`|低(預設值不變,行為零改動除非顯式覆寫)|
+|Controller/hardware_drivers/unified_driver.py|①`_move_keyence_probe_pose`/`_move_xyz_with_safety`/`_move_keyence_probe_xy` 加「同座標跳過移動」短路判斷(全域套用)②`capture_settle_time_s` 讀取邏輯加 per-af_mode override 優先權|①低(同座標保證同結果)②低(config-scoped)|
+|Controller/hardware_drivers/keyence_angle_aware.py|若 angle-aware 路徑也要修同座標重複移動問題,需要在此檔案對應處也加短路判斷|低|
+
+---
+
+### 九、`_dump_af_diagnostics()` / `logger.info` 移除
+
+這兩個是純日誌/除錯輸出,不影響對焦結果——建議加一個 `af_cfg.get("af_verbose_diagnostics_enable", True)` 開關(預設 True 維持 Watch 現狀不變),Strap mode 顯式設 `false`。這比直接刪除程式碼安全,萬一 Strap 現場除錯需要,隨時可以臨時開回來,不用重新部署程式碼。
