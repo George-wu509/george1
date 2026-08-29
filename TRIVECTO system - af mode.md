@@ -6,6 +6,9 @@
 | [[#### 列表整理每個af_mode_id(0~12)類別]]               |     |
 | [[#### 在執行App的create template拍照的autofocus]]     |     |
 | [[#### 完整整理在Strap時Af_mode]]                     |     |
+| [[#### autofocus為什麼比預期的更慢]]                     |     |
+| [[#### 甚麼原因會造成硬體 FPGA AF失敗]]                    |     |
+| [[#### 特別針對Strap使用到的autofocus方法]]               |     |
 |                                                 |     |
 |                                                 |     |
 |                                                 |     |
@@ -1300,3 +1303,528 @@ has_glass = false
 |4029/4030 references|macro_cam_1|8|無|不適用|無，固定 current 0|
 
 補充：macro_cam_1 scan 開始前的 Strap endpoint detection 也會使用 Keyence OUT1，但那是「找 Strap 左右邊界」的 probe，不是任何 stitch image 的 Autofocus，也不會執行 liquid-lens AF。
+
+
+
+
+
+```
+也請幫我分析所有的af_mode的keyence autofocus跟liquid lens autofocus為什麼比預期的更慢? 我使用官方的ITALA View 使用liquid lens都非常快都少於1sec, 但這裡都很慢, 請深入分析並提供優化建議
+```
+## Autofocus 效能分析:為什麼比 ITALA View 慢
+
+我已經深入追蹤了 Keyence AF 與 Liquid Lens AF(硬體 FPGA 版)的完整呼叫鏈,並實際讀取原始碼驗證了關鍵行號。結論:**兩條路徑都不是單一瓶頸造成的,而是"每一步都疊加了保守的 sleep / 診斷 / 安全檢查",而 ITALA View 官方工具幾乎只是直接下 FPGA 指令、輪詢一次狀態就結束。** 以下分兩部分拆解。
+
+---
+
+### 1. Liquid Lens AF(硬體 FPGA 版)—— 這是與 ITALA View 直接對標的路徑
+
+**呼叫鏈:** unified_driver.py:7957 `trigger_liquid_lens_hardware_autofocus` → hardware_managers.py:2914 `CameraManager.trigger_hardware_liquid_af`
+
+#### 1.1 單次呼叫的硬編碼 sleep 鏈(我已逐行核對)
+
+|位置|Sleep|說明|
+|---|---|---|
+|hardware_managers.py:2938,3087|80ms|重置 lens 電流為 0|
+|hardware_managers.py:3104|50ms|關閉 `oeLiquidLensAutofocusEnable` 後|
+|hardware_managers.py:3115|50ms|設定 `CurrentMode` 後|
+|hardware_managers.py:3684|**150ms**|關閉 `TriggerMode` 讓 FPGA free-run 後|
+|hardware_managers.py:3687-3692|最多100ms|清空舊 frame buffer|
+|hardware_managers.py:3707|50ms|啟用 `oeLiquidLensAutofocusEnable` 後|
+|hardware_managers.py:3905|**150ms**|下達 `AutofocusStart` 指令後(確認過,這行就是 `time.sleep(0.15)`)|
+|輪詢迴圈 hardware_managers.py:3924-3936|每輪 20ms drain + 讀 status + 讀電流|見下 1.2|
+|hardware_managers.py:3951,3982-3983|50+20+30ms|AF 成功後 latch 電流|
+|Fallback 逾時路徑|最多 **2.0s**|`status_fallback_wait_s`,只有輪詢逾時才會走到|
+
+**光是不含輪詢迭代的固定 sleep 就有 ~0.6–0.8 秒**,這還沒算 FPGA 內部真正掃描電流所花的時間。使用者提到 ITALA View 全程 <1 秒,這代表軟體層的"儀式性等待"幾乎吃掉了整個時間預算。
+
+#### 1.2 每次輪詢都做了不必要的重量級動作
+
+輪詢迴圈(hardware_managers.py:3924-3936)在等 FPGA 從 Busy 變成 Ready 的過程中,**每一輪**除了讀 status,還額外呼叫 `_read_liquid_lens_current()`(另一次同步 GenICam node 讀取),外加 20ms 的 buffer drain。這個電流讀值在迴圈裡除了寫進 trace 之外沒有被用來做決策,純粹是診斷用途卻跑在熱路徑裡。
+
+#### 1.3 診斷 dump 是隱藏的大成本(我新發現、之前探索沒抓到)
+
+hardware_managers.py:3007-3021 的 `_dump_af_diagnostics()` 在 PRE-START、POST-START、AF-SUCCESS/FAILED 等**每個階段都會呼叫**(至少 2-4 次/次 AF),每次呼叫 hardware_managers.py:2994-3005 的 `_read_af_diagnostics()`,而該函式會**逐一同步讀取 21 個 GenICam node**(`oeLiquidLensAutofocusEnable`、`Status`、`Current`、`Width/Height/WidthMax/HeightMax/SensorWidth/SensorHeight`…)。
+
+更糟的是,每次 dump 同時做 `self.logger.info(log_msg)` **和** `print(log_msg)`(hardware_managers.py:3020-3021),輸出一段 20 多行的格式化字串。在 console 沒有重導向、或 logger 掛了慢速 handler(檔案/網路)的情況下,`print()` 的 stdout flush 本身就可能造成數十毫秒的阻塞,而這完全跟"對焦"無關,是純粹的除錯輸出、且看起來沒有 debug flag 保護、是無條件執行的。
+
+**這是全部發現中風險最低、CP 值最高的優化點**——4 次 × 21 個 node 讀取 + 4 次 print/log,在生產環境的每次 AF 都在跑,卻只在真的要除錯時才有用。
+
+#### 1.4 真正致命的是"乘法效應":同一次邏輯 AF 被整套重跑多次
+
+unified_driver.py:8705 `_run_hardware_af_attempt` 包住上面整套 ~0.7-0.9 秒的流程,但以下開關會讓它**重複執行整個流程**:
+
+- **`fpga_af_best_of_n_enable`**(unified_driver.py:8186-8192,迴圈於 8741-8791):整套流程重跑 `best_n_count` 次取最銳利的結果
+- **`fpga_af_repeat_check`**(unified_driver.py:8182-8183, 8853-8874):再跑一次驗證電流值是否穩定
+- **`hardware_two_stage_enable`**(unified_driver.py:8116-8166, 9399-9490):先跑一次粗掃(預設 30 frames),再跑一次**完全獨立**的細掃(預設 30 frames)——等於整套流程跑 2 次
+- **`liquid_af_extensionN`**:結果落在邊界時額外重掃
+
+我核對了 config/af_mode_config.yaml 的第 25-33、119-273、403-539 行,確認有多個 `af_mode_id` 同時開啟 `hardware_two_stage_enable: true` **加上** `liquid_af_extensionN: 2`。這種組合下,單一邏輯 AF 呼叫可能把上述整套 ~0.7-0.9 秒的流程跑到 **4-6 次**,累積成 3-5 秒以上——這很可能就是你觀察到"比 ITALA View 慢很多"的主因,值得先確認慢速觀測點用的是哪個 `af_mode_id`。
+
+---
+
+### 2. Keyence AF(粗定位,`autofocus_option: 1` MATLAB-like)
+
+**核心函式:** unified_driver.py:5259 `_read_keyence_absolute_output_with_expansion`
+
+- `keyence_sample_settle_s` 設計上可調,但被 unified_driver.py:5609,5702 `max(0.05, settle_s)` **強制下限鎖在 50ms**,調再低也沒用
+- `read_stable_value(samples=5, delay=0.01)`(hardware_managers.py:4474-4498)每次讀 OUT1 都是 **5 次序列式 TCP 往返** + sleep,單次讀值成本就 ≥50ms + socket RTT
+- `read_out3_for_debug` 預設是 **`True`**(unified_driver.py:2809),等於每次都多打一次 Keyence 往返,但這個值只在 `has_glass` 時才會用到公式裡——多數情況純屬浪費
+- 每一次探針移動(甚至 dx=0,dy=0 的中心點)都走 `_move_xyz_with_safety` → `_plan_motion_segments` 的**完整安全規劃路徑**(unified_driver.py:985-1030):重新讀 5 軸 Zaber 位置、規劃"狗腿"退避-重配置-趨近路徑、re-validate against digital twin——對一個公厘級的探針微動來說是過度設計
+- 我還確認了 `_af_keyence_matlab_like`(unified_driver.py:3106-3111)先移到探針 XY,接著呼叫的 `sample_offsets()`(unified_driver.py:5400-5407)對中心點(offset 0,0)**又重複移動了一次到同一座標**——這是一個明確的重複動作 bug
+
+若 ROI/Z expansion(`keyence_read_roi_expan`/`keyence_read_z_expan`)被任何 mode override 打開(shipped config 預設是 0,關閉的),整套"移動+settle+5樣本讀值"會被乘上 `(2·roi+1)² × (2·z+1)` 倍。
+
+---
+
+### 3. 每次拍照都會疊加的全域開銷(跟 AF 演算法無關,但直接墊高你感受到的總延遲)
+
+- unified_driver.py:12298-12310:AF 完成後、每次擷取影像前,**無條件** `time.sleep(min(capture_settle_time_s, 10.0))`,而 config/hardware_config.yaml:88 設的是 **1.0 秒**(程式碼內建 fallback 是 0.5 秒,但 config 覆蓋成 1.0)。這是按"每次拍照"算,不是按"每個對焦點"算——如果一個點要拍多張(HDR/多曝光),這 1 秒會被重複收取
+- 每次 `capture_image()` 都會重新 arm software trigger 並 drain buffer 最多 150ms(hardware_managers.py:1339-1358)。這點有新加入的測試檔 test_camera_capture_state_machine.py:88-125 明確驗證是刻意設計(因為 AF 讓相機處於 free-run 模式,之後每次拍照都要重新 arm),但代價是它套用到**每一張**照片,不只是 AF 後的第一張
+
+---
+
+### 優化建議(依「效益/風險比」排序)
+
+1. **把 `_dump_af_diagnostics` 的 21-node 讀取 + print/log 輸出改成用 debug flag 包起來,預設關閉**(hardware_managers.py:3007-3021)。零風險,直接砍掉每次 AF 呼叫 2-4 次 × 21 個同步 GenICam 讀取。
+2. **確認生產環境用的 `af_mode_id` 是否開了 `hardware_two_stage_enable` + `best_of_n` + `extensionN` 的組合**(config/af_mode_config.yaml 第 25-33、119-273、403-539 行)。這是唯一能解釋"比 ITALA View 慢好幾倍"而非"慢 0.5-1 秒"的原因,先確認是否真的需要這些精度保證,否則關掉能立即減少 2-6 倍的呼叫次數。
+3. **重新檢視 FPGA AF 前後那串 50/80/150ms 的固定 sleep**(hardware_managers.py:2938-3707)。這些是軟體等待,不是光學/馬達物理限制,值得跟硬體廠商(Opto Engineering/ITALA)的規格書核對實際所需的最短穩定時間,很可能可以砍到目前的 1/2-1/3。
+4. **輪詢迴圈(hardware_managers.py:3924-3936)拿掉每輪都讀電流的呼叫**,只在狀態變成 success/failure 時才讀一次,减少每輪的 node round-trip。
+5. **`capture_settle_time_s` 從 1.0 秒下修**(config/hardware_config.yaml:88),或改成只在真正有 Z 軸移動/AF 動作後才 settle,而非每次拍照都套用。
+6. **修掉 Keyence AF 中心點的重複移動**(unified_driver.py:5400-5407)與 `read_out3_for_debug` 預設值改為 `False`(unified_driver.py:2809)。
+7. **針對 AF 用的公厘級微動探針,提供一條輕量直接移動路徑,繞過 `_move_xyz_with_safety` 的完整安全規劃器**(unified_driver.py:985-1030),把安全規劃保留給真正的大範圍點位跳轉。
+
+我建議先做 #1(零風險)跟 #2(找出你實際踩到的 mode 設定),這兩項不需要改動核心邏輯就能驗證影響有多大,再決定要不要動 sleep 時間常數。需要我直接動手改哪一項嗎?
+
+
+
+#### autofocus為什麼比預期的更慢
+```
+也請幫我分析所有的af_mode的keyence autofocus跟liquid lens autofocus為什麼比預期的更慢? 我使用官方的ITALA View 使用liquid lens都非常快都少於1sec, 但這裡都很慢, 請深入分析並提供優化建議, 那如果我用c++重寫keyence autofocus跟liquid lens autofocus functions之後在python裡呼叫是否也能加速, 以及那這樣也可以用python helper\deployment\build_moonlight.py這樣指令compiler成dll, exe並正常運作嗎
+```
+## 分析結果:Keyence AF 與 Liquid Lens AF 為什麼比 ITALA View 慢
+
+我完整讀過 Controller/hardware_managers.py、Controller/hardware_drivers/unified_driver.py 的核心 AF 邏輯，以及 helper/deployment/build_moonlight.py。結論先講:**慢的根源幾乎都是「軟體/機械掃描迴圈 + I/O 等待」,不是 Python 運算太慢** — 這也直接決定了 C++ 重寫能不能幫上忙。
+
+---
+
+### 一、Liquid Lens AF 慢在哪(這是主要瓶頸)
+
+系統其實**已經有**跟 ITALA View 一樣的硬體原生路徑,但實務上經常走到慢路徑:
+
+|路徑|機制|每次操作成本|速度|
+|---|---|---|---|
+|**硬體 FPGA AF**  <br>Controller/hardware_managers.py:2914|寫入 GenICam node 下單一 AF 指令,然後 50ms 週期 poll 狀態|由 FPGA 內部掃描時間決定,基本上等同 ITALA View|**快**(<1~2s 級)|
+|**軟體逐點掃描 AF**  <br>Controller/hardware_managers.py:2688|Python for 迴圈跑 **61 個(最多到 121 個,af_mode 14)** 鏡頭電流值,每個位置真的觸發拍一張圖算清晰度|61 × (settle 25ms + `capture_image` 完整觸發/曝光/fetch 流程)|**慢**(數秒到數十秒)|
+|**Side-Zaber 合併掃描**  <br>(af_mode 7/8/10,側面視角)  <br>Controller/hardware_drivers/unified_driver.py:7466|Y 軸機械移動(預設 4 點,最多 11 點)× 鏡頭電流(預設 11 點)× 每點拍 3 張|預設 **4×11×3 = 132 次拍照**,每次前面還有 Zaber 物理移動|**最慢**|
+
+關鍵程式碼(Controller/hardware_managers.py:2770):
+
+values = list(np.linspace(start_val, end_val, steps))   # steps 預設 61
+for idx, v in enumerate(values):
+    ok, applied = self.set_liquid_lens_raw(v, settle_time_s=settle_s, verify=False)
+    for _ in range(max(0, warmup_frames)):
+        _ = self.capture_image(...)         # 額外的暖機拍照,直接丟棄
+    img = self.capture_image(...)           # 真正的一張
+    score = self.get_image_sharpness(img, roi_cfg)  # 這段是 cv2 Laplacian,已向量化,不是瓶頸
+
+而每一次 `capture_image`(Controller/hardware_managers.py:1279)本身就包含:寫曝光/增益 → arm software trigger → drain 殘留 buffer(最多到 0.15s,通常較短)→ 等 trigger armed → `TriggerSoftware.execute()` → fetch(timeout 依曝光時間動態算,最多到 5s)→ 失敗會 `for attempt in range(3)` 重試。**這一整套流程被重複 61~132 次**,是實際慢下來的主因,不是 sharpness 計算本身。
+
+**為什麼會走到慢路徑**:
+
+1. 硬體 FPGA AF 失敗/驗證不通過時,系統設計上會 fallback 到軟體掃描(`software_fallback_enable: true`,多個 af_mode 都開啟這個),這是**預期會發生**的行為,不是 bug。
+2. 側面/strap 視角(af_mode 7/8/10/11/16)因為 `mechanical_af_disabled`,**預設就直接走**最貴的 side-Zaber 合併掃描,而不是先試硬體 AF。
+3. `af_mode_config.yaml:450-452` 甚至有一條註解明講這是**刻意的 speed-for-accuracy 取捨**(拒絕弱的 FPGA lock,強制用 121 步影像掃描驗證)。
+
+---
+
+### 二、Keyence AF 慢在哪
+
+Keyence AF 的核心不是拍照算清晰度,而是讀雷射位移感測器的數值算 Z(`_af_keyence_matlab_like`,Controller/hardware_drivers/unified_driver.py:2718)。**單點測量本身很快**(幾次 channel 讀值 + 一次 stage 移動)。
+
+但我進一步往下讀發現一個容易被忽略的地方——Controller/hardware_drivers/unified_driver.py:5272 的取樣函式,預設參數是:
+
+roi_expansion = af_cfg.get("keyence_read_roi_expan", ...)  # 預設 1
+z_expansion   = af_cfg.get("keyence_read_z_expan", ...)    # 預設 2  → z 方向會取 5 個點 (0, ±1, ±2 圈)
+
+一旦觸發 ROI 信心度擴展或 Z 擴展(信心度檢查沒過、角度感知模式等情況),它會對**每一個取樣點都做一次真實的 Zaber 探針移動**(Controller/hardware_drivers/unified_driver.py:5388/`_move_keyence_probe_xy`)+ `time.sleep(settle_s)`(預設 50ms)+ 對每個 channel 讀 5 次樣本、每次間隔 10ms。而且文件裡明確提到 Z 軸移動 profile(`z_focus`)是**系統中刻意設得最慢的**(helper/docs/24_performance_capacity_reliability/24.2_capture_and_motion_timing.md),上限 10mm/s,為了避免震動影響量測精度。
+
+所以 Keyence AF 慢,通常不是「演算法迴圈太多次」,而是**當信心度檢查沒過,退到多點網格重試時,每一點都要等一次「刻意放慢的機械移動」**——這是物理限制,不是程式效率問題。
+
+---
+
+### 三、為什麼 ITALA View 用 liquid lens 都 <1 秒
+
+合理推測(ITALA View 我們看不到原始碼,但從行為反推):它幾乎肯定只走**單一次 FPGA 硬體 AF 指令 + 輕量 poll**,沒有軟體逐點掃描 fallback、沒有多點信心度驗證重試、沒有側面 Y 軸機械掃描。這套系統為了要支援更嚴苛的良率驗證(拒絕弱鎖定、驗證信心度、side-Zaber 補救),主動加了很多「慢但準」的保護機制。**這是設計取捨造成的差異,不是實作效率差**。
+
+---
+
+### 四、優化建議(不需要 C++,純邏輯層面就能大幅提速)
+
+優先序由高到低:
+
+1. **把 61 步全域線性掃描改成粗到細二分搜尋**:先跑 7~9 步粗掃定出大致峰值區間,再在附近跑 5~7 步精掃。61 步 → 約 12~16 步,理論上可以砍掉 70-80% 的拍照次數,精度影響很小(清晰度曲線通常是單峰的)。
+2. **重新檢視軟體 fallback 觸發條件**,而不是條件放寬就無腦掃 61~121 步。先確認硬體 FPGA AF 為什麼常失敗(profile mismatch?timeout 太短?),把根因修掉可能比優化 fallback 更有效。
+3. **side-Zaber 掃描(af_mode 7/8/10)砍掉大量無效組合**:4 Y × 11 電流 × 3 frame = 132 張是暴力全網格。可以先用較少 Y 點粗定位,再用二分搜尋鎖電流,frame 數也可視情況降到 1~2(median 只是為了抗雜訊)。
+4. **把 lens 移動的 settle 時間跟上一步的 sharpness 運算重疊**(pipeline 化):目前是完全序列的 `set_liquid_lens_raw → sleep(settle) → capture → sharpness`,可以用一條背景 thread 讓「移動下一個電流值+settle」跟「算上一張圖的清晰度」同時進行——這用 Python threading 就能做,不需要 C++。
+5. **降低每步 log 開銷**:Controller/hardware_managers.py:2787 每步都 `logger.info` 格式化字串,加上 FPGA 路徑的 `_dump_af_diagnostics` 同時 `logger.info` + `print()` 一大段診斷(Controller/hardware_managers.py:3007)。單次影響不大,但在 61~132 次迴圈裡疊加起來是實測前該先關掉的干擾項。
+6. **對重複測同一位置的情況啟用 focus reuse**(文件已經有設計:helper/docs/07_capture_workflow/7.8_autofocus_routing_and_focus_reuse.md),避免對同一個站位重複跑完整 AF。
+7. 儲存庫**完全沒有實測過 AF 各路徑的真實耗時**(文件 helper/docs/24_performance_capacity_reliability/24.2_capture_and_motion_timing.md 明講"未找到已記錄的比較")。建議先加簡單的 timing log(每個 AF 呼叫記錄各階段耗時),實測出真正的熱點,再決定要優化哪一段——目前這份分析是基於程式碼結構推論,不是量測數據。
+
+---
+
+### 五、C++ 重寫 Keyence/Liquid Lens AF function 會加速嗎?
+
+**大機率不會有顯著效果,而且很可能不值得投入。** 原因:
+
+- 這些函式的耗時主體是 **I/O 等待**:相機曝光時間、GenTL frame fetch、`time.sleep()` 的機械 settle 時間、Zaber 物理移動時間、FPGA 內部掃描時間。這些都是**硬體本身的物理延遲**,C++ 跟 Python 呼叫底層 SDK 時等待的時間完全一樣——CPU 在這段時間根本沒有在算東西,只是在等硬體回應。
+- 唯一真正做運算的部分(`get_image_sharpness` 用 `cv2.Laplacian(...).var()`)本來就是**已經向量化的 C/C++(OpenCV 底層)**,Python 這層只是呼叫介面,重寫成 C++ 頂多省掉幾微秒的呼叫開銷,對總耗時(以百毫秒~秒計)完全無感。
+- 相機(harvesters/GenICam)跟 Zaber(zaber_motion)本身**已經是 Python 包著原生 C/C++ SDK**(zaber_motion 底層就是一顆 ctypes DLL:`zaber-motion-core-windows-*.dll`),不是純 Python 重新實作協議——所以「重寫成 C++」實際上只是把 Python 的**控制流程/迴圈邏輯**改寫,而控制流程本身不是瓶頸,迴圈裡的 `time.sleep()` 和 SDK 阻塞呼叫才是。
+
+真正該優化的是**演算法層(掃描點數、粗細二分、pipeline 重疊)**,這在 Python 就能做,C++ 重寫在這裡屬於「優化了不是瓶頸的部分」。
+
+如果你之後想用多執行緒把「移動 lens」跟「算清晰度」重疊(建議 4),C++ 或許能省掉 Python GIL 造成的執行緒排程開銷,但這個量級跟硬體延遲比起來也是次要的。
+
+---
+
+### 六、`build_moonlight.py` 能不能把 C++ 編譯進 DLL/EXE?
+
+**目前不行,而且它現在做的事完全是另一回事**——讀過整份 helper/deployment/build_moonlight.py 後可以確認:
+
+- 它用的是 **PyInstaller**(helper/deployment/build_moonlight.py:33、`PyInstaller.__main__.run(args)`)。PyInstaller **只是把 Python 直譯器 + bytecode + 相依套件打包成一個 exe**,執行時仍然是逐行解讀 Python bytecode,**完全不會編譯成原生機器碼**,跑起來速度跟直接 `python App_run.py` 一模一樣。它不是 Cython、不是 Nuitka,沒有任何 AOT 編譯步驟。
+- 整個 repo 裡**沒有任何 C++ extension 基礎建設**:沒有 `.pyx`、`CMakeLists.txt`、`pybind11`、`setup.py Extension()`、`.pyd` 檔案,也沒有 `src/`/`cpp/`/`native/` 目錄。硬體存取全部是純 Python binding(`harvesters`、`zaber_motion`)。
+
+如果你真的要把某段邏輯用 C++ 重寫並在 Python 呼叫(即使如上所述效益有限),流程會是:
+
+1. 用 **pybind11 + CMake**(或 `setup.py` 的 `Extension()` / scikit-build)另外寫一個獨立的 build 步驟,產出一個 `.pyd`(Windows 上 Python C extension 的副檔名)。這跟 `build_moonlight.py` 是兩個完全不同的階段——`build_moonlight.py` 只負責"打包成 exe",不負責"編譯 C++"。
+2. 先確認這個 `.pyd` 能被單獨 `import` 且正常運作。
+3. 修改 `build_moonlity.py`,仿照它現在處理 Zaber native DLL 的方式(`zaber_native_binaries()`,helper/deployment/build_moonlight.py:130、`--add-binary`,helper/deployment/build_moonlight.py:227),把新的 `.pyd` 加進 `--add-binary`/`--collect-all` 清單,PyInstaller 才會把它一起打包進最終的 `MoonlightApp.exe`。
+
+這條路技術上可行、也不複雜,但鑑於第五點的分析——**瓶頸是硬體等待時間,不是 CPU 運算**——投入 C++/pybind11 的建置成本換來的實際加速可能非常有限。我會建議先做第四節的邏輯層優化(掃描點數精簡、fallback 觸發條件檢討、pipeline 重疊),用時間量測驗證效果後,再評估是否真的需要走 C++。
+
+所以先針對liquid lens af, 甚麼時候會用硬體 FPGA AF? 甚麼時候會用軟體逐點掃描 AF?甚麼時候會用Side-Zaber 合併掃描? 是看不同的af_mode嗎? 是看不同的位置嗎? 那如果把軟體逐點掃描 AF都用硬體 FPGA AF替代是否可行?
+
+Traced liquid lens AF routing logicSonnet 5
+
+### 一、決定用哪個路徑的機制:是「per-camera 設定」,被 af_mode 覆寫,而不是位置直接判斷
+
+路徑選擇不是程式碼裡寫死的位置判斷式(例如 `if view=="side"`),而是每個 af_mode 的 YAML 針對每一台相機分別覆寫一組設定值,實際判斷邏輯只在 Controller/hardware_drivers/unified_driver.py:11837 這一段:
+
+af_method = str(af_liquid_af_cfg.get("af_method", "hardware")).strip().lower()
+use_hardware_first = af_method in ["hardware", "fpga", "hardware_first", "fpga_first"]
+
+if use_hardware_first:
+    side_zaber_two_stage = af_liquid_af_cfg.get("side_zaber_two_stage_enable", False)
+    if side_zaber_two_stage:
+        hw_success, ... = self._run_side_zaber_liquid_lens_autofocus(...)   # side-Zaber
+    else:
+        hw_success, ... = self.trigger_liquid_lens_hardware_autofocus(...)  # 純硬體 FPGA
+else:
+    # 直接跑軟體逐點掃描(primary,不是 fallback)
+
+# hw_success == False 時:
+allow_software_fallback = af_liquid_af_cfg.get("software_fallback_enable", not use_hardware_first)
+if liquid_failure_reason == "boundary_z_retry_exhausted":
+    allow_software_fallback = False   # 這個失敗原因無論如何都不會 fallback
+if (not hw_success) and allow_software_fallback:
+    self.trigger_liquid_lens_software_autofocus(...)   # 軟體掃描當 fallback
+
+`af_liquid_af_cfg` 讀的是 `hardware.autofocus.cameras.<相機>.liquid_af`(Controller/hardware_drivers/unified_driver.py:11019),所以**同一個 af_mode 底下,三台相機(macro_cam_1/macro_cam_2/micro_cam)可以各自被設成不同路徑**——這不是巧合,是設計上刻意允許的粒度。
+
+**判斷順序**:
+
+1. `af_method`(每相機設定)→ 決定走「硬體優先」還是「軟體優先(primary)」
+2. 若硬體優先,`side_zaber_two_stage_enable` → 決定是「純硬體 FPGA」還是「side-Zaber 機械 Y 掃描 + 內部硬體 FPGA 精掃」
+3. 若硬體嘗試失敗,`software_fallback_enable` → 決定要不要退到軟體逐點掃描(**除非失敗原因是 `boundary_z_retry_exhausted`,這種情況無論設定都不會 fallback**)
+
+### 二、實測整理:17 個 af_mode 各自用哪條路徑
+
+|af_mode|用途|Liquid Lens AF 實際路徑|
+|---|---|---|
+|0(預設)|一般拍攝|**純硬體 FPGA AF**,單次嘗試,`software_fallback_enable: false`|
+|1|crown|純硬體 FPGA(僅調電流範圍)|
+|2|advanced|硬體 FPGA,`hardware_two_stage_enable: true`(粗+精兩段內建重試,仍是硬體)|
+|3, 4|strap 相關|純硬體 FPGA(只調 Keyence Y/Z)|
+|5|lume guarded af|硬體 FPGA + baseline 驗證/邊界拒絕,無軟體/side-Zaber|
+|6|keyence only|Liquid lens AF **整個關閉**(`enable: 0`),只跑 Keyence|
+|**7**|side zaber two-stage|**side-Zaber 機械 Y 掃描 + 內部硬體 FPGA 精掃**(`side_zaber_two_stage_enable: true`)|
+|8|side af two-stage|**純硬體 FPGA,兩段式**,不是 side-Zaber(容易跟 mode7 搞混,但沒有機械 Y 掃描)|
+|9|keyence+two-stage|同 mode 8 + Keyence|
+|10|side z aoi scan|`liquid_af.enable: 0`,**完全不碰 liquid lens 電流**,靠機械 Y 軸當對焦軸|
+|11|reuse side reference|`liquid_af.enable: 0`,liquid lens **完全不跑**|
+|12, 13|strap component|硬體 FPGA 兩段式,mode 13 明確 `software_fallback_enable: false`|
+|**14**|strap component side adaptive|硬體 FPGA 兩段式 **+ 明確開啟 `software_fallback_enable: true`**(121 步密集掃描)|
+|15|strap Endlink safe|同 13,失敗直接不拍(`continue_capture_on_liquid_af_failure: false`)|
+|16|strap fast liquid only|純硬體 FPGA,單次嘗試,無任何重試/fallback|
+
+**關鍵發現:全部 17 個 af_mode 裡,只有 mode 14 的 macro_cam_1 明確開啟軟體逐點掃描當 fallback。** 其餘所有模式,`software_fallback_enable` 在 base config(config/hardware_config.yaml)都是 `false`,軟體掃描根本不會被觸發。也沒有任何 af_mode 把 `af_method` 設成純軟體當 primary。
+
+### 三、位置依賴是「透過 af_mode 間接表達」,不是硬體限制
+
+你問的「side view 是不是就一定要用軟體/side-Zaber」——答案是**不一定,是設定選擇,不是硬體限制**:
+
+- Mode 7(side,two-stage)**確實**用 side-Zaber。
+- Mode 8(同樣是 side 相關名稱)**卻是純硬體 FPGA**,完全沒有機械 Y 掃描。
+- Mode 16(strap,側面)也是**純硬體 FPGA 單次嘗試**。
+
+我specifically 找過程式碼裡有沒有「因為這個角度/視角,FPGA AF 硬體上做不到,所以才需要 side-Zaber」這種限制——**沒有找到**。唯一在程式碼裡寫明的物理限制是關於 **Keyence**(雷射位移感測器),不是 liquid lens:
+
+> `af_mode_config.yaml:104-106`:「R_X=90 的側面拍攝無法可靠使用 Keyence,因為相機參考點在較淺探針角度下難以重新對準,所以停用 mechanical/Keyence Z-AF,改用純 liquid lens AF」
+
+Mode 10/11 停用 liquid lens AF 也是**設計選擇**(用機械 Y 軸本身當對焦軸,刻意不碰電流),註解(config/af_mode_config.yaml)寫的是「不要改動/自動對焦 liquid lens」,不是「做不到」。
+
+**結論:side-Zaber 存在的真正理由是 mechanical_af_disabled({7,8,10,11,16})這幾個模式停用了 Keyence,而 side-Zaber 是為了在沒有 Keyence 輔助時,用機械掃描去補足對焦精度/魯棒性——不是因為 liquid lens 硬體 FPGA AF 在那些角度用不了。**
+
+### 四、如果把所有軟體逐點掃描都換成硬體 FPGA AF,可行嗎?
+
+**先講重點:你其實已經幾乎在那個狀態了。** 17 個模式裡有 16 個本來就是純硬體 FPGA(或硬體兩段式),軟體掃描目前只在 **mode 14 的 macro_cam_1** 上被啟用。所以「軟體逐點掃描造成的慢」在整體 17 個模式的使用比例上其實佔比不高——除非你的產線實際大量跑的是 mode 14,或是硬體 AF 在其他模式下經常失敗到需要靠 `use_manual_cammag_on_af_failure`/`best_effort_current_fallback_enable` 這類次要 fallback(這些不是軟體掃描,但也是失敗後的補救路徑,值得你確認一下實際觸發頻率)。
+
+**如果你想連 mode 14 也關掉 `software_fallback_enable`,會有明確記載的風險**——mode 14 的註解(config/af_mode_config.yaml:450)直接寫明了觀察到的失敗案例:
+
+> 「Point 93 顯示即使 sharpness 比 baseline 提升了 13.9%,整張影像仍然是全域模糊的。拒絕弱的 FPGA lock,讓影像掃描去證明確實存在一個明顯的峰值。」
+
+這是原作者實測踩過的坑,而不是理論上的擔心。根本原因是**結構性的**:硬體 FPGA AF 對驅動程式來說是黑盒子——它只回傳「最終鎖定電流 + 一個粗略狀態字串」,`fpga_af_baseline_validation_enable` 頂多拿這個結果去跟**單一一張** baseline 電流的清晰度比較,沒辦法看到完整的「電流 vs 清晰度」曲線。而軟體逐點掃描因為每一步都真的拍照算分數,才能做到:
+
+# hardware_managers.py:2824-2832
+curve_median = np.median(smoothed_scores)
+minimum_peak = curve_median * peak_median_min_gain
+curve_validation_passed = best_score >= minimum_peak   # 判斷整條曲線是不是「平的」(沒有真正峰值)
+
+這種「整條曲線是否平坦/沒有明顯峰值」的判斷,硬體 FPGA AF **拿不到資料去做**,除非韌體本身有暴露內部逐點掃描資料給驅動程式讀(我在程式碼裡沒找到任何 node/API 名稱暗示這個能力存在)。
+
+**所以我的建議是**:
+
+1. **可以放心做**:確認其餘 16 個模式(尤其如果你的產線常用到 mode 2/8/9/12/13 這種硬體兩段式)沒有意外開啟軟體 fallback,並檢查實際失敗率——如果硬體 AF 失敗率本來就低,現狀已經接近你要的「全硬體 FPGA」。
+2. **mode 14 不建議直接關掉軟體 fallback**,除非你能先驗證:硬體 FPGA AF 在 mode 14 對應的位置/相機上,已經不會再重現「Point 93」那種弱鎖定但全域模糊的狀況。比較安全的折衷做法:
+    - 先用 `fpga_af_best_of_n_enable`(重複跑 N 次 FPGA 掃描取一致結果)或 `liquid_af_extensionN`(邊界時延伸掃描範圍)這些**硬體側**現有的重試/驗證機制去加強,取代軟體掃描的角色。
+    - 或是把軟體掃描的步數從 121 大幅降低(例如降到 15~21 步的粗掃,只用來做「曲線平坦度快篩」,通過就直接信任硬體結果,不通過才精掃)——這樣即使保留軟體 fallback,單次觸發的代價也會小很多。
+3. 若要精準驗證「硬體 FPGA AF 失敗率到底多高」,目前程式碼裡**沒有任何統計/紀錄機制**在追蹤這個數字(只有 mode 14 那條質化註解),建議先加一個輕量 counter/log(記錄每次 AF 呼叫的 `af_method`、成功與否、`failure_reason`),量測幾天實際產線數據後再決定要不要進一步收斂 fallback。
+
+
+#### 甚麼原因會造成硬體 FPGA AF失敗
+```
+甚麼原因會造成硬體 FPGA AF失敗? 因為目前很慢的軟體逐點掃描 AF只有當硬體 FPGA AF失敗才會使用, 所以預計要刪除軟體逐點掃描 AF, 因為即使使用runningtime需求絕對無法達成. 我發覺17個af_mode即使寫純硬體 FPGA AF, 仍然有單次嘗試, (僅調電流範圍), 粗+精兩段內建重試,仍是硬體, + baseline 驗證/邊界拒絕,無軟體等等不同設定, 這些不同設定是否有的也造成running time大幅增加? 請深入分析並提供建議如何優化速度
+```
+### 一、硬體 FPGA AF 失敗的根本原因
+
+先講清楚 `trigger_hardware_liquid_af`(Controller/hardware_managers.py:2914)內部各失敗原因的判斷邏輯,以及背後真正的觸發條件:
+
+|失敗原因|判斷邏輯|真正根因|
+|---|---|---|
+|**`timeout`**|15s(`hardware_timeout_s`)內狀態機沒回報明確的 success/failure 字串,也沒出現 Busy→Ready 轉態(Controller/hardware_managers.py:3916)|三種可能:(1) FPGA 真的需要接近/超過 15s 掃完 `hardware_frame_count` 張(見下方分析);(2) FPGA 內部狀態機卡在上一次結果沒重置(程式碼註解明講:「Make sure FPGA Internal status machines have been reset」Controller/hardware_managers.py:3099);(3) GenICam/USB3Vision 連線 flaky,status node 讀不到值。**這三種原因程式碼本身分不出來**,只能靠實際跑起來的 poll_trace 診斷資料判斷。|
+|**`boundary`**|鎖定電流落在配置範圍邊緣 ±約 0.25~0.5mA 內(`_is_boundary_current`, 3576-3586)|有兩種可能且**程式碼分不出來**:(a) 真的物理上對焦點超出 `hardware_start/stop_current` 掃描範圍(例如工件 Z 位置超出液態鏡可對焦範圍);(b) 掃描範圍本身設太窄。這正是 `liquid_af_extensionN` 存在的理由——用「擴大範圍重跑」去試探到底是哪一種。|
+|**`out_of_range`**|讀回電流完全在範圍外(`_is_out_of_range_current`, 3566-3574)|邏輯上比較怪——FPGA 應該只在配置範圍內掃描。最可能是**讀值時機競態**(讀到還沒完全 settle 的過衝值),或前一次操作殘留的電流值在 reset 完成前被讀到,而不是掃描範圍配置問題。|
+|**`fpga_af_profile_mismatch`**|寫入值 vs 讀回值超過容許誤差(`_validate_af_profile`, 3811-3883)|程式碼註解直接寫明:`FrameCount` 這個暫存器在 AF Busy 狀態下會從「設定值」變成「即時遞減的剩餘張數計數器」,所以 start 後立刻讀回會「看起來不match」但其實是正常行為(所以 post_start 驗證故意跳過 frame_count,3907-3910)。真正的硬體 bug 只在 start/stop current 或 AOI size 這幾個「不該變」的欄位在 0.15s settle 後仍對不上時才算數。|
+|**`aoi_not_centered`/`_readback_unavailable`**|AOI offset 讀回值跟預期偏差超過 4px 或完全讀不到(3400-3498)|AOI size 選項的 offset node `min/max/inc` 可能根本不允許真正置中,或是 GenICam node 在 AOI size 剛改變後還沒被填值。|
+
+**重點結論**:`boundary`/`timeout` 是最模糊、最需要人工判斷的兩種失敗,而系統目前的應對方式(`liquid_af_extensionN` 擴大範圍重跑、15s+2s 的超時等待)本質上是在**用時間去換取對失敗原因的猜測**——這正是你要優化速度時該優先動手的地方。
+
+---
+
+### 二、各種「純硬體」設定層,實際上會不會拖慢速度
+
+我逐一查證了 `unified_driver.py` 裡包住 `trigger_hardware_liquid_af` 的 6 層機制,結果分兩類:
+
+#### 會增加 FPGA 呼叫次數的(真正拖慢速度)
+
+|機制|額外開銷|目前 17 個 af_mode 有沒有用|
+|---|---|---|
+|`hardware_two_stage_enable`(粗+精)|**固定 2 次完整 FPGA AF 呼叫**(coarse 全範圍 + fine 在鎖定值 ±10mA 內再掃一次,`frame_count` 通常一樣多,不是快速版)|mode 2, 8, 9, 12, 13, 14 有用|
+|`liquid_af_extensionN`|每次邊界失敗 → **再跑一次完整 FPGA AF**(範圍逐次加倍),且**不會關掉** best-of-N/baseline 驗證,是最大的組合爆炸源|mode 7、14 用(`extensionN: 2`)|
+|`fpga_af_best_of_n_enable`|N 次完整 FPGA AF 呼叫|**17 個模式全部沒開**(config 預設關閉)|
+|`fpga_af_repeat_check`|2 次完整 FPGA AF 呼叫|**17 個模式全部沒開**|
+|`stage_retry_*`|每個候選點 = 1 次物理 Zaber 移動 + 1 次 FPGA AF 呼叫,`hybrid` 模式預設 4 candidates/step|**17 個模式全部沒開**(`stage_retry_enable: false`)|
+
+**這是個很重要的發現:best-of-N、repeat-check、stage-retry 這三個最貴的乘數層,目前產線設定完全沒在用。** 所以你不需要擔心它們——它們目前是休眠的,不用特別去關。真正在吃時間的,是 `hardware_two_stage_enable` 和 `liquid_af_extensionN`。
+
+#### 只加額外拍照、不加 FPGA 呼叫次數的(影響較小)
+
+- `fpga_af_baseline_validation_enable`:多拍 1~3 張(mode 13/14 設到 3 張)參考電流的影像去算清晰度比較,不會重跑 FPGA 掃描本身。
+
+#### 單次 FPGA AF 呼叫本身的固定開銷
+
+- `hardware_timeout_s = 15.0s`(全部 3 台相機)+ `status_fallback_wait_s = 2.0s` → **失敗案例最多要等到 17s 才會判定失敗**,這是成功案例不受影響、但失敗/邊界案例會被拖累的固定成本。
+- `hardware_frame_count`:macro_cam 40 張、micro_cam 20 張。我驗證出一個明確的數學關係:`(hardware_stop_current - hardware_start_current) / hardware_frame_current` **精確等於** `hardware_frame_count`(20mA / 0.5mA = 40,20mA / 1mA = 20)。這強烈暗示 **FPGA 內部做的就是跟軟體逐點掃描邏輯相同的「電流步進 + 每步拍一張評分」,只是用韌體實作而非 Python**。這代表:**掃描範圍越寬、電流步階越細,FPGA 內部要處理的張數就越多,單次呼叫本身就會越慢**——這是你目前手上唯一能直接控制、且可能大幅影響單次呼叫耗時的旋鈕(即使我們拿不到 FPGA 內部真實耗時的量測數據)。
+- 另外我發現一個配置矛盾值得你確認:config/af_mode_config.yaml:117 註解寫「這台相機在側面模式下最多接受 30 張 FPGA AF frame」,但 base config(config/hardware_config.yaml:1195)預設是 40 張——這可能是韌體限制沒同步更新到 base config,建議跟硬體規格對一下。
+
+---
+
+### 三、17 個 af_mode 按硬體 AF 疊加開銷排名
+
+|排名|Mode|疊加了什麼|備註|
+|---|---|---|---|
+|1|**14**|two-stage(2 次 FPGA)+ extension×2(疊加 baseline 驗證)+ baseline validation(3 frame)|目前唯一 two-stage + extension + baseline 三層疊加的模式,最壞情況約 4 次 raw FPGA 呼叫 + 額外拍照,失敗後還會掉到 121 步軟體掃描|
+|2|**13**|two-stage + baseline validation(3 frame)|2 次 FPGA 呼叫 + 額外拍照,無 extension|
+|3|**7**|side-Zaber 粗掃(**4 Y × 11 電流 × 3 frame = 132 張拍照 + 4 次物理 Y 軸移動**)+ extension×2|這不算在「two_stage/best_of_n」這組計數裡,但**很可能是全系統實際 wall-clock 最貴的模式**,而且**不屬於你要刪除的「軟體逐點掃描 AF」**(它呼叫的是 `_run_side_zaber_liquid_lens_autofocus`,不是 `run_liquid_lens_autofocus`)——**這是你必須注意的地方,見下方第五節**。|
+|4|8, 9, 12|two-stage only|2 次 FPGA 呼叫,乾淨|
+|5|2|two-stage only|同上|
+|6|5|baseline validation only,但把 `hardware_frame_count` 拉到 80(單次掃描本身變慢)|無疊加重跑,但單次呼叫更慢|
+|—|0,1,3,4,6,10,11,15,16|無疊加|mode 16 是最乾淨的:單次嘗試、無任何重試|
+
+---
+
+### 四、優化建議(針對你要刪除軟體逐點掃描 AF 的計畫)
+
+#### 1. 軟體逐點掃描 AF 目前只在 mode 14 的 macro_cam_1 被啟用,砍掉風險可控但不是零
+
+刪掉它之前,你需要處理 mode 14 存在的**具體、已記錄的真實案例**(config/af_mode_config.yaml:450):「Point 93 顯示即使 sharpness 比 baseline 提升 13.9%,整張影像仍然全域模糊」——這是硬體 FPGA AF 誤判成功的真實案例,不是理論風險。
+
+**建議替代方案**(用硬體側現有機制取代,不用軟體掃描):
+
+- 開啟 `fpga_af_repeat_check`(跑 2 次 FPGA AF,比對兩次鎖定電流是否一致)——增加 1 次 FPGA 呼叫(約 1 個 timeout 週期內完成,遠比 121 步軟體掃描快),可以抓到「掃描結果不穩定」這種假成功。
+- 或開啟 `fpga_af_best_of_n_enable`(N=2~3),取最銳利的一次——同樣是 N 次 FPGA 呼叫而非 N 次「拍照+移動」。
+- 這兩個機制都不會重現軟體掃描「整條清晰度曲線平坦度驗證」的能力,但可以用更低的成本抓住「單次結果不可信」的訊號,值得先試,再看實際案例是否被攔下來。
+
+#### 2. `hardware_timeout_s`(15s)+ `status_fallback_wait_s`(2s)是失敗案例的固定拖累,建議先量測再調
+
+目前完全沒有 FPGA AF 實際耗時的量測數據(程式碼裡沒有,只有 runtime 才產生的 `poll_trace`)。**在動任何參數之前,建議先加輕量 log**:每次 `trigger_hardware_liquid_af` 呼叫記錄「成功耗時」「失敗類型+耗時」,跑個幾百次拿到真實分布,再決定：
+
+- 如果成功案例通常 2-4s 完成,15s timeout 可以大膽砍到 5-6s,失敗案例就能提早判定、提早重試,而不是白等 15s+2s。
+- 如果沒有這個數據就直接砍 timeout,可能把「掃描比較久但最終會成功」的案例錯殺成 timeout,反而增加失敗率、逼出更多 retry。
+
+#### 3. 檢視 `hardware_start_current`/`hardware_stop_current` 範圍寬度和 `hardware_frame_current` 步階
+
+因為驗證出 `frame_count = 範圍寬度 / 步階`,如果目前 ±10mA(20mA 全範圍)、0.5mA 步階(40 張)對實際產品的對焦範圍來說太保守,**縮小範圍或加粗步階能直接降低單次 FPGA 呼叫要處理的張數**,這是少數能直接影響「單次成功案例」耗時的槓桿(相對於前面談的都是「失敗/重試案例」的耗時)。建議先跟良率/精度要求核對,不要一刀切縮小導致更容易 boundary 失敗。
+
+#### 4. Mode 14/13 的 `hardware_two_stage_enable` + extension,建議收斂 fine stage 的 frame_count
+
+目前 fine stage 預設沿用跟 coarse 一樣多的 `hardware_frame_count`(除非模式明確覆寫成 30,如 mode 8/9/12/13/14 已經有做)。既然 fine stage 只在鎖定值 ±10mA 內精掃,**沒有必要用跟粗掃一樣密的步階**,可以把 fine stage 的 frame_count 進一步降低(例如 10-15 張),因為搜尋範圍已經窄很多。
+
+#### 5. ⚠️ **重要提醒:你說要刪除的是「軟體逐點掃描 AF」,但別忘了 mode 7 的 side-Zaber 掃描**
+
+Side-Zaber 掃描(mode 7)雖然內部精掃用的是 `trigger_hardware_liquid_af`(硬體 FPGA),但它的**粗掃階段是純 Python 迴圈:4 個 Y 位置 × 11 個電流 × 3 張 frame = 132 次真實拍照 + 4 次物理 Zaber Y 軸移動**(Controller/hardware_drivers/unified_driver.py:7523)。這在架構上跟你要刪的「軟體逐點掃描 AF」(`run_liquid_lens_autofocus`)是**不同的函式**,砍掉軟體逐點掃描**不會影響到它**,但它極可能是你目前系統裡**最慢的單一路徑**,如果你的產線有跑到 mode 7,單單看它就足以讓 runtime 需求無法達成。
+
+**建議**:
+
+- 把 4 Y 位置降到 2 個(或用二分搜尋代替全網格)
+- 11 個電流值改成先粗掃 3-4 點定範圍,再交給硬體 FPGA 精掃(反正精掃本來就已經是硬體了)
+- `side_zaber_probe_frames` 從 3 降到 1(median 抗雜訊的邊際效益在拿掉 2/3 拍照次數面前不划算)
+- 這樣理論上能把 132 次拍照砍到 20-30 次以下,是比刪軟體逐點掃描 AF 更立即見效的動作。
+
+---
+
+**總結行動順序建議**:(1)先加 timing log 量測硬體 AF 真實成功/失敗耗時分布;(2)刪除 mode 14 的軟體 fallback,同時開啟 `fpga_af_repeat_check` 或 `best_of_n=2` 當替代保護;(3)砍掉/精簡 mode 7 的 side-Zaber 132 次粗掃;(4)根據第 2 步的量測數據調整 `hardware_timeout_s`;(5)視良率數據評估是否收斂 `hardware_frame_count`/電流範圍。
+
+
+
+
+#### 特別針對Strap使用到的autofocus方法
+```
+那如果我現在是要特別針對Strap使用到的autofocus方法(liquid lens af, keyence af)要非常非常大的降低running time, 要用最單一優化的liquid lens autofocus跟優化的keyence autofocus, 並利用cpython or c++方法加速, 評估要如何設計對strap plan1到plan4都加速的計畫以及預估可以加速多少. 也深入分析除了autofocus之外, 還有甚麼可以再減少strap plan1到plan4的方法? 或有沒有其他更優化plan5,6等等
+```
+### 重要前提說明
+
+先講一個關鍵發現:Plan1~4 用的**是同一套執行引擎**——`UnifiedHardwareDriver.execute_template_point`(Controller/hardware_drivers/unified_driver.py:10481)。Plan1/2/3/4 只是「要走哪些站點、用哪個 af_mode」的**計畫層**差異(定義在 core/strap_workflow),真正執行 AF、拍照、settle 的**是同一段程式碼**。所以你要做的「統一優化 liquid lens/keyence AF」**本來就會自動套用到所有 4 個 plan**,不需要分別改。
+
+也要先提醒:**Plan 1 目前是 `production_enabled: false`(純工程/dry-run,從未真的跑在硬體上)**,Plan 4 是目前 active production plan。所以效能優化實質上是針對 Plan 4(順帶讓未來若重啟 Plan 2/3 也受益)。
+
+---
+
+### 一、統一優化的 Liquid Lens AF 設計
+
+#### 現況問題
+
+Plan 4 的 component AF 用 mode 13(前/後)、mode 14(側面),兩者都開 `hardware_two_stage_enable`——**固定跑 2 次完整 FPGA 掃描**(粗 40 幀 + 精 30 幀),mode 13/14 還加 `fpga_af_baseline_validation_enable`(額外 1-3 張參考影像)。而根據我們前面驗證出的關係式 `frame_count = 電流範圍寬度 / frame_current 步階`,**掃描範圍越寬,單次掃描本身就越慢**。
+
+#### 建議的單一優化設計
+
+**核心思路:用「位置延續性」取代「兩段式重掃」**——strap 上相鄰的 link 位置(4001→4028)幾何上是連續的,對焦電流值理論上也會連續變化,不需要每個點都從頭掃 ±10mA 全範圍。
+
+單一 FPGA AF 呼叫(取代 two-stage 雙掃):
+  1. 若有上一個相鄰點的鎖定電流 → seed_current = 上一點結果
+     否則 → seed_current = 該位置的出廠校正查找表(LUT)中心值
+  2. 用 seed_current ± 3~5mA(而非全範圍 ±10mA)做「單次」FPGA 掃描
+  3. hardware_frame_count 相應降到約 12~15 張(而非 40)
+  4. 只有當結果落在這個窄範圍的邊界(boundary)時,才觸發一次 liquid_af_extensionN
+     擴大範圍重掃——而不是不論如何都固定跑兩次
+
+- 這需要建立一個**每個 internalnum 位置的電流校正 LUT**(工程模式先跑一輪全範圍掃描記錄每個位置的鎖定電流,存成 config,量產時直接當 seed)——這是一次性投資,換來長期單次掃描張數減半以上。
+- mode 14 目前解決「弱鎖定/全域模糊」問題(Point 93 案例)靠的是軟體逐點掃描 fallback。前一輪分析建議過:改用 `fpga_af_repeat_check`(2 次 FPGA 掃描比對一致性)取代,現在加上「窄範圍掃描」後,repeat-check 的 2 次呼叫總成本仍然遠低於「兩段式(2 次×40幀)+ baseline 驗證」的現狀。
+- 光源穩定 sleep(`unified_driver.py:11755` 的 0.15s)如果相鄰點燈光設定沒變,不需要每點都重新 settle——可以在同一個 view 的連續 component 點之間**保持燈常亮**,只在真的切換燈光 profile 時才 settle。
+
+#### 統一優化的 Keyence AF 設計
+
+好消息:我深入追蹤了 `_read_keyence_raw_m_channels`/`sample_offsets` 的實際邏輯(Controller/hardware_drivers/unified_driver.py:5689),確認了**正常成功案例(happy path)其實已經很快**——先測中心點一次,只有讀值失敗才會進入 ROI/Z 擴展重試網格。單次成功測量大約是:1 次移動 + settle(50-80ms)+ OUT2 讀值 + OUT1 的 5-sample 穩定讀值(~50ms),總計約 150-250ms 額外開銷,**這部分不是主要瓶頸**。
+
+**真正的 Keyence 時間成本在「表面幾何掃描」,不是 component AF**:Plan 4 每個 view(側/前/後)有 **18~21 個純幾何量測站**(不拍照,只讀 Keyence 定義表面),三個 view 加起來約 55-65 站。這些站目前是**逐點全部量測**,沒有用插值。
+
+**建議**:把幾何掃描也改成「錨點 + 插值」——例如每個 view 只在 5-7 個關鍵位置做真實 Keyence 量測,其餘位置用插值估算表面(Plan 2/3 的 component AF 本來就是這樣做,只是還沒套用到幾何掃描上)。這能把 ~60 站砍到 ~20 站左右。
+
+---
+
+### 二、C++ / CPython 加速的定位:只在一個地方真正划算
+
+延續前面的結論——AF 本身的瓶頸是硬體等待/機械移動,C++ 幫不上忙。但這次深入 Strap 執行流程後,我找到一個**真正 CPU-bound、且在關鍵路徑上同步執行**的地方:
+
+**`unified_driver.py:12349-12354`**——每次拍照後,**同一個執行緒**同步做 `apply_color_calibration`、`apply_post_color_tone`、`_apply_capture_rotation`,做完才能進入下一站。這段是否已經向量化(numpy/cv2)還是逐 pixel Python 迴圈,值得先檢查——如果是逐 pixel,這才是這個系統裡少數 C++/Cython 重寫真正有意義的地方。
+
+**但建議順序是**:
+
+1. **先用背景執行緒把這段處理跟下一站的移動重疊**(零風險,不用 C++,Python threading 就能做)——如果影像處理時間本來就比移動時間短,重疊後這段成本幾乎完全被藏起來,C++ 就沒有必要了。
+2. 只有在重疊之後**還是**測出這段比移動時間長、拖累節奏時,才值得評估把色彩校正/旋轉這幾個函式用 pybind11/Cython 重寫——而且大機率它們已經是 `cv2`/`numpy` 向量化操作,重寫效益有限。
+
+SAM/screw ML 推論(可能 CPU-only,取決於有沒有 CUDA)如果真的是 CPU 跑,優化方向也不是「手寫 C++」,而是確認 GPU 有沒有被正確使用,或考慮縮小輸入解析度/量化模型——這些比重寫底層運算划算得多。
+
+**結論:C++ 在 Strap AF 加速計畫裡不是主戰場**,真正該投入的是流程重疊(threading/pipeline)跟前面的 AF 掃描範圍收斂。
+
+---
+
+### 三、AF 之外還能砍哪裡(依影響力排序)
+
+|排名|項目|現況|建議|預估影響|
+|---|---|---|---|---|
+|1|**固定 1.0s capture settle**|Controller/hardware_drivers/unified_driver.py:12310 每次拍照無條件 sleep 1.0s,Strap 沒有覆寫這個值(禁用中的 macro_cam_1 fast pipeline 已證明 0.25s 可行,config/strap_macro_cam1_scan.yaml:21)|幫 Strap component 拍照路徑加一個專屬 override,降到 0.25-0.3s|~30+ 次拍照 × 0.7s 節省 ≈ **20-25s**|
+|2|**`keyence_policy: every_physical_point`**|Plan 4 對全部 ~30 個 component 點都做完整 Keyence+liquid AF;Plan 2/3 只在 5 個錨點做完整 AF,其餘插值|評估是否所有位置都需要完整 AF精度,若可以改回錨點+插值(但保留每個點都拍照)|**最大槓桿**,但需要良率/精度團隊確認,不是免費午餐|
+|3|**前/後 view 轉場做了兩次**|stitch 順序是 側→前→後,component 順序卻是 後→前→側(相反)(core/strap_workflow/plan4.py:142)→ 需要**兩趟**完整 RX/RZ 轉場,每趟約 17s|檢查能否讓 component 順序跟 stitch 順序一致,只轉場一次|~**17-34s**,**但這個順序是刻意改的**(commit 訊息「strap plan4 reorder - err2 fix」暗示是修 bug 才改的,動之前務必先搞清楚原因,別引入舊 bug|
+|4|**表面幾何掃描站數(~55-65站)**|逐點量測,無插值|改錨點+插值(同第一節 Keyence 建議)|~**15-20s**|
+|5|**Y-offset 重試迴圈**|[`focus_y_search_offsets_mm`] 側面訊號不佳時最多重試到 8 個 offset,每次都要重新移動+settle+拍照|先加 log 統計實際觸發頻率,若常觸發,代表初始定位/校正需要改善(治本),而不是單純縮短重試列表(治標可能犧牲良率)|依觸發率而定,可能是隱藏的大成本|
+|6|**每段動作前後的 Zaber 讀值**|每個 motion segment 都有獨立多軸序列讀值(Controller/hardware_drivers/unified_driver.py:11356 等多處)|評估哪些讀值是防禦性/非必要,改成抽查而非每站必讀|每站省 0.1-0.2s,累積 ~90 站 ≈ **10-15s**|
+|7|**後處理與下一站移動重疊**|目前色彩校正/旋轉是同步阻塞(Controller/hardware_drivers/unified_driver.py:12349)|背景執行緒重疊(見上節)|視處理時間而定,可能隱藏掉這整段|
+
+---
+
+### 四、粗估總加速效果(重要:這是根據程式碼常數推算的示意估計,repo 裡完全沒有實測 timing 數據,務必先加 telemetry 驗證)
+
+|階段|現況粗估|優化後粗估|備註|
+|---|---|---|---|
+|Capture settle|~35s|~10s|高信心|
+|Liquid lens AF(~30 component 點,兩段式→單次窄範圍)|~90s(*)|~35-45s|(*)FPGA 內部真實掃描時間未知,這個數字是用 frame_count 比例反推的粗估,信心較低|
+|Keyence component 量測|~6s|~4s|本來就快,空間有限|
+|幾何表面掃描(錨點化)|~30s|~10s|中信心|
+|前後轉場(若能只做一次)|~34s|~17s|**需先確認安全**,不確定能不能改|
+|其他讀值/雜項|~15s|~8s||
+|**合計**|**~210s(~3.5分)**|**~85-95s(~1.5分)**|**約 50-55% 縮短,但這是示意值**|
+
+**強烈建議先做的第一步**:在 `execute_template_point` 跟 `trigger_hardware_liquid_af` 加入實際耗時 log(進站/AF開始/AF結束/拍照/下一站,各自時間戳),跑一輪真實產線資料,把上表換成真數字——目前所有「多少秒」的估計都是根據程式碼裡的迴圈次數/sleep 常數反推,FPGA 內部真實掃描時間完全是黑盒。沒有這個數據,任何優化投入的優先順序都可能賭錯方向。
+
+---
+
+### 五、有沒有更好的 Plan 5 / 6 架構?
+
+在現有 Plan 1-4 的基礎上,我認為有兩個值得評估的新方向,但**都需要跟量測精度/良率團隊確認可行性**,不是純工程單方面能決定:
+
+#### Plan 5 構想:「Geometry-first 順序 + Anchor-based AF」混合架構
+
+沿用 Plan 4 已經修好的站點順序/bug fix(不要重新引入 Plan 4 修過的問題),但把 `keyence_policy` 從 `every_physical_point` 改回 Plan 2/3 的錨點+插值——**每個點依然拍照**(不犧牲影像涵蓋率),但只有 5-7 個錨點做完整 AF,其餘用插值/延續電流值。這是影響力最大的一項,值得優先評估。
+
+#### Plan 6 構想:「全流水線重疊(Pipeline Overlap)架構」
+
+目前整個站點迴圈是完全序列化(移動→settle→AF→拍照→後處理→下一站移動),只有 SAM/screw 分析在背景跑。真正的架構升級是讓:
+
+- 站點 N 的影像後處理,跟站點 N+1 的移動**同時進行**(目前只有 SAM 這樣做,色彩校正/旋轉沒有)
+- 若 Zaber 控制器與相機觸發是獨立匯流排,評估「預先規劃/預先定位下一站」跟「當前站的 settle 收尾」是否能重疊,把 settle 從關鍵路徑上移除
+
+這兩個方向都不是「調參數」層級,是架構調整,實作前建議先用 telemetry 數據確認理論估計的加速效果值不值得投入這個工程量。
+
+
+
+```
+
+```
+
+
+
+
+```
+
+```
