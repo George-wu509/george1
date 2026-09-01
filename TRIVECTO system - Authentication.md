@@ -1,13 +1,13 @@
 
-|                                                  |     |
-| ------------------------------------------------ | --- |
-| [[#### 目前的系統設計可以做到單一數值就很重要譬如Dial文字上的Y的高度. ]]     |     |
-| [[#### pdf report應該包含上萬(?)個identifier]]          |     |
-| [[#### pdf report目前有的identifier數量]]              |     |
-| [[#### 深入解釋類似判別watch真偽系統的authentication評分要怎麼設計]] |     |
-| [[#### 基於8 classification的new 架構]]               |     |
-|                                                  |     |
-|                                                  |     |
+|                                                          |     |
+| -------------------------------------------------------- | --- |
+| [[#### 目前的系統設計可以做到單一數值就很重要譬如Dial文字上的Y的高度. ]]             |     |
+| [[#### pdf report應該包含上萬(?)個identifier]]                  |     |
+| [[#### pdf report目前有的identifier數量]]                      |     |
+| [[#### 深入解釋類似判別watch真偽系統的authentication評分要怎麼設計]]         |     |
+| [[#### 基於8 classification的new 架構]]                       |     |
+| [[#### 很多方法譬如fuzzy logic system推論, 多變量分析, or 貝氏推論或其他方法]] |     |
+|                                                          |     |
 
 
 
@@ -4608,3 +4608,2217 @@ Component→8-class probability distribution \boxed{ Component \rightarrow 8\
 Original/AuthenticReplacement/Forgery/Aftermarket/Modified/IncorrectAuthentic/Missing/NotApplicable\boxed{ Original / AuthenticReplacement / Forgery / Aftermarket / Modified / IncorrectAuthentic / Missing / NotApplicable }
 
 這樣其實會讓你的整套系統更簡潔，而且完全吻合你們已經跟 professional watch experts 定好的實際操作流程。
+
+
+
+#### 很多方法譬如fuzzy logic system推論, 多變量分析, or 貝氏推論或其他方法
+```
+不一定是要用CNN or ML的方法建立authentication system, 也有很多方法譬如fuzzy logic system推論, 多變量分析, or 貝氏推論或其他方法. 請幫我深入分析哪種分析或推論幫法是最適合我們目前的系統的優缺點, 以及目前我們的系統是有local DB結合AWS S3, AWS DB, AWS athena等, 所以也要考量實作問題
+```
+以你現在補充的條件來看，我會改變前一版「以 classifier 為中心」的建議。
+
+你們這個 Authentication System 最適合的其實不是「選一個 ML model」，而是做成 **Hybrid Evidence-Inference System（混合式證據推論系統）**：
+
+Robust Multivariate Statistics+Hierarchical Bayesian Inference+Reference/Anomaly Analysis+Optional Discriminative Model+Expert Rule/Fuzzy Decision Layer\boxed{ \text{Robust Multivariate Statistics} + \text{Hierarchical Bayesian Inference} + \text{Reference/Anomaly Analysis} + \text{Optional Discriminative Model} + \text{Expert Rule/Fuzzy Decision Layer} }
+
+其中我會讓 **Hierarchical Bayesian + multivariate evidence** 成為核心，而不是 CNN；Fuzzy Logic 則非常適合放在後面的「authentication policy / watch-level decision」層，而不是直接拿它處理 Lower Text 的 2,000 個 raw features。
+
+這個組合特別符合你們目前的五個特性：
+
+1. 已經有大量精細、可解釋的 engineered features。
+2. 每個 component 的 feature 數差距可以從 `<5` 到數千。
+3. Series 數量不平衡。
+4. 8 個 expert class 數量也嚴重不平衡。
+5. 每次 Scan 都在持續累積新的 expert-labelled data。
+
+---
+
+# 1. 先講結論：各種方法對你們的適合程度
+
+我會這樣排名：
+
+|方法|適合度|最適合扮演的角色|
+|---|---|---|
+|**Hierarchical Bayesian**|★★★★★|Series/Class 不平衡、證據融合、confidence|
+|**Robust Multivariate Analysis**|★★★★★|Feature distribution、Original reference、異常程度|
+|**Elastic-Net / Regularized Logistic**|★★★★★|高維 structured feature baseline / classifier|
+|**LightGBM / CatBoost**|★★★★☆|nonlinear feature interaction 的第二模型|
+|**Fuzzy Logic**|★★★★☆|Expert rules、Watch-level final decision|
+|**Bayesian Network**|★★★★☆|Evidence-group/component fusion|
+|**Anomaly / One-class analysis**|★★★★★|未見過的新型 Forgery|
+|**Naive Bayes**|★★☆☆☆|baseline，小 feature group|
+|**PCA/LDA/QDA**|★★★☆☆|dimension reduction/reference analysis|
+|**純 CNN/Image ML**|★★☆☆☆|補充 visual evidence，而不是核心|
+|**所有 feature 直接 weighted score**|★☆☆☆☆|不推薦|
+|**純 Fuzzy system 從 raw features 判斷**|★★☆☆☆|規則數量會爆炸|
+
+所以如果今天要我替 Moonlight 選 production architecture：
+
+> **不是 Fuzzy vs Bayesian vs ML 三選一，而是讓每一種方法做它最擅長的那一層。**
+
+---
+
+# 2. 先從最底層開始：你們的 Feature 最適合做「統計證據」
+
+例如：
+
+```
+Series A1
+Component = Dial
+View = Watch Front
+Region = Lower Text
+Token = SUBMARINER
+Character = S
+```
+
+有：
+
+```
+width
+height
+x projection profile
+y projection profile
+Hu1~Hu7
+skeleton length
+skeleton thickness
+contour
+...
+```
+
+假設有 80 個 features。
+
+當你逐漸累積：
+
+```
+300 Original A1 watches
+25 Authentic replacement
+18 Forgery
+6 Modified
+...
+```
+
+真正有價值的是逐漸形成：
+
+P(X∣A1,Dial,Original)P(X|A1,Dial,Original)
+
+以及：
+
+P(X∣A1,Dial,Forgery)P(X|A1,Dial,Forgery)
+
+等 class-conditional feature distributions。
+
+---
+
+# 3. 例如某 Feature 可以建立 Original distribution
+
+例如：
+
+```
+SUBMARINER / S / skeleton_thickness
+```
+
+A1 Original：
+
+Median=2.110Median=2.110 MAD=0.041MAD=0.041
+
+A1 Forgery：
+
+Median=2.284Median=2.284 MAD=0.075MAD=0.075
+
+新 Watch：
+
+x=2.126x=2.126
+
+那麼：
+
+> 這一個 feature 是「支持 Original 的證據」。
+
+但它不等於：
+
+> Original。
+
+這個區別非常重要。
+
+---
+
+# 4. 真正強大的地方會出現在「多變量」
+
+因為偽造者可能做得到：
+
+```
+S width 正確
+```
+
+也可能做到：
+
+```
+S skeleton thickness 正確
+```
+
+但是比較難同時做到：
+
+```
+width
+height
+aspect ratio
+Hu moments
+x projection
+y projection
+skeleton
+character spacing
+baseline
+stroke geometry
+```
+
+全部符合 genuine manufacturing distribution。
+
+所以你真正要分析的是：
+
+x=[x1,x2,...,xp]\mathbf{x} = [x_1,x_2,...,x_p]
+
+相對於 Original distribution 的位置。
+
+---
+
+# 5. Multivariate Analysis 為什麼非常適合你們
+
+最直觀的一個就是：
+
+## Mahalanobis Distance
+
+普通 Euclidean distance：
+
+D2=(x1−μ1)2+(x2−μ2)2+...D^2 = (x_1-\mu_1)^2+ (x_2-\mu_2)^2+...
+
+不知道 feature 間 correlation。
+
+Mahalanobis：
+
+DM2=(x−μ)TΣ−1(x−μ)D_M^2= (\mathbf{x}-\mathbf{\mu})^T \Sigma^{-1} (\mathbf{x}-\mathbf{\mu})
+
+會考慮 covariance。
+
+這非常適合例如：
+
+```
+character width
+character area
+skeleton length
+```
+
+這幾個本來就彼此有關。
+
+---
+
+# 6. 於是 Authentication report 可以非常漂亮
+
+例如：
+
+### A1 Dial Lower Text
+
+```
+Original Reference Similarity
+─────────────────────────────
+
+SUBMARINER typography        97%
+1000ft=300m                  94%
+SUPERLATIVE                  89%
+CHRONOMETER                  96%
+OFFICIALLY CERTIFIED         91%
+
+Combined Lower Text:
+94%
+```
+
+更深入：
+
+```
+Largest deviations from A1 Original:
+
+OFFICIALLY / C / Hu moment 3       +3.2σ
+SUBMARINER / R / x-projection       +2.8σ
+CERTIFIED / T / skeleton thickness  +2.1σ
+```
+
+這就是你們 feature extraction 真正能產生商業價值的地方。
+
+---
+
+# 7. 但是不能直接對 2,000 features 做普通 covariance
+
+因為你很可能：
+
+p>np > n
+
+例如：
+
+```
+Lower Text:
+2,000 features
+
+A1 Original watches:
+300
+```
+
+那 covariance：
+
+Σ2000×2000\Sigma_{2000\times2000}
+
+基本上不可穩定估計，而且會 singular。
+
+所以一定要加入：
+
+### Shrinkage / Regularization
+
+例如：
+
+Σshrunk=(1−λ)Σsample+λI\Sigma_{shrunk} = (1-\lambda)\Sigma_{sample} + \lambda I
+
+或者先做 feature-family dimensional reduction。
+
+---
+
+# 8. 因此 Multivariate Analysis 應該在 Feature Group 裡做
+
+不要：
+
+```
+All 5000 Dial features
+↓
+one huge covariance
+```
+
+而是：
+
+```
+SUBMARINER character morphology
+↓
+multivariate model
+
+1000ft=300m typography
+↓
+multivariate model
+
+Lower text geometry
+↓
+multivariate model
+
+Logo
+↓
+multivariate model
+
+Markers
+↓
+multivariate model
+```
+
+最後每組產生少數 evidence：
+
+```
+Original similarity
+Forgery similarity
+Anomaly score
+Evidence quality
+```
+
+例如：
+
+Eg=[LOriginal,LReplacement,LForgery,...,Anomaly,Quality]E_g = [ L_{Original}, L_{Replacement}, L_{Forgery}, ..., Anomaly, Quality ]
+
+這就把：
+
+```
+2,000 features
+```
+
+變成例如：
+
+```
+10~20 evidence values
+```
+
+---
+
+# 9. PCA 適不適合？
+
+適合，但我不會把 PCA 當 Authentication engine。
+
+PCA：
+
+X2000→PC1,PC2,...,PC50X_{2000} \rightarrow PC_{1},PC_{2},...,PC_{50}
+
+優點：
+
+- 非常適合 correlated features。
+- 可以從 2,000 維壓成 30–100 維。
+- 計算容易。
+- 很成熟。
+- 適合做 visualization。
+- 可以計算 distance to Original cluster。
+
+缺點非常重要：
+
+> PCA 不知道 Original/Forgery label。
+
+它找的是：
+
+> 最大 variance。
+
+而不是：
+
+> 最大 authentication discrimination。
+
+可能 lighting variation 是最大 variance：
+
+```
+PC1 = lighting
+```
+
+但真偽差異只在：
+
+```
+PC18
+```
+
+所以 PCA 比較適合作：
+
+> Dimension reduction / anomaly reference。
+
+而不是單獨做 8-class Authentication。
+
+---
+
+# 10. PLS / PLS-DA 其實比 PCA 更值得測試
+
+PLS：
+
+> 同時看 X features 和 Y class。
+
+因此在：
+
+p≫np\gg n
+
+而且大量 correlated variables 的情況，比單純 PCA 更符合 authentication。
+
+例如：
+
+```
+2000 Lower Text features
+↓
+20 latent factors
+↓
+8-class classification
+```
+
+這會是一個非常好的 baseline。
+
+缺點：
+
+- nonlinear pattern 捕捉有限。
+- multiclass 設計與 calibration 要額外處理。
+- data distribution 漂移時需要重新 fitting。
+
+---
+
+# 11. LDA/QDA 呢？
+
+## LDA
+
+假設各 class：
+
+X∣Y=k∼N(μk,Σ)X|Y=k \sim N(\mu_k,\Sigma)
+
+共用 covariance。
+
+對你們來說：
+
+### 優點
+
+非常容易解釋。
+
+可以看：
+
+```
+Original centroid
+Forgery centroid
+```
+
+而且 score 很自然。
+
+### 問題
+
+你 feature 很多：
+
+p≫np\gg n
+
+所以普通 LDA covariance 不穩。
+
+但是：
+
+> **Shrinkage LDA**
+
+值得測。
+
+---
+
+## QDA
+
+每個 class 自己：
+
+Σk\Sigma_k
+
+理論上更靈活。
+
+但是你：
+
+```
+Original = 500 samples
+Forgery = 20
+B2 Forgery = 2
+```
+
+QDA 要為 B2 Forgery 估一個：
+
+2000×20002000\times2000
+
+covariance。
+
+完全不現實。
+
+所以：
+
+> 普通 QDA 我不推薦。
+
+---
+
+# 12. Fuzzy Logic 呢？
+
+Fuzzy Logic 其實非常適合你們，但**適合的位置非常特定**。
+
+例如：
+
+```
+IF
+Dial Original confidence HIGH
+
+AND
+Movement Original confidence HIGH
+
+AND
+Case Original confidence HIGH
+
+AND
+Bezel Aftermarket probability LOW
+
+THEN
+Watch Authenticity HIGH
+```
+
+或者：
+
+```
+IF
+Movement Forgery probability HIGH
+
+THEN
+Authentication FAIL
+```
+
+再例如：
+
+```
+IF
+Dial Original probability MEDIUM
+
+AND
+Evidence Coverage LOW
+
+THEN
+Manual Review HIGH
+```
+
+這非常合理。
+
+---
+
+# 13. Fuzzy Logic 最大的優勢：跟 Watch Expert 思考方式很像
+
+Human 不一定想：
+
+```
+P = 0.731624
+```
+
+Watch Expert 比較像：
+
+```
+printing difference = small
+engraving difference = moderate
+movement mismatch = serious
+```
+
+Fuzzy：
+
+```
+LOW
+MEDIUM
+HIGH
+VERY HIGH
+```
+
+非常容易把這些 domain expertise encode 進去。
+
+---
+
+# 14. 但是我不推薦 Fuzzy 直接吃 2,000 features
+
+如果：
+
+```
+Feature1:
+low / medium / high
+
+Feature2:
+low / medium / high
+
+...
+Feature2000
+```
+
+Fuzzy rule combinations 很快就會爆炸。
+
+理論組合：
+
+320003^{2000}
+
+當然實務上不會真的建立這麼多，但是 rule base maintenance 一定失控。
+
+所以：
+
+> **Fuzzy 應該吃 Evidence，不是 Raw Feature。**
+
+---
+
+# 15. 也就是這樣
+
+錯誤：
+
+```
+2000 raw features
+↓
+Fuzzy Logic
+↓
+Original/Forgery
+```
+
+推薦：
+
+```
+2000 raw features
+↓
+Multivariate / statistical analysis
+↓
+Lower Text Authenticity Evidence
+↓
+Fuzzy/Bayesian Fusion
+```
+
+這個差別非常重要。
+
+---
+
+# 16. Bayesian 為什麼是我最推薦的核心 inference layer
+
+因為 Authentication 本質上就是：
+
+> 我原本認為這個 Component 有多大機率屬於各 class，看到不同 Evidence 後逐步更新。
+
+也就是 Bayes：
+
+P(C∣E)=P(E∣C)P(C)P(E)P(C|E) = \frac {P(E|C)P(C)} {P(E)}
+
+例如原本 A1 Dial：
+
+```
+Original                80%
+Authentic Replacement   10%
+Forgery                   3%
+Aftermarket               2%
+Modified                  3%
+Incorrect Authentic       2%
+```
+
+然後 Lower Text：
+
+```
+strongly supports Original
+```
+
+Logo：
+
+```
+supports Original
+```
+
+Printing：
+
+```
+moderately suspicious
+```
+
+最後：
+
+P(C∣Etext,Elogo,Eprinting)P(C|E_{text},E_{logo},E_{printing})
+
+自然變成新的 posterior。
+
+---
+
+# 17. Bayesian 最大的優點之一：自然處理 Evidence Missing
+
+假設這次：
+
+```
+Lower Text ✓
+Logo       ✓
+Markers    ✓
+Color      ×
+Texture    ×
+```
+
+Bayesian inference 不必：
+
+```
+Color = 0
+Texture = 0
+```
+
+而是：
+
+> 沒有這兩個 evidence 就不要 update。
+
+這非常符合你們實際 scan。
+
+---
+
+# 18. Bayesian 第二個巨大優勢：Confidence 很自然
+
+假設 A1：
+
+```
+1500 labelled watches
+```
+
+B2：
+
+```
+15 labelled watches
+```
+
+即使兩個：
+
+```
+prediction = Original 90%
+```
+
+其 uncertainty 不應相同。
+
+Bayesian 可以直接得到：
+
+Posterior uncertaintyPosterior\ uncertainty
+
+例如：
+
+```
+A1:
+P(Original)=0.91
+95% credible interval:
+0.87–0.94
+
+B2:
+P(Original)=0.90
+credible interval:
+0.59–0.98
+```
+
+UI 就可以：
+
+```
+A1:
+Original 91%
+Confidence HIGH
+
+B2:
+Original 90%
+Confidence LOW
+```
+
+這正好是你需要的。
+
+---
+
+# 19. 更重要的是 Hierarchical Bayesian 可以直接解決 Series imbalance
+
+假設：
+
+```
+Rolex
+│
+├── Family A
+│   ├── A1
+│   ├── A2
+│   └── A3
+│
+└── Family B
+    ├── B1
+    └── B2
+```
+
+可以：
+
+θA1∼N(θA,τA)\theta_{A1} \sim N(\theta_A,\tau_A) θA2∼N(θA,τA)\theta_{A2} \sim N(\theta_A,\tau_A)
+
+而：
+
+θA∼N(θRolex,τR)\theta_A \sim N(\theta_{Rolex},\tau_R)
+
+B2 只有 15 samples：
+
+> posterior 自然向 Family B shrink。
+
+A1 1500 samples：
+
+> 自己的 evidence 足夠，就更多相信 A1。
+
+這比：
+
+```
+if N<50:
+use global model
+```
+
+漂亮很多。
+
+---
+
+# 20. 所以 Hierarchical Bayesian 是我認為最符合你們資料結構的方法
+
+因為你的 data 本來就是 hierarchy：
+
+```
+Rolex
+↓
+Series
+↓
+Component
+↓
+View
+↓
+Region
+↓
+Word
+↓
+Character
+↓
+Feature Family
+↓
+Feature
+```
+
+這不是我硬套一個 Bayesian 結構。
+
+你的 physical inspection system 天生就是 hierarchical。
+
+---
+
+# 21. 但是我不推薦對所有 10,000 raw features 建巨大 Bayesian model
+
+原因同樣是：
+
+p≫np\gg n
+
+而且 inference 成本會很大。
+
+所以正確方式是：
+
+```
+Raw features
+↓
+Statistical Evidence Models
+↓
+Evidence scores
+↓
+Hierarchical Bayesian Fusion
+```
+
+不是：
+
+```
+10,000 raw features
+↓
+巨大 Bayesian network
+```
+
+---
+
+# 22. Bayesian Network 呢？
+
+Bayesian Network 可以漂亮地表達：
+
+```
+Series
+     ↓
+LowerText → Dial
+Logo      → Dial
+Markers   → Dial
+Material  → Dial
+
+Dial
+Movement
+Case
+...
+     ↓
+Watch Authentication
+```
+
+甚至可以：
+
+```
+Series → Expected Component
+```
+
+這非常有吸引力。
+
+---
+
+# 23. 但是不要把每個 raw feature 當一個 Bayesian Network node
+
+如果：
+
+```
+Lower Text = 2000 nodes
+Dial = 5000 nodes
+Movement = 500 nodes
+```
+
+network structure learning、parameter estimation、維護都會非常困難。
+
+所以仍然：
+
+```
+Feature Groups
+↓
+Evidence Nodes
+↓
+Bayesian Network
+```
+
+比較合理。
+
+---
+
+# 24. Naive Bayes 呢？
+
+Naive Bayes：
+
+P(C∣x1,...,xn)∝P(C)∏iP(xi∣C)P(C|x_1,...,x_n) \propto P(C)\prod_iP(x_i|C)
+
+非常簡單，而且：
+
+### 優點
+
+- training 非常快。
+- 小 dataset 可以運作。
+- naturally probabilistic。
+- missing feature 好處理。
+- 很容易 online update。
+
+看起來似乎非常適合你。
+
+---
+
+# 25. 但最大的問題：你們 features 高度 correlated
+
+例如：
+
+```
+character area
+width
+height
+perimeter
+skeleton length
+thickness
+```
+
+Naive Bayes 假設：
+
+xi⊥xj∣Cx_i \perp x_j | C
+
+顯然不成立。
+
+最後會出現：
+
+> 同一個 morphological difference 被算成十幾次獨立 evidence。
+
+造成：
+
+```
+Forgery probability = 99.9999%
+```
+
+但其實只是一個 physical difference。
+
+所以：
+
+> Naive Bayes 適合作 baseline 或 evidence-group 內非常少的、接近 independent 的 variables，不適合作全系統核心。
+
+---
+
+# 26. Dempster–Shafer Theory 其實也很值得你們研究
+
+這是一個我會列入 R&D comparison 的方法。
+
+Bayesian 通常要求：
+
+P(Class)P(Class)
+
+Dempster-Shafer 可以區分：
+
+```
+evidence supports Original
+```
+
+和：
+
+```
+I don't know
+```
+
+這一點很重要。
+
+例如：
+
+```
+Dial Logo:
+60% supports Original
+40% unknown
+```
+
+不是：
+
+```
+60% Original
+40% Forgery
+```
+
+這非常符合你們：
+
+```
+image blur
+feature missing
+low coverage
+```
+
+的情況。
+
+---
+
+# 27. 它最大優點是可以明確表示 Ignorance
+
+例如：
+
+```
+Original support = 0.65
+Forgery support = 0.05
+Unknown = 0.30
+```
+
+這比硬逼 softmax：
+
+```
+Original 65%
+Forgery 5%
+others 30%
+```
+
+概念上更正確。
+
+---
+
+# 28. 但我不會把 Dempster-Shafer 當第一版 production core
+
+因為：
+
+- evidence conflict 時 combination rule 需要非常小心。
+- 對一般工程師比較不直觀。
+- probability calibration/business communication 比 Bayesian 困難。
+- tooling / statistical ecosystem 不如 Bayesian/standard statistical models成熟。
+
+所以我的順位：
+
+> Bayesian 第一，Dempster-Shafer 當研究比較組。
+
+---
+
+# 29. Elastic-Net Multinomial Logistic Regression 非常值得成為你們的 reference model
+
+雖然 technically 是 ML/statistical learning，但它跟 CNN 完全不同。
+
+模型：
+
+P(Y=k∣X)=Softmax(βkTX)P(Y=k|X) = Softmax(\beta_k^TX)
+
+加入：
+
+λ1∣∣β∣∣1+λ2∣∣β∣∣22\lambda_1||\beta||_1+ \lambda_2||\beta||_2^2
+
+---
+
+# 30. 為什麼非常適合你
+
+你的 feature：
+
+```
+大量
+數值型
+可解釋
+彼此 correlated
+```
+
+Elastic Net：
+
+### L1
+
+會把沒用的 features：
+
+β→0\beta\rightarrow0
+
+### L2
+
+會防止 correlated feature coefficients 爆掉。
+
+而且最後可以直接知道：
+
+```
+哪些 features 推向 Forgery
+哪些推向 Original
+```
+
+這對你們產品非常重要。
+
+---
+
+# 31. 它最大的價值是當「標準尺」
+
+即使最後你用 Bayesian/LightGBM：
+
+都應該保留一個：
+
+```
+Regularized Logistic Reference Model
+```
+
+如果非常複雜的模型：
+
+```
+Accuracy = 92.5%
+```
+
+Elastic Net：
+
+```
+Accuracy = 92.2%
+```
+
+我很可能選 Elastic Net production。
+
+因為：
+
+> 0.3% improvement 不值得犧牲 explainability / maintenance。
+
+---
+
+# 32. LightGBM / CatBoost 則可以抓 nonlinear pattern
+
+例如：
+
+```
+Feature A 只有在 Feature B 高時才可疑
+```
+
+linear model 不容易學。
+
+Gradient boosting 可以：
+
+```
+if A>...
+and B<...
+and C>...
+```
+
+自然捕捉。
+
+優點：
+
+- Structured numerical features 非常強。
+- nonlinear。
+- interaction。
+- 通常 small/medium dataset 也不錯。
+- inference 很快。
+
+缺點：
+
+- explainability 不如 linear/Bayesian。
+- Probability 需要 calibration。
+- class/Series imbalance 仍然要處理。
+- extrapolation/OOD 不可靠。
+
+所以我會用：
+
+> **第二個 independent discriminative engine。**
+
+---
+
+# 33. 我最推薦的 Component Architecture
+
+例如 Dial：
+
+```
+                 2000+ Raw Features
+                         │
+       ┌─────────────────┼──────────────────┐
+       │                 │                  │
+       ▼                 ▼                  ▼
+ Typography         Geometry            Material
+ Evidence           Evidence            Evidence
+       │                 │                  │
+       │                 │                  │
+ Robust            Robust             Reference
+ Multivariate      Multivariate       Statistics
+       │                 │                  │
+       └────────────┬────┴───────────────┬──┘
+                    ▼                    ▼
+
+              Bayesian Evidence      Anomaly
+                   Fusion            Detector
+                    │                    │
+                    └─────────┬──────────┘
+                              ▼
+                       8-Class Posterior
+```
+
+再平行做：
+
+```
+Feature Evidence
+      ↓
+ElasticNet / CatBoost
+      ↓
+8-class calibrated probability
+```
+
+兩邊比較。
+
+---
+
+# 34. 最後不是簡單 average
+
+例如：
+
+### Statistical/Bayesian Engine
+
+```
+Original 84%
+Forgery  5%
+```
+
+### CatBoost
+
+```
+Original 87%
+Forgery  4%
+```
+
+### Original Anomaly Detector
+
+```
+Normal
+```
+
+→ 很一致。
+
+---
+
+但是：
+
+### Bayesian
+
+```
+Original 88%
+```
+
+### CatBoost
+
+```
+Original 91%
+```
+
+### Anomaly
+
+```
+99.8 percentile abnormal
+```
+
+就：
+
+```
+MANUAL REVIEW
+```
+
+這是 authentication system 非常重要的 safety valve。
+
+---
+
+# 35. Watch-level 反而最適合 Fuzzy / Expert Rules
+
+例如 component 已經得到：
+
+```
+Dial:
+Original 96%
+
+Movement:
+Original 98%
+
+Case:
+Original 95%
+
+Bezel:
+Aftermarket 81%
+
+Bracelet:
+Modified 74%
+```
+
+現在要回答：
+
+> 整隻 Watch Authentication 是多少？
+
+這時 fuzzy/rule system 就非常適合。
+
+---
+
+# 36. 例如 Expert Rule
+
+```
+IF Movement is Forgery with HIGH confidence
+THEN Overall Authentication = FAIL
+```
+
+```
+IF Bezel is Aftermarket HIGH
+AND all critical components are Original HIGH
+THEN Overall = REVIEW
+```
+
+```
+IF Box is Missing
+AND watch components are Original HIGH
+THEN Authentication impact = LOW
+```
+
+這些其實不是 ML 應該自己發明的。
+
+這是：
+
+> Watch authentication policy。
+
+讓專家明確控制更合理。
+
+---
+
+# 37. 所以我推薦的整體 Hybrid Architecture 是
+
+RawFeatures\boxed{ Raw Features }
+
+↓
+
+### Layer 1 — Feature Statistics
+
+Robust normalization+reference distribution\boxed{ Robust\ normalization + reference\ distribution }
+
+↓
+
+### Layer 2 — Evidence Group
+
+Multivariate Analysis\boxed{ Multivariate\ Analysis }
+
+↓
+
+### Layer 3 — Component Inference
+
+Hierarchical Bayesian\boxed{ Hierarchical\ Bayesian }
+
+Optional ElasticNet/CatBoost\boxed{ Optional\ ElasticNet/CatBoost }
+
+Anomaly Detector\boxed{ Anomaly\ Detector }
+
+↓
+
+### Layer 4 — Component 8 Classes
+
+P(8 classes)\boxed{ P(8\ classes) }
+
+↓
+
+### Layer 5 — Watch Decision
+
+Fuzzy/ExpertRules\boxed{ Fuzzy / Expert Rules }
+
+↓
+
+### Final
+
+```
+Authentication Score
+PASS
+REVIEW
+FAIL
+Reasons
+Confidence
+```
+
+---
+
+# 38. 現在來談你 AWS 架構，這其實非常適合這種設計
+
+我不建議每次 Authentication：
+
+```
+Moonlight
+↓
+Athena query
+↓
+算分
+```
+
+Athena 的角色不是 per-scan inference。
+
+Athena 是用 SQL 直接分析 S3 中的資料，而 Athena/Glue 的整體設計很適合做 dataset discovery、training cohorts、統計與歷史分析。AWS 官方也建議對 Athena workloads 使用 Parquet/ORC 等 columnar formats，因為能只讀取所需 columns、壓縮並利用 predicate pushdown。
+
+我會做：
+
+```
+                 AWS
+            historical data
+                   │
+                   │ model/reference update
+                   ▼
+
+Moonlight Local PC
+────────────────────────────
+
+Local DB
++
+Reference Statistics
++
+Model Parameters
++
+Fuzzy Rules
+
+        ↓
+
+Immediate Authentication
+```
+
+也就是：
+
+> **Local inference，AWS learning。**
+
+---
+
+# 39. 你現在的 Local DB 應該保存「當前 production snapshot」
+
+例如：
+
+```
+model_version = 17
+
+reference_distribution_version = 24
+
+feature_schema_version = 31
+
+fuzzy_policy_version = 8
+```
+
+以及：
+
+```
+A1 Dial Original:
+means
+MAD
+covariance/shrinkage parameters
+PCA transform
+
+A1 Dial Bayesian parameters
+
+component thresholds
+```
+
+Scan 時直接本機讀。
+
+---
+
+# 40. 所以即使 AWS 暫時沒有網路
+
+Moonlight：
+
+```
+Camera
+Zaber
+Keyence
+...
+```
+
+仍然可以：
+
+```
+Scan
+↓
+Feature extraction
+↓
+Local authentication
+↓
+Report
+```
+
+不用依賴：
+
+```
+internet latency
+Athena
+S3
+```
+
+這對機台類產品非常重要。
+
+---
+
+# 41. Scan 完才 sync AWS
+
+例如：
+
+```
+Moonlight Local DB
+         │
+         │ sync
+         ▼
+AWS
+```
+
+我會把 AWS 分成三種資料。
+
+---
+
+# 42. S3：大型 immutable data
+
+例如：
+
+```
+images
+raw feature export
+training snapshots
+model artifacts
+reports
+```
+
+概念：
+
+```
+s3://moonlight-data/
+    scans/
+    features/
+    training/
+    models/
+    reports/
+```
+
+---
+
+# 43. AWS DB：Transactional metadata
+
+你說目前有 AWS DB，但沒有指定目前是 DynamoDB 還是 relational DB；這一層不需要因此重做。
+
+可以保存：
+
+```
+watch_id
+scan_id
+series
+component
+expert_label
+
+capture timestamp
+learning/authentication mode
+
+feature_schema_version
+model_version
+review_status
+```
+
+也就是：
+
+> 查一隻 Watch 現在是什麼狀態。
+
+這跟 Analytics data 不同。
+
+---
+
+# 44. Athena：Historical / Analytics / Training Data Selection
+
+例如：
+
+```
+SELECT ...
+FROM component_features
+WHERE series = 'A1'
+AND component = 'dial'
+AND expert_label = 'Original'
+```
+
+找出：
+
+```
+所有 A1 Original Dial
+```
+
+建立新的 training/reference dataset。
+
+Athena 本身就是用 SQL query S3 資料；Glue Data Catalog 則保存 S3 table 的 table/column/schema metadata，提供 Athena 查詢。
+
+---
+
+# 45. Feature 資料不要永遠只保存 JSON
+
+如果：
+
+```
+500 watches
+×
+15 components
+×
+5000 features
+```
+
+數量很快就非常大。
+
+Analytics layer 建議：
+
+> Parquet。
+
+AWS 也明確建議 Athena 使用 Parquet/ORC columnar storage；只讀取需要的 columns、壓縮以及 block skipping 都能減少 I/O。
+
+---
+
+# 46. 但 Raw scan JSON 可以保留
+
+我會：
+
+```
+Raw
+─────────────────
+JSON / JSONL
+immutable archive
+
+           ↓ ETL / compaction
+
+Analytics
+─────────────────
+Parquet
+```
+
+不要二選一。
+
+Raw data 是：
+
+> audit/reprocessing source of truth。
+
+Parquet 是：
+
+> analytics/training format。
+
+---
+
+# 47. Feature DB 我會拆成兩種 representation
+
+### Long-format master
+
+```
+watch_id
+scan_id
+series
+component
+region
+feature_id
+feature_value
+quality
+extractor_version
+```
+
+非常 flexible。
+
+---
+
+### Training snapshot
+
+轉成：
+
+```
+watch_id
+feature_001
+feature_002
+...
+feature_2000
+label
+```
+
+Wide matrix。
+
+給：
+
+```
+Python
+R
+Stan/PyMC
+scikit-learn
+LightGBM
+```
+
+training。
+
+---
+
+# 48. 不要讓 Athena 每次讀數百萬個小 JSON file
+
+這會造成很差的 analytics pattern。
+
+AWS 自己也特別警告大量 small files 會增加 overhead，且 partitioning 也不能過度細碎。
+
+所以：
+
+```
+individual scan
+↓
+raw S3 objects
+↓
+periodic compaction
+↓
+larger Parquet objects
+```
+
+---
+
+# 49. S3 partition 怎麼設也很重要
+
+我不會：
+
+```
+/watch_id=W001/
+/watch_id=W002/
+/watch_id=W003/
+```
+
+拿 watch_id 做 Athena primary partition。
+
+因為 cardinality 太高。
+
+比較可以考慮：
+
+```
+/component=dial/
+/year=2026/
+/month=09/
+```
+
+或者視常見 query：
+
+```
+/series=A1/
+/component=dial/
+```
+
+但不要 partition 過頭。
+
+AWS 的 Athena 文件也指出 partition key 應針對常見 query 設計；partition 太多或資料太碎反而增加 overhead。
+
+---
+
+# 50. Feature schema version 對你尤其重要
+
+因為今天：
+
+```
+SUBMARINER:
+500 features
+```
+
+半年後你可能增加：
+
+```
+curvature
+stroke orientation histogram
+new skeleton descriptor
+```
+
+變：
+
+```
+650
+```
+
+所以一定：
+
+```
+feature_schema_version
+extractor_version
+```
+
+跟 scan 綁在一起。
+
+Parquet/ORC 本身支援 schema evolution，但你的 ML/reference pipeline 還是需要自己管理 feature semantics/version。AWS 也指出這些 columnar formats 支援 schema evolution。
+
+---
+
+# 51. Training cycle 可以完全利用你現在 AWS 架構
+
+例如每累積：
+
+```
+100 new expert-labelled watches
+```
+
+不是立即修改 model。
+
+而是：
+
+```
+Athena
+↓
+select validated training cohort
+
+S3
+↓
+training snapshot
+
+Python training
+↓
+Multivariate distributions
+Bayesian parameters
+ElasticNet
+CatBoost
+Anomaly reference
+
+Validation
+↓
+Candidate Version 25
+```
+
+如果：
+
+```
+Version 25 > Version 24
+```
+
+才：
+
+```
+S3 production models
+↓
+Moonlight Local
+```
+
+---
+
+# 52. Model artifact 不一定很大
+
+你這種方法可能只是：
+
+```
+means
+covariance parameters
+PCA matrices
+logistic coefficients
+Bayesian posterior parameters
+tree models
+fuzzy rules
+```
+
+可能幾 MB～幾十 MB。
+
+Moonlight machine 定期下載：
+
+```
+authentication_bundle_v25
+```
+
+非常容易。
+
+---
+
+# 53. 我會把整個 bundle 做成 immutable version
+
+例如：
+
+```
+authentication_bundle/
+ v025/
+   feature_schema.json
+   reference_stats.parquet
+   bayesian_params.json
+   dial_model.bin
+   movement_model.bin
+   anomaly_models/
+   fuzzy_policy.yaml
+   calibration.json
+   manifest.json
+```
+
+manifest：
+
+```
+version: 25
+created: ...
+training_dataset: 42
+compatible_feature_schema: 31
+validation_result: ...
+```
+
+---
+
+# 54. Production Authentication 就完全 reproducible
+
+例如 Watch W21903：
+
+```
+scan_id = ...
+feature_schema = 31
+authentication_bundle = 25
+policy = 8
+```
+
+兩年後有人問：
+
+> 為什麼這隻錶當時被判 REVIEW？
+
+你可以重新跑完全一樣的結果。
+
+這對真正的 authentication product 非常重要。
+
+---
+
+# 55. Local DB + AWS 的完整資料流，我推薦這樣
+
+```
+                    MOONLIGHT SYSTEM
+                 ─────────────────────
+
+Camera / Sensors
+      │
+      ▼
+ Images
+      │
+      ▼
+Feature Extraction
+      │
+      ▼
+Local DB
+      │
+      ├─────────── Learning Mode
+      │                  │
+      │             Expert 8-Class
+      │                  │
+      ▼                  ▼
+Local Authentication   Label
+      │                  │
+      ▼                  │
+Result                  │
+      │                  │
+      └────────┬─────────┘
+               │
+               │ Sync
+               ▼
+
+                     AWS
+────────────────────────────────────────
+
+       S3 Raw
+ Images / raw feature JSON
+               │
+               ▼
+        ETL / Compaction
+               │
+               ▼
+        S3 Parquet Lake
+               │
+         Glue Catalog
+               │
+               ▼
+             Athena
+               │
+               ▼
+     Training / Statistics
+               │
+      ┌────────┼──────────┐
+      ▼        ▼          ▼
+Multivariate Bayesian  ElasticNet/
+Reference     Model     CatBoost
+      │        │          │
+      └────────┼──────────┘
+               ▼
+           Validation
+               │
+               ▼
+       Production Bundle
+               │
+              S3
+               │
+               ▼
+        Moonlight Local
+```
+
+Athena + Glue + S3 正好很適合作上面中間那個「歷史資料湖 → training cohort」角色。
+
+---
+
+# 56. 如果只讓我選「一個」核心方法
+
+如果你逼我在：
+
+```
+Fuzzy
+Multivariate
+Bayesian
+ML
+```
+
+只選一個：
+
+我會選：
+
+# Hierarchical Bayesian
+
+原因不是它一定 predictive accuracy 最高。
+
+而是它最完整符合你們目前的 business/data requirements：
+
+|Requirement|Hierarchical Bayes|
+|---|---|
+|Series 不平衡|★★★★★|
+|8 class 不平衡|★★★★☆|
+|Missing evidence|★★★★★|
+|少量 Series|★★★★★|
+|Continual learning|★★★★★|
+|Confidence|★★★★★|
+|Explainability|★★★★★|
+|Expert prior|★★★★★|
+|Auditability|★★★★★|
+|2000 raw features|★★☆☆☆|
+
+注意最後一項只有兩顆星。
+
+所以才需要：
+
+> **Multivariate Evidence Layer 在前面。**
+
+---
+
+# 57. 如果問我最適合 Production 的整套組合
+
+我的排名會是：
+
+## 第一推薦
+
+### Hybrid Statistical–Bayesian Authentication
+
+```
+Raw Features
+↓
+Robust Multivariate Evidence
+↓
+Hierarchical Bayesian Fusion
+↓
+Anomaly Detection
+↓
+Expert/Fuzzy Watch Policy
+```
+
+★★★★★
+
+最符合你們的系統。
+
+---
+
+## 第二推薦
+
+### Statistical + ElasticNet/Boosting Ensemble
+
+```
+Raw Features
+↓
+Grouped Feature Models
+↓
+ElasticNet + CatBoost
+↓
+Calibration
+↓
+Expert Rules
+```
+
+★★★★☆
+
+比較容易 implementation。
+
+而且可能 predictive performance 非常好。
+
+---
+
+## 第三推薦
+
+### Pure Fuzzy
+
+```
+Raw features
+↓
+Fuzzy rules
+```
+
+★★☆☆☆
+
+不建議。
+
+但是：
+
+```
+Component posterior
+↓
+Fuzzy policy
+```
+
+★★★★★
+
+---
+
+## Pure Bayesian on every raw feature
+
+★★★☆☆
+
+理論很漂亮，但 computational/model complexity 太高。
+
+---
+
+## Pure Deep ML
+
+★★★☆☆
+
+可以很強，但是沒有充分利用你們：
+
+> feature engineering + explainability
+
+這個核心競爭力。
+
+---
+
+# 58. 實際開發我會分三個 Phase，而不是一次上所有方法
+
+### Phase 1 — 建立可信 baseline
+
+每個 Feature Group：
+
+```
+Robust statistics
+Mahalanobis/reference distance
+Elastic-Net
+```
+
+Component：
+
+```
+8-class probabilities
+```
+
+Watch：
+
+```
+Expert rules
+```
+
+這個版本非常容易 debug。
+
+---
+
+### Phase 2 — 加入 Hierarchical Bayesian
+
+開始處理：
+
+```
+A1/A2/A3/B1/B2
+```
+
+的 partial pooling。
+
+尤其：
+
+```
+rare Series
+rare Class
+```
+
+會改善很多。
+
+---
+
+### Phase 3 — Ensemble/OOD
+
+加入：
+
+```
+CatBoost
+Original anomaly detector
+Bayesian/discriminative disagreement
+```
+
+把：
+
+> 新型 Forgery / unknown cases
+
+送 Human Review。
+
+---
+
+# 最後我最推薦你記住這四層
+
+你們不要問：
+
+> **「哪一種演算法負責整套 Authentication？」**
+
+而應該問：
+
+### 第一層：Raw feature 是不是正常？
+
+Robust Multivariate Statistics\boxed{\text{Robust Multivariate Statistics}}
+
+### 第二層：這些 evidence 綜合起來屬於哪個 8-class？
+
+Hierarchical Bayesian Inference\boxed{\text{Hierarchical Bayesian Inference}}
+
+### 第三層：是不是我們從沒見過的新 pattern？
+
+Anomaly / OOD Detection\boxed{\text{Anomaly / OOD Detection}}
+
+### 第四層：Component results 對整隻 Watch 意味著什麼？
+
+Expert Rules / Fuzzy Logic\boxed{\text{Expert Rules / Fuzzy Logic}}
+
+這四個答案不是競爭關係，而是互補。
+
+而你們已經存在的 **Local DB + S3 + AWS DB + Athena** 不但不需要重做，反而非常適合這個架構：本機保留 production reference/model 做即時 Authentication；S3 保存 raw 與 training artifacts；AWS DB 保存 transactional metadata；Parquet + Glue + Athena 負責跨數千／數萬 Watch 的歷史統計、dataset selection、Series×Class coverage 分析與下一版 model/reference 建立。這也會比讓 AWS/Athena 介入每一次即時 scan 判斷穩定很多。
