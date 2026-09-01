@@ -4,24 +4,39 @@
     "type": "split",
     "children": [
       {
-        "id": "1187e663a35d5612",
+        "id": "6733e22a7e70edd0",
         "type": "tabs",
         "children": [
           {
-            "id": "19abd829261bf101",
+            "id": "6e853a733ab8e819",
             "type": "leaf",
             "state": {
               "type": "markdown",
               "state": {
-                "file": "TRIVECTO system - af mode.md",
+                "file": "TRIVECTO system - DB.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "TRIVECTO system - af mode"
+              "title": "TRIVECTO system - DB"
+            }
+          },
+          {
+            "id": "554e61d2c9f5ece9",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "TRIVECTO system - Authentication.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "TRIVECTO system - Authentication"
             }
           }
-        ]
+        ],
+        "currentTab": 1
       }
     ],
     "direction": "vertical"
@@ -173,15 +188,19 @@
       "table-editor-obsidian:Advanced Tables Toolbar": false
     }
   },
-  "active": "19abd829261bf101",
+  "active": "554e61d2c9f5ece9",
   "lastOpenFiles": [
+    "ChatGPT Image Sep 1, 2026, 12_04_04 PM.png",
+    "主要防撞路徑.md",
+    "TRIVECTO system - Authentication.md",
+    "Watch Authentication System.md",
+    "Untitled.md",
+    "TRIVECTO system - DB.md",
+    "TRIVECTO system - DB vs version control.md",
     "TRIVECTO system - af mode.md",
     "TRIVECTO system - collision avoidance.md",
     "TRIVECTO system - Strap active_plan.md",
-    "TRIVECTO system - DB.md",
-    "TRIVECTO system - Authentication.md",
     "TRIVECTO system - file system.md",
-    "主要防撞路徑.md",
     "Work - TRIVECTO Laboratories/TRIVECTO system - internalnum_config.md",
     "Work - TRIVECTO Laboratories/TRIVECTO system - template.md",
     "Work - TRIVECTO Laboratories/TRIVECTO system - AotoFocus.md",
@@ -196,10 +215,6 @@
     "Work - TRIVECTO Laboratories/TRIVECTO system - test_LLM.md",
     "Work - TRIVECTO Laboratories/TRIVECTO system - New template.md",
     "Work - TRIVECTO Laboratories/TRIVECTO system - keyence output.md",
-    "Work - TRIVECTO Laboratories/TRIVECTO system - run plans.md",
-    "Work - TRIVECTO Laboratories/TRIVECTO system - WatchQwen.md",
-    "Work - TRIVECTO Laboratories/TRIVECTO system - Ethernet.md",
-    "Work - TRIVECTO Laboratories/TRIVECTO system - DynamoDB.md",
-    "Work - TRIVECTO Laboratories/TRIVECTO system - design.md"
+    "Work - TRIVECTO Laboratories/TRIVECTO system - run plans.md"
   ]
 }
