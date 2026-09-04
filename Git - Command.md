@@ -397,3 +397,8 @@ git push origin dev
 - **哪個 commit**：可以，用 `git merge-base`
     
 - **哪個 branch**：Git 通常**不能保證正式查出**，只能從歷史圖和 reflog 高度推測
+
+
+
+
+
