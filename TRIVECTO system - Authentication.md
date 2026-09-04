@@ -7,6 +7,8 @@
 | [[#### 深入解釋類似判別watch真偽系統的authentication評分要怎麼設計]]         |     |
 | [[#### 基於8 classification的new 架構]]                       |     |
 | [[#### 很多方法譬如fuzzy logic system推論, 多變量分析, or 貝氏推論或其他方法]] |     |
+| [[#### 給Codex 的第一個 master prompt]]                       |     |
+| [[#### 如何實作這份Prompt]]                                    |     |
 |                                                          |     |
 
 
@@ -6822,3 +6824,912 @@ Expert Rules / Fuzzy Logic\boxed{\text{Expert Rules / Fuzzy Logic}}
 這四個答案不是競爭關係，而是互補。
 
 而你們已經存在的 **Local DB + S3 + AWS DB + Athena** 不但不需要重做，反而非常適合這個架構：本機保留 production reference/model 做即時 Authentication；S3 保存 raw 與 training artifacts；AWS DB 保存 transactional metadata；Parquet + Glue + Athena 負責跨數千／數萬 Watch 的歷史統計、dataset selection、Series×Class coverage 分析與下一版 model/reference 建立。這也會比讓 AWS/Athena 介入每一次即時 scan 判斷穩定很多。
+
+
+
+
+#### 給Codex 的第一個 master prompt
+```
+這是給Codex 的第一個 master prompt. 開發時不要一次讓 Codex 改完整套；比較穩定的是先用這份讓它讀完整 repo 並建立 implementation map，之後再依 Phase 1 → 7 分段實作，這樣每一層都能測試，而且比較不容易破壞你現在已經正常運作的 scan、feature extraction、Learning Mode 與 AWS 流程
+```
+對，這樣的開發方式最穩定。這份文件應該保留為整個專案的 **Architecture Contract / Master Specification**，但第一次交給 Codex 時，只允許它執行 **Phase 0：Repository Audit + Implementation Map**，不能直接開始 Phase 1–7。
+
+文件本身已經明確要求 Codex 先檢查現有 repository，找出 feature extraction、Learning Mode、Authentication Mode、local DB、S3、AWS DB、Athena、configuration、logging 與 testing framework，然後產生 code-impact map。
+
+## 目前文件中需要注意的一個指令衝突
+
+原始 master prompt 後段寫了：
+
+> Produce a concise implementation map … **Then implement the changes.**
+
+也就是說，Codex 讀完 repository 並輸出 implementation map 後，仍可能依照文件繼續修改程式。
+
+因此，**不要只把這份 DOCX 原封不動交給 Codex**。應該在文件最前面加上一段本次 session 的最高優先權限制，明確告訴它：
+
+- 本次只做 Phase 0。
+- 不得修改任何檔案。
+- 不得建立新 authentication package。
+- 不得執行 migration。
+- 不得安裝 dependency。
+- 不得開始 Phase 1。
+- 完成 implementation map 後立即停止。
+
+---
+
+# 建議放在 Master Prompt 最前面的 Session Override
+
+以下可以直接貼在整份 master prompt 前面：
+
+```
+# SESSION EXECUTION OVERRIDE
+# PHASE 0 — REPOSITORY AUDIT AND IMPLEMENTATION MAP ONLY
+
+The full specification below describes the intended final architecture across
+Phase 0 through Phase 7.
+
+However, THIS CODEX SESSION IS STRICTLY LIMITED TO PHASE 0.
+
+For this session, you must inspect the complete existing repository and produce
+a repository-grounded implementation map only.
+
+## Absolute Scope Restriction
+
+DO NOT:
+
+1. Modify any existing source-code file.
+2. Create any new source-code file.
+3. Delete, rename, move, or reformat files.
+4. Implement Phase 1, Phase 2, Phase 3, Phase 4, Phase 5, Phase 6, or Phase 7.
+5. Create the proposed authentication package yet.
+6. Add database migrations.
+7. Change the local database schema.
+8. Change any AWS, S3, AWS database, Glue, or Athena resource.
+9. Change any configuration file.
+10. Install or upgrade dependencies.
+11. Modify requirements.txt, pyproject.toml, setup files, environment files,
+    lock files, YAML files, JSON configuration files, or deployment scripts.
+12. Change the scan pipeline, image-capture pipeline, feature-extraction
+    pipeline, Learning Mode, Authentication Mode, report generation, or UI.
+13. Commit, push, merge, rebase, or otherwise modify Git history.
+14. Begin implementation after completing the repository audit.
+
+Even if later sections of the master specification say
+"then implement the changes", that instruction does NOT apply to this session.
+
+This session ends after the Phase 0 audit report and implementation map are
+produced.
+
+## Permitted Actions
+
+You may:
+
+1. Read and search the complete repository.
+2. Inspect source code, tests, configuration, schemas, SQL, migrations,
+   documentation, scripts, and deployment files.
+3. Inspect Git status and repository structure using read-only commands.
+4. Trace imports, calls, data flow, persistence flow, and AWS synchronization
+   flow.
+5. Identify existing abstractions that can be reused.
+6. Identify risks, ambiguities, duplicate responsibilities, and compatibility
+   constraints.
+7. Run non-destructive repository inspection commands.
+8. Run existing tests only if they can be executed using the currently
+   installed environment without modifying files or installing dependencies.
+9. Report test failures, but do not fix them in this session.
+
+## Primary Objective
+
+Map the full Hybrid Statistical–Bayesian Authentication specification onto the
+ACTUAL existing repository.
+
+Do not assume the proposed filenames or directory structure in the master
+specification already exist or must be created.
+
+Determine how the requested responsibilities should integrate with the current
+architecture while preserving all existing working behavior.
+
+## Required Repository Inspection
+
+Inspect and identify the actual implementation of:
+
+1. Application entry points.
+2. UI framework and major UI controllers.
+3. Scan orchestration.
+4. Learning Mode.
+5. Authentication Mode.
+6. Image acquisition.
+7. Camera integration.
+8. Zaber integration.
+9. Keyence integration.
+10. Existing feature extraction.
+11. Feature schemas and feature identifiers.
+12. Component definitions.
+13. Eight-class expert labels.
+14. Expert label persistence.
+15. Watch, scan, point, capture, image, and feature data models.
+16. Local database schema and database abstraction.
+17. Local file and artifact storage.
+18. Report generation.
+19. Existing authentication or scoring logic.
+20. Existing reference statistics or comparison logic.
+21. AWS synchronization.
+22. S3 uploads and downloads.
+23. Existing AWS database integration.
+24. Glue and Athena integration, if present.
+25. Offline queueing and retry behavior.
+26. Configuration loading and validation.
+27. Logging and observability.
+28. Error handling.
+29. Versioning mechanisms.
+30. Existing tests, fixtures, mocks, and simulation mode.
+31. Packaging and deployment entry points.
+32. Backward-compatibility requirements.
+
+## Required Data-Flow Tracing
+
+Trace the current code path for each of the following:
+
+### A. Normal Watch Scan
+
+UI action
+→ scan orchestration
+→ hardware movement
+→ image capture
+→ image storage
+→ feature extraction
+→ feature persistence
+→ result/report handling
+
+### B. Learning Mode
+
+UI action
+→ scan
+→ feature extraction
+→ component image review
+→ expert eight-class label selection
+→ local persistence
+→ AWS synchronization
+
+### C. Current Authentication Mode
+
+UI action
+→ scan
+→ feature extraction
+→ current comparison/scoring/authentication logic
+→ component result
+→ watch result
+→ local persistence
+→ report
+→ AWS synchronization
+
+### D. AWS Data Flow
+
+local scan/result/artifact
+→ synchronization queue or service
+→ S3
+→ AWS database
+→ Glue/Athena or historical analytics
+
+### E. Offline Behavior
+
+AWS unavailable
+→ local scan
+→ feature extraction
+→ local persistence
+→ authentication/report behavior
+→ retry/resynchronization behavior
+
+## Required Implementation Map
+
+Produce a table with at least these columns:
+
+| Requirement Area |
+| Existing File / Module |
+| Existing Class / Function |
+| Current Responsibility |
+| Current Input |
+| Current Output |
+| Existing Data Model / Table |
+| Existing Configuration |
+| Reusable for New Architecture? |
+| Planned Phase |
+| Planned Modification |
+| New File Needed? |
+| Backward-Compatibility Risk |
+| Required Tests |
+| Open Issue / Assumption |
+
+Include, at minimum, rows for:
+
+1. Authentication labels and enums.
+2. Feature metadata.
+3. Feature schema validation.
+4. Evidence grouping.
+5. Robust normalization.
+6. Reference statistics.
+7. Multivariate evidence.
+8. Hierarchical Bayesian priors.
+9. Hierarchical Bayesian fusion.
+10. Calibration.
+11. Anomaly/OOD detection.
+12. Component result.
+13. Watch result.
+14. Explanation objects.
+15. Expert/fuzzy policy.
+16. Bundle manifest.
+17. Bundle loading.
+18. Bundle compatibility.
+19. Bundle integrity.
+20. Bundle activation and rollback.
+21. Local authentication orchestration.
+22. Learning Mode integration.
+23. Authentication Mode integration.
+24. Local database persistence.
+25. Result/report integration.
+26. S3 artifact storage.
+27. AWS database metadata.
+28. Parquet/Glue/Athena workflow.
+29. Training dataset snapshots.
+30. Offline bundle generation.
+31. Candidate-versus-production evaluation.
+32. AWS synchronization.
+33. Logging and performance metrics.
+34. Unit and integration testing.
+
+## Required Phase-by-Phase File Plan
+
+After mapping the repository, provide a proposed file-level plan for:
+
+- Phase 1 — Domain Model and Bundle Infrastructure
+- Phase 2 — Robust Statistical Evidence
+- Phase 3 — Hierarchical Bayesian Fusion
+- Phase 4 — Anomaly Detection
+- Phase 5 — Expert/Fuzzy Watch Policy
+- Phase 6 — AWS Historical Training Pipeline
+- Phase 7 — Production Integration
+
+For every phase, specify:
+
+1. Existing files that would be modified.
+2. New files that may be required.
+3. Files that must explicitly remain untouched.
+4. Database changes, if any.
+5. Configuration changes, if any.
+6. API/interface changes.
+7. Backward-compatibility adapters.
+8. Tests required before the phase is considered complete.
+9. Dependencies on earlier phases.
+10. Principal risks and rollback approach.
+
+Do not implement any of these changes during this session.
+
+## Required Risk Analysis
+
+Explicitly identify risks involving:
+
+1. Existing scan stability.
+2. Existing feature extraction.
+3. Feature-ID compatibility.
+4. Existing expert labels.
+5. Existing Learning Mode records.
+6. Existing Authentication Mode behavior.
+7. Local database compatibility.
+8. Existing AWS upload behavior.
+9. Offline operation.
+10. Report compatibility.
+11. UI compatibility.
+12. Performance and memory usage.
+13. Existing production data.
+14. Existing tests and simulation mode.
+15. Authentication bundle compatibility.
+
+## Required Final Response Structure
+
+Return the audit in this order:
+
+1. Executive Repository Summary
+2. Repository Architecture Map
+3. Current Scan Data Flow
+4. Current Learning Mode Data Flow
+5. Current Authentication Mode Data Flow
+6. Current Local Database Map
+7. Current AWS/S3/AWS-Database/Athena Map
+8. Current Feature Schema and Label Map
+9. Existing Authentication or Scoring Logic
+10. Specification-to-Code Implementation Matrix
+11. Gap Analysis
+12. Backward-Compatibility Risks
+13. Phase 1–7 File-Level Implementation Plan
+14. Recommended Phase 1 Scope
+15. Existing Tests and Required New Tests
+16. Unresolved Questions and Assumptions
+17. Phase 0 Completion Checklist
+
+## Evidence Requirements
+
+Every material statement about the repository must reference:
+
+- the exact file path;
+- the relevant class, function, method, table, or configuration key;
+- approximate line numbers when available.
+
+Do not make unsupported assumptions.
+
+Use one of these labels for each finding:
+
+- CONFIRMED — directly verified in repository code.
+- INFERRED — strongly suggested by code but not fully confirmed.
+- NOT FOUND — searched but no implementation was located.
+- CONFLICT — existing implementation conflicts with the master specification.
+- UNKNOWN — cannot be determined from repository contents.
+
+## Stop Condition
+
+After producing the complete Phase 0 repository audit and implementation map:
+
+STOP.
+
+Do not edit the repository.
+Do not begin Phase 1.
+Wait for a separate Phase 1 implementation instruction.
+```
+
+---
+
+# 為什麼要保留完整 Master Prompt，而不是只給 Phase 0
+
+完整文件仍然需要一起提供，因為 Codex 必須知道最終目標，才能正確判斷現有程式中的責任應該映射到哪一層。例如，它需要知道：
+
+```
+Raw Features
+→ Robust Multivariate Evidence
+→ Hierarchical Bayesian Fusion
+→ Anomaly Detection
+→ Expert / Fuzzy Watch Policy
+→ Final Watch Authentication Result
+```
+
+而且必須理解幾項不可破壞的核心條件：
+
+- 不可取代既有 feature extraction。
+- feature extraction 是主要 authentication evidence。
+- Authentication 必須能在本機離線完成。
+- AWS/Athena 不可進入每次 scan 的即時 critical path。
+- 八個 expert labels 不可改變。
+- raw feature 數量不可直接決定 authentication 權重。
+- production bundle 必須 frozen、versioned、validated、可 rollback。
+
+這些是整體架構的根本限制。
+
+同時，文件已將 Phase 1–7 分成清楚的工程層次：先建立 domain model 與 bundle infrastructure，再做 statistical evidence、Bayesian fusion、anomaly、policy、AWS training pipeline，最後才接入 production workflow。
+
+因此最佳做法不是刪除 Master Prompt 後半部，而是：
+
+```
+Session Override
+    ↓
+完整 Master Specification
+    ↓
+Codex 只執行本次允許的 Phase
+```
+
+---
+
+# Phase 0 完成後，應該檢查 Codex 是否真的做到以下事項
+
+在進入 Phase 1 前，Codex 的輸出至少應該回答：
+
+|檢查項目|必須得到的結果|
+|---|---|
+|App entry point|真正啟動 ProveWatchApp/Moonlight UI 的檔案與函式|
+|Scan orchestration|從 UI 按鈕到 camera、light、Zaber、Keyence 的完整 call path|
+|Feature extraction|實際 feature schema、feature ID、metadata 與輸出位置|
+|Learning Mode|八類 expert label 如何顯示、保存與同步|
+|Authentication Mode|現在是否已有 scoring、reference comparison 或 decision code|
+|Local DB|現有 tables、ORM/repository/service、migration 系統|
+|Local files|images、JSON、JSONL、report、feature artifacts 的路徑規則|
+|AWS sync|queue、retry、idempotency、S3 upload 與 AWS DB 寫入方式|
+|Athena|是否已有 Glue table、Parquet、query 或 dataset selection code|
+|Configuration|YAML/JSON/env/config service 與 versioning|
+|Tests|hardware-free、simulation、unit、integration 測試能力|
+|Compatibility|哪些現有 interface 絕對不能改|
+|Phase plan|Phase 1–7 每一階段具體修改哪些檔案|
+
+尤其要確認 Codex 沒有提出重寫 GUI 或讓 authentication 直接依賴 camera/Zaber/Keyence。原規格要求保留現有 Learning Mode、Authentication Mode、scan、feature extraction 與 image storage，且 authentication engine 必須和 hardware/capture 解耦。repo-level engineering prompt.docxDOCX
+
+---
+
+# 後續每一個 Phase Prompt 都應有相同的控制結構
+
+每個 Phase 不應只寫「Implement Phase 2」，而應包含六個固定區塊：
+
+```
+1. Allowed scope
+2. Approved files/modules
+3. Explicitly prohibited changes
+4. Required implementation
+5. Acceptance tests
+6. Stop condition
+```
+
+例如 Phase 1 完成後，Codex 必須停止，不得順便開始 robust statistics；Phase 2 完成後，不得順便加入 Bayesian 或 fuzzy policy。如此才能讓每一層都有獨立測試邊界：
+
+```
+Phase 0
+Repository audit only
+        ↓ review
+
+Phase 1
+Domain models + bundle infrastructure
+        ↓ tests + review
+
+Phase 2
+Robust statistical evidence
+        ↓ tests + review
+
+Phase 3
+Hierarchical Bayesian fusion
+        ↓ tests + review
+
+Phase 4
+Anomaly/OOD
+        ↓ tests + review
+
+Phase 5
+Expert/fuzzy policy
+        ↓ tests + review
+
+Phase 6
+AWS historical training pipeline
+        ↓ tests + staging validation
+
+Phase 7
+Production integration
+        ↓ offline + end-to-end validation
+```
+
+**所以這份 DOCX 可以作為第一個 Master Specification，但實際交給 Codex 時，務必在最前面加入上面的 Phase 0 Session Override。** 這樣它會先完整理解 repository 與最終架構，卻不會因為文件後段的「then implement the changes」而直接開始大規模修改。
+
+
+
+#### 如何實作這份Prompt
+```
+所以核實一下: 現在要做的就是把你提供的Session Override, 插在那份word file 文字之前. 然後把這份work file attach 在codex上嗎? 那下一個階段呢 是要貼另一個Session Override嗎
+```
+對，核實後，**現在第一步就是把 Phase 0 的 Session Override 放在原始 Word 文件所有文字之前，然後將這份文件附加到 Codex 的新任務中**。
+
+但建議不要直接覆蓋唯一的原始檔案，而是保留一份不變的 Master Specification，再製作 Phase 0 專用版本。
+
+## 一、目前 Phase 0 應該怎麼做
+
+### 1. 保留原始檔案
+
+保留：
+
+```
+Moonlight_Authentication_Master_Specification.docx
+```
+
+這一份永遠維持原始完整規格，不加任何特定階段的限制。
+
+### 2. 建立 Phase 0 專用副本
+
+複製成：
+
+```
+Moonlight_Authentication_Phase0_Repository_Audit_Only.docx
+```
+
+然後把我前面提供的完整：
+
+```
+# SESSION EXECUTION OVERRIDE
+# PHASE 0 — REPOSITORY AUDIT AND IMPLEMENTATION MAP ONLY
+```
+
+放在 Word 文件的**第一頁最前面**，也就是放在以下原始標題之前：
+
+```
+Moonlight Hybrid Statistical–Bayesian Authentication System
+Detailed Engineering Requirements for Existing Codebase Modification
+```
+
+文件順序應該是：
+
+```
+PHASE 0 SESSION EXECUTION OVERRIDE
+        ↓
+完整的原始 Master Specification
+```
+
+這是必要的，因為原始文件雖然要求先做 Phase 0 Repository Audit，但緊接著又寫「Then modify the existing architecture」。
+
+文件最後的 Codex workflow 也寫著：
+
+```
+Produce a concise implementation map
+→ Then implement the changes
+```
+
+因此若沒有 Phase 0 Override，Codex 很可能做完 implementation map 後，就直接開始修改程式。
+
+---
+
+## 二、把 Word 文件附加到 Codex
+
+在 Codex for Windows 中：
+
+1. 選擇並打開正確的 Moonlight repository。
+2. 確認目前所在 branch。
+3. 開一個新的 Codex chat/task。
+4. 使用附件按鈕加入：
+
+```
+Moonlight_Authentication_Phase0_Repository_Audit_Only.docx
+```
+
+Codex／ChatGPT 的任務介面支援在工作指令中加入檔案、限制條件與 review criteria；Word 這類文件也可以作為附件提供給它閱讀。[OpenAI Help Center](https://help.openai.com/en/articles/20001275-chatgpt-work-and-codex?utm_source=chatgpt.com)
+
+除了附件以外，還要在 Codex 的文字輸入框貼一段很短的啟動指令，避免它不清楚附件的角色：
+
+```
+Read the attached Phase 0 master prompt in full.
+
+Treat the “SESSION EXECUTION OVERRIDE — PHASE 0” section at the
+beginning of the attached document as the controlling scope for this task.
+
+Inspect the complete currently opened repository and perform Phase 0 only.
+
+Produce the requested repository audit and implementation map in your response.
+
+Do not modify, create, delete, rename, move, or reformat any repository file.
+Do not begin Phase 1.
+Stop after completing the Phase 0 report.
+```
+
+這樣 Codex 會同時得到：
+
+```
+目前的 Moonlight repository
++
+完整的最終架構規格
++
+本次只准執行 Phase 0 的限制
+```
+
+---
+
+## 三、Phase 0 完成後先不要直接要求它繼續 Phase 1
+
+Codex 完成後，應先檢查三件事。
+
+### 1. 它是否真的沒有修改程式
+
+在 repository 執行：
+
+```
+git status
+```
+
+理想結果是：
+
+```
+nothing to commit, working tree clean
+```
+
+也可以檢查：
+
+```
+git diff
+```
+
+不應出現任何程式變更。
+
+### 2. Implementation Map 是否有實際 repository 證據
+
+報告中的重要判斷應包含：
+
+```
+實際 file path
+實際 class/function
+目前責任
+輸入與輸出
+現有 DB table
+現有 configuration
+預計在哪一個 Phase 修改
+需要的測試
+風險
+```
+
+不能只是把 Master Prompt 的理想架構重新敘述一次。
+
+### 3. 是否找出真正的整合位置
+
+至少要找出：
+
+```
+scan orchestration
+feature extraction
+Learning Mode
+Authentication Mode
+八類 expert label
+local DB
+report
+S3
+AWS DB
+Athena
+AWS sync
+offline behavior
+configuration
+tests
+```
+
+原始規格明確要求 Phase 0 在編輯前先找出這些現有實作。
+
+---
+
+# 四、下一階段要不要貼另一個 Session Override？
+
+**要，但是必須「更換」Phase 0 Override，而不是把 Phase 1 Override 繼續疊加在 Phase 0 Override 下面。**
+
+不能形成：
+
+```
+Phase 0 Override：不得修改任何檔案
+Phase 1 Override：允許修改 Phase 1 檔案
+完整 Master Prompt
+```
+
+因為這兩個指令會直接衝突。
+
+正確方式是：
+
+```
+Phase 1 Session Override
+        ↓
+完整 Master Specification
+        ↓
+經過人工確認的 Phase 0 Implementation Map
+```
+
+也就是 Phase 1 時，舊的 Phase 0 Override 不再放入該次任務。
+
+---
+
+## 五、Phase 1 建議使用新的 Codex task
+
+Phase 1 建議開一個新的 Codex chat/task，而不是直接在原本 Phase 0 chat 說：
+
+```
+Now continue to Phase 1.
+```
+
+新的 task 比較乾淨，不容易讓 Codex受到前面「禁止修改」或原始大範圍規格的混合影響。
+
+Phase 1 任務應附加三份資料：
+
+```
+1. 原始完整 Master Specification
+2. 經過確認的 Phase 0 Implementation Map
+3. Phase 1 Session Override
+```
+
+可以採用兩種文件管理方式。
+
+## 方式 A：每個 Phase 建立完整 Word 副本
+
+例如：
+
+```
+Moonlight_Authentication_Phase0_Audit_Only.docx
+Moonlight_Authentication_Phase1_Domain_Bundle.docx
+Moonlight_Authentication_Phase2_Robust_Evidence.docx
+Moonlight_Authentication_Phase3_Bayesian_Fusion.docx
+...
+```
+
+每一份文件都是：
+
+```
+該 Phase 的 Session Override
++
+完整 Master Specification
+```
+
+Phase 1 的文件必須把 Phase 0 Override 移除，換成 Phase 1 Override。
+
+這種方法最直觀，每次只要附加一份主要文件，但會產生很多內容重複的 Word 檔案。
+
+## 方式 B：Master Prompt 與 Phase Override 分開
+
+這是我比較推薦的管理方式：
+
+```
+00_Master_Specification.docx
+01_Phase0_Repository_Audit_Only.md
+02_Phase0_Approved_Implementation_Map.md
+03_Phase1_Domain_and_Bundle_Only.md
+04_Phase2_Robust_Evidence_Only.md
+05_Phase3_Bayesian_Fusion_Only.md
+...
+```
+
+每一次 Codex 任務附加：
+
+```
+固定不變的 Master Specification
++
+本次 Phase Override
++
+前一階段核准的結果或 interface contract
+```
+
+例如 Phase 1：
+
+```
+00_Master_Specification.docx
+02_Phase0_Approved_Implementation_Map.md
+03_Phase1_Domain_and_Bundle_Only.md
+```
+
+這樣不需要複製七份相同的 Master Prompt，而且比較不會忘記移除舊 Override。
+
+---
+
+# 六、Phase 1 Override 不能現在就完全寫死
+
+Phase 1 的正式 Override 應該在看到 Phase 0 Implementation Map 後再完成，因為目前還不知道 repository 中真正的：
+
+```
+domain model 檔案
+label enum 檔案
+result model
+configuration loader
+local bundle storage
+existing version mechanism
+test location
+database abstraction
+```
+
+Phase 1 的 Override 不應只寫：
+
+```
+Implement Phase 1.
+```
+
+而應使用 Phase 0 查到的實際路徑，例如：
+
+```
+Allowed existing files:
+- app/models/authentication_result.py
+- app/services/config_service.py
+- tests/unit/...
+
+Allowed new files:
+- authentication/domain/...
+- authentication/bundle/...
+
+Explicitly prohibited:
+- camera/
+- motion/
+- feature_extraction/
+- learning_mode/
+- aws_sync/
+- report/
+```
+
+實際路徑要依 Phase 0 結果決定，不能現在猜測。
+
+---
+
+# 七、Phase 1 本次只做什麼
+
+原始規格定義 Phase 1 僅包含：
+
+```
+8-class enum
+feature/evidence result schema
+component authentication result
+watch authentication result
+bundle manifest
+bundle loader
+bundle compatibility
+bundle rollback
+tests
+```
+
+因此 Phase 1 Override 必須明確禁止：
+
+```
+不實作 robust z-score
+不實作 MAD/reference statistics
+不實作 covariance/Mahalanobis
+不實作 Bayesian fusion
+不實作 anomaly detector
+不實作 fuzzy policy
+不修改 AWS/Athena
+不接進正式 Authentication Mode
+```
+
+換句話說，Phase 1 只建立後續演算法需要的「骨架、資料結構與 bundle 基礎設施」。
+
+Phase 1 完成並測試後，才開始 Phase 2。原始規格將 robust normalization、reference statistics、evidence grouping、multivariate distance、coverage、quality 與 missing masks 明確放在 Phase 2。repo-level engineering prompt.docxDOCX
+
+---
+
+# 八、完整的建議執行循環
+
+```
+Phase 0 Override
+→ Codex 只讀 repository
+→ 產生 Implementation Map
+→ 人工檢查
+→ 確認 git status 沒有修改
+
+Phase 1 Override
+→ Domain Model + Bundle Infrastructure
+→ 執行 Phase 1 tests
+→ 人工 review
+→ 建立 Phase 1 commit
+
+Phase 2 Override
+→ Robust Statistical Evidence
+→ 執行 Phase 1 + Phase 2 tests
+→ 人工 review
+→ 建立 Phase 2 commit
+
+Phase 3 Override
+→ Hierarchical Bayesian Fusion
+→ 執行 Phase 1–3 tests
+→ 人工 review
+→ 建立 Phase 3 commit
+
+Phase 4 Override
+→ Anomaly Detection
+→ tests + review + commit
+
+Phase 5 Override
+→ Expert/Fuzzy Policy
+→ tests + review + commit
+
+Phase 6 Override
+→ AWS Historical Training Pipeline
+→ staging tests + review + commit
+
+Phase 7 Override
+→ Production Integration
+→ offline test
+→ hardware-free integration test
+→ Moonlight hardware staging test
+→ final review
+```
+
+每個 Phase 都應遵循：
+
+```
+一個新的 Phase Override
+一個清楚的 allowed scope
+一組禁止修改的區域
+一組 acceptance tests
+一個 stop condition
+一個獨立可回退的 Git commit
+```
+
+## 最終核實
+
+你現在應該先做的是：
+
+```
+1. 保留原始 Master Prompt。
+2. 製作 Phase 0 專用副本。
+3. 把 Phase 0 Session Override 插在 Word 文件最前面。
+4. 在 Codex 打開正確 repository。
+5. 開新的 Codex task。
+6. 附加 Phase 0 Word 文件。
+7. 貼上簡短的啟動指令。
+8. 讓 Codex 只產生 repository audit 和 implementation map。
+9. 檢查 git status，確認它完全沒有修改 code。
+10. 審查 Phase 0 結果後，再根據實際檔案路徑建立 Phase 1 Override。
+```
+
+所以答案是：**第一階段確實是把 Session Override 放到 Word 文件最前面後附加到 Codex；下一階段也要用另一份 Phase-specific Override，但要替換舊的 Phase 0 Override，不能將兩個 Override 疊在一起。**
