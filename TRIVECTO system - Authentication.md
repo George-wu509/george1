@@ -15,6 +15,8 @@
 |                                                          |     |
 |                                                          |     |
 |                                                          |     |
+|                                                          |     |
+|                                                          |     |
 
 
 
@@ -7741,6 +7743,7 @@ Phase 7 Override
 
 
 
+<<<<<<< Updated upstream
 #### 已經有 active bundle，但 Feature Observation 與它不相容
 ```
 所以我的理解目前authentication-expert-fuzzy branch的authentication workflow目前尚無法通是因為: 雖然image data, material data, measurement data符合標準的都可通過imageresultadapter, materialresultadapter, measurementresultadapter, 然後進入到Feature Observation batch, 之後存入SQLite feature observation batches. ---> 載入同scan 全部observations. 就我的理解還無法進入Evidence->Bayesian->Anomaly->WatchAuthenticationResult的pipeline原因是存入SQLite feature observation batches之後, 無法相容activate bundle? 是這樣嗎? 那要如何解決呢? 或者還缺我提供甚麼資料呢?
@@ -7947,3 +7950,704 @@ Series reference → Family fallback → Global fallback
 - 正式 PASS/FAIL：需等上述資料與政策均驗證完成。
 
 所以結論是：現在不是「模型程式完全不能跑」，而是「沒有完整 bundle 時，正式 runtime 不允許產生鑑定結果」。下一步最合適的是先建立一個完整但保守的 pilot/shadow bundle，開始累積這 19 個 Series 的已標註資料；資料成熟前結果維持 `REVIEW`，成熟並驗證後才開放正式 PASS/FAIL。
+=======
+
+
+
+```
+請中文詳細解釋authentication的流程, 從App main.py拍照譬如拍照Upper text(0004)的文字並進行分析get identifier, 或從Hour hand lume(0023)的texture analysis get identifier, 或openbackcrown的Rotor(3006)形狀分析get identifier
+
+而這些images and identifier是怎麼跟AWS互動, 怎麼跟Local DB互動, 怎麼Sync module互動, 怎麼做feature extraction, 怎麼跟local inference engine互動, 怎麼跟AWS cloud(AWS S3, AWS Glue data catalog, Amazon athena, AWS DB)互動, 怎麼進入到Model & reference building pipeline(statistics, 階層貝氏, 輔助模型, 驗證), 怎麼產生model bundle, 怎麼產生輸出, 請以資料流程一個一個解釋, 並輔佐以流程圖解說.
+```
+
+## 結論先行
+
+我以目前 worktree：
+
+`D:\Provenance Laboratories projects\ImagingLibWatch_authentication-expert-fuzzy`
+
+以及 branch：
+
+`authentication-expert-fuzzy`，commit `7b8d0688349574f9b5a99250346f673e973c4bc9`
+
+檢查實際程式碼。核心結論是：
+
+> 現在 repository 內有兩條不同的流程，但尚未真正接通。
+
+1. **目前 App 實際執行的流程**  
+    拍照 → Local DB → OCR/texture/shape 等 task → task JSON → report identifier → Gold Standard 比對 → PDF/WatchAuthenticity snapshot → S3/DynamoDB。
+    
+2. **Phase 1–5 新 authentication engine**  
+    `FeatureObservation` → reference statistics → 階層式 Bayesian fusion → anomaly detection → expert fuzzy policy → PASS/REVIEW/FAIL。
+    
+
+目前 App、WorkflowManager、DataManager、Sync module 都沒有 import 或呼叫 `core.authentication`。因此 OCR、lume、Rotor 產生的 identifiers **目前不會自動送進新版 Bayesian/fuzzy authentication engine**。
+
+另外，新 worktree 裡沒有 `config/system_config.yaml`；它被 `.gitignore` 排除。以下 service selector 與 AWS runtime 設定，是參照原始 worktree 中現有的本機設定檔分析的。
+
+---
+
+## 一、先區分四種容易混淆的「identifier」
+
+|名稱|實際意思|
+|---|---|
+|Internal number|`internalnum1/internalnum2`，例如 `0004/0001`，用來表示拍攝點與拍攝變體|
+|Image selector|例如 `front.macropoint1.std_1`，用來決定要執行哪些 analysis service|
+|Report identifier|從 task JSON 擷取出的 `IDENTIFIER1...n`，供 Gold Standard 與 PDF 使用|
+|Authentication feature|新引擎要求的 `FeatureObservation`，包含 schema/version/state/quality 等；目前沒有從 report identifier 轉換過去的 adapter|
+
+`IDENTIFIER1` 這種 ID 只是同一 inspection 中的流水號，不是長期穩定的 feature ID。真正具有語義的是 `task_name + key + source_point`。
+
+---
+
+## 二、現行 App 完整資料流程
+
+
+```mermaid
+flowchart TD
+    A["App_run.py / App main.py"] --> B["載入 Watch Template 與 internalnum_config"]
+    B --> C["建立 selector → service_lookup_map"]
+    C --> D["依 Point 移動硬體、對焦、打光、拍照或 HDR"]
+    D --> E["DataManager.process_and_sync_raw_image"]
+    E --> F["Local_Data / WatchID / Raw / UUID.ext"]
+    E --> G["Local DB raw_images：synced=0"]
+    E --> H["Local DB image_assets / capture_instances"]
+    D --> I{"Selector 命中哪些 task？"}
+
+    I -->|0004 std_1| J["OCR CLI"]
+    I -->|0023 std_1| K["Hour lume shape API"]
+    I -->|0023 hdl_1| L["Texture API<br/>但實際沒有 hdl_1 capture"]
+    I -->|3006| M["沒有 service mapping"]
+
+    J --> N["OCR JSON、字元 mask、可視化"]
+    K --> O["Shape JSON、mask、幾何量"]
+    L --> P["U-Net + bump texture JSON"]
+    M --> Q["只有原始影像，沒有自動分析"]
+
+    N --> R["experiment_results + ui_asset_registry"]
+    O --> R
+    P --> R
+
+    R --> S["CloudSync 輪詢 synced=0"]
+    S --> T["AWS S3：檔案"]
+    S --> U["DynamoDB：metadata index"]
+    S --> V["成功後 synced=1"]
+
+    R --> W["Report builder"]
+    W --> X["build_task_identifiers"]
+    X --> Y["report_identifiers_WatchID.json"]
+    Y --> Z["Legacy Gold Standard 比對"]
+    Z --> AA["PDF / WatchAuthenticity snapshot"]
+
+    X -. "目前沒有 adapter" .-> AB["core.authentication FeatureObservation"]
+    AB -. "尚未接入 App" .-> AC["Bayesian + anomaly + fuzzy policy"]
+```
+
+
+拍攝主迴圈位於 [App/main.py](D:\\Provenance Laboratories projects\\ImagingLibWatch_authentication-expert-fuzzy\\App\\main.py)。它會：
+
+1. 建立 `watch_runs`。
+2. 為每個 watch point 建立 `point_instances`。
+3. 為每種 standard/HDR capture 建立 `capture_instances`。
+4. 執行硬體位置、相機、光源、曝光、自動對焦或 HDR。
+5. 產生 selector，例如 `Front.macropoint1.std_1`。
+6. 從 `service_lookup_map` 取得需要的 task。
+7. 呼叫 [process_and_sync_raw_image](D:\\Provenance Laboratories projects\\ImagingLibWatch_authentication-expert-fuzzy\\data_manager\\local_storage.py)。
+8. 再用 [register_image_asset](D:\\Provenance Laboratories projects\\ImagingLibWatch_authentication-expert-fuzzy\\DB\\db_manager.py) 保存 V3 lineage。
+9. 將單張影像分析送進背景 worker。
+
+Selector map 是由 [WorkflowManager._build_service_lookup_map](D:\\Provenance Laboratories projects\\ImagingLibWatch_authentication-expert-fuzzy\\core\\workflow_manager.py) 建立的。匹配條件是：
+
+```
+internalnum1 + internalnum2
+        ↓
+view + point + capture_id
+        ↓
+例如 front.macropoint1.std_1
+        ↓
+service/task list
+```
+
+---
+
+## 三、三個指定範例的實際流程
+
+### 1. Upper text（0004）
+
+拍攝定義在 [config/internalnum_config.yaml](D:\\Provenance Laboratories projects\\ImagingLibWatch_authentication-expert-fuzzy\\config\\internalnum_config.yaml)：
+
+- `internalnum1 = 0004`
+- `internalnum2 = 0001`
+- point：`Front.macropoint1`
+- display name：`Upper text`
+- component：`Dial`
+- capture：`std_1`
+- camera：`macro_cam_1`
+- exposure：300000
+- ring light 1：255
+- autofocus：啟用
+- `postcolor = 1`
+
+原始 runtime service config 將它映射到：
+
+```
+0004 / 0001 / std_1
+    → front.macropoint1.std_1
+    → ocr_service
+```
+
+它同時也是 `front_stitch_service` 的其中一個收集點；但 stitch 是 aggregator，不會把單張圖直接當普通 OCR task 執行。
+
+#### OCR feature extraction
+
+OCR 實作在 [tasks/task_algos/ocr_algo.py](D:\\Provenance Laboratories projects\\ImagingLibWatch_authentication-expert-fuzzy\\tasks\\task_algos\\ocr_algo.py)：
+
+1. 對影像做 LAB/CLAHE 對比增強。
+2. 使用 DocTR：
+    - detector：`db_resnet50`
+    - recognizer：`crnn_vgg16_bn`
+3. DocTR 沒找到文字時，可用 Tesseract fallback。
+4. 對每一個字元使用 SAM segmentation。
+5. 從字元 mask 計算：
+    - 字元寬度、高度、中心
+    - kerning
+    - X/Y projection
+    - stroke thickness
+    - skeleton length、endpoints
+    - Hu moments
+    - Fourier descriptors
+6. 產生 OCR task JSON、mask 與可視化結果。
+
+之後 [core/report_identifiers.py](D:\\Provenance Laboratories projects\\ImagingLibWatch_authentication-expert-fuzzy\\core\\report_identifiers.py) 從 task JSON 擷取：
+
+- recognized line
+- OCR block count
+- 字元數
+- 平均筆畫厚度
+- skeleton length
+- endpoints
+- word/confidence
+- 字元幾何
+- projections、Hu moments、Fourier descriptors
+
+這些才會被包裝成 `IDENTIFIER1...n`。
+
+---
+
+### 2. Hour hand lume（0023）texture analysis
+
+拍攝定義在 [config/internalnum_config.yaml](D:\\Provenance Laboratories projects\\ImagingLibWatch_authentication-expert-fuzzy\\config\\internalnum_config.yaml)。
+
+它有兩個 capture：
+
+|internalnum2|Capture|相機／光源|
+|---|---|---|
+|`0001`|`std_1`|micro camera、200000 exposure、ring light 2|
+|`0002`|`hdr_1`|micro camera、6 段曝光、雙 spotlight、HDR fusion|
+
+目前 runtime mapping 是：
+
+```
+0023 / 0001 / std_1 → lume_hour_shape_service
+0023 / 0001 / hdl_1 → lume_hour_texture_service
+```
+
+問題是拍攝設定只會產生 `std_1` 和 `hdr_1`，不會產生 `hdl_1`。
+
+因此目前實際結果是：
+
+- Hour hand shape：會自動執行。
+- Hour hand texture：**不會自動執行**，因為 selector 永遠匹配不到。
+- `service_target_selectors()` 允許明確指定的 `capture_id` 覆蓋實際 capture mapping，因此 `hdl_1` 不一定在啟動時被判定為無效；它只會變成永遠不命中的 selector。相關邏輯在 [internalnum_config.py](D:\\Provenance Laboratories projects\\ImagingLibWatch_authentication-expert-fuzzy\\DB\\templates\\internalnum_config.py)。
+
+#### 假設 texture task 被正確觸發
+
+實際演算法在 [lume_hour_texture_algo.py](D:\\Provenance Laboratories projects\\ImagingLibWatch_authentication-expert-fuzzy\\tasks\\task_algos\\lume_hour_texture_algo.py)：
+
+1. `micro_unet` 對影像做 segmentation。
+2. 取 U-Net class ID 2 作為夜光區域。
+3. 填滿 segmentation contour 內部孔洞。
+4. Connected Components 找出區域。
+5. 依面積排序，最多取三個 sector。
+6. 每個 sector 分別送到 `SurfaceTextureAnalyzer`。
+7. 偵測 bump/keypoint，並計算：
+    - bump count
+    - bump density
+    - sector area px
+    - area mm²
+    - area/distance/ratio 的 robust location、metric、scale
+    - Delaunay 網格
+8. 輸出 binary mask、texture visualization、JSON report。
+
+對應 identifier mapping 在 [report_identifiers.py](D:\\Provenance Laboratories projects\\ImagingLibWatch_authentication-expert-fuzzy\\core\\report_identifiers.py)。
+
+---
+
+### 3. OpenBackCrown Rotor（3006）形狀分析
+
+拍攝定義在 [config/internalnum_config.yaml](D:\\Provenance Laboratories projects\\ImagingLibWatch_authentication-expert-fuzzy\\config\\internalnum_config.yaml)：
+
+|internalnum2|Capture|用途|
+|---|---|---|
+|`0001`|第一張 standard，通常為 `std_1`|`macro_cam_1`、ring light、200000 exposure|
+|`0002`|第二張 standard，通常為 `std_2`|`micro_cam`、spotlights、50000 exposure|
+
+兩者的 component 都是 `Movement-rotor`。
+
+但是目前：
+
+- `movement1_service.internalnums = []`
+- `movement2_service.internalnums = []`
+- 沒有其他 service target 包含 `3006`
+- `report_identifiers.py` 也沒有 movement/Rotor 專用 identifier mapping
+
+所以目前 Rotor 流程只到：
+
+```
+拍攝 macro/micro image
+→ 保存本機檔案
+→ image_assets/raw_images/ui_asset_registry
+→ 視模式決定是否同步 AWS
+→ 結束
+```
+
+不會自動做 Rotor shape inference，也不會產生 Rotor shape identifiers。即使手動執行 movement task，若沒有新增 identifier mapping，結果仍不會自然進入 report identifier 文件。
+
+---
+
+## 四、Local inference engine 是哪一個？
+
+現在其實有兩種「local inference」概念。
+
+### 現行 image-analysis inference
+
+由 [WorkflowManager._run_analysis_safe](D:\\Provenance Laboratories projects\\ImagingLibWatch_authentication-expert-fuzzy\\core\\workflow_manager.py) 呼叫 `Orchestrator`。
+
+`Orchestrator` 支援：
+
+- CLI：啟動 Python wrapper process，解析 JSON stdout。
+- API：HTTP POST 到 localhost FastAPI service。
+- 多個非 heavy task 可以平行執行。
+- heavy task 受 semaphore 限制。
+
+目前設定：
+
+- OCR：CLI，`run_ocr_cli.py`
+- lume hour shape：API，shared `server_micro_analysis.py`
+- lume hour texture：API，shared `server_micro_analysis.py`
+- movement1/2：CLI，但未配置 3006 target
+
+### 新 authentication inference
+
+位於 [core/authentication](D:\\Provenance Laboratories projects\\ImagingLibWatch_authentication-expert-fuzzy\\core\\authentication\\__init__.py)。
+
+這才是 Bayesian、anomaly、fuzzy policy 的 authentication engine。但它明確把 DB、UI、cloud integration 放在 package 外，而且目前外部沒有接線。
+
+---
+
+## 五、Local DB 如何互動
+
+主要 schema 在 [DB/db_manager.py](D:\\Provenance Laboratories projects\\ImagingLibWatch_authentication-expert-fuzzy\\DB\\db_manager.py)。
+
+### Legacy tables
+
+- `raw_images`
+- `experiment_results`
+- `watch_metadata`
+- `ui_asset_registry`
+
+### V3 lineage tables
+
+- `watch_runs`
+- `point_instances`
+- `capture_instances`
+- `image_assets`
+- `analysis_results_v2`
+- `sync_outbox`
+- `sync_outbox_archive`
+- `lake_etl_batches`
+
+原始圖片會被重新命名成 UUID，放在：
+
+```
+Local_Data/{WatchID}/Raw/{UUID}.{ext}
+```
+
+一般 raw S3 key 是：
+
+```
+Raw/{UUID}.{ext}
+```
+
+App 的普通單圖分析路徑在 [App/main.py](D:\\Provenance Laboratories projects\\ImagingLibWatch_authentication-expert-fuzzy\\App\\main.py)。它掃描 analysis folder 中新增的檔案，再寫入：
+
+- `experiment_results`
+- `ui_asset_registry`
+
+此路徑目前有一個重要 lineage 缺口：
+
+```
+raw_image_id=None
+```
+
+也就是 OCR/lume task result 沒有直接連回原始 `asset_id`。它也沒有使用 `register_analysis_result_v2()`，因此普通 App OCR/lume result 不會自動建立 lake outbox。
+
+部分較新的 asset-driven/sidepoint 流程已使用 `register_analysis_result_v2()`，但不是目前普通 single-image App 路徑。
+
+另外，raw image 先由 `process_and_sync_raw_image()` 插入 legacy `raw_images`，之後 `register_image_asset()` 又會為相容性雙寫 legacy record，因此同一物理影像存在產生兩筆 legacy raw row 的風險。
+
+---
+
+## 六、Sync、S3 與 DynamoDB
+
+現有 sync 是 Local DB 驅動的 durable polling：
+
+
+```mermaid
+flowchart LR
+    A["Local DB row<br/>synced=0"] --> B["CloudSync background worker"]
+    B --> C{"網路與 AWS 可用？"}
+    C -->|否| D["保留 synced=0<br/>下次重試"]
+    C -->|是| E["上傳檔案到 S3"]
+    E --> F["寫入 DynamoDB metadata index"]
+    F --> G["Local DB synced=1"]
+```
+
+
+[CloudSyncManager](D:\\Provenance Laboratories projects\\ImagingLibWatch_authentication-expert-fuzzy\\data_manager\\cloud_sync.py) 的實際工作是：
+
+1. 輪詢 `raw_images`、`experiment_results` 中 `synced=0` 的資料。
+2. 上傳 image/JSON/mask 到 S3。
+3. 視需要上傳 metadata sidecar。
+4. 呼叫 [CloudDatabaseManager.index_record](D:\\Provenance Laboratories projects\\ImagingLibWatch_authentication-expert-fuzzy\\data_manager\\cloud_db.py)。
+5. DynamoDB 使用：
+    - Partition key：`WatchID`
+    - Sort key：通常為 `asset_id`
+6. 成功才把 local row 標記為 `synced=1`。
+
+這裡所謂的「AWS DB」是 **DynamoDB**，repository 沒有顯示以 RDS 作為主要影像分析資料庫。
+
+但目前原始本機設定是：
+
+```
+system mode = simulation
+force_upload_to_S3 = false
+legacy_polling_enabled = true
+outbox_enabled = false
+```
+
+因此會選擇 `NullCloudSync`，實際上不會上傳 AWS。也就是說，目前是「DB 記錄了預定 S3 key」，但 simulation 模式不代表物件已存在於 S3。
+
+---
+
+## 七、Glue Data Catalog、Iceberg 與 Athena
+
+這一段是 analytical data lake，不是即時 inference。
+
+[LakeETLJob](D:\\Provenance Laboratories projects\\ImagingLibWatch_authentication-expert-fuzzy\\data_manager\\lake_etl.py) 的設計是：
+
+1. 讀取 `sync_outbox` 中 target=`lake` 的 analysis snapshot。
+2. 將 nested result JSON 攤平成多筆 facts：
+    - `watch_id`
+    - brand/model/reference
+    - view/point/algo
+    - `result_key`
+    - numeric `result_value`
+    - categorical `result_value_string`
+    - captured time / `dt`
+3. 依 brand/date 組織資料。
+4. 使用 PyIceberg + Glue Catalog append 到：
+
+```
+moonlight_lake.analysis_facts
+```
+
+5. 以 batch ID 寫入 Iceberg snapshot properties，避免同一 batch 重複 append。
+
+Athena 層由 [AthenaQueryEngine](D:\\Provenance Laboratories projects\\ImagingLibWatch_authentication-expert-fuzzy\\data_manager\\athena_query.py) 提交 SQL、輪詢 query 狀態並分頁取得結果。[AnalyticsQueryService](D:\\Provenance Laboratories projects\\ImagingLibWatch_authentication-expert-fuzzy\\data_manager\\analytics_query.py) 則提供受 whitelist 保護的：
+
+- feature distribution
+- 數值分桶
+- series/model comparison
+- 統計摘要
+
+目前限制是：
+
+- `outbox_enabled=false`
+- 普通 App OCR/lume path 沒寫 `analysis_results_v2`
+- `LakeETLJob` 沒有被 App 的 production lifecycle 自動啟動
+- Athena 查詢結果沒有送進 authentication engine
+
+所以現在 Glue/Athena 比較像「已有基礎設施程式碼」，不是 live authentication 的一部分。
+
+---
+
+## 八、新版 Model & Reference Building Pipeline
+
+
+```mermaid
+flowchart TD
+    A["OCR / shape / texture task JSON"] --> B["缺少：Feature Adapter / Schema Mapping"]
+    B --> C["FeatureObservation<br/>value/state/quality/version"]
+    C --> D["ComponentFeatureSet"]
+    D --> E["Expert label：8 classes"]
+    E --> F["以 physical watch 切分<br/>train / validation / test"]
+
+    F -->|train only| G["EvidenceReferenceLibrary.fit"]
+    G --> H["同一手錶多次 scan 取 median"]
+    H --> I["Robust scalar statistics<br/>median / MAD / IQR / quantiles"]
+    I --> J["去除無效、近常數、強相關 features"]
+    J --> K["Optional PCA"]
+    K --> L["OAS / Ledoit-Wolf covariance"]
+    L --> M["Mahalanobis distance 與經驗分布"]
+    M --> N["Series → Family → Global references"]
+
+    F -->|held-out validation| O["Probability calibration<br/>目前只支援載入與套用"]
+    F -->|held-out reference cohort| P["Original anomaly calibration"]
+    F -->|test| Q["缺少完整 production evaluation runner"]
+
+    N --> R["BayesianFusionService"]
+    O --> R
+    R --> S["8-class posterior"]
+    P --> T["AnomalyDetector"]
+    S --> T
+    T --> U["Expert fuzzy policy"]
+    U --> V["PASS / REVIEW / FAIL"]
+
+    N --> W["Model bundle artifacts"]
+    O --> W
+    P --> W
+    U --> W
+    W --> X["manifest + SHA256 + compatibility"]
+    X --> Y["install / atomic activate / rollback"]
+```
+
+
+### Feature contract
+
+[FeatureObservation](D:\\Provenance Laboratories projects\\ImagingLibWatch_authentication-expert-fuzzy\\core\\authentication\\domain\\models.py) 要求：
+
+- watch/scan/series/family/component/view
+- feature family 與穩定 feature ID
+- feature schema version
+- extractor version
+- feature state：
+    - `value`
+    - `missing`
+    - `not_applicable`
+    - `invalid`
+    - `extraction_failed`
+- numeric value
+- quality score
+- failure reason
+
+現行 report identifier 並不具備完整的這些欄位，所以不能直接當 authentication input。
+
+### 八種 authentication classes
+
+[domain/labels.py](D:\\Provenance Laboratories projects\\ImagingLibWatch_authentication-expert-fuzzy\\core\\authentication\\domain\\labels.py) 固定為：
+
+- Original
+- Authentic replacements
+- Forgery
+- Aftermarket
+- Modified
+- Incorrect Authentic
+- Missing
+- Not applicable
+
+舊的二元 `"Authentic"` 不會被自動映射成 `"Original"`，避免語義錯誤。
+
+### Reference statistics
+
+[EvidenceReferenceLibrary.fit](D:\\Provenance Laboratories projects\\ImagingLibWatch_authentication-expert-fuzzy\\core\\authentication\\evidence\\reference.py) 有幾項重要防洩漏規則：
+
+- 只接受 train partition。
+- 同一 physical watch 不可跨 train/validation/test。
+- 同一手錶多次拍攝先取 median，避免拍得多的手錶權重過大。
+- 每一 component/evidence group/class 分別建立：
+    - series reference
+    - family fallback
+    - global fallback
+
+Robust statistics 使用 median/MAD；MAD 不足時依序 fallback 到 IQR、standard deviation、unit scale。[實作位置](D:\\Provenance Laboratories projects\\ImagingLibWatch_authentication-expert-fuzzy\\core\\authentication\\evidence\\robust_statistics.py)。
+
+多變量部分會處理：
+
+- missing/低變異 features
+- 高相關 feature removal
+- optional PCA
+- OAS 或 Ledoit-Wolf covariance shrinkage
+- Mahalanobis distance
+
+### 階層 Bayesian
+
+[BayesianFusionService](D:\\Provenance Laboratories projects\\ImagingLibWatch_authentication-expert-fuzzy\\core\\authentication\\bayesian\\fusion.py)：
+
+1. 取得 series/family/global production prior。
+2. 加入各 evidence group 的 class log evidence。
+3. 權重同時考慮：
+    - reliability
+    - tempering
+    - coverage
+    - quality
+    - reference maturity
+4. 套用 frozen calibration。
+5. softmax 得到完整八類 posterior。
+6. 產生 predicted class、entropy、uncertainty、coverage、fallback 與 explanation。
+
+Training distribution 只作 diagnostics，不會偷偷取代 production prior。
+
+### Anomaly detection
+
+[AnomalyDetector](D:\\Provenance Laboratories projects\\ImagingLibWatch_authentication-expert-fuzzy\\core\\authentication\\anomaly\\detector.py) 使用 held-out Original reference distance，產生：
+
+- NORMAL
+- ELEVATED
+- HIGH
+- EXTREME
+- UNAVAILABLE
+
+它不會修改八類 posterior。如果 Original posterior 很高、但 anomaly 又是 EXTREME，會加入：
+
+```
+MODEL_REFERENCE_CONFLICT
+```
+
+並要求人工 review。
+
+### Expert fuzzy policy
+
+[WatchPolicyService](D:\\Provenance Laboratories projects\\ImagingLibWatch_authentication-expert-fuzzy\\core\\authentication\\policy\\watch_policy.py) 綜合：
+
+- class posterior × class severity
+- component criticality
+- coverage
+- anomaly
+- reference maturity/fallback
+- review signals
+
+輸出 `PASS / REVIEW / FAIL`、authentication score、risk score、policy confidence 與解釋。如果 policy artifact 還是 draft，系統強制輸出 `REVIEW`。
+
+---
+
+## 九、Model bundle 如何產生與使用
+
+Bundle manifest 要求七種 artifact role，[定義位置](D:\\Provenance Laboratories projects\\ImagingLibWatch_authentication-expert-fuzzy\\core\\authentication\\bundle\\manifest.py)：
+
+1. `feature_schema`
+2. `reference_stats`
+3. `bayesian`
+4. `anomaly`
+5. `calibration`
+6. `policy`
+7. `diagnostics`
+
+Manifest 還需要：
+
+- bundle version
+- supported series/components
+- runtime/schema compatibility
+- `validation_report_id`
+- 每個檔案的 SHA-256
+
+[BundleStore](D:\\Provenance Laboratories projects\\ImagingLibWatch_authentication-expert-fuzzy\\core\\authentication\\bundle\\updater.py) 支援：
+
+- immutable install
+- checksum 驗證
+- 禁止未宣告檔案與 symlink
+- atomic activation
+- activation 失敗 rollback
+- 手動 rollback 到上一版
+
+但是 repository 目前只有：
+
+- artifact contract
+- loader/validator
+- install/activate/rollback
+- runtime inference components
+- 測試用 synthetic bundle
+
+目前沒有：
+
+- 從實際 OCR/texture result 建立 FeatureObservation 的 adapter
+- 完整 training orchestration
+- probability calibration fitting
+- validation report generator
+- production bundle writer
+- 真實 bundle artifact
+- App bundle activation/inference lifecycle
+- 獨立的 auxiliary authenticity model
+
+DocTR、SAM、U-Net 等是 feature extractors，不是 authentication Bayesian pipeline 中已整合的「輔助分類模型」。
+
+---
+
+## 十、目前會產生的輸出 vs 尚未產生的輸出
+
+### 現在 App 可產生
+
+- UUID raw image
+- HDR fused image
+- task JSON
+- masks/visualizations
+- Local DB records
+- `report_identifiers_{WatchID}.json`
+- legacy Gold Standard comparison
+- PDF component authenticity summary
+- S3 objects、DynamoDB index——僅在 real cloud sync 模式
+- Glue/Iceberg facts——僅在另外執行並接通 lake ETL 時
+
+Report identifier 建立位置在 [App/main.py](D:\\Provenance Laboratories projects\\ImagingLibWatch_authentication-expert-fuzzy\\App\\main.py)。
+
+Legacy Gold Standard 邏輯在 [App/main.py](D:\\Provenance Laboratories projects\\ImagingLibWatch_authentication-expert-fuzzy\\App\\main.py)：
+
+- numeric：預設容許差約 5%
+- categorical：完全相等
+- component：預設 90% identifiers 通過才標示 Authentic
+
+這不是 Bayesian authentication；它是簡單逐 identifier threshold comparison。
+
+### 新 authentication engine 理論上可產生
+
+Component 級：
+
+- 八類 posterior
+- predicted class
+- confidence
+- coverage
+- anomaly level/score
+- model maturity
+- series/family/global fallback
+- safety flags
+- evidence explanation
+- feature deviations
+
+Watch 級：
+
+- PASS/REVIEW/FAIL
+- authentication score
+- risk score
+- policy confidence
+- reasons
+- component results
+- model/bundle/schema versions
+
+但以上目前尚未由 App 真實產生。
+
+---
+
+## 十一、最重要的缺口與風險
+
+1. **App 與 `core.authentication` 完全未接線。**
+2. **0023 texture selector 寫成 `hdl_1`，實際 capture 是 `std_1/hdr_1`。**
+3. **3006 Rotor 沒有任何 analysis service mapping。**
+4. **Rotor/movement 沒有 report identifier mapping。**
+5. **普通 App analysis 使用 legacy result table，`raw_image_id=None`。**
+6. **Outbox 關閉，Lake ETL 沒有自動執行。**
+7. **沒有 production model bundle、builder 或 calibration fitting pipeline。**
+8. **`config/system_config.yaml` 被忽略，新 worktree 沒有這個執行設定。**
+9. **原始 worktree 的 ignored `system_config.yaml` 內存在明文長期 AWS credential。**  
+    我沒有在報告中揭露其值；應立即 rotate/revoke，改用 IAM role、環境注入或 Secrets Manager，並檢查是否曾進入 log、備份或歷史分享。
+10. Authentication 核心的 125 個 domain/bundle/evidence/Bayesian/anomaly/policy 單元測試已全部通過，但這只證明核心元件內部契約，不代表端到端 App authentication 已完成。
+>>>>>>> Stashed changes
