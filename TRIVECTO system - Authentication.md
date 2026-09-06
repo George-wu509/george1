@@ -9,6 +9,11 @@
 | [[#### 很多方法譬如fuzzy logic system推論, 多變量分析, or 貝氏推論或其他方法]] |     |
 | [[#### 給Codex 的第一個 master prompt]]                       |     |
 | [[#### 如何實作這份Prompt]]                                    |     |
+| [[#### 已經有 active bundle，但 Feature Observation 與它不相容]]   |     |
+| [[#### Bundle 與測量資料的關係]]                                 |     |
+|                                                          |     |
+|                                                          |     |
+|                                                          |     |
 |                                                          |     |
 
 
@@ -7733,3 +7738,212 @@ Phase 7 Override
 ```
 
 所以答案是：**第一階段確實是把 Session Override 放到 Word 文件最前面後附加到 Codex；下一階段也要用另一份 Phase-specific Override，但要替換舊的 Phase 0 Override，不能將兩個 Override 疊在一起。**
+
+
+
+#### 已經有 active bundle，但 Feature Observation 與它不相容
+```
+所以我的理解目前authentication-expert-fuzzy branch的authentication workflow目前尚無法通是因為: 雖然image data, material data, measurement data符合標準的都可通過imageresultadapter, materialresultadapter, measurementresultadapter, 然後進入到Feature Observation batch, 之後存入SQLite feature observation batches. ---> 載入同scan 全部observations. 就我的理解還無法進入Evidence->Bayesian->Anomaly->WatchAuthenticationResult的pipeline原因是存入SQLite feature observation batches之後, 無法相容activate bundle? 是這樣嗎? 那要如何解決呢? 或者還缺我提供甚麼資料呢?
+```
+的理解大致正確，但要修正一個關鍵點：
+
+目前不是「已經有 active bundle，但 Feature Observation 與它不相容」，而是「目前根本沒有 active bundle 可以載入」。因此系統在進入 Evidence pipeline 前就停止，回傳 `NOT_EVALUATED`。
+
+實際流程是：
+
+```
+Image / Material / Measurement Result
+        ↓ Adapters
+FeatureObservationBatch
+        ↓
+SQLite: feature_observation_batches
+        ↓
+讀取同 watch_id + scan_id 的全部 observations
+        ↓
+解析 Series / Family
+        ↓
+載入並驗證 active bundle
+        ↓ 成功後才會執行
+Evidence → Bayesian → Anomaly → Policy
+        ↓
+WatchAuthenticationResult
+```
+
+目前有兩個獨立阻擋：
+
+1. `Local_Data/authentication` 沒有已安裝及啟用的 bundle。
+2. `series_to_family: {}` 是空的；若 WatchEntry 也沒明確提供 Series/Family，身分解析會失敗。
+
+`shadow_mode: true` 並不會阻止推論；它只是避免 authentication 結果直接影響現行 App/報告的正式判定。
+
+為什麼 SQLite observations 還不夠？
+
+因為它們只描述「這次受測手錶觀察到什麼」，但 Evidence/Bayesian/Anomaly/Policy 還需要 bundle 內凍結的：
+
+- 正品 reference distributions/statistics
+- Bayesian likelihood model
+- 8 類 production priors
+- anomaly baseline/model
+- calibration model
+- decision thresholds 與 component criticality policy
+- feature schema、extractor version 與適用 Series/Component 範圍
+
+不能用同一筆待測 observation 臨時建立這些資料，否則會形成資料洩漏和自我正規化，結果沒有鑑定意義。
+
+## 如果你已經有訓練完成的 bundle
+
+最少需要提供我：
+
+1. Bundle 資料夾或 ZIP 路徑。
+2. 正式核准的 `Series → Family` mapping。
+3. 該 bundle 預期支援的 Series 與 Components。
+
+Bundle 必須包含 manifest 及下列 artifact roles：
+
+- feature schema
+- reference statistics
+- Bayesian model
+- anomaly model
+- calibration
+- policy
+- diagnostics
+
+而且至少必須符合目前 runtime：
+
+```
+feature_schema_version: live-feature-observation-v1
+extractor_version: app-adapters-v1
+```
+
+安裝及啟用可使用：
+
+```
+python -m core.authentication.bundle_cli install "D:\path\to\approved-bundle"
+python -m core.authentication.bundle_cli --series "品牌:系列ID" --component Dial status
+```
+
+Series/Family 則可以放進 [authentication_feature_registry.yaml](D:\\Provenance Project\\ImagingLibWatch_authentication-expert-fuzzy\\config\\authentication_feature_registry.yaml)，例如：
+
+```
+identity:
+  series_to_family:
+    "ROLEX:16613T": "ROLEX:SUBMARINER_5_DIGIT"
+```
+
+也可以直接由 WatchEntry/template 提供 `authentication_series_id` 和 `authentication_family_id`。
+
+## 如果目前沒有 bundle
+
+那麼缺的不是一般 App 執行資料，而是一套可建立 production bundle 的參考資料與治理決策。至少需要：
+
+- Series、Family、Component 清單與 mapping
+- 多只實體手錶的 reference observations
+- 每只手錶及 component 的專家 ground truth
+- 依實體手錶切分的 training/validation/test set，避免同一只錶不同 scan 洩漏
+- 完整 8 類標籤，尤其必須區分 `Original` 與 `Authentic replacements`
+- 8 類 production prevalence priors；不能直接從過度採樣的訓練資料推定
+- calibration/validation 資料
+- PASS/REVIEW/FAIL threshold、重要 component 與 failure policy 的核准規則
+
+現有整合測試已證明：放入相容的測試 bundle 後，完整的 Evidence → Bayesian → Anomaly → Policy pipeline 可以運作。因此目前不是 engine 本身接不通，而是 production inference prerequisites 尚未齊全。
+
+最直接的下一步是：如果你已有 bundle，給我「bundle 路徑＋Series/Family mapping」，我就可以安裝、驗證 compatibility，並用一筆真實 scan 做端到端測試；如果沒有 bundle，則要先從上述 reference data 建立並驗證 production bundle。
+
+
+
+
+
+#### Bundle 與測量資料的關係
+```
+目前我們預計要scan的手錶包括Rolex Submariner: 16610, 16613, 116610, 116613, 126610, and 126613, and Rolex Datejust: 16013, 16014, 16220, 16233, 16234, 116200, 116233, 116234, 126200, 126233, 126234, 126300, 126331. 是否可以這些建立Series/Family ? 而且這機制也希望在config可以容易的修改(因為之後會增加更多的watchs..) . 所以`Local_Data/authentication` 沒有已安裝及啟用的 bundle 的意思就是還沒有每個數值個別的reference distributions/statistics. 所以也就是要先有夠多的測量的數值才能統計distribution? 在那之前model都完全無法跑? 然後bundle裡面也包括Bayesian likelihood model, 8 類 production priors , anomaly baseline/model 等等.. 所以這些都還沒設定, 要等有足夠測量的數值才能開始?
+```
+
+可以。我已把這 19 個 Rolex reference 加入可擴充的 YAML `Series → Family` mapping，之後新增手錶只需修改 config，不必改 Python：
+
+[authentication_feature_registry.yaml (line 24)](D:\\Provenance Project\\ImagingLibWatch_authentication-expert-fuzzy\\config\\authentication_feature_registry.yaml:24)
+
+目前採用：
+
+- Series：`ROLEX:<Reference>`，例如 `ROLEX:16610`
+- Family：依系列、世代、尺寸與金屬材質分組
+- 沒有把所有 Submariner 或 Datejust 混成同一 Family，避免間金、鋼款、40mm、41mm 的重量及材質分布互相污染
+
+已驗證 19 個 reference 都能由 `Brand=Rolex + Reference` 自動解析，且 Python 語法檢查通過。
+
+## Bundle 與測量資料的關係
+
+你的理解基本正確：`Local_Data/authentication` 沒有 bundle，代表目前沒有可供 runtime 使用的完整、版本化模型資產。這不只是缺少「每個數值的平均與 distribution」，還同時缺少：
+
+- 各 Series/Family/Component/Evidence Group 的 reference statistics
+- 各 authentication class 的 likelihood
+- Bayesian hierarchy 與 production priors
+- Original anomaly baseline
+- probability calibration
+- PASS/REVIEW/FAIL policy
+- validation diagnostics 與版本資訊
+
+因此目前 production runtime 的完整 pipeline 確實不會執行，而是刻意 fail-closed 回傳 `NOT_EVALUATED`。
+
+## 是否要等「很多資料」才能開始？
+
+不用等到所有資料都完整才能開始開發，但要區分三個階段：
+
+1. 現在即可執行
+    
+    - Feature adapters
+    - Observation 儲存
+    - Series/Family 解析
+    - scan finalization
+    - 使用 synthetic/dev bundle 的端到端技術測試
+    
+    這可以證明程式鏈路正常，但結果不能當成正式鑑定。
+    
+2. 有初步資料後可建立 pilot/shadow bundle
+    
+    可以先建立結構完整的 bundle，讓 Evidence → Bayesian → Anomaly → Policy 真正運作，但設定保守 policy，例如資料成熟度不足時一律 `REVIEW`。
+    
+3. 資料與驗證充足後才開 production PASS/FAIL
+    
+    必須經過 held-out validation、threshold calibration、錯誤率評估與人工核准。
+    
+
+## 目前程式內的最低門檻
+
+[reference.py (line 91)](D:\\Provenance Project\\ImagingLibWatch_authentication-expert-fuzzy\\core\\authentication\\evidence\\reference.py:91) 預設為：
+
+- 至少 2 只不同實體手錶才嘗試 fit
+- 至少 5 只不同實體手錶才允許選用 Series/Family reference
+- 30 只不同實體手錶視為 reference maturity target
+
+但這些只是工程預設，不是已驗證的 production 樣本量。
+
+特別注意：同一只手錶掃描 20 次仍然只算一個 physical-watch sample；程式會將同一只錶的重複 scan 聚合，避免產生虛假的樣本量。
+
+實際門檻是針對：
+
+```
+Series/Family
+× Component
+× Evidence Group
+× Authentication Class
+```
+
+不一定要每個組合立即都有 30 只，因為模型支援：
+
+```
+Series reference → Family fallback → Global fallback
+```
+
+資料較少時可以回退，但可信度和 maturity 會降低，policy 應轉為 `REVIEW`。
+
+## 各 bundle 項目何時可以設定
+
+- Feature schema、Series/Family mapping：現在即可設定。
+- Policy 草案：現在即可設定，但 threshold 之後仍需 validation。
+- Production priors：可以先由業務/專家核准估計，不必等量測資料；它代表實際送驗母體的八類盛行率，不能直接使用訓練資料比例。
+- Reference/likelihood distributions：需要已知真實標籤的實體手錶量測資料。
+- Anomaly baseline：需要獨立保留的已知 Original 手錶資料。
+- Calibration：需要 held-out validation data。
+- 正式 PASS/FAIL：需等上述資料與政策均驗證完成。
+
+所以結論是：現在不是「模型程式完全不能跑」，而是「沒有完整 bundle 時，正式 runtime 不允許產生鑑定結果」。下一步最合適的是先建立一個完整但保守的 pilot/shadow bundle，開始累積這 19 個 Series 的已標註資料；資料成熟前結果維持 `REVIEW`，成熟並驗證後才開放正式 PASS/FAIL。
