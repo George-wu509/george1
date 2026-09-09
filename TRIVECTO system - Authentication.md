@@ -11,8 +11,8 @@
 | [[#### 如何實作這份Prompt]]                                    |     |
 | [[#### 已經有 active bundle，但 Feature Observation 與它不相容]]   |     |
 | [[#### Bundle 與測量資料的關係]]                                 |     |
-|                                                          |     |
-|                                                          |     |
+| [[#### 多站點手錶掃描、真偽模型與 AWS Lakehouse 參考設計]]                |     |
+| [[#### 確認這條pipeline的code是否能取得approved Bundle]]           |     |
 |                                                          |     |
 |                                                          |     |
 |                                                          |     |
@@ -7954,6 +7954,8 @@ Series reference → Family fallback → Global fallback
 
 
 
+
+
 ```
 請中文詳細解釋authentication的流程, 從App main.py拍照譬如拍照Upper text(0004)的文字並進行分析get identifier, 或從Hour hand lume(0023)的texture analysis get identifier, 或openbackcrown的Rotor(3006)形狀分析get identifier
 
@@ -8651,3 +8653,1049 @@ Watch 級：
     我沒有在報告中揭露其值；應立即 rotate/revoke，改用 IAM role、環境注入或 Secrets Manager，並檢查是否曾進入 log、備份或歷史分享。
 10. Authentication 核心的 125 個 domain/bundle/evidence/Bayesian/anomaly/policy 單元測試已全部通過，但這只證明核心元件內部契約，不代表端到端 App authentication 已完成。
 >>>>>>> Stashed changes
+
+
+
+#### 多站點手錶掃描、真偽模型與 AWS Lakehouse 參考設計
+```
+如果要重新設計讓local SQLite, AWS S3, AWS DynamoDB, or其他這系統有用到的AWS服務能在這三個功能性上都能優化發揮完整
+
+1. 能夠符合並最佳化authentication批次重訓 + 版本化發佈的版本設計.
+2. 也符合有多個站點可以各自載入template然後每天都scan至少300個watchs到raw images跟Analysis results到local DB並上傳到AWS.&#x20;
+3. 也要能之後在App能結合除了本來有的AWS的服務之外還有AWS outbox, Iceberg, AWS Glue, AWS Atena等進行很多分析或檢索功能譬如下列:&#x20;
+
+尋找某個uuid的image file是屬於哪個watchid, 是屬於哪個template, 是甚麼時候拍的, 是哪個watchpoint, 以及跟這個uuid相關的analysis結果是存在哪裡哪個experiment? 跟這個uuid相關的analysis結果的某個結果數值value? 跟這個uuid相關的pdf report的identifier是哪一個? 有哪個另外的uuid跟這個同屬於同一次拍照, 有哪個另外的uuid跟這個同屬於同個watchpoint?, 有哪個另外的uuid跟這個同屬於同個reference number? 跟這個uuid相關的watchpoint不同capture的uuid是? 找到所有屬於同個reference number的所有這個watchpoint的uuid, 找到所有屬於同個watchpoint的所有的uuid, 找到找到所有屬於同個reference number的所有這個watchpoint且authentication是真品的uuid Analysis\Exp\_YYYYMMDD\_HHMMSS\_<8字元ID>有包含哪些analysis results, analysis結果的某個結果數值value? 跟這個uuid相關的pdf report的某個analysis的identifier是哪一個? 這個experiment是從哪一次watchid來的? 是從哪個template? 這個watchid還有沒有其他experiments, 找到所有屬於同個reference number的所有這個watchpoint的uuid, 找到所有屬於同個analysis result的所有的uuid, 找到找到所有屬於同個reference number的所有這個analysis result且authentication是真品的values, 要對這個experiment裡面某個analysis找到所有相關values的distribution. 要怎麼找到Camera pipeline TXT 報告是屬於哪次拍照, 是屬於哪個template建立的, 其中的某個數值譬如拍照的exposure 尋找某個template是屬於哪個reference number, 以及用在哪個watchid, 是甚麼時候建立的, 跟哪些watchpoint有關, 以及跟這個template相關的analysis結果是存在哪裡哪個experiment? 跟這個template相關的analysis結果的某個結果數值value? 有哪個另外的template跟這個同屬於同個reference number? 找到所有屬於同個template的所有這個watch scan 是否有儲存WatchShift 參考影像相關index在database裡面 關於material data是屬於哪一次scan? 是屬於哪個reference number? 跟同個reference number的material values是否能比較不同的成分組成%? 跟同個reference number的material values是否能比較分析特定成分%? 能否找到pdf file是從哪次watch scan? 這個pdf file是屬於哪種reference number? pdf file裡面的某個數值是甚麼? pdf file裡面某數值跟另外一份pdf file數值的比較 local DB能否查詢裡面有哪些種類跟內容? 譬如有哪些template? 有哪些watch scan? 以及還有甚麼是local DB有儲存的  最後請幫我用極簡的 Markdown 條列，總結我們做了哪些變更以及接下來要測試/修復的重點
+```
+建議把系統拆成四個資料責任層：
+
+1. **站點 Edge**：SQLite 保存可查詢的作業資料；檔案系統 spool 保存 raw image/PDF/TXT；同一個本機 transaction 寫業務資料與 outbox。
+2. **S3 object store**：保存不可變 raw/derived image、analysis blob、PDF、camera TXT、template/model/dataset manifest；S3 是檔案內容的權威來源。
+3. **DynamoDB operational index**：保存全站點即時 UUID lookup、關係索引、冪等 inbox/cloud-outbox、站點 desired/current release；不拿來做大型 distribution 或任意 join。
+4. **Iceberg + Glue + Athena lakehouse**：保存可演進、可 upsert 的分析事實表，用 Athena 做跨站點、跨年份、distribution、material/PDF 比較與追溯。
+
+這裡將 **authentication** 解讀為「手錶真偽判定模型」，不是使用者登入。若兩者都需要，登入/授權應另用 Cognito/IAM Identity Center，不混入模型版本欄位。
+
+> 「AWS Outbox」不是一個獨立 AWS 服務；這份設計同時使用 **本機 transactional outbox** 與 **DynamoDB cloud outbox item + Streams**，達到斷線可重送及雲端可靠 fan-out。
+
+## 整體資料流
+
+```mermaid
+flowchart LR
+    subgraph Site[每一個站點]
+        Scanner[Scan / Camera / Analysis]
+        Writer[單一 DB Writer]
+        SQLite[(SQLite WAL)]
+        Spool[(Local file spool)]
+        Outbox[Outbox dispatcher]
+        Scanner --> Writer
+        Writer -->|同一 transaction| SQLite
+        Writer --> Spool
+        SQLite --> Outbox
+        Spool --> Outbox
+    end
+
+    Outbox -->|temporary credentials + checksum| S3[(S3 immutable assets)]
+    Outbox -->|metadata event| Ingest[API / IoT ingest]
+    Ingest -->|conditional TransactWriteItems| DDB[(DynamoDB trace + cloud outbox)]
+    DDB --> Streams[DynamoDB Streams]
+    Streams --> Pipes[EventBridge Pipes]
+    Pipes --> Firehose[Data Firehose]
+    Firehose --> Iceberg[(S3 Iceberg tables)]
+    Glue[Glue Data Catalog] --- Iceberg
+    Athena[Athena] --> Glue
+    App[App query API] --> DDB
+    App --> Athena
+    App --> S3
+
+    Iceberg --> Dataset[Immutable training dataset manifest]
+    Dataset --> Pipeline[SageMaker Pipeline]
+    Pipeline --> Registry[SageMaker Model Registry]
+    Registry --> Release[Signed release manifest]
+    Release --> Jobs[AWS IoT Jobs staged rollout]
+    Jobs --> Site
+```
+
+## 各儲存層的權責
+
+| 資料 | 本機 | AWS 權威來源 | 查詢方式 |
+|---|---|---|---|
+| Raw/derived image、PDF、TXT、model/template 檔 | spool，只在上傳驗證與 retention 條件滿足後清理 | S3 object + version/checksum | 先查 UUID metadata，再用短效 signed URL 取檔 |
+| Scan/capture/experiment/result metadata | SQLite | DynamoDB current projection；Iceberg history/analytics | SQLite（站點）、DynamoDB（即時）、Athena（跨站點） |
+| Scalar analysis/material/PDF/TXT value | SQLite typed columns | Iceberg typed fact tables | SQLite 或 Athena SQL |
+| Template/model/dataset version | SQLite cache | S3 manifest + DynamoDB control + SageMaker Model Registry | release API / audit query |
+| Sync reliability state | SQLite outbox/inbox | DynamoDB inbox/cloud-outbox + Iceberg event audit | backlog/age/error metrics |
+
+S3 對成功 PUT/DELETE 及後續 GET/LIST 提供強一致性，但應仍以內容 checksum 判斷檔案完整性；multipart 的 ETag 不可當作整檔 MD5。[S3 consistency](https://docs.aws.amazon.com/AmazonS3/latest/userguide/Welcome.html)；[S3 checksum guidance](https://docs.aws.amazon.com/AmazonS3/latest/userguide/checking-object-integrity-upload.html)
+
+## 1. Authentication 批次重訓與版本化發佈
+
+### 必須分開的版本實體
+
+- `dataset_version`：凍結 asset UUID、S3 version ID、SHA-256、label、train/validation/test split、Iceberg snapshot/query 與 label schema；舊 manifest 不覆寫。
+- `training_run`：固定 source commit、container digest、hyperparameters、random seed、dataset version 與 evaluation。
+- `model_version`：固定 model artifact、preprocessing version、feature schema、training run 與 Model Registry package ARN。
+- `model_release`：把 model version、threshold、template compatibility、channel 與 release manifest 綁定。**改 threshold 也要建立新 release**，不能偷偷改現有判定。
+- `site_model_deployment`：記錄每個站點的 desired/installed/failed/rolled-back 狀態。
+- `analysis_version`：每個 analysis 的程式與結果 schema 也獨立版本化。
+- `authentication_decision`：每次結果必須記錄 `model_version_id`、`release_id`、score、threshold、verdict、時間及 source UUID。
+
+### 批次流程
+
+1. Athena/Iceberg 選樣，但輸出不可變 dataset manifest；保存 Iceberg snapshot/query 與每個物件的 S3 version/checksum，避免重訓後無法重現。
+2. EventBridge schedule 或人工核准啟動 SageMaker Pipeline：驗證資料 → preprocessing → training → evaluation → bias/drift/quality gate。
+3. 通過 gate 才註冊候選 model package。SageMaker Model Registry 會在 model group 內給每個 model package 版本，適合保留 lineage 與 approval 狀態。[SageMaker Model Registry](https://docs.aws.amazon.com/sagemaker/latest/dg/model-registry-models.html)
+4. 建立簽章 release manifest，先 DEV，再指定少量 PILOT 站點，最後 PRODUCTION；每階段設定錯誤率/健康檢查 abort gate。
+5. 透過 AWS IoT Jobs 發佈；Jobs 支援 rollout、retry、timeout 與 abort，適合多站點分批部署及回滾。[AWS IoT Jobs](https://docs.aws.amazon.com/iot/latest/developerguide/jobs-what-is.html)
+6. Edge 下載到暫存目錄，驗證 manifest、artifact checksum、template compatibility，原子切換 `current` 指標；舊版保留到新版本健康檢查通過。
+
+### 防止資料洩漏與不可重現
+
+- split 以 `watch_id` 或實體批次分組，不能以單張 image 隨機拆分，避免同一只錶同時出現在 train/test。
+- reference image、WatchShift feature、preprocessing、threshold 皆要有版本。
+- 每份真偽結果保存完整 decision context；App 顯示 verdict 時也能顯示是由哪一版 model/release 產生。
+- model/template version payload 發佈後不可原地修改；SQLite schema 已加入 immutable guard trigger。
+
+## 2. 多站點每天至少 300 個 watch scan
+
+### Edge 寫入原則
+
+- 每站點一個 Edge Agent 負責 SQLite 的**單一 writer queue**；相機/UI/analysis worker 經本機 API 送寫入，不讓多個 process 直接搶 DB。
+- 啟用 WAL、foreign key、busy timeout；transaction 保持短小。SQLite 不放 image BLOB，只放 UUID、關聯、typed value、local URI、S3 URI 與 checksum。
+- SQLite DB 不放在 NAS/SMB share；多台工作站各有自己的 DB、`site_id`、`device_id`，由雲端合併。
+- 一次拍照用一個 `capture_id`；同次拍出的多 camera/lighting image 各自有 `asset_uuid`，因此「同次拍照」可精確查詢。
+- `watch_scan` 固定記錄實際使用的 `template_version_id`；站點稍後更新 template 不會改寫歷史。
+
+### Template 載入
+
+1. Cloud 建立 immutable template manifest：version、schema、watchpoint 順序、capture config、reference image UUID/checksum、相容 model release。
+2. 站點下載到 staging，驗證 schema 與 checksum，做 dry-run。
+3. transaction 寫入 `template_version`/`template_watchpoint`/`template_deployment`，再原子切換 active pointer。
+4. Scan 開始後 template version 鎖定；未完成 scan 不跟著 active pointer 變更。
+
+### 一次 scan 的安全提交順序
+
+1. 建立 `watch_scan`。
+2. 每個 watchpoint 建立 `capture` 與 raw `asset` rows；檔案先寫 temporary name、flush/fsync、rename，再提交 DB row。
+3. Analysis 建立 `experiment`、`analysis_result`、typed `analysis_value`；大型 result blob 另成 asset。
+4. 在相同 SQLite transaction 寫對應 `outbox_event`。payload 只放 metadata，絕不塞 image bytes。
+5. Dispatcher 先上傳 asset，S3 `HEAD`/checksum 驗證成功後，再送 `asset.verified` 與下游 result event。
+6. Cloud 確認 DynamoDB transaction 成功後才將 local event 標為 `SENT`；失敗採 exponential backoff + jitter，超過上限進 `DEAD_LETTER`，保留人工重播能力。
+
+### S3 key 與生命週期
+
+```text
+raw/tenant_id=<id>/site_id=<id>/capture_date=YYYY-MM-DD/scan_id=<id>/capture_id=<id>/<asset_uuid>.<ext>
+derived/tenant_id=<id>/site_id=<id>/event_date=YYYY-MM-DD/experiment_id=<id>/analysis_key=<key>/<asset_uuid>.<ext>
+reports/tenant_id=<id>/site_id=<id>/report_date=YYYY-MM-DD/scan_id=<id>/<pdf_uuid>.pdf
+templates/template_id=<id>/version=<n>/manifest.json
+models/model_family_id=<id>/model_version_id=<id>/manifest.json
+datasets/dataset_name=<name>/version=<n>/manifest.json
+```
+
+- Key 只含不可變 ID，不用可改名的 display name；同 key 不覆寫。
+- bucket 開啟 versioning、Block Public Access、SSE-KMS；若有法規證據保存需求，再對 raw/report bucket 使用 Object Lock。
+- local 檔案至少等 `UPLOADED → VERIFIED`，並達到 retention/backup 條件後才清理；metadata 不跟著刪。
+- 大檔使用可續傳 multipart；指定 checksum 並保存 S3 回傳 checksum。AWS SDK/S3 可驗證整檔或分段 checksum。[Multipart checksum](https://docs.aws.amazon.com/AmazonS3/latest/userguide/mpuoverview.html)
+
+### 站點 AWS 身分
+
+每個 device 使用獨立 AWS IoT X.509 certificate；由 IoT credentials provider 換取短效、最小權限 AWS credentials，不在站點硬編碼 access key。該 provider 會驗證 X.509 並簽發 limited-privilege temporary token。[IoT credential provider](https://docs.aws.amazon.com/iot/latest/developerguide/authorizing-direct-aws.html)
+
+若採 presigned upload，簽發端必須固定 bucket/key/content type/checksum、使用短 expiry，並在簽發前以 UUID/idempotency key 保留該 key。因為相同 key 的 presigned PUT 可以覆蓋既有物件，不能只靠 URL 本身防止覆寫。[S3 presigned upload](https://docs.aws.amazon.com/AmazonS3/latest/userguide/PresignedUrlUploadObject.html)
+
+## 3. Outbox、DynamoDB、Iceberg、Glue、Athena
+
+### 兩段 outbox / idempotency
+
+**Edge transaction** 同時寫 domain rows 與 `outbox_event`。事件至少包含：
+
+```text
+event_id, idempotency_key, schema_version, event_type,
+aggregate_type, aggregate_id, aggregate_version,
+tenant_id, site_id, device_id, occurred_at,
+entity payload, S3 bucket/key/version/checksum
+```
+
+**Cloud transaction** 以 DynamoDB conditional `TransactWriteItems` 同時寫：
+
+- `INBOX#<event_id>`：拒絕重複 event。
+- current trace projection/relationship items。
+- `OUTBOX#<event_id>`：交給 Streams fan-out。
+
+`ClientRequestToken` 可使相同 `TransactWriteItems` 在其 idempotency window 內具冪等性；長期重播仍必須靠 inbox condition 與 `aggregate_version` 條件，不能只依賴 token。[DynamoDB TransactWriteItems](https://docs.aws.amazon.com/amazondynamodb/latest/APIReference/API_TransactWriteItems.html)
+
+EventBridge Pipes 從 DynamoDB Streams 只篩 cloud-outbox items，批次送 Data Firehose。Streams/Pipes 是 at-least-once，因此 consumer 必須冪等；AWS 文件也明確指出 DynamoDB Streams 經 Pipes 可能至少送達一次。[DynamoDB source for EventBridge Pipes](https://docs.aws.amazon.com/eventbridge/latest/userguide/eb-pipes-dynamodb.html)
+
+### DynamoDB `TraceIndex` key pattern
+
+| PK | SK | 用途 |
+|---|---|---|
+| `ASSET#<uuid>` | `META` | 一次取得 capture/scan/watch/reference/template/watchpoint/experiment/report/S3 links |
+| `CAPTURE#<capture_id>` | `ASSET#<type>#<uuid>` | 同一次拍照的所有 UUID |
+| `WATCH#<watch_id>` | `SCAN#<time>#<scan_id>` | watch 的歷次 scan |
+| `SCAN#<scan_id>` | `EXPERIMENT#<time>#<experiment_id>` | scan 的所有 experiment |
+| `EXPERIMENT#<id>` | `RESULT#<analysis>#<result_id>` | experiment 內容與 values |
+| `WP#<watchpoint_id>#<YYYYMM>` | `CAPTURE#<time>#<uuid>` | watchpoint 的 bounded time-range 查詢 |
+| `REFWP#<reference_id>#<watchpoint_id>#<YYYYMM>` | `AUTH#<verdict>#<time>#<uuid>` | reference + watchpoint + genuine lookup |
+| `TEMPLATE#<template_version_id>` | `SCAN#<time>#<scan_id>` | template 使用紀錄 |
+| `ANALYSIS#<analysis_id>#<YYYYMM>` | `ASSET#<uuid>#RESULT#<id>` | 同 analysis 的 UUID |
+| `OUTBOX#<event_id>` | `EVENT` | cloud fan-out item |
+
+`YYYYMM` 是刻意的 write/read shard。App 的即時 request 必須有合理 date range/page limit；「全部歷史」或 distribution 直接走 Athena，避免 DynamoDB hot partition 及昂貴 fan-out。
+
+另設 `SiteControl` table 保存 `SITE#id / DESIRED#MODEL|TEMPLATE`、installed state、heartbeat 與 sync watermark。不要把 control-plane item 與多年 trace adjacency 混在同一 hot partition。
+
+### Iceberg / Glue / Athena
+
+- Data Firehose 可直接將 stream 寫入 S3 上的 Iceberg table，並依 table 路由 insert/update/delete；對 current fact 設 unique key，例如 `asset_uuid`、`capture_id`、`value_id`、`decision_id`。若沒指定 operation，預設 insert 會保留重複資料。[Firehose Iceberg setup](https://docs.aws.amazon.com/firehose/latest/dev/apache-iceberg-stream.html)
+- `event_audit` 永遠 append，以 `event_id` 稽核；current fact 使用 update + unique key，或先落 staging 再以 Athena/Glue `MERGE` 依 `aggregate_version` 更新。
+- Glue Data Catalog 保存 Iceberg metadata/schema；Athena engine v3 建立的是 Iceberg v2 table，支援 transactional `MERGE INTO`。[Athena Iceberg CREATE](https://docs.aws.amazon.com/athena/latest/ug/querying-iceberg-creating-tables.html)；[Athena MERGE](https://docs.aws.amazon.com/athena/latest/ug/merge-into-statement.html)
+- 以月份 + hash bucket 做 hidden partition；不要以 UUID identity partition，也不要每天/每事件建立大量小 partition。
+- Firehose 設 buffer 並監控 failed row/error S3 prefix；依實際 file count/scan bytes 排程 compaction。Athena 的 `OPTIMIZE`/`VACUUM` 應排程且保留足夠 snapshot；VACUUM 後無法 time travel 到已過期 snapshot。[Athena VACUUM](https://docs.aws.amazon.com/athena/latest/ug/vacuum-statement.html)
+- 需要 column/row/table access control 時加 Lake Formation；tenant/site filters 仍要在 API 層強制，不能只信前端參數。
+
+## App 的查詢路由
+
+| 問題 | 首選 | 原因 |
+|---|---|---|
+| UUID 屬於哪個 capture/watch/template/watchpoint、檔案在哪 | SQLite（本站）或 DynamoDB `ASSET#uuid` | 單點、低延遲 |
+| 同 capture、scan、watchpoint、reference 的近期 UUID | DynamoDB adjacency | 有界關係查詢 |
+| Experiment 有哪些 result/value、watch/template 來源 | DynamoDB；本站可 SQLite | 以 experiment/scan 為 partition |
+| PDF identifier、analysis section、page/value；camera TXT exposure | DynamoDB metadata/value；全文或大量比較走 Athena | value 已抽成 typed row，原檔仍在 S3 |
+| 同 reference + genuine 的分析數值 | Athena | 需要 join/filter 大量歷史 |
+| distribution、percentile、跨 PDF/material composition 比較 | Athena | columnar scan/aggregation |
+| 下載 raw image/PDF/TXT | S3 signed GET | DB 不傳 binary |
+
+App API 建議提供 `GET /assets/{uuid}/trace`，一次回傳 node + bounded edges；`POST /analytics/query` 只接受 allowlisted query template 與 tenant/site scope，不讓 App 拼接任意 Athena SQL。
+
+## 追溯能力對照
+
+這份 schema/query catalog 已涵蓋：
+
+- UUID → watch/reference/template/capture/watchpoint/time/S3 object。
+- UUID → experiment → analysis/result storage → typed metric value → model/release/authentication。
+- UUID → PDF report identifier → PDF 內 analysis identifier/page/value。
+- 同 capture、同 watchpoint、同 reference + watchpoint、不同 capture 的 UUID。
+- 同 reference + watchpoint 且 genuine 的 UUID；同 reference + analysis 且 genuine 的 values。
+- Experiment 內容、來源 watch/template、同 scan 的其他 experiments、metric distribution。
+- Camera pipeline TXT → capture/template → exposure 等 extracted typed value。
+- Template → reference/watchpoints/scans/experiments/results；同 reference 的其他 templates。
+- WatchShift reference image index metadata、index version、index locator 與 feature asset UUID。
+- Material sample → scan/reference；同 reference 的 composition/指定成分比較。
+- PDF → scan/reference/experiment；兩份 PDF 的 extracted value 比較。
+- 本機有哪些 entity/table、template、scan、asset type、analysis 與 metric，以及 outbox backlog。
+
+具體 SQLite SQL 在 `sqlite_queries.sql`；Athena DDL 與 distribution/comparison SQL 在 `athena_iceberg.sql`。
+
+## 一致性與衝突規則
+
+- 每個 mutable aggregate 有遞增 `aggregate_version`；cloud 只接受 `incoming > stored`，重送同版本回成功但不重寫。
+- UUID 在產生端生成；server 不替重送事件換 UUID。
+- Event schema 只做 additive evolution；破壞性變更升 `schema_version`，consumer 同時支援 N/N-1 直到所有站點升級。
+- Template/model/dataset/analysis version 發佈後不可變；修正內容一律新 version。
+- S3 object key 與 content hash 不符即 quarantine，不能讓 metadata 指向未驗證內容。
+- UTC 是儲存時間；site timezone 只在 UI/rendering 使用。設備 clock drift 另記 `received_at` 並監控。
+- 所有 delete 先 tombstone/event；S3 lifecycle 真正清理前要通過 retention、legal hold 與引用檢查。
+
+## 監控與 SLO 指標
+
+- Edge：pending/failed/dead-letter count、oldest pending age、spool bytes、SQLite integrity/backup age、disk free、clock drift。
+- Upload：bytes/sec、retry count、checksum mismatch、multipart orphan、S3 verified latency。
+- Cloud：DynamoDB throttle/conditional failure、Streams iterator age、Pipes retry/DLQ、Firehose failed rows/data freshness、Iceberg small-file count、Athena scanned bytes/query latency。
+- Release：每站 desired vs installed、checksum/compatibility failure、pilot error rate、rollback count、model verdict/score drift。
+
+「每天 300 watch/站點」只描述 scan 數，不足以直接 sizing。壓測需另外量測每 watch 的 watchpoint 數、每 capture 的 image 數/大小、analysis value 數、同時相機數、可接受上傳延遲與離線天數。
+
+## 分階段落地
+
+1. **Schema + Edge transaction**：導入新表/ID、單 writer、WAL、typed values、local spool/outbox；做雙寫與 backfill 驗證。
+2. **S3 + ingest idempotency**：immutable key、checksum、temporary credentials、DynamoDB inbox/trace/cloud-outbox、故障重播。
+3. **Lakehouse**：建立 Glue catalog/Iceberg tables、Pipes/Firehose、Athena allowlisted queries、compaction/VACUUM policy。
+4. **Versioned ML delivery**：dataset manifest、SageMaker Pipeline/Registry、signed release、IoT Jobs pilot/production/rollback。
+5. **App query API**：UUID trace graph、PDF/TXT/material extractors、distribution endpoints、RBAC/tenant scope。
+
+## 上線前驗收重點
+
+- 拔網路 24–72 小時持續 scan，再恢復網路：沒有遺失、重複 current row 或錯誤關聯。
+- 在每個 commit boundary 強制關機：SQLite 與檔案 spool 不出現「有 row 無檔案」或「有檔案無可恢復 row」。
+- 重送相同 event 10 次、亂序送 v3/v2/v1：DynamoDB/Iceberg current state 仍為 v3，event audit 可看見重播。
+- 上傳中斷與 multipart resume；故意破壞 bytes：checksum mismatch 必須 quarantine，不能標 `VERIFIED`。
+- 兩個站點產生同樣 local sequence：因 site/device/global UUID 不碰撞。
+- 發佈不相容 model/template：Edge 拒絕切換；pilot 超過 error gate 自動停止/回滾。
+- 從任意 raw image UUID 完成全鏈追溯，並逐項驗證 `sqlite_queries.sql` Q01–Q27。
+- Athena 對同 reference genuine values、percentile distribution、PDF/material comparison 與 SQLite 抽樣結果一致。
+- PII/tenant isolation、KMS、signed URL expiry、certificate rotation/revocation、CloudTrail/Lake Formation access test。
+- 備份還原：SQLite online backup、S3 version、DynamoDB PITR、Iceberg snapshot/metadata restore 都實際演練。
+
+
+
+
+#### 確認這條pipeline的code是否能取得approved Bundle
+```
+請修正這問題: "0005 的 0 observations 是一個明確的資料結構接線問題，不是 OCR 沒有算出 features"
+
+Learning mode 定位是錯誤的, 正確應該是將上傳的多份samples在AWS 訓練與核准, 建立可用於authentication mode的 active Bundle
+
+我就是要確認這條pipeline的code是否能取得approved Bundle，所以需要驗證 AWS Batch → gate → 人工核准 → KMS 簽章 → canary 發布 → 本機下載 → Authentication mode. 所以要做甚麼才能夠正確執行 AWS Batch → gate → 人工核准 → KMS 簽章 → canary 發布 → 本機下載 → Authentication mode
+所以要怎麼做, code的方面請直接修正, 而需要我進行的一步步說明
+```
+已完成程式修正，但「真實 AWS 端到端部署」尚未實際跑通；目前的阻礙是 AWS CLI 回傳 `InvalidClientTokenId`，而這台電腦也尚未安裝 Docker。
+
+### 已修正的問題
+
+- `0005` 的 OCR 結果實際位於 `raw_report`，現在 adapter 會先解開 wrapper 再產生 observations：[adapters.py (line 223)](D:/Provenance Laboratories projects/ImagingLibWatch_authentication-expert-fuzzy/core/authentication/integration/adapters.py:223)
+- 以保留的真實 `0005` OCR report 驗證：
+    - 修正前：`0 observations`
+    - 修正後：`2,011 observations`
+- 先前 `20260908_164328_961` 實際載入的是 `0012 + 0005`，不是 `0012 + 0026`。
+- 舊的 learning sample 是 immutable，不會自動被修正；必須重新執行一次 Learning mode，產生新的 corrected sample。
+
+### Learning mode 現在的正確流程
+
+Learning mode 不執行 authentication inference 本身是正確的。原先缺少的是「上傳完成後啟動訓練/發佈 orchestration」的接線。
+
+現在 [test_authentication_ui.py (line 1720)](D:/Provenance Laboratories projects/ImagingLibWatch_authentication-expert-fuzzy/helper/tests/test_authentication_ui.py:1720) 增加了：
+
+- 真實 S3 + DynamoDB outbox 上傳
+- 等待目前 sample 與 feature batches 全部驗證成功
+- 可選擇啟動：  
+    `AWS Batch → release gates → human approval → KMS signing → canary publish`
+- 需要填入：
+    - Step Functions ARN
+    - Canary site IDs
+    - 可選的 corpus site filter
+    - 可選的 frozen label set
+- 啟動後，execution ARN 會寫進 `pipeline_summary.json`
+
+共用啟動邏輯在 [orchestration.py (line 90)](D:/Provenance Laboratories projects/ImagingLibWatch_authentication-expert-fuzzy/cloud/authentication/orchestration.py:90)；State Machine 現在也會完整傳入 `family/site_id/policy/prior`：[training.asl.json (line 18)](D:/Provenance Laboratories projects/ImagingLibWatch_authentication-expert-fuzzy/cloud/authentication/statemachine/training.asl.json:18)。
+
+另外修正了兩個部署時才會爆出的 import 問題：
+
+- Batch image 匯入 `authentication_labels` 時不再強制載入 station-only storage。
+- Replay Lambda ZIP 現在包含間接需要的 `core/report_identifiers.py`。
+
+### 你接下來要做的事
+
+完整 PowerShell 指令與逐步驗證已寫進：
+
+[authentication_cloud_training.md (line 273)](D:/Provenance Laboratories projects/ImagingLibWatch_authentication-expert-fuzzy/docs/authentication_cloud_training.md:273)
+
+執行順序如下：
+
+1. 重新執行 Learning mode
+    
+    用相同 Series/Family，重新 load `0012 + 0005` 或真正需要的 `0012 + 0026`。確認新 summary 中 `0005` 對應 batch 不再是 0 observations，且：
+    
+    - `learning_sample.status = LEARNING_SAMPLE_RECORDED`
+    - `cloud_delivery.verified = true`
+    - corrected learning sample 的 S3 key 出現在 `verified_s3_keys`
+2. 收集足夠而且有代表性的 corpus
+    
+    目前只有少數 `Original` Dial samples，不足以通過 release gates。`1000` 不是固定門檻；真正要求是：
+    
+    - 不同 physical watches
+    - Authentic/Aftermarket/Forgery 等必要標籤
+    - train/calibration/holdout 都有足夠資料
+    - holdout 不能缺類別
+    - calibration 必須能建立 anomaly reference
+3. 先在本機執行真實 training
+    
+    使用 reviewed policy 與 production priors。若本機 gates 不通過，AWS Batch 也不會神奇通過。
+    
+4. 修復 AWS 登入並準備 Docker
+    
+    先確認：
+    
+    ```
+    aws sts get-caller-identity
+    docker version
+    ```
+    
+    現在第一個命令會得到 `InvalidClientTokenId`。建議改用 AWS SSO、AWS profile 或 IAM role；`config/system_config.yaml` 內若仍保存靜態 credentials，應輪替並移除，避免它覆蓋有效 profile。
+    
+5. 建置並推送 Batch image、打包 Lambda、部署 CloudFormation
+    
+    新增的 Lambda 打包器：
+    
+    [package_lambdas.py (line 91)](D:/Provenance Laboratories projects/ImagingLibWatch_authentication-expert-fuzzy/cloud/authentication/package_lambdas.py:91)
+    
+    CloudFormation 排程預設為 `false`，所以第一次部署不會自行啟動付費訓練：[authentication.yaml (line 28)](D:/Provenance Laboratories projects/ImagingLibWatch_authentication-expert-fuzzy/cloud/authentication/infra/authentication.yaml:28)。
+    
+    ECR 登入、push、CloudFormation deploy 的行為可對照 AWS 官方文件：[ECR push](https://docs.aws.amazon.com/cli/latest/userguide/cli_ecr_code_examples.html)、[CloudFormation deploy](https://docs.aws.amazon.com/cli/latest/reference/cloudformation/deploy.html)。
+    
+6. 啟動一次 Learning-mode training workflow
+    
+    部署完成後，把輸出的 `TrainingStateMachineArn` 貼進 UI，勾選新增的 AWS training/release 選項。
+    
+    UI 只會在 S3/DynamoDB delivery verified 後呼叫 Step Functions。也可手動使用 AWS 的 [`start-execution`](https://docs.aws.amazon.com/cli/latest/reference/stepfunctions/start-execution.html)。
+    
+7. 人工核准
+    
+    Gates 通過後，execution 會停在 `RequestApproval`。你必須檢查 candidate、corpus partitions 與 validation report，然後使用 [`send-task-success`](https://docs.aws.amazon.com/cli/latest/reference/stepfunctions/send-task-success.html) 回傳：
+    
+    ```
+    {
+      "approved_by": "j.lin",
+      "approval_reference": "REVIEW-2026-114"
+    }
+    ```
+    
+    不通過則使用 `send-task-failure`，不要核准。
+    
+8. 安裝 canary Bundle 並跑 Authentication mode
+    
+    從 KMS 匯出 public key；官方指令說明見 [`get-public-key`](https://docs.aws.amazon.com/cli/latest/reference/kms/get-public-key.html)。設定 station 的：
+    
+    ```
+    authentication:
+      bundle_store_path: Local_Data/authentication
+      cloud_bundle_source:
+        enabled: true
+        bucket: <bucket>
+        region: us-east-2
+        public_key_path: config/authentication_bundle_signing.pem
+    ```
+    
+    完整本機設定見 [authentication_local_inference.md (line 41)](D:/Provenance Laboratories projects/ImagingLibWatch_authentication-expert-fuzzy/docs/authentication_local_inference.md:41)。
+    
+    下一次啟動 pipeline 時會下載 canary pointer、驗證 KMS signature、安裝並 activate Bundle。確認：
+    
+    - `Local_Data/authentication/activation_state.json` 有 active version
+    - Authentication mode 結果包含 approved `bundle_version`
+    - component results 有 Evidence、Bayesian、Anomaly、Fuzzy-policy 輸出
+
+### 驗證結果
+
+- Python syntax：通過
+- Authentication tests：`202/202 passed`
+- 真實 `0005` wrapper regression：`2,011 observations`
+- Lambda package layout：通過
+- CloudFormation 本機 YAML/contract 測試：通過
+- AWS 線上 `validate-template`：尚未通過，原因是目前 AWS security token 無效
+- 真實 AWS Batch/KMS/canary execution：尚未執行
+
+`Generate synthetic bundle` 仍可驗證本機四階段 inference，但它沒有經過 S3 corpus training、人工核准或 KMS 簽章，因此不能當作這條 AWS approved Bundle pipeline 的完成證據。
+
+
+
+
+
+```
+我執行新的test\_authentication\_ui.py那有State machine ARN, Corpus site filter, Frozen label set這些是甚麼要怎麼填? App main.py裡面有這選項嗎? 不能直接load config的值嗎
+```
+可以。結論是：
+
+- `test_authentication_ui.py` 已經會直接載入 `config/system_config.yaml`。
+- 正式的 `App/main.py` 目前沒有這三個 UI 選項。
+- 這三個欄位不是每次都要手動填；部署完成後可以固定寫在 config。
+- `State machine ARN` 在 AWS Stack 尚未部署前不可能存在，所以第一次一定要等 CloudFormation 建立後取得。
+
+目前 test UI 讀取的位置是：
+
+[helper/tests/test_authentication_ui.py (line 1698)](D:/Provenance Laboratories projects/ImagingLibWatch_authentication-expert-fuzzy/helper/tests/test_authentication_ui.py:1698)
+
+設定格式：
+
+```
+authentication:
+  cloud_training:
+    start_after_learning_upload: false
+    state_machine_arn: arn:aws:states:us-east-2:<account>:stateMachine:authentication-bundle-training
+    canary_sites:
+      - Moonlight system v1
+    site_id: ""
+    label_set: ""
+    policy_key: authentication/authored/policy.json
+    prior_key: authentication/authored/priors.json
+```
+
+各欄位意思：
+
+|欄位|怎麼填|
+|---|---|
+|State machine ARN|CloudFormation deploy 後輸出的 `TrainingStateMachineArn`。未部署前留空。|
+|Corpus site filter|限制訓練資料來源站點。留空代表讀取所有相容 site 的 learning samples；目前建議留空。|
+|Frozen label set|DynamoDB 中已建立的專家標籤快照名稱。尚未建立 label set 就留空，不要自行編造名稱。|
+|Canary site IDs|必須是實際 station identity，例如 `Moonlight system v1`。|
+|policy/prior key|S3 中已人工審核的 policy 與 priors 文件，通常使用預設值。|
+
+第一次 AWS 部署完成後，用這個命令取得 ARN：
+
+```
+aws cloudformation describe-stacks `
+  --stack-name authentication-bundle-pipeline `
+  --query "Stacks[0].Outputs[?OutputKey=='TrainingStateMachineArn'].OutputValue" `
+  --output text `
+  --region us-east-2
+```
+
+然後把輸出的 ARN 寫入：
+
+```
+config/system_config.yaml
+```
+
+重新開啟 test UI，欄位就會自動填入。若只是在收集 learning samples：
+
+- `start_after_learning_upload: false`
+- 不勾選 AWS training/release checkbox
+- `site_id` 留空
+- `label_set` 留空
+- ARN 可以留空
+
+等 corpus 足夠、AWS stack 已部署後，再將 checkbox 勾起來執行一次訓練。
+
+正式 `App/main.py` 目前只有 Learning/Authentication mode 與 component authentication state，沒有 State machine ARN、Corpus site filter、Frozen label set 這些控制項；它也不會從每一次 learning scan 自動啟動 AWS Batch。這是刻意保留的安全邊界，避免每次掃描都產生 Batch 費用並啟動人工核准流程。
+
+因此目前完整 AWS training release 控制是在 test UI 中，正式 App 仍負責：
+
+1. 產生 feature batches。
+2. Learning mode 儲存並上傳 learning sample。
+3. Authentication mode 使用本機已啟用的 Bundle 執行 inference。
+
+另外，開始 AWS 部署前請先確認：
+
+```
+aws sts get-caller-identity
+```
+
+目前這台機器曾回傳 `InvalidClientTokenId`，所以 AWS credentials/profile 必須先修正。
+
+
+
+
+
+```
+我執行authentication pipelinetest\_authentication\_ui.py load 0012跟0026 images. Series=ROLEX:16613, family=rolex:submariner\_5digit\_steel), physical watch id=1788472938.裡面有internalnum1=0012, 0026的images. Cloud delivery and bundle training release有勾選Enable real AWS S3 + DynamoDB transactional outbox 也勾選了After verified learning upload, start AWS Batch->gates->approval-> signed canary release.
+
+然後在App選擇learning mode, Dial component選擇Original. Cloud delivery勾選Enable real AWS S3 + DynamoDB transactional outbox, 然後沒有按下Generate synthetic bundle. 之後按下Authentication按鈕, 想問這是否有在AWS執行authentication pipeline(Evidence / Bayesian / Anomaly / Fuzzy流程)?
+
+為什麼顯示: Enter the deployed step functions state-machine ARN and at least one exact canary site ID
+
+另外"第一次 AWS 部署完成後"是指甚麼? 我在執行App main.py時已經可以將App create的template上傳到AWS, 也可以用config設定然後將拍攝的images可以上傳到AWS S3. 這算是第一次 AWS 部署完成? 還是要做其他設定?
+```
+目前這次沒有在 AWS 執行 Evidence / Bayesian / Anomaly / Fuzzy，也沒有啟動 AWS Batch。警告是在 pipeline 開始前出現，因此這次按下按鈕後整個 Learning run 會提前停止，連本次 sample 上傳都不會開始。
+
+原因很明確：目前設定是：
+
+```
+state_machine_arn: ""
+```
+
+雖然 Canary site 已經有：
+
+```
+canary_sites:
+  - Moonlight system v1
+```
+
+但 UI 把「ARN 缺少」與「Canary site 缺少」放在同一個警告訊息裡，所以仍顯示：
+
+> Enter the deployed step functions state-machine ARN and at least one exact canary site ID
+
+### 先修正 Family
+
+你這次輸入的 identity 有衝突：
+
+```
+Series: ROLEX:16613
+Family: ROLEX:SUBMARINER_5DIGIT_STEEL
+```
+
+Registry 的正式 mapping 是：
+
+```
+ROLEX:16610 → ROLEX:SUBMARINER_5DIGIT_STEEL
+ROLEX:16613 → ROLEX:SUBMARINER_5DIGIT_ROLESOR
+```
+
+所以 `16613` 應填：
+
+```
+ROLEX:SUBMARINER_5DIGIT_ROLESOR
+```
+
+否則即使 Batch 啟動，也可能因為 corpus 的 Series/Family 不相容而沒有可用 training samples。
+
+### 你現有的 AWS 能力算不算「第一次 AWS 部署完成」？
+
+不算 authentication training stack 已部署完成。
+
+目前你已經具備的是基礎 App cloud delivery：
+
+- Template 上傳
+- Images 上傳 S3
+- DynamoDB 寫入
+- Transactional outbox delivery
+
+但 authentication approved Bundle 還需要另一組專用 AWS 資源：
+
+- ECR：存放 authentication trainer Docker image
+- AWS Batch Fargate：執行模型訓練
+- Step Functions：控制 training、gate、approval、publish
+- Lambda：讀報告、核准後 publish、replay
+- KMS asymmetric key：簽署 approved Bundle
+- SNS：寄送人工核准通知
+- DynamoDB AuthenticationLabels
+- DynamoDB AuthenticationBundleReleases
+- Per-site canary bundle pointer
+
+這些要透過：
+
+[authentication.yaml (line 1)](D:/Provenance Laboratories projects/ImagingLibWatch_authentication-expert-fuzzy/cloud/authentication/infra/authentication.yaml:1)
+
+另外部署。它會重用你現有的 S3 bucket，不需要再建立另一個 images bucket。
+
+### 現在可以怎麼做
+
+如果目前只想繼續收集 samples：
+
+1. 保留勾選：
+    
+    ```
+    Enable real AWS S3 + DynamoDB transactional outbox
+    ```
+    
+2. 取消勾選：
+    
+    ```
+    After verified Learning upload, start AWS Batch → ...
+    ```
+    
+3. 使用正確 Family：
+    
+    ```
+    ROLEX:SUBMARINER_5DIGIT_ROLESOR
+    ```
+    
+4. 執行 Learning mode。
+    
+
+這樣會產生並上傳 learning sample，但不會嘗試啟動尚未部署的 Step Functions。
+
+### 要啟動完整 training release
+
+先完成 authentication stack 部署。詳細命令在：
+
+[authentication_cloud_training.md (line 273)](D:/Provenance Laboratories projects/ImagingLibWatch_authentication-expert-fuzzy/docs/authentication_cloud_training.md:273)
+
+大致順序是：
+
+1. 準備 Fargate Batch queue。
+2. 建置 trainer Docker image。
+3. Push image 到 ECR。
+4. 建置並上傳三個 Lambda ZIP。
+5. 上傳 Step Functions ASL。
+6. 上傳人工審核完成的 policy/priors。
+7. Deploy CloudFormation。
+8. 確認 SNS email subscriptions。
+9. 從 Stack output 取得 `TrainingStateMachineArn`。
+
+部署後取得 ARN：
+
+```
+aws cloudformation describe-stacks `
+  --stack-name authentication-bundle-pipeline `
+  --query "Stacks[0].Outputs[?OutputKey=='TrainingStateMachineArn'].OutputValue" `
+  --output text `
+  --region us-east-2
+```
+
+然後寫入：
+
+```
+authentication:
+  cloud_training:
+    start_after_learning_upload: true
+    state_machine_arn: arn:aws:states:us-east-2:<account>:stateMachine:authentication-bundle-training
+    canary_sites:
+      - Moonlight system v1
+    site_id: ""
+    label_set: ""
+    policy_key: authentication/authored/policy.json
+    prior_key: authentication/authored/priors.json
+```
+
+其中：
+
+- `site_id: ""`：建議留空，代表使用所有相容站點的 corpus。
+- `label_set: ""`：尚未建立 DynamoDB frozen expert-label set 時留空。
+- `canary_sites`：填本機實際 station ID，目前是 `Moonlight system v1`。
+- `state_machine_arn`：必須填 CloudFormation 真正輸出的 ARN。
+
+重新啟動 test UI 後，這些值會自動載入。
+
+### 正確啟動後會看到什麼
+
+Learning run 成功啟動 AWS workflow 時，`pipeline_summary.json` 會包含：
+
+```
+{
+  "cloud_training": {
+    "status": "STARTED",
+    "execution_arn": "arn:aws:states:..."
+  }
+}
+```
+
+AWS 執行的是：
+
+```
+所有相容 learning samples
+→ Evidence references / multivariate models
+→ Bayesian priors與calibration
+→ Anomaly references
+→ Fuzzy policy binding
+→ Holdout四階段驗證
+→ Gates
+→ 人工核准
+→ KMS簽章
+→ Canary publish
+```
+
+這不是對目前 Learning watch 產生 authentication result。要等 approved Bundle 發布並下載到本機後，下一次使用 Authentication mode，才會在本機跑 Evidence / Bayesian / Anomaly / Fuzzy 並得到 `authentication_result`。
+
+另外，目前 AWS CLI credential chain 回傳 `InvalidClientTokenId`。App 能上傳並不代表 AWS CLI 能部署，因為 App 可能讀取自己的 YAML credentials，而 AWS CLI 使用 environment/profile。部署前必須先讓：
+
+```
+aws sts get-caller-identity
+```
+
+成功。
+
+
+
+
+```
+你前面提到要完成"先完成 authentication stack 部署"
+所以下列完成就代表第一次 AWS 部署完成? 就可以在AWS start Batch->gates->Approval->signed canary release等地pipeline可以得到authentication result. 能否提供script或其他方法幫我完成下列步驟:
+
+1.準備 Fargate Batch queue。
+2.建置 trainer Docker image。
+3.Push image 到 ECR。
+4.建置並上傳三個 Lambda ZIP。
+5.上傳 Step Functions ASL。
+6.上傳人工審核完成的 policy/priors。
+7.Deploy CloudFormation。
+8.確認 SNS email subscriptions。
+9.從 Stack output 取得 TrainingStateMachineArn。
+```
+已新增一支完整部署腳本，會自動完成你列出的 1–9 步驟：
+
+[deploy.ps1 (line 1)](D:/Provenance Laboratories projects/ImagingLibWatch_authentication-expert-fuzzy/cloud/authentication/deploy.ps1:1)
+
+執行成功、CloudFormation Stack 顯示 `CREATE_COMPLETE/UPDATE_COMPLETE`，而且 SNS email 已確認後，才代表「authentication AWS stack 第一次部署完成」。
+
+但要注意：部署完成只代表基礎設施可用；它產生的是 approved Bundle，不會立刻產生某支手錶的 `authentication_result`。Authentication result 是 approved Bundle 被 canary station 下載後，下一次在本機執行 Authentication mode 才產生。
+
+### 腳本會完成什麼
+
+加上 `-Apply` 後會：
+
+1. 建立或驗證 AWS Batch Fargate queue。
+2. 建置 Linux/AMD64 trainer Docker image。
+3. 建立/使用 ECR repository 並 push image。
+4. 取得 ECR SHA-256 digest，CloudFormation 不使用 `latest`。
+5. 建置三個 Lambda ZIP。
+6. 上傳 Lambda、Step Functions ASL、reviewed policy/priors。
+7. Deploy CloudFormation。
+8. 列出兩個 SNS subscription 狀態。
+9. 輸出 `TrainingStateMachineArn`。
+10. 將所有結果寫入：
+
+```
+build/authentication-deployment/deployment-outputs.json
+```
+
+Fargate compute environment、queue 的建立方式符合 AWS 官方流程：[AWS Batch Fargate CLI 教學](https://docs.aws.amazon.com/en_en/batch/latest/userguide/getting-started-with-fargate-using-the-aws-cli.html)。CloudFormation 部署使用官方 `deploy` 介面：[AWS CloudFormation deploy](https://docs.aws.amazon.com/cli/latest/reference/cloudformation/deploy/)。
+
+### 目前這台電腦仍有三個 blocker
+
+我剛剛實際檢查到：
+
+- AWS CLI：`InvalidClientTokenId`
+- Docker：尚未安裝或不在 `PATH`
+- Reviewed policy/priors：尚不存在
+
+缺少的檔案是：
+
+```
+config/auth-review/authentication_policy.json
+config/auth-review/authentication_priors.json
+```
+
+因此目前不能直接加 `-Apply`。
+
+### 第一步：修好 AWS CLI
+
+建議使用 AWS SSO/profile：
+
+```
+aws configure sso --profile authentication-deploy
+aws sso login --profile authentication-deploy
+aws sts get-caller-identity --profile authentication-deploy --region us-east-2
+```
+
+最後一行必須成功回傳 account/ARN。
+
+App 可以上傳 S3 不代表 AWS CLI 已登入，因為 App 和 AWS CLI 可能使用不同 credential chain。
+
+### 第二步：建立並人工審核 policy/priors
+
+先產生 scaffold：
+
+```
+cd "D:\Provenance Laboratories projects\ImagingLibWatch_authentication-expert-fuzzy"
+
+conda run -n watch_env python -m core.authentication.training_cli scaffold `
+  --series ROLEX:16613 `
+  --family ROLEX:SUBMARINER_5DIGIT_ROLESOR `
+  --component Dial `
+  --output config/auth-review
+```
+
+接著必須人工檢查、修改：
+
+- Fuzzy memberships
+- Policy thresholds
+- Component criticality
+- Class severity
+- Production prevalence
+- `policy_version`
+- `prior_config.version`
+- `prior_config.source`
+- `production_hierarchy_counts`
+
+部署 validator 會拒絕仍含以下文字的原始 scaffold：
+
+```
+scaffold
+unbound
+PLACEHOLDER
+```
+
+檢查程式在：
+
+[validate_release_inputs.py (line 25)](D:/Provenance Laboratories projects/ImagingLibWatch_authentication-expert-fuzzy/cloud/authentication/validate_release_inputs.py:25)
+
+### 第三步：準備 Docker
+
+可以選擇：
+
+- 安裝 Docker Desktop，讓腳本建置並 push image。
+- 在其他 CI/build machine 建置，然後把 immutable digest URI 傳給腳本：
+
+```
+-TrainingImageUri "123456789012.dkr.ecr.us-east-2.amazonaws.com/authentication-trainer@sha256:<64-hex>"
+```
+
+如果由腳本建置，Git worktree 必須先 commit 且保持 clean，避免 Docker image tag 與實際 source 不一致。
+
+### 第四步：選擇 Batch queue
+
+如果已有 Fargate queue：
+
+```
+-BatchJobQueue <existing-fargate-queue>
+```
+
+如果沒有，讓腳本建立：
+
+```
+-CreateBatchQueue `
+-SubnetIds subnet-aaa,subnet-bbb `
+-SecurityGroupIds sg-aaa `
+-AssignPublicIp DISABLED
+```
+
+`DISABLED` 要求 private subnets 已有 NAT 或必要 VPC endpoints。若只是經過確認的 public-subnet 測試環境，可改成：
+
+```
+-AssignPublicIp ENABLED
+```
+
+CloudFormation 現在也已支援這個設定：
+
+[authentication.yaml (line 18)](D:/Provenance Laboratories projects/ImagingLibWatch_authentication-expert-fuzzy/cloud/authentication/infra/authentication.yaml:18)
+
+### 第五步：先跑 preflight
+
+使用現有 queue：
+
+```
+.\cloud\authentication\deploy.ps1 `
+  -Bucket moonlight-system-v2 `
+  -ApprovalEmail <你的審核email> `
+  -AwsProfile authentication-deploy `
+  -BatchJobQueue <existing-fargate-queue>
+```
+
+沒有 `-Apply` 時不建立 AWS 資源，只檢查：
+
+- AWS identity
+- S3 bucket
+- CloudFormation template
+- Batch queue
+- 必要檔案與參數
+
+### 第六步：正式部署
+
+確認 preflight 後：
+
+```
+.\cloud\authentication\deploy.ps1 `
+  -Apply `
+  -AcknowledgeReviewedPolicyAndPriors `
+  -Bucket moonlight-system-v2 `
+  -ApprovalEmail <你的審核email> `
+  -AwsProfile authentication-deploy `
+  -BatchJobQueue <existing-fargate-queue>
+```
+
+若要建立 queue：
+
+```
+.\cloud\authentication\deploy.ps1 `
+  -Apply `
+  -AcknowledgeReviewedPolicyAndPriors `
+  -Bucket moonlight-system-v2 `
+  -ApprovalEmail <你的審核email> `
+  -AwsProfile authentication-deploy `
+  -CreateBatchQueue `
+  -SubnetIds subnet-aaa,subnet-bbb `
+  -SecurityGroupIds sg-aaa `
+  -AssignPublicIp DISABLED
+```
+
+第一次不要傳入 `-EnableSchedule`。先手動完成一次 canary 流程。
+
+### 第七步：確認 SNS
+
+CloudFormation 會寄兩封確認信：
+
+- Approval topic
+- Notification topic
+
+這兩封信必須手動點擊確認。腳本只能檢查並顯示 `PendingConfirmation`，不能代替收件人確認。
+
+### 第八步：設定 test UI
+
+部署成功後，從輸出檔取得：
+
+```
+{
+  "outputs": {
+    "TrainingStateMachineArn": "arn:aws:states:..."
+  }
+}
+```
+
+寫入：
+
+```
+authentication:
+  cloud_training:
+    start_after_learning_upload: true
+    state_machine_arn: arn:aws:states:us-east-2:<account>:stateMachine:authentication-bundle-training
+    canary_sites:
+      - Moonlight system v1
+    site_id: ""
+    label_set: ""
+    policy_key: authentication/authored/policy.json
+    prior_key: authentication/authored/priors.json
+```
+
+重新開啟 test UI，欄位就會自動載入。
+
+### 第九步：真正跑 approved Bundle pipeline
+
+之後執行 Learning mode：
+
+```
+Learning sample
+→ S3/DynamoDB verified
+→ Step Functions execution STARTED
+→ AWS Batch training
+→ release gates
+→ SNS human approval
+→ KMS signing
+→ canary pointer
+→ local signed Bundle download
+```
+
+Gates 通過後仍須人工檢查 candidate/report，再回覆 Step Functions task token。核准後才會簽章與 canary publish。
+
+最後設定本機 `cloud_bundle_source`、重啟 App，再用 Authentication mode 掃描：
+
+```
+Local approved Bundle
+→ Evidence
+→ Bayesian
+→ Anomaly
+→ Fuzzy
+→ authentication_result
+```
+
+完整 runbook 已更新在：
+
+[authentication_cloud_training.md (line 280)](D:/Provenance Laboratories projects/ImagingLibWatch_authentication-expert-fuzzy/docs/authentication_cloud_training.md:280)
+
+驗證結果：PowerShell parser 通過，完整 authentication test suite 為 `204/204 passed`。
+
+
+
+
+```
+(watch\_env) D:\Provenance Laboratories projects\ImagingLibWatch\_authentication-expert-fuzzy>aws configure sso --profile authentication-deploy
+SSO session name (Recommended):  應該要填甚麼
+```
+`SSO session name` 只是存在這台電腦上的本機識別名稱，不是 AWS 帳號名稱，也不是 IAM role。
+
+建議填：
+
+```
+authentication-deploy
+```
+
+接下來通常會依序詢問：
+
+```
+SSO start URL:
+SSO region:
+SSO registration scopes:
+```
+
+這些不能自行猜測，需要從公司／組織的 AWS IAM Identity Center 管理員取得：
+
+- `SSO start URL`：例如 `https://your-company.awsapps.com/start`
+- `SSO region`：Identity Center 所在區域，不一定是工作負載的 `us-east-2`
+- `SSO registration scopes`：通常直接 Enter，接受預設 `sso:account:access`
+
+登入瀏覽器後還會選：
+
+- AWS account
+- Permission set / role
+- Default client region：你的資源位於 `us-east-2`，可填 `us-east-2`
+- CLI output format：建議 `json`
+- Profile name：保留 `authentication-deploy`
+
+完成後驗證：
+
+```
+aws sso login --profile authentication-deploy
+aws sts get-caller-identity --profile authentication-deploy --region us-east-2
+```
+
+如果你沒有 `SSO start URL`，代表目前可能沒有設定 AWS IAM Identity Center。這時先按 `Ctrl+C` 離開，不要隨便填網址；可以改用既有 AWS profile：
+
+```
+aws configure list-profiles
+```
+
+若你只有 IAM Access Key，則改用：
+
+```
+aws configure --profile authentication-deploy
+```
+
+但正式部署較建議使用 SSO 或短期 credentials，避免把長期 Access Key 寫進 `config/system_config.yaml`。

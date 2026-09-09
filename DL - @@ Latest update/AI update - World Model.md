@@ -6,3 +6,7 @@ https://zhuanlan.zhihu.com/p/2070839413714767986
 2026.0904
 World Model + VLA-RL:从 JEPA 转向 Dreamer 4 的一次判断更新 - 向阳的文章 - 知乎
 https://zhuanlan.zhihu.com/p/2058857549533819412
+
+2026.0906
+DINOv3: CV的天塌了 - cloud erow的文章 - 知乎
+https://zhuanlan.zhihu.com/p/1939643238282666562
