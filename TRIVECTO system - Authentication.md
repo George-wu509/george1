@@ -9699,3 +9699,1584 @@ aws configure --profile authentication-deploy
 ```
 
 但正式部署較建議使用 SSO 或短期 credentials，避免把長期 Access Key 寫進 `config/system_config.yaml`。
+
+
+
+
+```
+請幫我整理目前App main.py authentication的流程, 從App main.py拍照譬如拍照Upper text(0004)的文字並進行分析get identifier, 或從Hour hand lume(0023)的texture analysis get identifier, 或openbackcrown的Rotor(3006)形狀分析get identifier
+
+而這些images and identifier是怎麼跟AWS互動, 怎麼跟Local DB互動, 怎麼Sync module互動, 怎麼做feature extraction, 怎麼跟local inference engine互動, 怎麼跟AWS cloud(AWS S3, AWS Glue data catalog, Amazon athena, AWS DB)互動, 怎麼進入到Model & reference building pipeline(statistics, 階層貝氏, 輔助模型, 驗證), 怎麼產生model bundle, 怎麼產生輸出, 請以資料流程一個一個解釋, 並輔佐以Blueprint完整流程圖解說.
+```
+
+以下整理是依目前 repository 程式碼追出的「實際資料流」。先釐清一點：
+
+- `asset_id`：影像或分析檔案的 UUID，主要用於 Local DB、S3、DynamoDB provenance。
+- `identifier`：分析結果中的特徵值，例如 OCR 字元幾何、lume bump density、Rotor contour metrics。
+- `feature_id`：Authentication engine 將 identifier 轉成穩定語意 key，例如 `image.ocr_service.0004.0001.std_1...`。
+- 最終 Authentication result 不是單一影像 identifier，而是多個 component/features 經模型融合後的 `PASS / REVIEW / FAIL`。
+
+## 1. 全域 Blueprint
+
+
+
+---
+
+# 2. App 啟動與 Authentication 初始化
+
+`main.py` 本身主要是 GUI、拍照與分析派送入口；真正的 Authentication integration 是由 `DataManager` 初始化：
+
+`local_storage.py:130-180`
+
+它會建立：
+
+DataManager
+```
+DataManager
+ ├─ DatabaseManager -> Local SQLite
+ ├─ CloudSync / OutboxDispatcher
+ └─ AuthenticationIntegration
+```
+Authentication 設定來源是：
+
+`authentication_feature_registry.yaml:1-174`
+
+目前預設：
+
+runtime:
+
+  enabled: true
+
+  shadow_mode: true
+
+  evaluate_provisional: true
+
+因此目前 Authentication 結果原則上是：
+
+- 可以保存 observation。
+- 可以產生 provisional authentication result。
+- 不直接改變既有 Legacy UI/report 判斷。
+- 沒有合法 active bundle 時，結果會保守落為 `NOT_EVALUATED` 或 `REVIEW`。
+
+---
+
+# 3. Watch Point 如何映射到 internal number
+
+internal number 的定義在：
+
+`internalnum_config.yaml:1-20`
+
+規則是：
+
+internalnum1 = point-level identity
+
+internalnum2 = capture/image-level identity
+
+例如：
+
+Front / 0004 / 0001
+
+OpenBackCrown / 3006 / 0001
+
+對應關係如下。
+
+## 3.1 Upper text `0004`
+
+`internalnum_config.yaml:147-175`
+
+internalnum1: 0004
+
+point_ref: Front.macropoint1
+
+displayname: Upper text
+
+component: Dial
+
+camera: macro_cam_1
+
+所以：
+
+0004 = Front.macropoint1 = Upper text = Dial component
+
+這個 point 由 template 的 capture 設定決定拍照位置、camera、曝光與 autofocus。
+
+## 3.2 Hour hand lume `0023`
+
+`internalnum_config.yaml:1405-1440`
+
+internalnum1: 0023
+
+point_ref: Front.micropoint13
+
+displayname: Hour hand lume
+
+component: Hands-hour
+
+camera: micro_cam
+
+HDR: enabled
+
+AF mode: 5
+
+所以：
+
+0023 = Front.micropoint13 = Hour hand lume = Hands-hour component
+
+## 3.3 OpenBackCrown Rotor `3006`
+
+`internalnum_config.yaml:4590-4635`
+
+internalnum1: 3006
+
+point_ref: OpenBackCrown.macropoint5
+
+displayname: Rotor
+
+component: Movement-rotor
+
+camera: macro_cam_1
+
+Authentication registry 會把：
+
+Movement-rotor -> Movement
+
+`authentication_feature_registry.yaml:51-88`
+
+所以最終 Authentication component 是：
+
+Rotor -> Movement
+
+---
+
+# 4. 拍照流程
+
+在 App 中，拍照工作主要由：
+
+CaptureTaskRunnable.run
+
+處理。
+
+流程是：
+
+1. 取得 side / point_key / capture_id
+
+2. 從 template 找 internalnum1 / internalnum2
+
+3. 使用硬體設定執行 execute_template_point()
+
+4. 得到 image
+
+5. 建立臨時 PNG
+
+6. DataManager 保存原始影像
+
+7. 寫入 image asset metadata
+
+8. 將分析 task 派送到背景 worker
+
+Capture metadata 大致包含：
+
+{
+
+  "view_name": "front",
+
+  "point_name": "macropoint1",
+
+  "capture_id": "std_1",
+
+  "internalnum1": "0004",
+
+  "internalnum2": "0001",
+
+  "asset_role": "raw_single",
+
+  "is_hdr": false
+
+}
+
+影像的物理身份主要由以下欄位共同決定：
+
+watchid
+
+run_id / scan_id
+
+view_name
+
+point_name
+
+internalnum1
+
+internalnum2
+
+capture_id
+
+asset_id
+
+這就是為什麼目前資料模型可以支援：
+
+一個 watch point -> 多張影像 + optional HDR image
+
+而不會把所有影像壓成單一檔案。
+
+---
+
+# 5. Local DB 與影像保存
+
+`DataManager.process_and_sync_raw_image()` 會負責：
+
+temporary image
+
+    ↓
+
+Local_Data raw image
+
+    ↓
+
+Local SQLite registration
+
+    ↓
+
+S3 / DynamoDB sync queue
+
+Local SQLite 的重要資料表在：
+
+`db_manager.py:1-220`
+
+主要表格：
+
+|Table|用途|
+|---|---|
+|`watch_runs`|一次完整掃描|
+|`experiments`|run 對應的 experiment|
+|`point_instances`|一個 watch point instance|
+|`capture_instances`|一次 standard/HDR capture|
+|`image_assets`|實際影像資產|
+|`analysis_results_v2`|演算法 JSON、mask、result|
+|`artifact_records`|report、camera pipeline report 等 artifact|
+|`feature_observation_batches`|Authentication numeric features|
+|`authentication_results`|Authentication result|
+|`authentication_learning_samples`|Learning mode training sample|
+|`authentication_bundle_releases`|已安裝 model bundle|
+|`sync_outbox`|S3、catalog、lake 的可靠同步佇列|
+
+在 App 中，raw image 完成後還會更新 UI asset registry：
+
+`main.py:1345-1395`
+
+---
+
+# 6. Sync module 如何運作
+
+目前有兩種同步模式。
+
+## 6.1 Legacy polling
+
+`cloud_sync.py:1-120`
+
+流程：
+
+SQLite synced=0
+
+    ↓
+
+CloudSyncManager polling
+
+    ↓
+
+upload image / .meta sidecar to S3
+
+    ↓
+
+CloudDatabaseManager.index_record()
+
+    ↓
+
+SQLite mark_as_synced()
+
+它會：
+
+1. 上傳影像到 S3。
+2. 若有 `.meta`，一併上傳。
+3. 將 metadata 寫到 DynamoDB。
+4. 成功後把 Local DB 標成 `synced=1`。
+
+## 6.2 Transactional outbox
+
+較新的路徑是：
+
+`outbox_dispatcher.py:1-200`
+
+Local DB transaction
+
+    ↓
+
+sync_outbox
+
+    ├─ target=s3
+
+    ├─ target=catalog
+
+    └─ target=lake
+
+Outbox 的好處是：
+
+- Local DB 已成功寫入，但 AWS 暫時離線時不會遺失事件。
+- 可以 retry。
+- 可以分別送 S3、DynamoDB catalog、Glue/Iceberg lake。
+- S3 upload 後會檢查檔案大小與 SHA-256 metadata。
+
+---
+
+# 7. 三個分析案例
+
+## 7.1 Upper text `0004`: OCR 與文字幾何
+
+流程：
+
+Front.macropoint1
+
+    ↓
+
+拍攝 Upper text
+
+    ↓
+
+ocr_service
+
+    ↓
+
+OCRProcessor.process_single_image()
+
+    ↓
+
+DocTR / Tesseract fallback
+
+    ↓
+
+SAM segmentation
+
+    ↓
+
+字元 skeleton / stroke / geometry
+
+    ↓
+
+JSON report
+
+    ↓
+
+report_identifiers
+
+    ↓
+
+FeatureObservation
+
+OCR 主體在：
+
+`ocr_algo.py:1-260`
+
+它會使用：
+
+- DocTR：文字 detection + recognition。
+- Tesseract：DocTR 找不到文字時的 fallback。
+- SAM：分割文字區域。
+- `algorithms.char_features`：字元骨架、端點、筆畫等特徵。
+
+可能產生的 identifiers 包含：
+
+recognized_line_text
+
+word_text
+
+word_confidence
+
+char_value
+
+char_width_px
+
+char_height_px
+
+char_kerning_px
+
+char_skeleton_length
+
+char_skeleton_endpoints
+
+char_stroke_width_mean
+
+char_fourier_descriptor_mean
+
+這些 mapping 定義在：
+
+`report_identifiers.py:1-220`
+
+重要的是，OCR 的文字 `"0004"` 與 Authentication 的 `feature_id` 是兩件事：
+
+文字內容:
+
+    "0004"
+
+point identity:
+
+    internalnum1=0004
+
+feature identity:
+
+    image.ocr_service.0004.0001.std_1.mapped...
+
+因此 OCR 結果會貢獻數值與文字語意特徵，但不會直接把 `"0004"` 當成 Authentication 最終結果。
+
+---
+
+## 7.2 Hour hand lume `0023`: texture analysis
+
+流程：
+
+Front.micropoint13
+
+    ↓
+
+拍攝 Hour hand lume
+
+    ↓
+
+lume_hour_texture_service
+
+    ↓
+
+U-Net segmentation
+
+    ↓
+
+取得 lume class_id=2 mask
+
+    ↓
+
+切出最多三個 lume sectors
+
+    ↓
+
+SurfaceTextureAnalyzer / bump analysis
+
+    ↓
+
+JSON report
+
+    ↓
+
+report_identifiers
+
+    ↓
+
+FeatureObservation
+
+實作在：
+
+`lume_hour_texture_algo.py:1-172`
+
+它使用：
+
+- `UnetWrapper`：取得 lume segmentation mask。
+- `lume_class_id=2`：找夜光區域。
+- connected components：切出 sectors。
+- `SurfaceTextureAnalyzer`：計算 bump features、density、geometry statistics。
+
+代表性 identifiers：
+
+total_bump_count
+
+sectors_analyzed
+
+sector_bump_features_count
+
+sector_bump_density
+
+sector_area_px
+
+sector_area_mm2
+
+geometry_area_loc
+
+geometry_area_metric
+
+geometry_dist_loc
+
+geometry_dist_metric
+
+geometry_ratio_loc
+
+geometry_ratio_metric
+
+Mapping 在：
+
+`report_identifiers.py:130-190`
+
+Authentication feature family 會設定為：
+
+lume_texture
+
+`authentication_feature_registry.yaml:120-174`
+
+因此其概念資料是：
+
+{
+
+  "watch_id": "...",
+
+  "scan_id": "...",
+
+  "component": "Hands",
+
+  "view": "front",
+
+  "region": "0023",
+
+  "feature_family": "lume_texture",
+
+  "feature_id": "image.lume_hour_texture_service.0023.0001.std_1....",
+
+  "value": 0.123
+
+}
+
+---
+
+## 7.3 OpenBackCrown Rotor `3006`: shape analysis
+
+流程：
+
+OpenBackCrown.macropoint5
+
+    ↓
+
+拍攝 Rotor
+
+    ↓
+
+Movement-rotor component
+
+    ↓
+
+shape / geometry analysis service
+
+    ↓
+
+contour / edge / circle / geometry metrics
+
+    ↓
+
+report identifiers
+
+    ↓
+
+FeatureObservation
+
+    ↓
+
+Movement component
+
+`3006` 的模板定義已明確指出它是：
+
+OpenBackCrown.macropoint5
+
+Rotor
+
+Movement-rotor
+
+但目前 repository 中沒有看到「只為 3006 命名的 Rotor authentication service」。它是透過通用 component/task routing 進入分析服務。
+
+可能使用的幾何分析包括：
+
+- edge detection
+- circle fitting
+- concentric circle detection
+- cover/holder geometry
+- rotor-related contour metrics
+
+OpenBackTop 類型分析實作在：
+
+`openbacktop_algo.py:1-260`
+
+Authentication registry 會把：
+
+Movement-rotor -> Movement
+
+所以 Rotor 的 feature 最終納入 Movement component，而不是獨立的 Rotor component。
+
+---
+
+# 8. Local inference engine 如何接上
+
+App 的分析派送入口是：
+
+`main.py:34014-34433`
+
+它會：
+
+1. 依 view / point / capture_id 找 req_algos
+
+2. 建立 analysis payload
+
+3. 發出 analysis_request_signal
+
+4. ManualAnalysisWorker 背景執行
+
+5. 呼叫 WorkflowManager._run_analysis_safe()
+
+真正的推論流程在：
+
+WorkflowManager._run_analysis_safe
+
+prepare_image_for_viewing()
+
+    ↓
+
+Orchestrator.run_batch()
+
+    ↓
+
+tasks/api_servers/*.py 或本地 processor
+
+    ↓
+
+JSON report + visual artifacts
+
+Local inference engine 可能使用：
+
+|類型|主要模組|
+|---|---|
+|OCR|DocTR、Tesseract、SAM|
+|segmentation|`UnetWrapper`|
+|texture|`SurfaceTextureAnalyzer`|
+|geometry|OpenCV|
+|feature extraction|`char_features`, contour/Hu/Fourier/skeleton|
+|report|task processor JSON|
+
+注意：這不是雲端 inference。影像留在 station，local inference 先完成 numeric extraction，雲端主要拿 feature batch、model training 與 replay。
+
+---
+
+# 9. Analysis report 如何變成 Authentication features
+
+`WorkflowManager._run_analysis_safe()` 完成 `Orchestrator.run_batch()` 後，會呼叫：
+
+authentication.record_image_results(
+
+    res,
+
+    context=auth_context,
+
+    image_path=image_path,
+
+)
+
+這段是目前 App/Workflow 與 Authentication bridge 的實際接點：
+
+`workflow_manager.py:3420-3445`
+
+接著進入：
+
+AuthenticationIntegration.record_image_results
+
+主要步驟：
+
+analysis result
+
+    ↓
+
+ImageResultAdapter.adapt()
+
+    ↓
+
+canonical task name
+
+    ↓
+
+report_identifiers.build_task_identifiers()
+
+    ↓
+
+numeric identifier values
+
+    ↓
+
+FeatureObservation
+
+    ↓
+
+feature_observation_batches
+
+Adapter 的關鍵行為在：
+
+`adapters.py:170-360`
+
+它會保留：
+
+watch_id
+
+scan_id
+
+series
+
+family
+
+component
+
+view
+
+region/internalnum1
+
+capture_id
+
+internalnum2/image slot
+
+feature_family
+
+feature_id
+
+value
+
+quality
+
+extractor_version
+
+feature_schema_version
+
+其中：
+
+internalnum1 = point identity
+
+internalnum2/capture_id = image identity
+
+這是支援一個 point 多張影像的核心。
+
+---
+
+# 10. Provisional 與 Final Authentication
+
+每次分析完成後，若不是 learning mode：
+
+record_image_results()
+
+    ↓
+
+persist feature batch
+
+    ↓
+
+evaluate provisional
+
+當 routine 或 watch entry 完成時：
+
+`workflow_manager.py:540-563`
+
+會呼叫：
+
+authentication.finalize_scan(...)
+
+Authentication runtime：
+
+`runtime.py:520-585`
+
+分成兩條：
+
+learning mode:
+
+    persist_learning_sample()
+
+authentication mode:
+
+    _evaluate_scan(evaluation_phase="final")
+
+結果寫入：
+
+authentication_results
+
+欄位包括：
+
+authentication_result_id
+
+watchid
+
+scan_id
+
+status
+
+bundle_version
+
+evaluation_phase
+
+is_final
+
+result_json
+
+目前 `shadow_mode: true` 時：
+
+Authentication result 會保存
+
+但不取代 Legacy report / UI decision
+
+---
+
+# 11. Authentication local inference 四階段
+
+Authentication engine 的真正 inference 順序在：
+
+`evaluator.py:1-140`
+
+## Phase 1: Feature observations
+
+由 OCR、lume texture、Rotor shape 等分析產生：
+
+FeatureObservation[]
+
+每一個 observation 都有：
+
+feature_id
+
+value
+
+quality
+
+component
+
+feature_family
+
+region
+
+schema version
+
+extractor version
+
+## Phase 2: Evidence reference
+
+`evidence_service.py:1-140`
+
+依：
+
+series
+
+family
+
+component
+
+evidence group
+
+feature_id
+
+找對應的 reference model，計算：
+
+coverage
+
+quality
+
+distance
+
+log evidence
+
+fallback level
+
+support
+
+maturity
+
+reference 可能依序 fallback：
+
+Series -> Family -> Global
+
+統計方法包括：
+
+- median
+- MAD
+- IQR
+- robust scale
+- multivariate reference
+- covariance / diagonal model
+
+`robust_statistics.py:1-217`
+
+## Phase 3: Hierarchical Bayesian fusion
+
+`fusion.py:1-220`
+
+會先解析：
+
+Global prior
+
+    ↓
+
+Family prior
+
+    ↓
+
+Series prior
+
+然後以 evidence group 做 log-space Bayesian fusion，產生八類 posterior：
+
+Original
+
+Authentic replacements
+
+Forgery
+
+Aftermarket
+
+Modified
+
+Incorrect Authentic
+
+Missing
+
+Not applicable
+
+Hierarchical prior 實作在：
+
+`hierarchy.py:1-220`
+
+注意：production prior 不能直接拿 training corpus class count 代替。Training distribution 只作 diagnostic，production prevalence 必須由 reviewed prior document 提供。
+
+## Phase 4: Anomaly / OOD
+
+`detector.py:1-120`
+
+會把目前 observation 與 Original calibration population 的距離比較，判斷：
+
+NORMAL
+
+ELEVATED
+
+HIGH
+
+EXTREME
+
+UNAVAILABLE
+
+此階段不是重新訓練，而是使用 bundle 中已 frozen 的 Original distance reference。
+
+## Phase 5: Fuzzy policy
+
+`watch_policy.py:1-120`
+
+綜合：
+
+component posterior
+
+confidence
+
+coverage
+
+maturity
+
+fallback
+
+anomaly
+
+component criticality
+
+輸出：
+
+PASS
+
+REVIEW
+
+FAIL
+
+NOT_EVALUATED
+
+例如：
+
+Movement component 的 Forgery posterior 很高
+
+且 component criticality 很高
+
+    -> 可能 FAIL
+
+coverage 不足、reference maturity 太低、anomaly extreme
+
+    -> REVIEW
+
+---
+
+# 12. Local DB 與 AWS Authentication 資料流
+
+## 12.1 Local SQLite
+
+Authentication 的 Local DB 流程：
+
+analysis report
+
+    ↓
+
+FeatureObservation
+
+    ↓
+
+feature_observation_batches
+
+    ↓
+
+authentication_results
+
+Learning mode 另外產生：
+
+authentication_learning_samples
+
+Bundle activation 會寫：
+
+authentication_bundle_releases
+
+Local provenance lookup 可以從影像追到：
+
+image asset
+
+  -> analysis results
+
+  -> artifacts
+
+  -> authentication result
+
+`provenance_query.py:1-220`
+
+## 12.2 AWS S3
+
+一般影像與分析 artifact：
+
+Local_Data
+
+    -> S3 raw image / analysis JSON / overlay / mask
+
+Authentication training sample 使用 Hive-style key：
+
+authentication/training/samples/
+
+  feature_schema_version=<fsv>/
+
+  extractor_version=<ev>/
+
+  series=<series>/
+
+  site_id=<site>/
+
+  dt=<date>/
+
+  <sample_id>.json
+
+Key grammar 在：
+
+`storage_layout.py:1-120`
+
+Authentication bundle 則使用 immutable S3 prefix：
+
+authentication/bundles/<bundle_version>/
+
+Bundle 內容：
+
+manifest.json
+
+feature_schema/schema.json
+
+reference_stats/reference.json
+
+bayesian/model.json
+
+anomaly/model.json
+
+calibration/model.json
+
+policy/policy.json
+
+diagnostics/validation.json
+
+Bundle layout 在：
+
+`writer.py:1-175`
+
+## 12.3 DynamoDB
+
+一般 operational catalog 使用：
+
+`cloud_db.py:1-220`
+
+可保存：
+
+WatchAnalysisResults
+
+WatchCommandLog
+
+WatchTemplates
+
+WatchUsers
+
+`index_record()` 將以下資料 flatten 到 DynamoDB：
+
+WatchID
+
+asset_id
+
+s3_key
+
+record_type
+
+view_name
+
+point_name
+
+capture_id
+
+internalnum1
+
+internalnum2
+
+algorithm_name
+
+result_identifier
+
+authentication_status
+
+metadata_raw
+
+DynamoDB 適合：
+
+快速 asset / command / template lookup
+
+不適合：
+
+大型統計、跨日聚合、模型 fitting
+
+---
+
+# 13. Glue Data Catalog、Iceberg、Athena
+
+Feature batches 與 analysis facts 可以經由：
+
+`lake_etl.py:1-200`
+
+寫入 Glue-backed Iceberg table：
+
+S3 lake objects
+
+    ↓
+
+AWS Glue Catalog
+
+    ↓
+
+Iceberg table
+
+    ↓
+
+Amazon Athena
+
+預設資料表：
+
+moonlight_lake.analysis_facts
+
+Glue catalog：
+
+moonlight_glue
+
+Athena query wrapper 在：
+
+`athena_query.py:1-96`
+
+執行：
+
+start_query_execution
+
+    ↓
+
+poll get_query_execution
+
+    ↓
+
+get_query_results
+
+角色分工：
+
+|系統|主要用途|
+|---|---|
+|SQLite|offline-first operational state|
+|S3|image、JSON、training samples、bundles|
+|DynamoDB|operational catalog / commands / templates / labels|
+|Glue|S3/Iceberg schema catalog|
+|Athena|跨站、跨日、跨 feature 的 SQL analytics|
+|AWS Batch|model fitting|
+|Step Functions|training/release orchestration|
+|KMS|bundle signing|
+
+Athena 並不是每次拍照立即參與 Authentication inference；它主要用於：
+
+- feature drift
+- station bias analysis
+- corpus analytics
+- dashboards
+- training/release metrics
+
+---
+
+# 14. Model & reference building pipeline
+
+## 14.1 Learning mode
+
+CLI 或 workflow 會帶入：
+
+authentication_context = {
+
+    "authentication_mode": "learning",
+
+    "physical_watch_id": "...",
+
+    "dataset_partition": "train",
+
+    "component_labels": {...},
+
+}
+
+`main_cli.py:160-220`
+
+Learning mode 要求：
+
+- 至少一個 reviewed component label。
+- 明確 `physical_watch_id`。
+- dataset partition 必須是 `train / validation / test`。
+- 不用 Authentication bundle 做正式 inference。
+- 只收集 labeled feature sample。
+
+## 14.2 Corpus assembly
+
+`corpus.py:1-180`
+
+會把資料拆成：
+
+train
+
+calibration / validation
+
+holdout / test
+
+重要規則：
+
+同一 physical_watch_id 不可同時出現在 train 與 test
+
+避免同一支手錶被重複當成獨立樣本，造成 data leakage。
+
+## 14.3 Reference statistics
+
+`reference.py:1-220`
+
+建立：
+
+Series reference
+
+Family reference
+
+Global reference
+
+每個 component / Evidence Group / authentication class 都可以有 multivariate reference。
+
+## 14.4 Hierarchical Bayesian model
+
+Trainer 會建立：
+
+production prior hierarchy
+
+training distributions diagnostic
+
+Bayesian fusion configuration
+
+Hierarchical prior 使用：
+
+Global -> Family -> Series partial pooling
+
+而不是簡單把所有 sample count 當成 production prevalence。
+
+## 14.5 Calibration
+
+`fit_temperature()` 使用 calibration partition，將實際 Evidence + Bayesian fusion 跑過一遍，再以 temperature grid 找到較好的 probability calibration。
+
+這不是 runtime fit；runtime 只套用 bundle 中已保存的 calibration artifact。
+
+## 14.6 Anomaly reference
+
+Anomaly reference 使用獨立的 Original calibration population，建立：
+
+Original distance distribution
+
+percentile thresholds
+
+maturity/support
+
+不能直接拿 training data 的 fitting distance 當 anomaly calibration，否則會過度樂觀。
+
+## 14.7 Fuzzy policy
+
+Fuzzy policy 不是自動從資料學出來，而是由人審核：
+
+component criticality
+
+class severity
+
+membership function
+
+rule outcome
+
+approval status
+
+程式明確區分：
+
+fitted:
+
+  evidence reference
+
+  anomaly reference
+
+  probability calibration
+
+authored/reviewed:
+
+  production priors
+
+  fuzzy policy
+
+---
+
+# 15. Model bundle 如何產生
+
+Trainer 主體在：
+
+`trainer.py:1-180`
+
+Bundle writer 會寫出七個 artifact 加 manifest：
+
+`writer.py:45-175`
+
+Manifest 對每個 artifact 記錄：
+
+SHA-256
+
+bundle_version
+
+dataset_version
+
+feature_schema_version
+
+extractor_version
+
+validation_report_id
+
+supported_series
+
+supported_components
+
+流程：
+
+S3 compatible corpus
+
+    ↓
+
+AWS Batch train_job
+
+    ↓
+
+fit references
+
+    ↓
+
+fit Bayesian
+
+    ↓
+
+fit anomaly
+
+    ↓
+
+fit calibration
+
+    ↓
+
+bind reviewed policy / priors
+
+    ↓
+
+validate holdout
+
+    ↓
+
+write candidate bundle
+
+    ↓
+
+S3 training report
+
+Validation 在：
+
+`validate.py:1-180`
+
+會檢查：
+
+- holdout watch 數量
+- class coverage
+- Original false-forgery rate
+- Forgery missed rate
+- calibration error
+- extreme anomaly safety
+- component evaluation failure
+
+只要不能計算，通常會 fail closed，而不是當作通過。
+
+---
+
+# 16. AWS bundle release 與回到 App
+
+AWS release pipeline：
+
+Station 啟動時：
+
+`runtime.py:60-190`
+
+會：
+
+1. 從 S3 讀 site-specific bundle pointer。
+2. 下載 manifest 宣告的檔案。
+3. 驗證 detached KMS signature。
+4. 驗證每個檔案 SHA-256。
+5. 檢查 feature schema / extractor version。
+6. `BundleStore` immutable install。
+7. atomic activate。
+8. 失敗時維持上一個 trusted bundle。
+
+Bundle loader 會拒絕：
+
+- 缺檔
+- 多餘檔案
+- checksum mismatch
+- symlink
+- schema incompatibility
+- production-blocking diagnostics
+
+---
+
+# 17. 輸出有哪些層次
+
+一次 capture / analysis 可能產生四種輸出：
+
+## A. 影像輸出
+
+raw PNG/JPEG
+
+HDR fused image
+
+binary mask
+
+overlay
+
+geometry visualization
+
+texture visualization
+
+## B. 演算法 JSON report
+
+例如：
+
+{
+
+  "task": "lume_hour_texture_analysis",
+
+  "metrics": {},
+
+  "details": {},
+
+  "visuals": {},
+
+  "identifiers": []
+
+}
+
+## C. Feature observation batch
+
+{
+
+  "component": "Hands",
+
+  "feature_family": "lume_texture",
+
+  "feature_id": "...",
+
+  "feature_value": 0.123,
+
+  "quality": 0.8,
+
+  "schema_version": "live-feature-observation-v1",
+
+  "extractor_version": "app-adapters-v1"
+
+}
+
+## D. Authentication result
+
+{
+
+  "status": "REVIEW",
+
+  "authentication_score": 0.74,
+
+  "risk_score": 0.26,
+
+  "confidence": "MEDIUM",
+
+  "component_results": [],
+
+  "reasons": [],
+
+  "bundle_version": "..."
+
+}
+
+最終結果會同時保存在：
+
+Local SQLite authentication_results
+
+Local authentication JSON artifact
+
+S3 authentication result / feature batch
+
+DynamoDB catalog metadata
+
+Glue/Iceberg lake facts
+
+---
+
+# 18. 目前程式中需要注意的邊界
+
+這幾點很重要：
+
+1. `main.py` 負責拍照、保存影像、啟動 analysis worker；Authentication bridge 實際落點是 `WorkflowManager._run_analysis_safe()`。
+2. App 舊的 analysis/report DB 路徑與 Authentication feature batch 是兩套相關但不同的資料結構。
+3. `asset_id` 不是 feature identifier；它是 provenance identity。
+4. `report_identifiers` 會把 report metrics 轉成 numeric features，但不是 Authentication decision。
+5. `shadow_mode: true` 時 Authentication 不會取代現有 UI/Legacy report。
+6. 沒有 active compatible bundle 時，系統仍可收集 learning samples，但不能產生可信的 production authentication decision。
+7. `3006 Rotor` 明確映射到 `Movement-rotor -> Movement`，但目前沒有看到獨立名為 `rotor_authentication_service` 的服務；它依通用 shape/geometry task routing 執行。
+8. App 的 simulation capture 路徑明確標示會跳過部分 V3 DB writes；因此 simulation 資料不能直接等同於 production capture provenance。
+9. Glue/Athena 是資料湖與統計查詢層，不是每次拍照同步阻塞的 inference dependency。
+10. Model fitting 只在 cloud training pipeline 執行；station 只做 feature extraction、bundle loading 與 inference。
+
+簡化成一句話就是：
+
+App 拍影像
+
+ -> Local DB/S3 保存 raw asset
+
+ -> Local inference 產生 report
+
+ -> report identifiers 轉成 FeatureObservation
+
+ -> SQLite 保存 feature batches
+
+ -> active bundle 做 Evidence + Bayesian + Anomaly + Policy
+
+ -> SQLite/S3 保存 Authentication result
+
+ -> Learning samples 再送 AWS training pipeline
+
+ -> 新 bundle 經 validation、human approval、KMS signing 後回到 station
