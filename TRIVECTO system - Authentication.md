@@ -1,22 +1,22 @@
 
-|                                                          |     |
-| -------------------------------------------------------- | --- |
-| [[#### 目前的系統設計可以做到單一數值就很重要譬如Dial文字上的Y的高度. ]]             |     |
-| [[#### pdf report應該包含上萬(?)個identifier]]                  |     |
-| [[#### pdf report目前有的identifier數量]]                      |     |
-| [[#### 深入解釋類似判別watch真偽系統的authentication評分要怎麼設計]]         |     |
-| [[#### 基於8 classification的new 架構]]                       |     |
-| [[#### 很多方法譬如fuzzy logic system推論, 多變量分析, or 貝氏推論或其他方法]] |     |
-| [[#### 給Codex 的第一個 master prompt]]                       |     |
-| [[#### 如何實作這份Prompt]]                                    |     |
-| [[#### 已經有 active bundle，但 Feature Observation 與它不相容]]   |     |
-| [[#### Bundle 與測量資料的關係]]                                 |     |
-| [[#### 多站點手錶掃描、真偽模型與 AWS Lakehouse 參考設計]]                |     |
-| [[#### 確認這條pipeline的code是否能取得approved Bundle]]           |     |
-|                                                          |     |
-|                                                          |     |
-|                                                          |     |
-|                                                          |     |
+|                                                                                               |     |
+| --------------------------------------------------------------------------------------------- | --- |
+| [[#### 目前的系統設計可以做到單一數值就很重要譬如Dial文字上的Y的高度. ]]                                                  |     |
+| [[#### pdf report應該包含上萬(?)個identifier]]                                                       |     |
+| [[#### pdf report目前有的identifier數量]]                                                           |     |
+| [[#### 深入解釋類似判別watch真偽系統的authentication評分要怎麼設計]]                                              |     |
+| [[#### 基於8 classification的new 架構]]                                                            |     |
+| [[#### 很多方法譬如fuzzy logic system推論, 多變量分析, or 貝氏推論或其他方法]]                                      |     |
+| [[#### 給Codex 的第一個 master prompt]]                                                            |     |
+| [[#### 如何實作這份Prompt]]                                                                         |     |
+| [[#### 已經有 active bundle，但 Feature Observation 與它不相容]]                                        |     |
+| [[#### Bundle 與測量資料的關係]]                                                                      |     |
+| [[#### 多站點手錶掃描、真偽模型與 AWS Lakehouse 參考設計]]                                                     |     |
+| [[#### 確認這條pipeline的code是否能取得approved Bundle]]                                                |     |
+| [[#### 建立 CloudFormation、IAM、Lambda、Step Functions、KMS、DynamoDB、SNS、EventBridge、Batch 資源的權限]] |     |
+|                                                                                               |     |
+|                                                                                               |     |
+|                                                                                               |     |
 
 
 
@@ -9748,6 +9748,7 @@ Image 定義在 `cloud/authentication/Dockerfile`：
 3. **啟動一次訓練**：可以從 App 內的 Learning-mode UI 觸發，或直接呼叫 `cloud/authentication/orchestration.py` 的 `start_training_execution(...)`，本質上就是 `boto3 stepfunctions.start_execution(...)`，帶入 `series`、`family`、`site_id`、`policy_key`、`prior_key`、`canary_sites` 等參數。
 4. Step Functions 依 ASL 定義呼叫 `batch:SubmitJob` 啟動剛剛那個 Job Definition（也就是跑進 Docker image 裡的 `train_job.py`）。
 
+
 也就是說：**你不會「登進 AWS 手動跑這支 code」，而是透過 Step Functions/Batch 自動排程執行**；本機除錯/驗證則是直接 `python -m core.authentication.training_cli train ...`（不進 Docker，跑一樣的 core 程式碼）。
 
 ## 3. 怎麼用 AWS 上的 data 跑 code
@@ -9756,46 +9757,181 @@ Image 定義在 `cloud/authentication/Dockerfile`：
 
 1. **下載設定/政策檔**：從 S3 下載 feature registry（或用容器內建的）、`authentication/authored/policy.json`、`authentication/authored/priors.json`（這兩份是人工審核過的業務規則文件，S3 key 由 Step Functions 輸入指定）。
 2. **（可選）讀標籤**：若指定 `label_set`，透過 `data_manager/authentication_labels.py` 從 DynamoDB `AuthenticationLabels` table 讀取凍結的專家標註，覆蓋原始標籤。
+
 3. **讀訓練語料**：`load_s3_corpus(...)` 從 S3 依 Hive-style partition 路徑撈資料：
-    
+```
     authentication/training/samples/
     
       feature_schema_version=<fsv>/extractor_version=<ev>/
     
       series=<series>/site_id=<site>/dt=<YYYY-MM-DD>/<sample_id>.json
-    
-    這些是站點端 Learning-mode 掃描時就已經上傳好的「數值特徵」JSON（不是原始影像 —— 原始影像每天在站點端就被清掉了）。
+```
+
+
+ 這些是站點端 Learning-mode 掃描時就已經上傳好的「數值特徵」JSON（不是原始影像 —— 原始影像每天在站點端就被清掉了）。
 4. **訓練與驗證**：`select_corpus` 依 series/family/site 篩選並依 watch id 分成 train/calibration/holdout，`train_bundle` fit 出模型，`validate_trained_bundle` 在 holdout 上跑 gate 檢驗。
+
 5. **寫回 AWS**：
-    - 候選 bundle 上傳到 S3 的 immutable prefix（`authentication/bundles/<version>/...`，只上傳 manifest 宣告的檔案）。
+```
+- 候選 bundle 上傳到 S3 的 immutable prefix（`authentication/bundles/<version>/...`，只上傳 manifest 宣告的檔案）。
     - 完整報告寫到 `authentication/training-runs/<run_id>.json`，供 `report_lambda` 讀取判斷 gate 是否通過。
+```
+
 6. **後續**：人工在 SNS email 收到 approval 請求 → `send-task-success` 核准 → `publish_lambda` 用 KMS 簽章並更新 `authentication/bundles/targets/<site>.json` 這個 pointer，站點才會拉到新版本。`replay_lambda` 則是拿已發佈 bundle 對 S3 裡保存的歷史 feature batch（`authentication/features/...`、`authentication/results/...`）重新評分，做 backfill 或站點/雲端一致性稽核。
-
+7. 
 如果你要**手動本機測試**整條路徑而不動 AWS 基礎設施，最小驗證方式是：
-
+```
 aws sts get-caller-identity     # 確認憑證/身份
 
 aws stepfunctions start-execution --state-machine-arn <arn> --input file://input.json
 
 aws s3 cp s3://<bucket>/authentication/training-runs/<run>.json -
-
+```
 更完整的部署與驗收步驟（含 IAM 權限需求、KMS 公鑰匯出給站點驗簽等）在文件 `docs/authentication_cloud_training.md` 和 `docs/authentication_qualification.md` 有逐步 PowerShell 指令，若你要實際操作我可以陪你跑一遍或針對特定步驟深入解釋。
 
 
 
 
 
-
+#### 建立 CloudFormation、IAM、Lambda、Step Functions、KMS、DynamoDB、SNS、EventBridge、Batch 資源的權限
 ```
+請再詳細解釋A1步驟, 尤其是部署者需要建立 CloudFormation、IAM、Lambda、Step Functions、KMS、DynamoDB、SNS、EventBridge、Batch 資源的權限。要怎麼完成, 是我登入AWS在上面建立權限嗎?
 
+A1步驟  
+確認帳號、region 與 profile  
+qualification 文件記錄 2026-09-10 的檢查結果是:authentication-deploy profile 指向 account 426476636376 的 IAM user admin-tcw(us-east-2),而 default profile 是 us-east-1,且 us-east-2 當時沒有任何 CREATE_COMPLETE 的 stack。請先重新確認現況:
+
+aws sts get-caller-identity --profile authentication-deploy  
+aws configure get region --profile authentication-deploy  
+aws cloudformation list-stacks --region us-east-2 --stack-status-filter CREATE_COMPLETE UPDATE_COMPLETE  
+部署者需要建立 CloudFormation、IAM、Lambda、Step Functions、KMS、DynamoDB、SNS、EventBridge、Batch 資源的權限。
+
+我的user config:  
+[default]  
+region = us-east-1  
+output = json  
+[profile authentication-deploy]  
+region = us-east-2  
+output = json  
+[profile authentication-preprod]  
+role_arn = arn:aws:iam::426476636376:role/auth-isolated-lab-001-operator  
+source_profile = authentication-deploy  
+role_session_name = auth-preprod-operator  
+region = us-east-2  
+[profile authentication-preprod-station]  
+role_arn = arn:aws:iam::426476636376:role/auth-isolated-lab-001-station  
+source_profile = authentication-deploy  
+region = us-east-2  
+[profile authentication-preprod-reviewer]  
+role_arn = arn:aws:iam::426476636376:role/auth-isolated-lab-001-reviewer  
+source_profile = authentication-deploy  
+region = us-east-2
+
+我的user credentials:  
+只有[default]跟[authentication-deploy]
+
+user config跟user credentials怎麼數量不同, 且這兩個差別在哪裡, 是不是moonlight system只能選一個用
 ```
+### 結論
 
+- **部署權限不用另外建立。** `admin-tcw` 已經有部署需要的全部權限，我用 AWS 的權限模擬實際驗證過。
+- **config 和 credentials 數量不同是正常的**，而且你的 3 個 preprod role profile 都能正常切換。
+- **有一個要優先處理的問題：** 你的 `default` profile 是**另一個 AWS 帳號的 root 使用者金鑰**，而 Moonlight App 現在設定用的正是 `default`。
 
+---
 
+### 1. 部署權限：要自己去 AWS 上建立嗎？
 
+一般來說，是由有 IAM 管理權限的人登入 AWS Console，到 **IAM → Users → 使用者 → Add permissions** 把 policy 掛上去。**但你的情況不需要做這一步。** 我唯讀查了 `admin-tcw`：
 
+|檢查項目|結果|
+|---|---|
+|掛載的 policy|`PowerUserAccess`、`IAMFullAccess`、`AmazonS3FullAccess`、`AmazonDynamoDBFullAccess`，另有 Athena、IoT 等|
+|Permissions boundary|無|
+|權限模擬（`simulate-principal-policy`）|下列 20 個動作**全部 allowed**：CloudFormation CreateStack/ChangeSet、IAM CreateRole/PassRole/PutRolePolicy、Lambda、Step Functions、KMS CreateKey/GetPublicKey、DynamoDB、SNS、EventBridge、Batch CE/Queue/JobDefinition、ECR、S3、CreateServiceLinkedRole|
 
+`PowerUserAccess` 涵蓋 IAM 以外的所有服務，`IAMFullAccess` 補上 IAM 的部分，兩個加起來其實等同完整管理員。所以 A1 的權限需求已經滿足。
 
+之後可以再改善的地方（不影響目前進度）：
+
+- 這個權限比部署實際需要的大很多。
+- `admin-tcw` 有 **2 把啟用中的 access key**。你 credentials 檔裡的是 2026-09-10 建立、結尾 `T7VN` 的那把。另一把 2026-02-03 建立、`AKIAWGS7••••••••••••` 的不在這台電腦上。如果確認沒有別的地方在用，建議在 Console 停用它。
+
+---
+
+### 2. config 和 credentials 有什麼差別？
+
+||`~\.aws\credentials`|`~\.aws\config`|
+|---|---|---|
+|放什麼|**長期秘密金鑰**（access key ID 和 secret）|**設定**（region、output），以及 **role profile 的切換規則**|
+|區段寫法|`[default]`、`[authentication-deploy]`|`[default]`、`[profile authentication-deploy]`（多了 `profile` 前綴）|
+
+role profile 自己**沒有金鑰**。以 `authentication-preprod` 為例，運作方式是：
+
+authentication-preprod（config，沒有金鑰）
+   └─ source_profile = authentication-deploy ──► 取用 credentials 裡 admin-tcw 的金鑰
+        └─ 用這把金鑰呼叫 STS AssumeRole(auth-isolated-lab-001-operator)
+             └─ 拿到約 1 小時有效的暫時憑證，以 operator 角色的身分操作
+
+所以只有「真正持有金鑰的身分」需要寫在 credentials 裡。你有 2 把金鑰、5 個 profile，這是正確的設計。我也實際測過，三個 role profile 都能切換：
+
+|profile|實際身分|
+|---|---|
+|`authentication-preprod`|`assumed-role/auth-isolated-lab-001-operator` ✅|
+|`authentication-preprod-station`|`assumed-role/auth-isolated-lab-001-station` ✅|
+|`authentication-preprod-reviewer`|`assumed-role/auth-isolated-lab-001-reviewer` ✅|
+
+---
+
+### ⚠️ 要優先處理：`default` 是另一個帳號的 root
+
+default               → arn:aws:iam::063557504555:root   ← 另一個帳號，而且是 root
+authentication-deploy → arn:aws:iam::426476636376:user/admin-tcw
+
+這造成兩個影響：
+
+1. **你上一輪的 `list-stacks` 查到的是 063557504555 這個帳號**，因為那條指令沒加 `--profile`。所以「沒有 stack」的結果不能用。
+2. **root access key 風險很高**：它有無限權限、不能用 policy 限制，外洩就等於整個帳號被接管。AWS 官方建議不要建立 root 金鑰。建議你先確認沒有程式在用它，再登入 063557504555 帳號，到 **Security credentials → Access keys** 停用並刪除。這是不可逆的動作，請你自己判斷後執行，我不會代為操作。
+
+---
+
+### 3. Moonlight system 是不是只能選一個 profile？
+
+**同一個 App 程式一次只用一個 profile，但不同工具可以同時用不同的 profile。**
+
+App 讀的是 config/system_config.local.yaml 裡 `aws.profile` 的值。依 data_manager/cloud_db.py 的邏輯，憑證的優先順序是：
+
+1. 設定檔裡直接寫的 `access_key_id` / `secret_access_key`
+2. `aws.profile`
+3. boto3 的預設尋找順序（環境變數，然後 `default`）
+
+你現在的設定是第 60 行 `profile: default`。也就是說，**App 目前連的是 063557504555 的 root**，不是 426476636376。雖然 `security.enable_cloud_sync: false`，但 CloudDB 仍可能用它去連 DynamoDB。
+
+各 profile 的正確用途：
+
+|profile|誰用|什麼時候用|
+|---|---|---|
+|`authentication-deploy`|`deploy.ps1 -AwsProfile`、正式 station 的 `aws.profile`|正式部署（A5/A6）。另外它是三個 role 的金鑰來源|
+|`authentication-preprod`|`deploy.ps1 -PreproductionQualification -AwsProfile`|PREPROD 部署與 qualification runner|
+|`authentication-preprod-station`|PREPROD station overlay 的 `station_profile`|隔離測試站台|
+|`authentication-preprod-reviewer`|核准步驟（`states:SendTaskSuccess`）|PREPROD 的 A9|
+|`default`|**不要用在這個專案**|—|
+
+你不用手動改 App 的 profile。之後帶 `-ConfigureLocalStation` 部署時，`configure_station.py` 會把 `aws.profile` 自動寫成你傳給 `-AwsProfile` 的值（正式環境就是 `authentication-deploy`）。在那之前，如果要先開 App 的雲端功能，要先把第 60 行改成 `authentication-deploy`。
+
+---
+
+### A1 修正後的做法與下一步
+
+A1 前兩條的結果都正確，只有第三條要**補上 `--profile`** 重跑：
+
+aws cloudformation list-stacks --region us-east-2 --profile authentication-deploy --stack-status-filter CREATE_COMPLETE UPDATE_COMPLETE --query "StackSummaries[].StackName"
+
+也建議確認 `moonlight-system-v2` 這個 bucket 是在哪個帳號。能查到就代表它在 426476636376；如果顯示 AccessDenied 或 NoSuchBucket，就可能在另一個帳號：
+
+aws s3api get-bucket-location --bucket moonlight-system-v2 --profile authentication-deploy
+
+這兩條跑完，A1 就完成了，接著繼續上一輪 **A2 的第 3、4 步**（列出 job queue 和 compute environment），指令記得都加 `--profile authentication-deploy`。三條的輸出請一起貼給我。
 
 
 
