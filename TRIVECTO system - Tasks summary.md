@@ -7,7 +7,7 @@
 | [[#### 是否有針對stitched image的task service]]           |     |
 | [[#### stitched image有用unet辨識分針, 時針, Hour Markers]] |     |
 | [[#### unet class id整理]]                            |     |
-|                                                     |     |
+| [[#### Unet 詳細class id 整理]]                         |     |
 |                                                     |     |
 |                                                     |     |
 |                                                     |     |
@@ -75,443 +75,444 @@
 
 ## 完整非 backup 對照表
 
-| internalnum1 | internalnum2 | displayname | server | service_name | 狀態 |
-|---|---|---|---|---|---|
-| 0001 | 0001 | Top view | — | — | internalnum_config only |
-| 0002 | 0001 | Top Side | server_sidepoint.py | sidepoint_service | 已對應 |
-| 0003 | 0001 | Bottom Side | server_sidepoint.py | sidepoint_service | 已對應 |
-| 0004 | 0001 | Upper text | server_front_stitch.py; server_ocr.py | front_stitch_service; ocr_service | 一對多：2 services |
-| 0005 | 0001 | Lower text | server_front_stitch.py; server_ocr.py | front_stitch_service; ocr_service | 一對多：2 services |
-| 0006 | 0001 | Crown | server_front_stitch.py; server_micro_analysis.py | front_stitch_service; side_crown_service | 一對多：2 services |
-| 0006 | 0002 | Crown | — | — | internalnum_config only |
-| 0007 | 0001 | Bottom right lug | server_front_stitch.py | front_stitch_service | 已對應 |
-| 0008 | 0001 | Dial Left | server_front_stitch.py | front_stitch_service | 已對應 |
-| 0008 | 0002 | Dial Left | — | — | internalnum_config only |
-| 0009 | 0001 | Dial Right | — | — | internalnum_config only |
-| 0009 | 0002 | Dial Right | — | — | internalnum_config only |
-| 0010 | 0001 | Dial Lower | — | — | internalnum_config only |
-| 0010 | 0002 | Dial Lower | — | — | internalnum_config only |
-| 0011 | 0001 | Y in Officially | server_micro_analysis.py | features_letter_service | 已對應 |
-| 0011 | 0002 | Y in Officially hdr image | — | — | internalnum_config only |
-| 0012 | 0001 | Logo on Dial | server_micro_analysis.py | features_crown_service | 已對應 |
-| 0012 | 0002 | Inside of crown logo bottom football shape hdr image | — | — | internalnum_config only |
-| 0013 | 0001 | M in Made at near 6 | server_micro_analysis.py | features_letter_service | 已對應 |
-| 0013 | 0002 | M in Made at near 6 hdr image | — | — | internalnum_config only |
-| 0014 | 0001 | 60 minute marker | server_micro_analysis.py | features_marker_service | 已對應 |
-| 0014 | 0002 | 60 minute marker hdr image | — | — | internalnum_config only |
-| 0015 | 0001 | 1 minute marker | server_micro_analysis.py | features_marker_service | 已對應 |
-| 0015 | 0002 | 1 minute marker hdr image | — | — | internalnum_config only |
-| 0016 | 0001 | Bezel at 30 (middle of 3 in 30) | server_micro_analysis.py | bezel_marker_service | 已對應 |
-| 0016 | 0002 | Bezel at 30 (middle of 3 in 30) hdr image | — | — | internalnum_config only |
-| 0017 | 0001 | Bezel at 45 mark (centered) | server_micro_analysis.py | bezel_marker_service | 已對應 |
-| 0017 | 0002 | Bezel at 45 mark (centered) hdr image | — | — | internalnum_config only |
-| 0018 | 0001 | Bezel at 12  (middle of 2 in 12) | — | — | internalnum_config only |
-| 0019 | 0001 | Bezel at 18 (middle of 8 in 18) | — | — | internalnum_config only |
-| 0020 | 0001 | Bezel at 120  (middle of 2 in 120) | — | — | internalnum_config only |
-| 0021 | 0001 | Bezel at 240 (middle of 4 in 240) | — | — | internalnum_config only |
-| 0022 | 0001 | Lume of the 1 hour marker | server_micro_analysis.py | diallume_shape_service; diallume_texture_service | 一對多：2 services |
-| 0022 | 0002 | Lume of 1 marker hdr image | — | — | internalnum_config only |
-| 0023 | 0001 | Hour hand lume - near lower text for mercedes hand | server_micro_analysis.py | lume_hour_shape_service; lume_hour_texture_service | 一對多：2 services |
-| 0023 | 0002 | Hour hand lume - near lower text for mercedes hand hdr image | — | — | internalnum_config only |
-| 0024 | 0001 | Minute hand lume - at end futher from center | server_micro_analysis.py | lume_hand_shape_service; lume_hand_texture_service | 一對多：2 services |
-| 0024 | 0002 | Minute hand lume - at end futher from center hdr image | — | — | internalnum_config only |
-| 0025 | 0001 | Second hand lume | server_micro_analysis.py | lume_hand_shape_service; lume_hand_texture_service | 一對多：2 services |
-| 0025 | 0002 | Second hand lume hdr image | — | — | internalnum_config only |
-| 0026 | 0001 | Dial area with no text just inside of 1 marker | server_micro_analysis.py | texture_service | 已對應 |
-| 0026 | 0002 | Dial area with no text just inside of 1 marker hdr image | — | — | internalnum_config only |
-| 0027 | 0001 | bottom subdial: 20: 0 in 20 | server_micro_analysis.py | bezel_marker_service | 已對應 |
-| 0028 | 0001 | Hour to dial height | — | — | internalnum_config only |
-| 0029 | 0001 | minute to dial height | — | — | internalnum_config only |
-| 0030 | 0001 | 1 hour marker lume to dial height | — | — | internalnum_config only |
-| 0031 | 0001 | thickness of the glass | — | — | internalnum_config only |
-| 0032 | 0001 | Crown on sapphire crystal | server_crown2.py | crown2_service | 已對應 |
-| 0033 | 0001 | Side refer num E in ROLEX | — | — | internalnum_config only |
-| 0034 | 0001 | Side refer num R in ROLEX | — | — | internalnum_config only |
-| 0035 | 0001 | Side serial num E in STAINLESS | — | — | internalnum_config only |
-| 0036 | 0001 | Side serial num S in STEEL | — | — | internalnum_config only |
-| 0037 | 0001 | Side crown center | — | — | internalnum_config only |
-| 0038 | 0001 | Side crown 3 star | — | — | internalnum_config only |
-| 0039 | 0001 | Rehaut at 12 o'clock | — | — | internalnum_config only |
-| 0040 | 0001 | Rehaut at 1 o'clock | — | — | internalnum_config only |
-| 0041 | 0001 | Rehaut at 2 o'clock | — | — | internalnum_config only |
-| 0042 | 0001 | Rehaut at 3 o'clock | — | — | internalnum_config only |
-| 0043 | 0001 | Rehaut at 4 o'clock | — | — | internalnum_config only |
-| 0044 | 0001 | Rehaut at 5 o'clock | — | — | internalnum_config only |
-| 0045 | 0001 | Rehaut at 6 o'clock | — | — | internalnum_config only |
-| 0046 | 0001 | Rehaut at 7 o'clock | — | — | internalnum_config only |
-| 0047 | 0001 | Rehaut at 8 o'clock | — | — | internalnum_config only |
-| 0048 | 0001 | Rehaut at 9 o'clock | — | — | internalnum_config only |
-| 0049 | 0001 | Rehaut at 10 o'clock | — | — | internalnum_config only |
-| 0050 | 0001 | Rehaut at 11 o'clock | — | — | internalnum_config only |
-| 0055 | 0001 | Hour hand lumeless - near lower text for mercedes hand | — | — | internalnum_config only |
-| 0056 | 0001 | Minute hand lumeless - at end futher from center | — | — | internalnum_config only |
-| 0057 | 0001 | Second hand lumeless | — | — | internalnum_config only |
-| 0058 | 0001 | fluted bezel field | — | — | internalnum_config only |
-| 0058 | 0002 | fluted bezel field hdr image | — | — | internalnum_config only |
-| 1001 | 0001 | Top view | — | — | internalnum_config only |
-| 1002 | 0001 | Bottom Left Lug (top left in the image) | — | — | internalnum_config only |
-| 1003 | 0001 | Caseback near top of main circle | — | — | internalnum_config only |
-| 1004 | 0001 | Caseback Center | — | — | internalnum_config only |
-| 2001 | 0001 | Top view | — | — | internalnum_config only |
-| 2002 | 0001 | Text below rotor that is exposed | — | — | internalnum_config only |
-| 2003 | 0001 | Serial number | — | — | internalnum_config only |
-| 2004 | 0001 | Ratchet wheel | — | — | internalnum_config only |
-| 2005 | 0001 | A letter or number in the serial | server_isolation.py | isolation_service | 已對應 |
-| 3001 | 0001 | Top view | — | — | internalnum_config only |
-| 3002 | 0001 | Movement caliber | — | — | internalnum_config only |
-| 3003 | 0001 | Balance Wheel and Bridge | — | — | internalnum_config only |
-| 3003 | 0002 | Balance Wheel and Bridge -1 | — | — | internalnum_config only |
-| 3004 | 0001 | Text below rotor that is exposed | — | — | internalnum_config only |
-| 3005 | 0001 | Movement serial number | — | — | internalnum_config only |
-| 3006 | 0001 | Rotor | — | — | internalnum_config only |
-| 3006 | 0002 | Rotor | — | — | internalnum_config only |
-| 3007 | 0001 | First number in movement caliber | — | — | internalnum_config only |
-| 3008 | 0001 | Bridge | — | — | internalnum_config only |
-| 3009 | 0001 | Rachet wheel (Big yellow gear) | server_isolation.py | isolation_service | 已對應 |
-| 3010 | 0001 | A letter or number in the serial | server_isolation.py | isolation_service | 已對應 |
-| 4001 | 0001 | underside link1 | — | — | internalnum_config only |
-| 4002 | 0001 | underside link2 | — | — | internalnum_config only |
-| 4003 | 0001 | underside link3 | — | — | internalnum_config only |
-| 4004 | 0001 | underside link4 | — | — | internalnum_config only |
-| 4005 | 0001 | underside link5 | — | — | internalnum_config only |
-| 4006 | 0001 | underside link6 | — | — | internalnum_config only |
-| 4007 | 0001 | underside link7 | — | — | internalnum_config only |
-| 4008 | 0001 | 3clock side link1 | — | — | internalnum_config only |
-| 4009 | 0001 | 3clock side link2 | — | — | internalnum_config only |
-| 4010 | 0001 | 3clock side link3 | — | — | internalnum_config only |
-| 4011 | 0001 | 3clock side link4 | — | — | internalnum_config only |
-| 4012 | 0001 | 3clock side link5 | — | — | internalnum_config only |
-| 4013 | 0001 | 3clock side link6 | — | — | internalnum_config only |
-| 4014 | 0001 | 3clock side link7 | — | — | internalnum_config only |
-| 4015 | 0001 | Outer surface side1 | — | — | internalnum_config only |
-| 4016 | 0001 | Outer surface side2 | — | — | internalnum_config only |
-| 4017 | 0001 | Outer surface side3 | — | — | internalnum_config only |
-| 4018 | 0001 | Outer surface side4 | — | — | internalnum_config only |
-| 4019 | 0001 | Outer surface side5 | — | — | internalnum_config only |
-| 4020 | 0001 | Outer surface side6 | — | — | internalnum_config only |
-| 4021 | 0001 | Outer surface side7 | — | — | internalnum_config only |
-| 4022 | 0001 | 9clock side link1 | — | — | internalnum_config only |
-| 4023 | 0001 | 9clock side link2 | — | — | internalnum_config only |
-| 4024 | 0001 | 9clock side link3 | — | — | internalnum_config only |
-| 4025 | 0001 | 9clock side link4 | — | — | internalnum_config only |
-| 4026 | 0001 | 9clock side link5 | — | — | internalnum_config only |
-| 4027 | 0001 | 9clock side link6 | — | — | internalnum_config only |
-| 4028 | 0001 | 9clock side link7 | — | — | internalnum_config only |
-| 4029 | 0001 | 12 clock end link code | — | — | internalnum_config only |
-| 4030 | 0001 | 6 clock end link code | — | — | internalnum_config only |
-| 4034 | 0001 | Fast macro_cam_1 front tile 4034 | — | — | internalnum_config only |
-| 4035 | 0001 | Fast macro_cam_1 front tile 4035 | — | — | internalnum_config only |
-| 4036 | 0001 | Fast macro_cam_1 front tile 4036 | — | — | internalnum_config only |
-| 4037 | 0001 | Fast macro_cam_1 front tile 4037 | — | — | internalnum_config only |
-| 4038 | 0001 | Fast macro_cam_1 front tile 4038 | — | — | internalnum_config only |
-| 4039 | 0001 | Fast macro_cam_1 front tile 4039 | — | — | internalnum_config only |
-| 4040 | 0001 | Fast macro_cam_1 front tile 4040 | — | — | internalnum_config only |
-| 4041 | 0001 | Fast macro_cam_1 front tile 4041 | — | — | internalnum_config only |
-| 4042 | 0001 | Fast macro_cam_1 front tile 4042 | — | — | internalnum_config only |
-| 4043 | 0001 | Fast macro_cam_1 front tile 4043 | — | — | internalnum_config only |
-| 4044 | 0001 | Fast macro_cam_1 front tile 4044 | — | — | internalnum_config only |
-| 4045 | 0001 | Fast macro_cam_1 side tile 4045 | — | — | internalnum_config only |
-| 4046 | 0001 | Fast macro_cam_1 side tile 4046 | — | — | internalnum_config only |
-| 4047 | 0001 | Fast macro_cam_1 side tile 4047 | — | — | internalnum_config only |
-| 4048 | 0001 | Fast macro_cam_1 side tile 4048 | — | — | internalnum_config only |
-| 4049 | 0001 | Fast macro_cam_1 side tile 4049 | — | — | internalnum_config only |
-| 4050 | 0001 | Fast macro_cam_1 side tile 4050 | — | — | internalnum_config only |
-| 4051 | 0001 | Fast macro_cam_1 side tile 4051 | — | — | internalnum_config only |
-| 4052 | 0001 | Fast macro_cam_1 side tile 4052 | — | — | internalnum_config only |
-| 4053 | 0001 | Fast macro_cam_1 side tile 4053 | — | — | internalnum_config only |
-| 4054 | 0001 | Fast macro_cam_1 side tile 4054 | — | — | internalnum_config only |
-| 4055 | 0001 | Fast macro_cam_1 side tile 4055 | — | — | internalnum_config only |
-| 4056 | 0001 | Fast macro_cam_1 back tile 4056 | — | — | internalnum_config only |
-| 4057 | 0001 | Fast macro_cam_1 back tile 4057 | — | — | internalnum_config only |
-| 4058 | 0001 | Fast macro_cam_1 back tile 4058 | — | — | internalnum_config only |
-| 4059 | 0001 | Fast macro_cam_1 back tile 4059 | — | — | internalnum_config only |
-| 4060 | 0001 | Fast macro_cam_1 back tile 4060 | — | — | internalnum_config only |
-| 4061 | 0001 | Fast macro_cam_1 back tile 4061 | — | — | internalnum_config only |
-| 4062 | 0001 | Fast macro_cam_1 back tile 4062 | — | — | internalnum_config only |
-| 4063 | 0001 | Fast macro_cam_1 back tile 4063 | — | — | internalnum_config only |
-| 4064 | 0001 | Fast macro_cam_1 back tile 4064 | — | — | internalnum_config only |
-| 4065 | 0001 | Fast macro_cam_1 back tile 4065 | — | — | internalnum_config only |
-| 4066 | 0001 | Fast macro_cam_1 back tile 4066 | — | — | internalnum_config only |
-| 4067 | 0001 | Fast macro_cam_1 9-clock tile 4067 | — | — | internalnum_config only |
-| 4068 | 0001 | Fast macro_cam_1 9-clock tile 4068 | — | — | internalnum_config only |
-| 4069 | 0001 | Fast macro_cam_1 9-clock tile 4069 | — | — | internalnum_config only |
-| 4070 | 0001 | Fast macro_cam_1 9-clock tile 4070 | — | — | internalnum_config only |
-| 4071 | 0001 | Fast macro_cam_1 9-clock tile 4071 | — | — | internalnum_config only |
-| 4072 | 0001 | Fast macro_cam_1 9-clock tile 4072 | — | — | internalnum_config only |
-| 4073 | 0001 | Fast macro_cam_1 9-clock tile 4073 | — | — | internalnum_config only |
-| 4074 | 0001 | Fast macro_cam_1 9-clock tile 4074 | — | — | internalnum_config only |
-| 4075 | 0001 | Fast macro_cam_1 9-clock tile 4075 | — | — | internalnum_config only |
-| 4076 | 0001 | Fast macro_cam_1 9-clock tile 4076 | — | — | internalnum_config only |
-| 4077 | 0001 | Fast macro_cam_1 9-clock tile 4077 | — | — | internalnum_config only |
-| 4101 | 0001 | End link of 12 clock Bracelet section - underside | — | — | internalnum_config only |
-| 4102 | 0001 | 12 clock Bracelet section link 1 - underside | — | — | internalnum_config only |
-| 4103 | 0001 | 12 clock Bracelet section link 2 - underside | — | — | internalnum_config only |
-| 4104 | 0001 | 12 clock Bracelet section link 3 - underside | — | — | internalnum_config only |
-| 4105 | 0001 | 12 clock Bracelet section link 4 - underside | — | — | internalnum_config only |
-| 4106 | 0001 | 12 clock Bracelet section link 5 - underside | — | — | internalnum_config only |
-| 4107 | 0001 | 12 clock Bracelet section link 6 - underside | — | — | internalnum_config only |
-| 4108 | 0001 | 12 clock Bracelet section link 7 - underside | — | — | internalnum_config only |
-| 4109 | 0001 | 12 clock Bracelet section link 8 - underside | — | — | internalnum_config only |
-| 4110 | 0001 | 12 clock Bracelet section link 9 - underside | — | — | internalnum_config only |
-| 4111 | 0001 | 12 clock Bracelet section link 10 - underside | — | — | internalnum_config only |
-| 4112 | 0001 | 12 clock Bracelet section link 11 - underside | — | — | internalnum_config only |
-| 4113 | 0001 | 12 clock Bracelet section link 12 - underside | — | — | internalnum_config only |
-| 4114 | 0001 | 12 clock Bracelet section link 13 - underside | — | — | internalnum_config only |
-| 4115 | 0001 | 12 clock Bracelet section link 14 - underside | — | — | internalnum_config only |
-| 4116 | 0001 | 12 clock Bracelet section link 15 - underside | — | — | internalnum_config only |
-| 4117 | 0001 | 12 clock Bracelet section link 16 - underside | — | — | internalnum_config only |
-| 4118 | 0001 | 12 clock Bracelet section link 17 - underside | — | — | internalnum_config only |
-| 4119 | 0001 | 12 clock Bracelet section link 18 - underside | — | — | internalnum_config only |
-| 4120 | 0001 | 12 clock Bracelet section link 19 - underside | — | — | internalnum_config only |
-| 4201 | 0001 | End link of 6 clock Bracelet section - underside | — | — | internalnum_config only |
-| 4202 | 0001 | 6 clock Bracelet section link 1 - underside | — | — | internalnum_config only |
-| 4203 | 0001 | 6 clock Bracelet section link 2 - underside | — | — | internalnum_config only |
-| 4204 | 0001 | 6 clock Bracelet section link 3 - underside | — | — | internalnum_config only |
-| 4205 | 0001 | 6 clock Bracelet section link 4 - underside | — | — | internalnum_config only |
-| 4206 | 0001 | 6 clock Bracelet section link 5 - underside | — | — | internalnum_config only |
-| 4207 | 0001 | 6 clock Bracelet section link 6 - underside | — | — | internalnum_config only |
-| 4208 | 0001 | 6 clock Bracelet section link 7 - underside | — | — | internalnum_config only |
-| 4209 | 0001 | 6 clock Bracelet section link 8 - underside | — | — | internalnum_config only |
-| 4210 | 0001 | 6 clock Bracelet section link 9 - underside | — | — | internalnum_config only |
-| 4211 | 0001 | 6 clock Bracelet section link 10 - underside | — | — | internalnum_config only |
-| 4212 | 0001 | 6 clock Bracelet section link 11 - underside | — | — | internalnum_config only |
-| 4213 | 0001 | 6 clock Bracelet section link 12 - underside | — | — | internalnum_config only |
-| 4214 | 0001 | 6 clock Bracelet section link 13 - underside | — | — | internalnum_config only |
-| 4215 | 0001 | 6 clock Bracelet section link 14 - underside | — | — | internalnum_config only |
-| 4216 | 0001 | 6 clock Bracelet section link 15 - underside | — | — | internalnum_config only |
-| 4217 | 0001 | 6 clock Bracelet section link 16 - underside | — | — | internalnum_config only |
-| 4218 | 0001 | 6 clock Bracelet section link 17 - underside | — | — | internalnum_config only |
-| 4219 | 0001 | 6 clock Bracelet section link 18 - underside | — | — | internalnum_config only |
-| 4220 | 0001 | 6 clock Bracelet section link 19 - underside | — | — | internalnum_config only |
-| 4301 | 0001 | End link of 12 clock Bracelet section - Outer surface | — | — | internalnum_config only |
-| 4302 | 0001 | 12 clock Bracelet section link 1 - Outer surface | — | — | internalnum_config only |
-| 4303 | 0001 | 12 clock Bracelet section link 2 - Outer surface | — | — | internalnum_config only |
-| 4304 | 0001 | 12 clock Bracelet section link 3 - Outer surface | — | — | internalnum_config only |
-| 4305 | 0001 | 12 clock Bracelet section link 4 - Outer surface | — | — | internalnum_config only |
-| 4306 | 0001 | 12 clock Bracelet section link 5 - Outer surface | — | — | internalnum_config only |
-| 4307 | 0001 | 12 clock Bracelet section link 6 - Outer surface | — | — | internalnum_config only |
-| 4308 | 0001 | 12 clock Bracelet section link 7 - Outer surface | — | — | internalnum_config only |
-| 4309 | 0001 | 12 clock Bracelet section link 8 - Outer surface | — | — | internalnum_config only |
-| 4310 | 0001 | 12 clock Bracelet section link 9 - Outer surface | — | — | internalnum_config only |
-| 4311 | 0001 | 12 clock Bracelet section link 10 - Outer surface | — | — | internalnum_config only |
-| 4312 | 0001 | 12 clock Bracelet section link 11 - Outer surface | — | — | internalnum_config only |
-| 4313 | 0001 | 12 clock Bracelet section link 12 - Outer surface | — | — | internalnum_config only |
-| 4314 | 0001 | 12 clock Bracelet section link 13 - Outer surface | — | — | internalnum_config only |
-| 4315 | 0001 | 12 clock Bracelet section link 14 - Outer surface | — | — | internalnum_config only |
-| 4316 | 0001 | 12 clock Bracelet section link 15 - Outer surface | — | — | internalnum_config only |
-| 4317 | 0001 | 12 clock Bracelet section link 16 - Outer surface | — | — | internalnum_config only |
-| 4318 | 0001 | 12 clock Bracelet section link 17 - Outer surface | — | — | internalnum_config only |
-| 4319 | 0001 | 12 clock Bracelet section link 18 - Outer surface | — | — | internalnum_config only |
-| 4320 | 0001 | 12 clock Bracelet section link 19 - Outer surface | — | — | internalnum_config only |
-| 4401 | 0001 | End link of 6 clock Bracelet section - Outer surface | — | — | internalnum_config only |
-| 4402 | 0001 | 6 clock Bracelet section link 1 - Outer surface | — | — | internalnum_config only |
-| 4403 | 0001 | 6 clock Bracelet section link 2 - Outer surface | — | — | internalnum_config only |
-| 4404 | 0001 | 6 clock Bracelet section link 3 - Outer surface | — | — | internalnum_config only |
-| 4405 | 0001 | 6 clock Bracelet section link 4 - Outer surface | — | — | internalnum_config only |
-| 4406 | 0001 | 6 clock Bracelet section link 5 - Outer surface | — | — | internalnum_config only |
-| 4407 | 0001 | 6 clock Bracelet section link 6 - Outer surface | — | — | internalnum_config only |
-| 4408 | 0001 | 6 clock Bracelet section link 7 - Outer surface | — | — | internalnum_config only |
-| 4409 | 0001 | 6 clock Bracelet section link 8 - Outer surface | — | — | internalnum_config only |
-| 4410 | 0001 | 6 clock Bracelet section link 9 - Outer surface | — | — | internalnum_config only |
-| 4411 | 0001 | 6 clock Bracelet section link 10 - Outer surface | — | — | internalnum_config only |
-| 4412 | 0001 | 6 clock Bracelet section link 11 - Outer surface | — | — | internalnum_config only |
-| 4413 | 0001 | 6 clock Bracelet section link 12 - Outer surface | — | — | internalnum_config only |
-| 4414 | 0001 | 6 clock Bracelet section link 13 - Outer surface | — | — | internalnum_config only |
-| 4415 | 0001 | 6 clock Bracelet section link 14 - Outer surface | — | — | internalnum_config only |
-| 4416 | 0001 | 6 clock Bracelet section link 15 - Outer surface | — | — | internalnum_config only |
-| 4417 | 0001 | 6 clock Bracelet section link 16 - Outer surface | — | — | internalnum_config only |
-| 4418 | 0001 | 6 clock Bracelet section link 17 - Outer surface | — | — | internalnum_config only |
-| 4419 | 0001 | 6 clock Bracelet section link 18 - Outer surface | — | — | internalnum_config only |
-| 4420 | 0001 | 6 clock Bracelet section link 19 - Outer surface | — | — | internalnum_config only |
-| 4501 | 0001 | End link of 12 clock Bracelet section - 3clock side | — | — | internalnum_config only |
-| 4502 | 0001 | 12 clock Bracelet section link 1 - 3clock side | — | — | internalnum_config only |
-| 4503 | 0001 | 12 clock Bracelet section link 2 - 3clock side | — | — | internalnum_config only |
-| 4504 | 0001 | 12 clock Bracelet section link 3 - 3clock side | — | — | internalnum_config only |
-| 4505 | 0001 | 12 clock Bracelet section link 4 - 3clock side | — | — | internalnum_config only |
-| 4506 | 0001 | 12 clock Bracelet section link 5 - 3clock side | — | — | internalnum_config only |
-| 4507 | 0001 | 12 clock Bracelet section link 6 - 3clock side | — | — | internalnum_config only |
-| 4508 | 0001 | 12 clock Bracelet section link 7 - 3clock side | — | — | internalnum_config only |
-| 4509 | 0001 | 12 clock Bracelet section link 8 - 3clock side | — | — | internalnum_config only |
-| 4510 | 0001 | 12 clock Bracelet section link 9 - 3clock side | — | — | internalnum_config only |
-| 4511 | 0001 | 12 clock Bracelet section link 10 - 3clock side | — | — | internalnum_config only |
-| 4512 | 0001 | 12 clock Bracelet section link 11 - 3clock side | — | — | internalnum_config only |
-| 4513 | 0001 | 12 clock Bracelet section link 12 - 3clock side | — | — | internalnum_config only |
-| 4514 | 0001 | 12 clock Bracelet section link 13 - 3clock side | — | — | internalnum_config only |
-| 4515 | 0001 | 12 clock Bracelet section link 14 - 3clock side | — | — | internalnum_config only |
-| 4516 | 0001 | 12 clock Bracelet section link 15 - 3clock side | — | — | internalnum_config only |
-| 4517 | 0001 | 12 clock Bracelet section link 16 - 3clock side | — | — | internalnum_config only |
-| 4518 | 0001 | 12 clock Bracelet section link 17 - 3clock side | — | — | internalnum_config only |
-| 4519 | 0001 | 12 clock Bracelet section link 18 - 3clock side | — | — | internalnum_config only |
-| 4520 | 0001 | 12 clock Bracelet section link 19 - 3clock side | — | — | internalnum_config only |
-| 4601 | 0001 | End link of 6 clock Bracelet section - 3clock side | — | — | internalnum_config only |
-| 4602 | 0001 | 6 clock Bracelet section link 1 - 3clock side | — | — | internalnum_config only |
-| 4603 | 0001 | 6 clock Bracelet section link 2 - 3clock side | — | — | internalnum_config only |
-| 4604 | 0001 | 6 clock Bracelet section link 3 - 3clock side | — | — | internalnum_config only |
-| 4605 | 0001 | 6 clock Bracelet section link 4 - 3clock side | — | — | internalnum_config only |
-| 4606 | 0001 | 6 clock Bracelet section link 5 - 3clock side | — | — | internalnum_config only |
-| 4607 | 0001 | 6 clock Bracelet section link 6 - 3clock side | — | — | internalnum_config only |
-| 4608 | 0001 | 6 clock Bracelet section link 7 - 3clock side | — | — | internalnum_config only |
-| 4609 | 0001 | 6 clock Bracelet section link 8 - 3clock side | — | — | internalnum_config only |
-| 4610 | 0001 | 6 clock Bracelet section link 9 - 3clock side | — | — | internalnum_config only |
-| 4611 | 0001 | 6 clock Bracelet section link 10 - 3clock side | — | — | internalnum_config only |
-| 4612 | 0001 | 6 clock Bracelet section link 11 - 3clock side | — | — | internalnum_config only |
-| 4613 | 0001 | 6 clock Bracelet section link 12 - 3clock side | — | — | internalnum_config only |
-| 4614 | 0001 | 6 clock Bracelet section link 13 - 3clock side | — | — | internalnum_config only |
-| 4615 | 0001 | 6 clock Bracelet section link 14 - 3clock side | — | — | internalnum_config only |
-| 4616 | 0001 | 6 clock Bracelet section link 15 - 3clock side | — | — | internalnum_config only |
-| 4617 | 0001 | 6 clock Bracelet section link 16 - 3clock side | — | — | internalnum_config only |
-| 4618 | 0001 | 6 clock Bracelet section link 17 - 3clock side | — | — | internalnum_config only |
-| 4619 | 0001 | 6 clock Bracelet section link 18 - 3clock side | — | — | internalnum_config only |
-| 4620 | 0001 | 6 clock Bracelet section link 19 - 3clock side | — | — | internalnum_config only |
-| 4701 | 0001 | End link of 12 clock Bracelet section - 9clock side | — | — | internalnum_config only |
-| 4702 | 0001 | 12 clock Bracelet section link 1 - 9clock side | — | — | internalnum_config only |
-| 4703 | 0001 | 12 clock Bracelet section link 2 - 9clock side | — | — | internalnum_config only |
-| 4704 | 0001 | 12 clock Bracelet section link 3 - 9clock side | — | — | internalnum_config only |
-| 4705 | 0001 | 12 clock Bracelet section link 4 - 9clock side | — | — | internalnum_config only |
-| 4706 | 0001 | 12 clock Bracelet section link 5 - 9clock side | — | — | internalnum_config only |
-| 4707 | 0001 | 12 clock Bracelet section link 6 - 9clock side | — | — | internalnum_config only |
-| 4708 | 0001 | 12 clock Bracelet section link 7 - 9clock side | — | — | internalnum_config only |
-| 4709 | 0001 | 12 clock Bracelet section link 8 - 9clock side | — | — | internalnum_config only |
-| 4710 | 0001 | 12 clock Bracelet section link 9 - 9clock side | — | — | internalnum_config only |
-| 4711 | 0001 | 12 clock Bracelet section link 10 - 9clock side | — | — | internalnum_config only |
-| 4712 | 0001 | 12 clock Bracelet section link 11 - 9clock side | — | — | internalnum_config only |
-| 4713 | 0001 | 12 clock Bracelet section link 12 - 9clock side | — | — | internalnum_config only |
-| 4714 | 0001 | 12 clock Bracelet section link 13 - 9clock side | — | — | internalnum_config only |
-| 4715 | 0001 | 12 clock Bracelet section link 14 - 9clock side | — | — | internalnum_config only |
-| 4716 | 0001 | 12 clock Bracelet section link 15 - 9clock side | — | — | internalnum_config only |
-| 4717 | 0001 | 12 clock Bracelet section link 16 - 9clock side | — | — | internalnum_config only |
-| 4718 | 0001 | 12 clock Bracelet section link 17 - 9clock side | — | — | internalnum_config only |
-| 4719 | 0001 | 12 clock Bracelet section link 18 - 9clock side | — | — | internalnum_config only |
-| 4720 | 0001 | 12 clock Bracelet section link 19 - 9clock side | — | — | internalnum_config only |
-| 4801 | 0001 | End link of 6 clock Bracelet section - 9clock side | — | — | internalnum_config only |
-| 4802 | 0001 | 6 clock Bracelet section link 1 - 9clock side | — | — | internalnum_config only |
-| 4803 | 0001 | 6 clock Bracelet section link 2 - 9clock side | — | — | internalnum_config only |
-| 4804 | 0001 | 6 clock Bracelet section link 3 - 9clock side | — | — | internalnum_config only |
-| 4805 | 0001 | 6 clock Bracelet section link 4 - 9clock side | — | — | internalnum_config only |
-| 4806 | 0001 | 6 clock Bracelet section link 5 - 9clock side | — | — | internalnum_config only |
-| 4807 | 0001 | 6 clock Bracelet section link 6 - 9clock side | — | — | internalnum_config only |
-| 4808 | 0001 | 6 clock Bracelet section link 7 - 9clock side | — | — | internalnum_config only |
-| 4809 | 0001 | 6 clock Bracelet section link 8 - 9clock side | — | — | internalnum_config only |
-| 4810 | 0001 | 6 clock Bracelet section link 9 - 9clock side | — | — | internalnum_config only |
-| 4811 | 0001 | 6 clock Bracelet section link 10 - 9clock side | — | — | internalnum_config only |
-| 4812 | 0001 | 6 clock Bracelet section link 11 - 9clock side | — | — | internalnum_config only |
-| 4813 | 0001 | 6 clock Bracelet section link 12 - 9clock side | — | — | internalnum_config only |
-| 4814 | 0001 | 6 clock Bracelet section link 13 - 9clock side | — | — | internalnum_config only |
-| 4815 | 0001 | 6 clock Bracelet section link 14 - 9clock side | — | — | internalnum_config only |
-| 4816 | 0001 | 6 clock Bracelet section link 15 - 9clock side | — | — | internalnum_config only |
-| 4817 | 0001 | 6 clock Bracelet section link 16 - 9clock side | — | — | internalnum_config only |
-| 4818 | 0001 | 6 clock Bracelet section link 17 - 9clock side | — | — | internalnum_config only |
-| 4819 | 0001 | 6 clock Bracelet section link 18 - 9clock side | — | — | internalnum_config only |
-| 4820 | 0001 | 6 clock Bracelet section link 19 - 9clock side | — | — | internalnum_config only |
-| 5001 | 0001 | Reserved unused screw slot | — | — | internalnum_config only |
-| 5002 | 0001 | 12 clock Bracelet section link 1 - 3clock side screw | — | — | internalnum_config only |
-| 5003 | 0001 | 12 clock Bracelet section link 2 - 3clock side screw | — | — | internalnum_config only |
-| 5004 | 0001 | 12 clock Bracelet section link 3 - 3clock side screw | — | — | internalnum_config only |
-| 5005 | 0001 | 12 clock Bracelet section link 4 - 3clock side screw | — | — | internalnum_config only |
-| 5006 | 0001 | 12 clock Bracelet section link 5 - 3clock side screw | — | — | internalnum_config only |
-| 5007 | 0001 | 12 clock Bracelet section link 6 - 3clock side screw | — | — | internalnum_config only |
-| 5008 | 0001 | 12 clock Bracelet section link 7 - 3clock side screw | — | — | internalnum_config only |
-| 5009 | 0001 | 12 clock Bracelet section link 8 - 3clock side screw | — | — | internalnum_config only |
-| 5010 | 0001 | 12 clock Bracelet section link 9 - 3clock side screw | — | — | internalnum_config only |
-| 5011 | 0001 | 12 clock Bracelet section link 10 - 3clock side screw | — | — | internalnum_config only |
-| 5012 | 0001 | 12 clock Bracelet section link 11 - 3clock side screw | — | — | internalnum_config only |
-| 5013 | 0001 | 12 clock Bracelet section link 12 - 3clock side screw | — | — | internalnum_config only |
-| 5014 | 0001 | 12 clock Bracelet section link 13 - 3clock side screw | — | — | internalnum_config only |
-| 5015 | 0001 | 12 clock Bracelet section link 14 - 3clock side screw | — | — | internalnum_config only |
-| 5016 | 0001 | 12 clock Bracelet section link 15 - 3clock side screw | — | — | internalnum_config only |
-| 5017 | 0001 | 12 clock Bracelet section link 16 - 3clock side screw | — | — | internalnum_config only |
-| 5018 | 0001 | 12 clock Bracelet section link 17 - 3clock side screw | — | — | internalnum_config only |
-| 5019 | 0001 | 12 clock Bracelet section link 18 - 3clock side screw | — | — | internalnum_config only |
-| 5020 | 0001 | 12 clock Bracelet section link 19 - 3clock side screw | — | — | internalnum_config only |
-| 5101 | 0001 | Reserved unused screw slot | — | — | internalnum_config only |
-| 5102 | 0001 | 6 clock Bracelet section link 1 - 3clock side screw | — | — | internalnum_config only |
-| 5103 | 0001 | 6 clock Bracelet section link 2 - 3clock side screw | — | — | internalnum_config only |
-| 5104 | 0001 | 6 clock Bracelet section link 3 - 3clock side screw | — | — | internalnum_config only |
-| 5105 | 0001 | 6 clock Bracelet section link 4 - 3clock side screw | — | — | internalnum_config only |
-| 5106 | 0001 | 6 clock Bracelet section link 5 - 3clock side screw | — | — | internalnum_config only |
-| 5107 | 0001 | 6 clock Bracelet section link 6 - 3clock side screw | — | — | internalnum_config only |
-| 5108 | 0001 | 6 clock Bracelet section link 7 - 3clock side screw | — | — | internalnum_config only |
-| 5109 | 0001 | 6 clock Bracelet section link 8 - 3clock side screw | — | — | internalnum_config only |
-| 5110 | 0001 | 6 clock Bracelet section link 9 - 3clock side screw | — | — | internalnum_config only |
-| 5111 | 0001 | 6 clock Bracelet section link 10 - 3clock side screw | — | — | internalnum_config only |
-| 5112 | 0001 | 6 clock Bracelet section link 11 - 3clock side screw | — | — | internalnum_config only |
-| 5113 | 0001 | 6 clock Bracelet section link 12 - 3clock side screw | — | — | internalnum_config only |
-| 5114 | 0001 | 6 clock Bracelet section link 13 - 3clock side screw | — | — | internalnum_config only |
-| 5115 | 0001 | 6 clock Bracelet section link 14 - 3clock side screw | — | — | internalnum_config only |
-| 5116 | 0001 | 6 clock Bracelet section link 15 - 3clock side screw | — | — | internalnum_config only |
-| 5117 | 0001 | 6 clock Bracelet section link 16 - 3clock side screw | — | — | internalnum_config only |
-| 5118 | 0001 | 6 clock Bracelet section link 17 - 3clock side screw | — | — | internalnum_config only |
-| 5119 | 0001 | 6 clock Bracelet section link 18 - 3clock side screw | — | — | internalnum_config only |
-| 5120 | 0001 | 6 clock Bracelet section link 19 - 3clock side screw | — | — | internalnum_config only |
-| 5201 | 0001 | Reserved unused screw slot | — | — | internalnum_config only |
-| 5202 | 0001 | 12 clock Bracelet section link 1 - 9clock side screw | — | — | internalnum_config only |
-| 5203 | 0001 | 12 clock Bracelet section link 2 - 9clock side screw | — | — | internalnum_config only |
-| 5204 | 0001 | 12 clock Bracelet section link 3 - 9clock side screw | — | — | internalnum_config only |
-| 5205 | 0001 | 12 clock Bracelet section link 4 - 9clock side screw | — | — | internalnum_config only |
-| 5206 | 0001 | 12 clock Bracelet section link 5 - 9clock side screw | — | — | internalnum_config only |
-| 5207 | 0001 | 12 clock Bracelet section link 6 - 9clock side screw | — | — | internalnum_config only |
-| 5208 | 0001 | 12 clock Bracelet section link 7 - 9clock side screw | — | — | internalnum_config only |
-| 5209 | 0001 | 12 clock Bracelet section link 8 - 9clock side screw | — | — | internalnum_config only |
-| 5210 | 0001 | 12 clock Bracelet section link 9 - 9clock side screw | — | — | internalnum_config only |
-| 5211 | 0001 | 12 clock Bracelet section link 10 - 9clock side screw | — | — | internalnum_config only |
-| 5212 | 0001 | 12 clock Bracelet section link 11 - 9clock side screw | — | — | internalnum_config only |
-| 5213 | 0001 | 12 clock Bracelet section link 12 - 9clock side screw | — | — | internalnum_config only |
-| 5214 | 0001 | 12 clock Bracelet section link 13 - 9clock side screw | — | — | internalnum_config only |
-| 5215 | 0001 | 12 clock Bracelet section link 14 - 9clock side screw | — | — | internalnum_config only |
-| 5216 | 0001 | 12 clock Bracelet section link 15 - 9clock side screw | — | — | internalnum_config only |
-| 5217 | 0001 | 12 clock Bracelet section link 16 - 9clock side screw | — | — | internalnum_config only |
-| 5218 | 0001 | 12 clock Bracelet section link 17 - 9clock side screw | — | — | internalnum_config only |
-| 5219 | 0001 | 12 clock Bracelet section link 18 - 9clock side screw | — | — | internalnum_config only |
-| 5220 | 0001 | 12 clock Bracelet section link 19 - 9clock side screw | — | — | internalnum_config only |
-| 5301 | 0001 | Reserved unused screw slot | — | — | internalnum_config only |
-| 5302 | 0001 | 6 clock Bracelet section link 1 - 9clock side screw | — | — | internalnum_config only |
-| 5303 | 0001 | 6 clock Bracelet section link 2 - 9clock side screw | — | — | internalnum_config only |
-| 5304 | 0001 | 6 clock Bracelet section link 3 - 9clock side screw | — | — | internalnum_config only |
-| 5305 | 0001 | 6 clock Bracelet section link 4 - 9clock side screw | — | — | internalnum_config only |
-| 5306 | 0001 | 6 clock Bracelet section link 5 - 9clock side screw | — | — | internalnum_config only |
-| 5307 | 0001 | 6 clock Bracelet section link 6 - 9clock side screw | — | — | internalnum_config only |
-| 5308 | 0001 | 6 clock Bracelet section link 7 - 9clock side screw | — | — | internalnum_config only |
-| 5309 | 0001 | 6 clock Bracelet section link 8 - 9clock side screw | — | — | internalnum_config only |
-| 5310 | 0001 | 6 clock Bracelet section link 9 - 9clock side screw | — | — | internalnum_config only |
-| 5311 | 0001 | 6 clock Bracelet section link 10 - 9clock side screw | — | — | internalnum_config only |
-| 5312 | 0001 | 6 clock Bracelet section link 11 - 9clock side screw | — | — | internalnum_config only |
-| 5313 | 0001 | 6 clock Bracelet section link 12 - 9clock side screw | — | — | internalnum_config only |
-| 5314 | 0001 | 6 clock Bracelet section link 13 - 9clock side screw | — | — | internalnum_config only |
-| 5315 | 0001 | 6 clock Bracelet section link 14 - 9clock side screw | — | — | internalnum_config only |
-| 5316 | 0001 | 6 clock Bracelet section link 15 - 9clock side screw | — | — | internalnum_config only |
-| 5317 | 0001 | 6 clock Bracelet section link 16 - 9clock side screw | — | — | internalnum_config only |
-| 5318 | 0001 | 6 clock Bracelet section link 17 - 9clock side screw | — | — | internalnum_config only |
-| 5319 | 0001 | 6 clock Bracelet section link 18 - 9clock side screw | — | — | internalnum_config only |
-| 5320 | 0001 | 6 clock Bracelet section link 19 - 9clock side screw | — | — | internalnum_config only |
-| 6001 | 0001 | Box macro view1 | — | — | internalnum_config only |
-| 6002 | 0001 | Box macro view2 | — | — | internalnum_config only |
-| 6003 | 0001 | Box macro view3 | — | — | internalnum_config only |
-| 6004 | 0001 | Box macro view4 | — | — | internalnum_config only |
-| 6005 | 0001 | Box macro view5 | — | — | internalnum_config only |
-| 6006 | 0001 | Box micro view1 | — | — | internalnum_config only |
-| 6007 | 0001 | Box micro view2 | — | — | internalnum_config only |
-| 6008 | 0001 | Box micro view3 | — | — | internalnum_config only |
-| 6009 | 0001 | Box micro view4 | — | — | internalnum_config only |
-| 6010 | 0001 | Box micro view5 | — | — | internalnum_config only |
-| 6011 | 0001 | toppoint1 | — | — | internalnum_config only |
-| 7001 | — | Case-Body | — | — | internalnum_config only |
-| 7002 | — | Case-Caseback | — | — | internalnum_config only |
-| 7003 | — | Crown | — | — | internalnum_config only |
-| 7004 | — | Bracelet-Endlink-Center | — | — | internalnum_config only |
-| 7005 | — | Bracelet-Endlink-Side | — | — | internalnum_config only |
-| 7006 | — | Bracelet-Link-Center | — | — | internalnum_config only |
-| 7007 | — | Bracelet-Link-Side | — | — | internalnum_config only |
-| 7008 | — | Bracelet-Clasp-Outer-Center | — | — | internalnum_config only |
-| 7009 | — | Bracelet-Clasp-Outer-Side | — | — | internalnum_config only |
-| 7010 | — | Bracelet-Clasp-Inner | — | — | internalnum_config only |
-| 7011 | — | Bezel | — | — | internalnum_config only |
-| 7012 | — | Box-Lid-Front | — | — | internalnum_config only |
-| 7013 | — | Box-Lid-Crown | — | — | internalnum_config only |
-| 8001 | — | watch_body_weight | — | — | internalnum_config only |
-| 8002 | — | timing | — | — | internalnum_config only |
-| 8003 | — | pressure | — | — | internalnum_config only |
-| 8004 | — | strap_weight | — | — | internalnum_config only |
-| 8005 | — | amplitude | — | — | internalnum_config only |
+| internalnum1 | internalnum2 | displayname                                                  | server                                           | service_name                                       | 狀態                      |
+| ------------ | ------------ | ------------------------------------------------------------ | ------------------------------------------------ | -------------------------------------------------- | ----------------------- |
+| 0001         | 0001         | Top view                                                     | —                                                | —                                                  | internalnum_config only |
+| 0002         | 0001         | Top Side                                                     | server_sidepoint.py                              | sidepoint_service                                  | 已對應                     |
+| 0003         | 0001         | Bottom Side                                                  | server_sidepoint.py                              | sidepoint_service                                  | 已對應                     |
+| 0004         | 0001         | Upper text                                                   | server_front_stitch.py; server_ocr.py            | front_stitch_service; ocr_service                  | 一對多：2 services          |
+| 0005         | 0001         | Lower text                                                   | server_front_stitch.py; server_ocr.py            | front_stitch_service; ocr_service                  | 一對多：2 services          |
+| 0006         | 0001         | Crown                                                        | server_front_stitch.py; server_micro_analysis.py | front_stitch_service; side_crown_service           | 一對多：2 services          |
+| 0006         | 0002         | Crown                                                        | —                                                | —                                                  | internalnum_config only |
+| 0007         | 0001         | Bottom right lug                                             | server_front_stitch.py                           | front_stitch_service                               | 已對應                     |
+| 0008         | 0001         | Dial Left                                                    | server_front_stitch.py                           | front_stitch_service                               | 已對應                     |
+| 0008         | 0002         | Dial Left                                                    | —                                                | —                                                  | internalnum_config only |
+| 0009         | 0001         | Dial Right                                                   | —                                                | —                                                  | internalnum_config only |
+| 0009         | 0002         | Dial Right                                                   | —                                                | —                                                  | internalnum_config only |
+| 0010         | 0001         | Dial Lower                                                   | —                                                | —                                                  | internalnum_config only |
+| 0010         | 0002         | Dial Lower                                                   | —                                                | —                                                  | internalnum_config only |
+| 0011         | 0001         | Y in Officially                                              | server_micro_analysis.py                         | features_letter_service                            | 已對應                     |
+| 0011         | 0002         | Y in Officially hdr image                                    | —                                                | —                                                  | internalnum_config only |
+| 0012         | 0001         | Logo on Dial                                                 | server_micro_analysis.py                         | features_crown_service                             | 已對應                     |
+| 0012         | 0002         | Inside of crown logo bottom football shape hdr image         | —                                                | —                                                  | internalnum_config only |
+| 0013         | 0001         | M in Made at near 6                                          | server_micro_analysis.py                         | features_letter_service                            | 已對應                     |
+| 0013         | 0002         | M in Made at near 6 hdr image                                | —                                                | —                                                  | internalnum_config only |
+| 0014         | 0001         | 60 minute marker                                             | server_micro_analysis.py                         | features_marker_service                            | 已對應                     |
+| 0014         | 0002         | 60 minute marker hdr image                                   | —                                                | —                                                  | internalnum_config only |
+| 0015         | 0001         | 1 minute marker                                              | server_micro_analysis.py                         | features_marker_service                            | 已對應                     |
+| 0015         | 0002         | 1 minute marker hdr image                                    | —                                                | —                                                  | internalnum_config only |
+| 0016         | 0001         | Bezel at 30 (middle of 3 in 30)                              | server_micro_analysis.py                         | bezel_marker_service                               | 已對應                     |
+| 0016         | 0002         | Bezel at 30 (middle of 3 in 30) hdr image                    | —                                                | —                                                  | internalnum_config only |
+| 0017         | 0001         | Bezel at 45 mark (centered)                                  | server_micro_analysis.py                         | bezel_marker_service                               | 已對應                     |
+| 0017         | 0002         | Bezel at 45 mark (centered) hdr image                        | —                                                | —                                                  | internalnum_config only |
+| 0018         | 0001         | Bezel at 12  (middle of 2 in 12)                             | —                                                | —                                                  | internalnum_config only |
+| 0019         | 0001         | Bezel at 18 (middle of 8 in 18)                              | —                                                | —                                                  | internalnum_config only |
+| 0020         | 0001         | Bezel at 120  (middle of 2 in 120)                           | —                                                | —                                                  | internalnum_config only |
+| 0021         | 0001         | Bezel at 240 (middle of 4 in 240)                            | —                                                | —                                                  | internalnum_config only |
+| 0022         | 0001         | Lume of the 1 hour marker                                    | server_micro_analysis.py                         | diallume_shape_service; diallume_texture_service   | 一對多：2 services          |
+| 0022         | 0002         | Lume of 1 marker hdr image                                   | —                                                | —                                                  | internalnum_config only |
+| 0023         | 0001         | Hour hand lume - near lower text for mercedes hand           | server_micro_analysis.py                         | lume_hour_shape_service; lume_hour_texture_service | 一對多：2 services          |
+| 0023         | 0002         | Hour hand lume - near lower text for mercedes hand hdr image | —                                                | —                                                  | internalnum_config only |
+| 0024         | 0001         | Minute hand lume - at end futher from center                 | server_micro_analysis.py                         | lume_hand_shape_service; lume_hand_texture_service | 一對多：2 services          |
+| 0024         | 0002         | Minute hand lume - at end futher from center hdr image       | —                                                | —                                                  | internalnum_config only |
+| 0025         | 0001         | Second hand lume                                             | server_micro_analysis.py                         | lume_hand_shape_service; lume_hand_texture_service | 一對多：2 services          |
+| 0025         | 0002         | Second hand lume hdr image                                   | —                                                | —                                                  | internalnum_config only |
+| 0026         | 0001         | Dial area with no text just inside of 1 marker               | server_micro_analysis.py                         | texture_service                                    | 已對應                     |
+| 0026         | 0002         | Dial area with no text just inside of 1 marker hdr image     | —                                                | —                                                  | internalnum_config only |
+| 0027         | 0001         | bottom subdial: 20: 0 in 20                                  | server_micro_analysis.py                         | bezel_marker_service                               | 已對應                     |
+| 0028         | 0001         | Hour to dial height                                          | —                                                | —                                                  | internalnum_config only |
+| 0029         | 0001         | minute to dial height                                        | —                                                | —                                                  | internalnum_config only |
+| 0030         | 0001         | 1 hour marker lume to dial height                            | —                                                | —                                                  | internalnum_config only |
+| 0031         | 0001         | thickness of the glass                                       | —                                                | —                                                  | internalnum_config only |
+| 0032         | 0001         | Crown on sapphire crystal                                    | server_crown2.py                                 | crown2_service                                     | 已對應                     |
+| 0033         | 0001         | Side refer num E in ROLEX                                    | —                                                | —                                                  | internalnum_config only |
+| 0034         | 0001         | Side refer num R in ROLEX                                    | —                                                | —                                                  | internalnum_config only |
+| 0035         | 0001         | Side serial num E in STAINLESS                               | —                                                | —                                                  | internalnum_config only |
+| 0036         | 0001         | Side serial num S in STEEL                                   | —                                                | —                                                  | internalnum_config only |
+| 0037         | 0001         | Side crown center                                            | —                                                | —                                                  | internalnum_config only |
+| 0038         | 0001         | Side crown 3 star                                            | —                                                | —                                                  | internalnum_config only |
+| 0039         | 0001         | Rehaut at 12 o'clock                                         | —                                                | —                                                  | internalnum_config only |
+| 0040         | 0001         | Rehaut at 1 o'clock                                          | —                                                | —                                                  | internalnum_config only |
+| 0041         | 0001         | Rehaut at 2 o'clock                                          | —                                                | —                                                  | internalnum_config only |
+| 0042         | 0001         | Rehaut at 3 o'clock                                          | —                                                | —                                                  | internalnum_config only |
+| 0043         | 0001         | Rehaut at 4 o'clock                                          | —                                                | —                                                  | internalnum_config only |
+| 0044         | 0001         | Rehaut at 5 o'clock                                          | —                                                | —                                                  | internalnum_config only |
+| 0045         | 0001         | Rehaut at 6 o'clock                                          | —                                                | —                                                  | internalnum_config only |
+| 0046         | 0001         | Rehaut at 7 o'clock                                          | —                                                | —                                                  | internalnum_config only |
+| 0047         | 0001         | Rehaut at 8 o'clock                                          | —                                                | —                                                  | internalnum_config only |
+| 0048         | 0001         | Rehaut at 9 o'clock                                          | —                                                | —                                                  | internalnum_config only |
+| 0049         | 0001         | Rehaut at 10 o'clock                                         | —                                                | —                                                  | internalnum_config only |
+| 0050         | 0001         | Rehaut at 11 o'clock                                         | —                                                | —                                                  | internalnum_config only |
+| 0055         | 0001         | Hour hand lumeless - near lower text for mercedes hand       | —                                                | —                                                  | internalnum_config only |
+| 0056         | 0001         | Minute hand lumeless - at end futher from center             | —                                                | —                                                  | internalnum_config only |
+| 0057         | 0001         | Second hand lumeless                                         | —                                                | —                                                  | internalnum_config only |
+| 0058         | 0001         | fluted bezel field                                           | —                                                | —                                                  | internalnum_config only |
+| 0058         | 0002         | fluted bezel field hdr image                                 | —                                                | —                                                  | internalnum_config only |
+| 1001         | 0001         | Top view                                                     | —                                                | —                                                  | internalnum_config only |
+| 1002         | 0001         | Bottom Left Lug (top left in the image)                      | —                                                | —                                                  | internalnum_config only |
+| 1003         | 0001         | Caseback near top of main circle                             | —                                                | —                                                  | internalnum_config only |
+| 1004         | 0001         | Caseback Center                                              | —                                                | —                                                  | internalnum_config only |
+| 2001         | 0001         | Top view                                                     | —                                                | —                                                  | internalnum_config only |
+| 2002         | 0001         | Text below rotor that is exposed                             | —                                                | —                                                  | internalnum_config only |
+| 2003         | 0001         | Serial number                                                | —                                                | —                                                  | internalnum_config only |
+| 2004         | 0001         | Ratchet wheel                                                | —                                                | —                                                  | internalnum_config only |
+| 2005         | 0001         | A letter or number in the serial                             | server_isolation.py                              | isolation_service                                  | 已對應                     |
+| 3001         | 0001         | Top view                                                     | —                                                | —                                                  | internalnum_config only |
+| 3002         | 0001         | Movement caliber                                             | —                                                | —                                                  | internalnum_config only |
+| 3003         | 0001         | Balance Wheel and Bridge                                     | —                                                | —                                                  | internalnum_config only |
+| 3003         | 0002         | Balance Wheel and Bridge -1                                  | —                                                | —                                                  | internalnum_config only |
+| 3004         | 0001         | Text below rotor that is exposed                             | —                                                | —                                                  | internalnum_config only |
+| 3005         | 0001         | Movement serial number                                       | —                                                | —                                                  | internalnum_config only |
+| 3006         | 0001         | Rotor                                                        | —                                                | —                                                  | internalnum_config only |
+| 3006         | 0002         | Rotor                                                        | —                                                | —                                                  | internalnum_config only |
+| 3007         | 0001         | First number in movement caliber                             | —                                                | —                                                  | internalnum_config only |
+| 3008         | 0001         | Bridge                                                       | —                                                | —                                                  | internalnum_config only |
+| 3009         | 0001         | Rachet wheel (Big yellow gear)                               | server_isolation.py                              | isolation_service                                  | 已對應                     |
+| 3010         | 0001         | A letter or number in the serial                             | server_isolation.py                              | isolation_service                                  | 已對應                     |
+| 4001         | 0001         | underside link1                                              | —                                                | —                                                  | internalnum_config only |
+| 4002         | 0001         | underside link2                                              | —                                                | —                                                  | internalnum_config only |
+| 4003         | 0001         | underside link3                                              | —                                                | —                                                  | internalnum_config only |
+| 4004         | 0001         | underside link4                                              | —                                                | —                                                  | internalnum_config only |
+| 4005         | 0001         | underside link5                                              | —                                                | —                                                  | internalnum_config only |
+| 4006         | 0001         | underside link6                                              | —                                                | —                                                  | internalnum_config only |
+| 4007         | 0001         | underside link7                                              | —                                                | —                                                  | internalnum_config only |
+| 4008         | 0001         | 3clock side link1                                            | —                                                | —                                                  | internalnum_config only |
+| 4009         | 0001         | 3clock side link2                                            | —                                                | —                                                  | internalnum_config only |
+| 4010         | 0001         | 3clock side link3                                            | —                                                | —                                                  | internalnum_config only |
+| 4011         | 0001         | 3clock side link4                                            | —                                                | —                                                  | internalnum_config only |
+| 4012         | 0001         | 3clock side link5                                            | —                                                | —                                                  | internalnum_config only |
+| 4013         | 0001         | 3clock side link6                                            | —                                                | —                                                  | internalnum_config only |
+| 4014         | 0001         | 3clock side link7                                            | —                                                | —                                                  | internalnum_config only |
+| 4015         | 0001         | Outer surface side1                                          | —                                                | —                                                  | internalnum_config only |
+| 4016         | 0001         | Outer surface side2                                          | —                                                | —                                                  | internalnum_config only |
+| 4017         | 0001         | Outer surface side3                                          | —                                                | —                                                  | internalnum_config only |
+| 4018         | 0001         | Outer surface side4                                          | —                                                | —                                                  | internalnum_config only |
+| 4019         | 0001         | Outer surface side5                                          | —                                                | —                                                  | internalnum_config only |
+| 4020         | 0001         | Outer surface side6                                          | —                                                | —                                                  | internalnum_config only |
+| 4021         | 0001         | Outer surface side7                                          | —                                                | —                                                  | internalnum_config only |
+| 4022         | 0001         | 9clock side link1                                            | —                                                | —                                                  | internalnum_config only |
+| 4023         | 0001         | 9clock side link2                                            | —                                                | —                                                  | internalnum_config only |
+| 4024         | 0001         | 9clock side link3                                            | —                                                | —                                                  | internalnum_config only |
+| 4025         | 0001         | 9clock side link4                                            | —                                                | —                                                  | internalnum_config only |
+| 4026         | 0001         | 9clock side link5                                            | —                                                | —                                                  | internalnum_config only |
+| 4027         | 0001         | 9clock side link6                                            | —                                                | —                                                  | internalnum_config only |
+| 4028         | 0001         | 9clock side link7                                            | —                                                | —                                                  | internalnum_config only |
+| 4029         | 0001         | 12 clock end link code                                       | —                                                | —                                                  | internalnum_config only |
+| 4030         | 0001         | 6 clock end link code                                        | —                                                | —                                                  | internalnum_config only |
+| 4034         | 0001         | Fast macro_cam_1 front tile 4034                             | —                                                | —                                                  | internalnum_config only |
+| 4035         | 0001         | Fast macro_cam_1 front tile 4035                             | —                                                | —                                                  | internalnum_config only |
+| 4036         | 0001         | Fast macro_cam_1 front tile 4036                             | —                                                | —                                                  | internalnum_config only |
+| 4037         | 0001         | Fast macro_cam_1 front tile 4037                             | —                                                | —                                                  | internalnum_config only |
+| 4038         | 0001         | Fast macro_cam_1 front tile 4038                             | —                                                | —                                                  | internalnum_config only |
+| 4039         | 0001         | Fast macro_cam_1 front tile 4039                             | —                                                | —                                                  | internalnum_config only |
+| 4040         | 0001         | Fast macro_cam_1 front tile 4040                             | —                                                | —                                                  | internalnum_config only |
+| 4041         | 0001         | Fast macro_cam_1 front tile 4041                             | —                                                | —                                                  | internalnum_config only |
+| 4042         | 0001         | Fast macro_cam_1 front tile 4042                             | —                                                | —                                                  | internalnum_config only |
+| 4043         | 0001         | Fast macro_cam_1 front tile 4043                             | —                                                | —                                                  | internalnum_config only |
+| 4044         | 0001         | Fast macro_cam_1 front tile 4044                             | —                                                | —                                                  | internalnum_config only |
+| 4045         | 0001         | Fast macro_cam_1 side tile 4045                              | —                                                | —                                                  | internalnum_config only |
+| 4046         | 0001         | Fast macro_cam_1 side tile 4046                              | —                                                | —                                                  | internalnum_config only |
+| 4047         | 0001         | Fast macro_cam_1 side tile 4047                              | —                                                | —                                                  | internalnum_config only |
+| 4048         | 0001         | Fast macro_cam_1 side tile 4048                              | —                                                | —                                                  | internalnum_config only |
+| 4049         | 0001         | Fast macro_cam_1 side tile 4049                              | —                                                | —                                                  | internalnum_config only |
+| 4050         | 0001         | Fast macro_cam_1 side tile 4050                              | —                                                | —                                                  | internalnum_config only |
+| 4051         | 0001         | Fast macro_cam_1 side tile 4051                              | —                                                | —                                                  | internalnum_config only |
+| 4052         | 0001         | Fast macro_cam_1 side tile 4052                              | —                                                | —                                                  | internalnum_config only |
+| 4053         | 0001         | Fast macro_cam_1 side tile 4053                              | —                                                | —                                                  | internalnum_config only |
+| 4054         | 0001         | Fast macro_cam_1 side tile 4054                              | —                                                | —                                                  | internalnum_config only |
+| 4055         | 0001         | Fast macro_cam_1 side tile 4055                              | —                                                | —                                                  | internalnum_config only |
+| 4056         | 0001         | Fast macro_cam_1 back tile 4056                              | —                                                | —                                                  | internalnum_config only |
+| 4057         | 0001         | Fast macro_cam_1 back tile 4057                              | —                                                | —                                                  | internalnum_config only |
+| 4058         | 0001         | Fast macro_cam_1 back tile 4058                              | —                                                | —                                                  | internalnum_config only |
+| 4059         | 0001         | Fast macro_cam_1 back tile 4059                              | —                                                | —                                                  | internalnum_config only |
+| 4060         | 0001         | Fast macro_cam_1 back tile 4060                              | —                                                | —                                                  | internalnum_config only |
+| 4061         | 0001         | Fast macro_cam_1 back tile 4061                              | —                                                | —                                                  | internalnum_config only |
+| 4062         | 0001         | Fast macro_cam_1 back tile 4062                              | —                                                | —                                                  | internalnum_config only |
+| 4063         | 0001         | Fast macro_cam_1 back tile 4063                              | —                                                | —                                                  | internalnum_config only |
+| 4064         | 0001         | Fast macro_cam_1 back tile 4064                              | —                                                | —                                                  | internalnum_config only |
+| 4065         | 0001         | Fast macro_cam_1 back tile 4065                              | —                                                | —                                                  | internalnum_config only |
+| 4066         | 0001         | Fast macro_cam_1 back tile 4066                              | —                                                | —                                                  | internalnum_config only |
+| 4067         | 0001         | Fast macro_cam_1 9-clock tile 4067                           | —                                                | —                                                  | internalnum_config only |
+| 4068         | 0001         | Fast macro_cam_1 9-clock tile 4068                           | —                                                | —                                                  | internalnum_config only |
+| 4069         | 0001         | Fast macro_cam_1 9-clock tile 4069                           | —                                                | —                                                  | internalnum_config only |
+| 4070         | 0001         | Fast macro_cam_1 9-clock tile 4070                           | —                                                | —                                                  | internalnum_config only |
+| 4071         | 0001         | Fast macro_cam_1 9-clock tile 4071                           | —                                                | —                                                  | internalnum_config only |
+| 4072         | 0001         | Fast macro_cam_1 9-clock tile 4072                           | —                                                | —                                                  | internalnum_config only |
+| 4073         | 0001         | Fast macro_cam_1 9-clock tile 4073                           | —                                                | —                                                  | internalnum_config only |
+| 4074         | 0001         | Fast macro_cam_1 9-clock tile 4074                           | —                                                | —                                                  | internalnum_config only |
+| 4075         | 0001         | Fast macro_cam_1 9-clock tile 4075                           | —                                                | —                                                  | internalnum_config only |
+| 4076         | 0001         | Fast macro_cam_1 9-clock tile 4076                           | —                                                | —                                                  | internalnum_config only |
+| 4077         | 0001         | Fast macro_cam_1 9-clock tile 4077                           | —                                                | —                                                  | internalnum_config only |
+| 4101         | 0001         | End link of 12 clock Bracelet section - underside            | —                                                | —                                                  | internalnum_config only |
+| 4102         | 0001         | 12 clock Bracelet section link 1 - underside                 | —                                                | —                                                  | internalnum_config only |
+| 4103         | 0001         | 12 clock Bracelet section link 2 - underside                 | —                                                | —                                                  | internalnum_config only |
+| 4104         | 0001         | 12 clock Bracelet section link 3 - underside                 | —                                                | —                                                  | internalnum_config only |
+| 4105         | 0001         | 12 clock Bracelet section link 4 - underside                 | —                                                | —                                                  | internalnum_config only |
+| 4106         | 0001         | 12 clock Bracelet section link 5 - underside                 | —                                                | —                                                  | internalnum_config only |
+| 4107         | 0001         | 12 clock Bracelet section link 6 - underside                 | —                                                | —                                                  | internalnum_config only |
+| 4108         | 0001         | 12 clock Bracelet section link 7 - underside                 | —                                                | —                                                  | internalnum_config only |
+| 4109         | 0001         | 12 clock Bracelet section link 8 - underside                 | —                                                | —                                                  | internalnum_config only |
+| 4110         | 0001         | 12 clock Bracelet section link 9 - underside                 | —                                                | —                                                  | internalnum_config only |
+| 4111         | 0001         | 12 clock Bracelet section link 10 - underside                | —                                                | —                                                  | internalnum_config only |
+| 4112         | 0001         | 12 clock Bracelet section link 11 - underside                | —                                                | —                                                  | internalnum_config only |
+| 4113         | 0001         | 12 clock Bracelet section link 12 - underside                | —                                                | —                                                  | internalnum_config only |
+| 4114         | 0001         | 12 clock Bracelet section link 13 - underside                | —                                                | —                                                  | internalnum_config only |
+| 4115         | 0001         | 12 clock Bracelet section link 14 - underside                | —                                                | —                                                  | internalnum_config only |
+| 4116         | 0001         | 12 clock Bracelet section link 15 - underside                | —                                                | —                                                  | internalnum_config only |
+| 4117         | 0001         | 12 clock Bracelet section link 16 - underside                | —                                                | —                                                  | internalnum_config only |
+| 4118         | 0001         | 12 clock Bracelet section link 17 - underside                | —                                                | —                                                  | internalnum_config only |
+| 4119         | 0001         | 12 clock Bracelet section link 18 - underside                | —                                                | —                                                  | internalnum_config only |
+| 4120         | 0001         | 12 clock Bracelet section link 19 - underside                | —                                                | —                                                  | internalnum_config only |
+| 4201         | 0001         | End link of 6 clock Bracelet section - underside             | —                                                | —                                                  | internalnum_config only |
+| 4202         | 0001         | 6 clock Bracelet section link 1 - underside                  | —                                                | —                                                  | internalnum_config only |
+| 4203         | 0001         | 6 clock Bracelet section link 2 - underside                  | —                                                | —                                                  | internalnum_config only |
+| 4204         | 0001         | 6 clock Bracelet section link 3 - underside                  | —                                                | —                                                  | internalnum_config only |
+| 4205         | 0001         | 6 clock Bracelet section link 4 - underside                  | —                                                | —                                                  | internalnum_config only |
+| 4206         | 0001         | 6 clock Bracelet section link 5 - underside                  | —                                                | —                                                  | internalnum_config only |
+| 4207         | 0001         | 6 clock Bracelet section link 6 - underside                  | —                                                | —                                                  | internalnum_config only |
+| 4208         | 0001         | 6 clock Bracelet section link 7 - underside                  | —                                                | —                                                  | internalnum_config only |
+| 4209         | 0001         | 6 clock Bracelet section link 8 - underside                  | —                                                | —                                                  | internalnum_config only |
+| 4210         | 0001         | 6 clock Bracelet section link 9 - underside                  | —                                                | —                                                  | internalnum_config only |
+| 4211         | 0001         | 6 clock Bracelet section link 10 - underside                 | —                                                | —                                                  | internalnum_config only |
+| 4212         | 0001         | 6 clock Bracelet section link 11 - underside                 | —                                                | —                                                  | internalnum_config only |
+| 4213         | 0001         | 6 clock Bracelet section link 12 - underside                 | —                                                | —                                                  | internalnum_config only |
+| 4214         | 0001         | 6 clock Bracelet section link 13 - underside                 | —                                                | —                                                  | internalnum_config only |
+| 4215         | 0001         | 6 clock Bracelet section link 14 - underside                 | —                                                | —                                                  | internalnum_config only |
+| 4216         | 0001         | 6 clock Bracelet section link 15 - underside                 | —                                                | —                                                  | internalnum_config only |
+| 4217         | 0001         | 6 clock Bracelet section link 16 - underside                 | —                                                | —                                                  | internalnum_config only |
+| 4218         | 0001         | 6 clock Bracelet section link 17 - underside                 | —                                                | —                                                  | internalnum_config only |
+| 4219         | 0001         | 6 clock Bracelet section link 18 - underside                 | —                                                | —                                                  | internalnum_config only |
+| 4220         | 0001         | 6 clock Bracelet section link 19 - underside                 | —                                                | —                                                  | internalnum_config only |
+| 4301         | 0001         | End link of 12 clock Bracelet section - Outer surface        | —                                                | —                                                  | internalnum_config only |
+| 4302         | 0001         | 12 clock Bracelet section link 1 - Outer surface             | —                                                | —                                                  | internalnum_config only |
+| 4303         | 0001         | 12 clock Bracelet section link 2 - Outer surface             | —                                                | —                                                  | internalnum_config only |
+| 4304         | 0001         | 12 clock Bracelet section link 3 - Outer surface             | —                                                | —                                                  | internalnum_config only |
+| 4305         | 0001         | 12 clock Bracelet section link 4 - Outer surface             | —                                                | —                                                  | internalnum_config only |
+| 4306         | 0001         | 12 clock Bracelet section link 5 - Outer surface             | —                                                | —                                                  | internalnum_config only |
+| 4307         | 0001         | 12 clock Bracelet section link 6 - Outer surface             | —                                                | —                                                  | internalnum_config only |
+| 4308         | 0001         | 12 clock Bracelet section link 7 - Outer surface             | —                                                | —                                                  | internalnum_config only |
+| 4309         | 0001         | 12 clock Bracelet section link 8 - Outer surface             | —                                                | —                                                  | internalnum_config only |
+| 4310         | 0001         | 12 clock Bracelet section link 9 - Outer surface             | —                                                | —                                                  | internalnum_config only |
+| 4311         | 0001         | 12 clock Bracelet section link 10 - Outer surface            | —                                                | —                                                  | internalnum_config only |
+| 4312         | 0001         | 12 clock Bracelet section link 11 - Outer surface            | —                                                | —                                                  | internalnum_config only |
+| 4313         | 0001         | 12 clock Bracelet section link 12 - Outer surface            | —                                                | —                                                  | internalnum_config only |
+| 4314         | 0001         | 12 clock Bracelet section link 13 - Outer surface            | —                                                | —                                                  | internalnum_config only |
+| 4315         | 0001         | 12 clock Bracelet section link 14 - Outer surface            | —                                                | —                                                  | internalnum_config only |
+| 4316         | 0001         | 12 clock Bracelet section link 15 - Outer surface            | —                                                | —                                                  | internalnum_config only |
+| 4317         | 0001         | 12 clock Bracelet section link 16 - Outer surface            | —                                                | —                                                  | internalnum_config only |
+| 4318         | 0001         | 12 clock Bracelet section link 17 - Outer surface            | —                                                | —                                                  | internalnum_config only |
+| 4319         | 0001         | 12 clock Bracelet section link 18 - Outer surface            | —                                                | —                                                  | internalnum_config only |
+| 4320         | 0001         | 12 clock Bracelet section link 19 - Outer surface            | —                                                | —                                                  | internalnum_config only |
+| 4401         | 0001         | End link of 6 clock Bracelet section - Outer surface         | —                                                | —                                                  | internalnum_config only |
+| 4402         | 0001         | 6 clock Bracelet section link 1 - Outer surface              | —                                                | —                                                  | internalnum_config only |
+| 4403         | 0001         | 6 clock Bracelet section link 2 - Outer surface              | —                                                | —                                                  | internalnum_config only |
+| 4404         | 0001         | 6 clock Bracelet section link 3 - Outer surface              | —                                                | —                                                  | internalnum_config only |
+| 4405         | 0001         | 6 clock Bracelet section link 4 - Outer surface              | —                                                | —                                                  | internalnum_config only |
+| 4406         | 0001         | 6 clock Bracelet section link 5 - Outer surface              | —                                                | —                                                  | internalnum_config only |
+| 4407         | 0001         | 6 clock Bracelet section link 6 - Outer surface              | —                                                | —                                                  | internalnum_config only |
+| 4408         | 0001         | 6 clock Bracelet section link 7 - Outer surface              | —                                                | —                                                  | internalnum_config only |
+| 4409         | 0001         | 6 clock Bracelet section link 8 - Outer surface              | —                                                | —                                                  | internalnum_config only |
+| 4410         | 0001         | 6 clock Bracelet section link 9 - Outer surface              | —                                                | —                                                  | internalnum_config only |
+| 4411         | 0001         | 6 clock Bracelet section link 10 - Outer surface             | —                                                | —                                                  | internalnum_config only |
+| 4412         | 0001         | 6 clock Bracelet section link 11 - Outer surface             | —                                                | —                                                  | internalnum_config only |
+| 4413         | 0001         | 6 clock Bracelet section link 12 - Outer surface             | —                                                | —                                                  | internalnum_config only |
+| 4414         | 0001         | 6 clock Bracelet section link 13 - Outer surface             | —                                                | —                                                  | internalnum_config only |
+| 4415         | 0001         | 6 clock Bracelet section link 14 - Outer surface             | —                                                | —                                                  | internalnum_config only |
+| 4416         | 0001         | 6 clock Bracelet section link 15 - Outer surface             | —                                                | —                                                  | internalnum_config only |
+| 4417         | 0001         | 6 clock Bracelet section link 16 - Outer surface             | —                                                | —                                                  | internalnum_config only |
+| 4418         | 0001         | 6 clock Bracelet section link 17 - Outer surface             | —                                                | —                                                  | internalnum_config only |
+| 4419         | 0001         | 6 clock Bracelet section link 18 - Outer surface             | —                                                | —                                                  | internalnum_config only |
+| 4420         | 0001         | 6 clock Bracelet section link 19 - Outer surface             | —                                                | —                                                  | internalnum_config only |
+| 4501         | 0001         | End link of 12 clock Bracelet section - 3clock side          | —                                                | —                                                  | internalnum_config only |
+| 4502         | 0001         | 12 clock Bracelet section link 1 - 3clock side               | —                                                | —                                                  | internalnum_config only |
+| 4503         | 0001         | 12 clock Bracelet section link 2 - 3clock side               | —                                                | —                                                  | internalnum_config only |
+| 4504         | 0001         | 12 clock Bracelet section link 3 - 3clock side               | —                                                | —                                                  | internalnum_config only |
+| 4505         | 0001         | 12 clock Bracelet section link 4 - 3clock side               | —                                                | —                                                  | internalnum_config only |
+| 4506         | 0001         | 12 clock Bracelet section link 5 - 3clock side               | —                                                | —                                                  | internalnum_config only |
+| 4507         | 0001         | 12 clock Bracelet section link 6 - 3clock side               | —                                                | —                                                  | internalnum_config only |
+| 4508         | 0001         | 12 clock Bracelet section link 7 - 3clock side               | —                                                | —                                                  | internalnum_config only |
+| 4509         | 0001         | 12 clock Bracelet section link 8 - 3clock side               | —                                                | —                                                  | internalnum_config only |
+| 4510         | 0001         | 12 clock Bracelet section link 9 - 3clock side               | —                                                | —                                                  | internalnum_config only |
+| 4511         | 0001         | 12 clock Bracelet section link 10 - 3clock side              | —                                                | —                                                  | internalnum_config only |
+| 4512         | 0001         | 12 clock Bracelet section link 11 - 3clock side              | —                                                | —                                                  | internalnum_config only |
+| 4513         | 0001         | 12 clock Bracelet section link 12 - 3clock side              | —                                                | —                                                  | internalnum_config only |
+| 4514         | 0001         | 12 clock Bracelet section link 13 - 3clock side              | —                                                | —                                                  | internalnum_config only |
+| 4515         | 0001         | 12 clock Bracelet section link 14 - 3clock side              | —                                                | —                                                  | internalnum_config only |
+| 4516         | 0001         | 12 clock Bracelet section link 15 - 3clock side              | —                                                | —                                                  | internalnum_config only |
+| 4517         | 0001         | 12 clock Bracelet section link 16 - 3clock side              | —                                                | —                                                  | internalnum_config only |
+| 4518         | 0001         | 12 clock Bracelet section link 17 - 3clock side              | —                                                | —                                                  | internalnum_config only |
+| 4519         | 0001         | 12 clock Bracelet section link 18 - 3clock side              | —                                                | —                                                  | internalnum_config only |
+| 4520         | 0001         | 12 clock Bracelet section link 19 - 3clock side              | —                                                | —                                                  | internalnum_config only |
+| 4601         | 0001         | End link of 6 clock Bracelet section - 3clock side           | —                                                | —                                                  | internalnum_config only |
+| 4602         | 0001         | 6 clock Bracelet section link 1 - 3clock side                | —                                                | —                                                  | internalnum_config only |
+| 4603         | 0001         | 6 clock Bracelet section link 2 - 3clock side                | —                                                | —                                                  | internalnum_config only |
+| 4604         | 0001         | 6 clock Bracelet section link 3 - 3clock side                | —                                                | —                                                  | internalnum_config only |
+| 4605         | 0001         | 6 clock Bracelet section link 4 - 3clock side                | —                                                | —                                                  | internalnum_config only |
+| 4606         | 0001         | 6 clock Bracelet section link 5 - 3clock side                | —                                                | —                                                  | internalnum_config only |
+| 4607         | 0001         | 6 clock Bracelet section link 6 - 3clock side                | —                                                | —                                                  | internalnum_config only |
+| 4608         | 0001         | 6 clock Bracelet section link 7 - 3clock side                | —                                                | —                                                  | internalnum_config only |
+| 4609         | 0001         | 6 clock Bracelet section link 8 - 3clock side                | —                                                | —                                                  | internalnum_config only |
+| 4610         | 0001         | 6 clock Bracelet section link 9 - 3clock side                | —                                                | —                                                  | internalnum_config only |
+| 4611         | 0001         | 6 clock Bracelet section link 10 - 3clock side               | —                                                | —                                                  | internalnum_config only |
+| 4612         | 0001         | 6 clock Bracelet section link 11 - 3clock side               | —                                                | —                                                  | internalnum_config only |
+| 4613         | 0001         | 6 clock Bracelet section link 12 - 3clock side               | —                                                | —                                                  | internalnum_config only |
+| 4614         | 0001         | 6 clock Bracelet section link 13 - 3clock side               | —                                                | —                                                  | internalnum_config only |
+| 4615         | 0001         | 6 clock Bracelet section link 14 - 3clock side               | —                                                | —                                                  | internalnum_config only |
+| 4616         | 0001         | 6 clock Bracelet section link 15 - 3clock side               | —                                                | —                                                  | internalnum_config only |
+| 4617         | 0001         | 6 clock Bracelet section link 16 - 3clock side               | —                                                | —                                                  | internalnum_config only |
+| 4618         | 0001         | 6 clock Bracelet section link 17 - 3clock side               | —                                                | —                                                  | internalnum_config only |
+| 4619         | 0001         | 6 clock Bracelet section link 18 - 3clock side               | —                                                | —                                                  | internalnum_config only |
+| 4620         | 0001         | 6 clock Bracelet section link 19 - 3clock side               | —                                                | —                                                  | internalnum_config only |
+| 4701         | 0001         | End link of 12 clock Bracelet section - 9clock side          | —                                                | —                                                  | internalnum_config only |
+| 4702         | 0001         | 12 clock Bracelet section link 1 - 9clock side               | —                                                | —                                                  | internalnum_config only |
+| 4703         | 0001         | 12 clock Bracelet section link 2 - 9clock side               | —                                                | —                                                  | internalnum_config only |
+| 4704         | 0001         | 12 clock Bracelet section link 3 - 9clock side               | —                                                | —                                                  | internalnum_config only |
+| 4705         | 0001         | 12 clock Bracelet section link 4 - 9clock side               | —                                                | —                                                  | internalnum_config only |
+| 4706         | 0001         | 12 clock Bracelet section link 5 - 9clock side               | —                                                | —                                                  | internalnum_config only |
+| 4707         | 0001         | 12 clock Bracelet section link 6 - 9clock side               | —                                                | —                                                  | internalnum_config only |
+| 4708         | 0001         | 12 clock Bracelet section link 7 - 9clock side               | —                                                | —                                                  | internalnum_config only |
+| 4709         | 0001         | 12 clock Bracelet section link 8 - 9clock side               | —                                                | —                                                  | internalnum_config only |
+| 4710         | 0001         | 12 clock Bracelet section link 9 - 9clock side               | —                                                | —                                                  | internalnum_config only |
+| 4711         | 0001         | 12 clock Bracelet section link 10 - 9clock side              | —                                                | —                                                  | internalnum_config only |
+| 4712         | 0001         | 12 clock Bracelet section link 11 - 9clock side              | —                                                | —                                                  | internalnum_config only |
+| 4713         | 0001         | 12 clock Bracelet section link 12 - 9clock side              | —                                                | —                                                  | internalnum_config only |
+| 4714         | 0001         | 12 clock Bracelet section link 13 - 9clock side              | —                                                | —                                                  | internalnum_config only |
+| 4715         | 0001         | 12 clock Bracelet section link 14 - 9clock side              | —                                                | —                                                  | internalnum_config only |
+| 4716         | 0001         | 12 clock Bracelet section link 15 - 9clock side              | —                                                | —                                                  | internalnum_config only |
+| 4717         | 0001         | 12 clock Bracelet section link 16 - 9clock side              | —                                                | —                                                  | internalnum_config only |
+| 4718         | 0001         | 12 clock Bracelet section link 17 - 9clock side              | —                                                | —                                                  | internalnum_config only |
+| 4719         | 0001         | 12 clock Bracelet section link 18 - 9clock side              | —                                                | —                                                  | internalnum_config only |
+| 4720         | 0001         | 12 clock Bracelet section link 19 - 9clock side              | —                                                | —                                                  | internalnum_config only |
+| 4801         | 0001         | End link of 6 clock Bracelet section - 9clock side           | —                                                | —                                                  | internalnum_config only |
+| 4802         | 0001         | 6 clock Bracelet section link 1 - 9clock side                | —                                                | —                                                  | internalnum_config only |
+| 4803         | 0001         | 6 clock Bracelet section link 2 - 9clock side                | —                                                | —                                                  | internalnum_config only |
+| 4804         | 0001         | 6 clock Bracelet section link 3 - 9clock side                | —                                                | —                                                  | internalnum_config only |
+| 4805         | 0001         | 6 clock Bracelet section link 4 - 9clock side                | —                                                | —                                                  | internalnum_config only |
+| 4806         | 0001         | 6 clock Bracelet section link 5 - 9clock side                | —                                                | —                                                  | internalnum_config only |
+| 4807         | 0001         | 6 clock Bracelet section link 6 - 9clock side                | —                                                | —                                                  | internalnum_config only |
+| 4808         | 0001         | 6 clock Bracelet section link 7 - 9clock side                | —                                                | —                                                  | internalnum_config only |
+| 4809         | 0001         | 6 clock Bracelet section link 8 - 9clock side                | —                                                | —                                                  | internalnum_config only |
+| 4810         | 0001         | 6 clock Bracelet section link 9 - 9clock side                | —                                                | —                                                  | internalnum_config only |
+| 4811         | 0001         | 6 clock Bracelet section link 10 - 9clock side               | —                                                | —                                                  | internalnum_config only |
+| 4812         | 0001         | 6 clock Bracelet section link 11 - 9clock side               | —                                                | —                                                  | internalnum_config only |
+| 4813         | 0001         | 6 clock Bracelet section link 12 - 9clock side               | —                                                | —                                                  | internalnum_config only |
+| 4814         | 0001         | 6 clock Bracelet section link 13 - 9clock side               | —                                                | —                                                  | internalnum_config only |
+| 4815         | 0001         | 6 clock Bracelet section link 14 - 9clock side               | —                                                | —                                                  | internalnum_config only |
+| 4816         | 0001         | 6 clock Bracelet section link 15 - 9clock side               | —                                                | —                                                  | internalnum_config only |
+| 4817         | 0001         | 6 clock Bracelet section link 16 - 9clock side               | —                                                | —                                                  | internalnum_config only |
+| 4818         | 0001         | 6 clock Bracelet section link 17 - 9clock side               | —                                                | —                                                  | internalnum_config only |
+| 4819         | 0001         | 6 clock Bracelet section link 18 - 9clock side               | —                                                | —                                                  | internalnum_config only |
+| 4820         | 0001         | 6 clock Bracelet section link 19 - 9clock side               | —                                                | —                                                  | internalnum_config only |
+| 5001         | 0001         | Reserved unused screw slot                                   | —                                                | —                                                  | internalnum_config only |
+| 5002         | 0001         | 12 clock Bracelet section link 1 - 3clock side screw         | —                                                | —                                                  | internalnum_config only |
+| 5003         | 0001         | 12 clock Bracelet section link 2 - 3clock side screw         | —                                                | —                                                  | internalnum_config only |
+| 5004         | 0001         | 12 clock Bracelet section link 3 - 3clock side screw         | —                                                | —                                                  | internalnum_config only |
+| 5005         | 0001         | 12 clock Bracelet section link 4 - 3clock side screw         | —                                                | —                                                  | internalnum_config only |
+| 5006         | 0001         | 12 clock Bracelet section link 5 - 3clock side screw         | —                                                | —                                                  | internalnum_config only |
+| 5007         | 0001         | 12 clock Bracelet section link 6 - 3clock side screw         | —                                                | —                                                  | internalnum_config only |
+| 5008         | 0001         | 12 clock Bracelet section link 7 - 3clock side screw         | —                                                | —                                                  | internalnum_config only |
+| 5009         | 0001         | 12 clock Bracelet section link 8 - 3clock side screw         | —                                                | —                                                  | internalnum_config only |
+| 5010         | 0001         | 12 clock Bracelet section link 9 - 3clock side screw         | —                                                | —                                                  | internalnum_config only |
+| 5011         | 0001         | 12 clock Bracelet section link 10 - 3clock side screw        | —                                                | —                                                  | internalnum_config only |
+| 5012         | 0001         | 12 clock Bracelet section link 11 - 3clock side screw        | —                                                | —                                                  | internalnum_config only |
+| 5013         | 0001         | 12 clock Bracelet section link 12 - 3clock side screw        | —                                                | —                                                  | internalnum_config only |
+| 5014         | 0001         | 12 clock Bracelet section link 13 - 3clock side screw        | —                                                | —                                                  | internalnum_config only |
+| 5015         | 0001         | 12 clock Bracelet section link 14 - 3clock side screw        | —                                                | —                                                  | internalnum_config only |
+| 5016         | 0001         | 12 clock Bracelet section link 15 - 3clock side screw        | —                                                | —                                                  | internalnum_config only |
+| 5017         | 0001         | 12 clock Bracelet section link 16 - 3clock side screw        | —                                                | —                                                  | internalnum_config only |
+| 5018         | 0001         | 12 clock Bracelet section link 17 - 3clock side screw        | —                                                | —                                                  | internalnum_config only |
+| 5019         | 0001         | 12 clock Bracelet section link 18 - 3clock side screw        | —                                                | —                                                  | internalnum_config only |
+| 5020         | 0001         | 12 clock Bracelet section link 19 - 3clock side screw        | —                                                | —                                                  | internalnum_config only |
+| 5101         | 0001         | Reserved unused screw slot                                   | —                                                | —                                                  | internalnum_config only |
+| 5102         | 0001         | 6 clock Bracelet section link 1 - 3clock side screw          | —                                                | —                                                  | internalnum_config only |
+| 5103         | 0001         | 6 clock Bracelet section link 2 - 3clock side screw          | —                                                | —                                                  | internalnum_config only |
+| 5104         | 0001         | 6 clock Bracelet section link 3 - 3clock side screw          | —                                                | —                                                  | internalnum_config only |
+| 5105         | 0001         | 6 clock Bracelet section link 4 - 3clock side screw          | —                                                | —                                                  | internalnum_config only |
+| 5106         | 0001         | 6 clock Bracelet section link 5 - 3clock side screw          | —                                                | —                                                  | internalnum_config only |
+| 5107         | 0001         | 6 clock Bracelet section link 6 - 3clock side screw          | —                                                | —                                                  | internalnum_config only |
+| 5108         | 0001         | 6 clock Bracelet section link 7 - 3clock side screw          | —                                                | —                                                  | internalnum_config only |
+| 5109         | 0001         | 6 clock Bracelet section link 8 - 3clock side screw          | —                                                | —                                                  | internalnum_config only |
+| 5110         | 0001         | 6 clock Bracelet section link 9 - 3clock side screw          | —                                                | —                                                  | internalnum_config only |
+| 5111         | 0001         | 6 clock Bracelet section link 10 - 3clock side screw         | —                                                | —                                                  | internalnum_config only |
+| 5112         | 0001         | 6 clock Bracelet section link 11 - 3clock side screw         | —                                                | —                                                  | internalnum_config only |
+| 5113         | 0001         | 6 clock Bracelet section link 12 - 3clock side screw         | —                                                | —                                                  | internalnum_config only |
+| 5114         | 0001         | 6 clock Bracelet section link 13 - 3clock side screw         | —                                                | —                                                  | internalnum_config only |
+| 5115         | 0001         | 6 clock Bracelet section link 14 - 3clock side screw         | —                                                | —                                                  | internalnum_config only |
+| 5116         | 0001         | 6 clock Bracelet section link 15 - 3clock side screw         | —                                                | —                                                  | internalnum_config only |
+| 5117         | 0001         | 6 clock Bracelet section link 16 - 3clock side screw         | —                                                | —                                                  | internalnum_config only |
+| 5118         | 0001         | 6 clock Bracelet section link 17 - 3clock side screw         | —                                                | —                                                  | internalnum_config only |
+| 5119         | 0001         | 6 clock Bracelet section link 18 - 3clock side screw         | —                                                | —                                                  | internalnum_config only |
+| 5120         | 0001         | 6 clock Bracelet section link 19 - 3clock side screw         | —                                                | —                                                  | internalnum_config only |
+| 5201         | 0001         | Reserved unused screw slot                                   | —                                                | —                                                  | internalnum_config only |
+| 5202         | 0001         | 12 clock Bracelet section link 1 - 9clock side screw         | —                                                | —                                                  | internalnum_config only |
+| 5203         | 0001         | 12 clock Bracelet section link 2 - 9clock side screw         | —                                                | —                                                  | internalnum_config only |
+| 5204         | 0001         | 12 clock Bracelet section link 3 - 9clock side screw         | —                                                | —                                                  | internalnum_config only |
+| 5205         | 0001         | 12 clock Bracelet section link 4 - 9clock side screw         | —                                                | —                                                  | internalnum_config only |
+| 5206         | 0001         | 12 clock Bracelet section link 5 - 9clock side screw         | —                                                | —                                                  | internalnum_config only |
+| 5207         | 0001         | 12 clock Bracelet section link 6 - 9clock side screw         | —                                                | —                                                  | internalnum_config only |
+| 5208         | 0001         | 12 clock Bracelet section link 7 - 9clock side screw         | —                                                | —                                                  | internalnum_config only |
+| 5209         | 0001         | 12 clock Bracelet section link 8 - 9clock side screw         | —                                                | —                                                  | internalnum_config only |
+| 5210         | 0001         | 12 clock Bracelet section link 9 - 9clock side screw         | —                                                | —                                                  | internalnum_config only |
+| 5211         | 0001         | 12 clock Bracelet section link 10 - 9clock side screw        | —                                                | —                                                  | internalnum_config only |
+| 5212         | 0001         | 12 clock Bracelet section link 11 - 9clock side screw        | —                                                | —                                                  | internalnum_config only |
+| 5213         | 0001         | 12 clock Bracelet section link 12 - 9clock side screw        | —                                                | —                                                  | internalnum_config only |
+| 5214         | 0001         | 12 clock Bracelet section link 13 - 9clock side screw        | —                                                | —                                                  | internalnum_config only |
+| 5215         | 0001         | 12 clock Bracelet section link 14 - 9clock side screw        | —                                                | —                                                  | internalnum_config only |
+| 5216         | 0001         | 12 clock Bracelet section link 15 - 9clock side screw        | —                                                | —                                                  | internalnum_config only |
+| 5217         | 0001         | 12 clock Bracelet section link 16 - 9clock side screw        | —                                                | —                                                  | internalnum_config only |
+| 5218         | 0001         | 12 clock Bracelet section link 17 - 9clock side screw        | —                                                | —                                                  | internalnum_config only |
+| 5219         | 0001         | 12 clock Bracelet section link 18 - 9clock side screw        | —                                                | —                                                  | internalnum_config only |
+| 5220         | 0001         | 12 clock Bracelet section link 19 - 9clock side screw        | —                                                | —                                                  | internalnum_config only |
+| 5301         | 0001         | Reserved unused screw slot                                   | —                                                | —                                                  | internalnum_config only |
+| 5302         | 0001         | 6 clock Bracelet section link 1 - 9clock side screw          | —                                                | —                                                  | internalnum_config only |
+| 5303         | 0001         | 6 clock Bracelet section link 2 - 9clock side screw          | —                                                | —                                                  | internalnum_config only |
+| 5304         | 0001         | 6 clock Bracelet section link 3 - 9clock side screw          | —                                                | —                                                  | internalnum_config only |
+| 5305         | 0001         | 6 clock Bracelet section link 4 - 9clock side screw          | —                                                | —                                                  | internalnum_config only |
+| 5306         | 0001         | 6 clock Bracelet section link 5 - 9clock side screw          | —                                                | —                                                  | internalnum_config only |
+| 5307         | 0001         | 6 clock Bracelet section link 6 - 9clock side screw          | —                                                | —                                                  | internalnum_config only |
+| 5308         | 0001         | 6 clock Bracelet section link 7 - 9clock side screw          | —                                                | —                                                  | internalnum_config only |
+| 5309         | 0001         | 6 clock Bracelet section link 8 - 9clock side screw          | —                                                | —                                                  | internalnum_config only |
+| 5310         | 0001         | 6 clock Bracelet section link 9 - 9clock side screw          | —                                                | —                                                  | internalnum_config only |
+| 5311         | 0001         | 6 clock Bracelet section link 10 - 9clock side screw         | —                                                | —                                                  | internalnum_config only |
+| 5312         | 0001         | 6 clock Bracelet section link 11 - 9clock side screw         | —                                                | —                                                  | internalnum_config only |
+| 5313         | 0001         | 6 clock Bracelet section link 12 - 9clock side screw         | —                                                | —                                                  | internalnum_config only |
+| 5314         | 0001         | 6 clock Bracelet section link 13 - 9clock side screw         | —                                                | —                                                  | internalnum_config only |
+| 5315         | 0001         | 6 clock Bracelet section link 14 - 9clock side screw         | —                                                | —                                                  | internalnum_config only |
+| 5316         | 0001         | 6 clock Bracelet section link 15 - 9clock side screw         | —                                                | —                                                  | internalnum_config only |
+| 5317         | 0001         | 6 clock Bracelet section link 16 - 9clock side screw         | —                                                | —                                                  | internalnum_config only |
+| 5318         | 0001         | 6 clock Bracelet section link 17 - 9clock side screw         | —                                                | —                                                  | internalnum_config only |
+| 5319         | 0001         | 6 clock Bracelet section link 18 - 9clock side screw         | —                                                | —                                                  | internalnum_config only |
+| 5320         | 0001         | 6 clock Bracelet section link 19 - 9clock side screw         | —                                                | —                                                  | internalnum_config only |
+| 6001         | 0001         | Box macro view1                                              | —                                                | —                                                  | internalnum_config only |
+| 6002         | 0001         | Box macro view2                                              | —                                                | —                                                  | internalnum_config only |
+| 6003         | 0001         | Box macro view3                                              | —                                                | —                                                  | internalnum_config only |
+| 6004         | 0001         | Box macro view4                                              | —                                                | —                                                  | internalnum_config only |
+| 6005         | 0001         | Box macro view5                                              | —                                                | —                                                  | internalnum_config only |
+| 6006         | 0001         | Box micro view1                                              | —                                                | —                                                  | internalnum_config only |
+| 6007         | 0001         | Box micro view2                                              | —                                                | —                                                  | internalnum_config only |
+| 6008         | 0001         | Box micro view3                                              | —                                                | —                                                  | internalnum_config only |
+| 6009         | 0001         | Box micro view4                                              | —                                                | —                                                  | internalnum_config only |
+| 6010         | 0001         | Box micro view5                                              | —                                                | —                                                  | internalnum_config only |
+| 6011         | 0001         | toppoint1                                                    | —                                                | —                                                  | internalnum_config only |
+| 7001         | —            | Case-Body                                                    | —                                                | —                                                  | internalnum_config only |
+| 7002         | —            | Case-Caseback                                                | —                                                | —                                                  | internalnum_config only |
+| 7003         | —            | Crown                                                        | —                                                | —                                                  | internalnum_config only |
+| 7004         | —            | Bracelet-Endlink-Center                                      | —                                                | —                                                  | internalnum_config only |
+| 7005         | —            | Bracelet-Endlink-Side                                        | —                                                | —                                                  | internalnum_config only |
+| 7006         | —            | Bracelet-Link-Center                                         | —                                                | —                                                  | internalnum_config only |
+| 7007         | —            | Bracelet-Link-Side                                           | —                                                | —                                                  | internalnum_config only |
+| 7008         | —            | Bracelet-Clasp-Outer-Center                                  | —                                                | —                                                  | internalnum_config only |
+| 7009         | —            | Bracelet-Clasp-Outer-Side                                    | —                                                | —                                                  | internalnum_config only |
+| 7010         | —            | Bracelet-Clasp-Inner                                         | —                                                | —                                                  | internalnum_config only |
+| 7011         | —            | Bezel                                                        | —                                                | —                                                  | internalnum_config only |
+| 7012         | —            | Box-Lid-Front                                                | —                                                | —                                                  | internalnum_config only |
+| 7013         | —            | Box-Lid-Crown                                                | —                                                | —                                                  | internalnum_config only |
+| 8001         | —            | watch_body_weight                                            | —                                                | —                                                  | internalnum_config only |
+| 8002         | —            | timing                                                       | —                                                | —                                                  | internalnum_config only |
+| 8003         | —            | pressure                                                     | —                                                | —                                                  | internalnum_config only |
+| 8004         | —            | strap_weight                                                 | —                                                | —                                                  | internalnum_config only |
+| 8005         | —            | amplitude                                                    | —                                                | —                                                  | internalnum_config only |
+|              |              |                                                              |                                                  |                                                    |                         |
 
 ## 已排除的 backup
 
@@ -625,34 +626,34 @@
 
 ## 完整對照表
 
-| tasks service | mode | 實作 | 算法內容 | internalnum1 / internalnum2 | 狀態 |
-|---|---|---|---|---|---|
-| lume_service | cli | — | 設定指向不存在的 `run_lume_cli.py` 與 `lume_config.yaml`；目前無法由此 task 追到可執行算法，不應直接推定為 dial-lume 算法。 | — | tasks only；無 services route；缺 CLI wrapper、task_config |
-| features_letter_service | api | `features_algo.py` / `FeaturesProcessor` | 共用 `FeaturesProcessor`：U-Net 分割文字特徵；計算筆畫寬度、骨架長度、X/Y 投影、輪廓特徵與可選的表面 bump/texture 指標。 | `0011` / `0001` — Y in Officially<br>`0013` / `0001` — M in Made at near 6 | 有 internalnum route |
-| features_crown_service | api | `features_algo.py` / `FeaturesProcessor` | 共用 `FeaturesProcessor`：U-Net 分割錶盤皇冠 Logo；分析面積、周長、圓度、凸缺陷與 crown tine 數量，並可做 bump/texture 分析。 | `0012` / `0001` — Logo on Dial | 有 internalnum route |
-| features_marker_service | api | `features_algo.py` / `FeaturesProcessor` | 共用 `FeaturesProcessor`：U-Net 分割分鐘刻度；分析 rounded-rectangle 輪廓、四角圓角半徑、Hu moments／radial contour signature 與可選 texture。 | `0014` / `0001` — 60 minute marker<br>`0015` / `0001` — 1 minute marker | 有 internalnum route |
-| movement1_service | cli | `movement1_algo.py` / `Movement1Processor` | U-Net 背景 mask 反相後擷取數字／刻印（程式針對類似數字 3）；做骨架排序、厚度 profile、直線／曲線分段、頭尾切角、亮度 type 分類及 bump 分析。 | — | services.internalnums 為空 |
-| movement2_service | cli | `movement2_algo.py` / `Movement2Processor` | U-Net 分割 movement 刻字；connected-components 拆字，分析骨架／筆畫厚度與輪廓幾何，以亮度分 type；EasyOCR 多角度辨識並對文字區做 bump 分析。 | — | services.internalnums 為空 |
-| crown_service | cli | `crown_algo.py` / `CrystalProcessor` | Crown v1，純傳統 CV：亮／暗雙 template 多尺度多角度比對；檢查發光點亮度、缺點／暗點及 crown 旁 bezel 的週期峰值。 | — | tasks only；無 services route |
-| crown2_service | cli | `crown2_algo.py` / `CrystalProcessor` | Crown v2，純傳統 CV：top-hat + Otsu 分割亮點、template 尺度對齊；量測每點位置偏差、半徑、長寬比、solidity，以及 bezel profile 峰值。 | `0032` / `0001` — Crown on sapphire crystal | 有 internalnum route |
-| links_service | cli | `links_algo.py` / `LinksProcessor` | U-Net 分割 bracelet link 與 slot；connected-components 計數，保留中心 ROI 內 link，骨架化後以 graph longest path 量測每節長度。 | — | services.internalnums 為空 |
-| bracelet_service | cli | `bracelet_algo.py` / `PinGeometryProcessor` | 純 OpenCV：Laplacian variance 評估對焦；Otsu／形態學取得內外環，least-squares 擬合圓並量測同心度，可用 radial refinement 修正。 | — | services.internalnums 為空 |
-| doctr_service | cli | `doctr_algo.py` / `DoctrProcessor` | DocTR 偵測文字／行與字元框，Tesseract 作交叉字元分割；抽取骨架端點／交點、筆畫寬、Hu moments、Fourier descriptors、projection profiles 等字形特徵。 | — | services.internalnums 為空 |
-| ocr_service | cli | `ocr_algo.py` / `OCRProcessor` | DocTR 偵測 word（無結果時用 Tesseract），SAM 逐字分割，再以 `char_features` 計算骨架、筆畫與字元幾何特徵。 | `0004` / `0001` — Upper text<br>`0005` / `0001` — Lower text | 有 internalnum route |
-| isolation_service | cli | `isolation_algo.py` / `IsolationProcessor` | U-Net 合併指定 class mask 隔離目標表面，套用 Gaussian／亮度／HSV／ROI 等前處理，再以 KAZE + Delaunay bump pipeline 分析微結構與粗糙度。 | `3009` / `0001` — Rachet wheel (Big yellow gear)<br>`3010` / `0001` — A letter or number in the serial<br>`2005` / `0001` — A letter or number in the serial | 有 internalnum route |
-| bezel_marker_service | api | `bezel_marker_algo.py` / `BezelMarkerProcessor` | U-Net 分割金色 bezel 字／刻度；骨架與 graph longest path 分析線段、角點、筆畫厚度，含數字 3 的拓樸特例，並做 bump/particle 分析。 | `0016` / `0001` — Bezel at 30 (middle of 3 in 30)<br>`0017` / `0001` — Bezel at 45 mark (centered)<br>`0027` / `0001` — bottom subdial: 20: 0 in 20 | 有 internalnum route |
-| side_crown_service | api | `side_crown_algo.py` / `SideCrownProcessor` | U-Net 分割側視 crown；把最大輪廓轉成極座標 radius-vs-angle，從 peaks／valleys 計算外內半徑、齒數、齒深、齒距對稱與圓度誤差。 | `0006` / `0001` — Crown | 有 internalnum route |
-| texture_service | api | `texture_algo.py` / `TextureProcessor` | 薄封裝至 `SurfaceTextureAnalyzer`：KAZE 微特徵、focus／Otsu 區域 mask、Delaunay 空間統計，輸出 bump 數量、密度與分析面積。 | `0026` / `0001` — Dial area with no text just inside of 1 marker | 有 internalnum route |
-| lume_hour_shape_service | api | `lume_hour_shape_algo.py` / `LumeHourShapeProcessor` | U-Net 分割 Mercedes hour-hand lume 與 Y 型金屬框；取最大 3 個扇形 sector，量測內尖角、兩直邊長、弧半徑及金屬框平均寬度。 | `0023` / `0001` — Hour hand lume - near lower text for mercedes hand | 有 internalnum route |
-| lume_hour_texture_service | api | `lume_hour_texture_algo.py` / `LumeHourTextureProcessor` | U-Net 分割 Mercedes hour-hand lume；取最大 3 個扇形 sector，逐區執行 KAZE + Delaunay texture/bump 分析並統計密度。 | `0023` / `0001` — Hour hand lume - near lower text for mercedes hand | 有 internalnum route |
-| lume_hand_shape_service | api | `lume_hand_shape_algo.py` / `LumeHandShapeProcessor` | U-Net 分割指針 lume 與深色框；依面積比分類圓形／矩形，量測尺寸、旋轉角、圓角半徑與 frame width。 | `0024` / `0001` — Minute hand lume - at end futher from center<br>`0025` / `0001` — Second hand lume | 有 internalnum route |
-| lume_hand_texture_service | api | `lume_hand_texture_algo.py` / `LumeHandTextureProcessor` | U-Net 取得 hand-lume mask 並填洞；只在 lume 區域執行 KAZE + Delaunay texture/bump 分析。 | `0024` / `0001` — Minute hand lume - at end futher from center<br>`0025` / `0001` — Second hand lume | 有 internalnum route |
-| diallume_shape_service | api | `diallume_shape_algo.py` / `DialLumeShapeProcessor` | U-Net 取得 dial lume mask 並填洞；找圓形 lume、半徑／area ratio，並以 edge/contour 偵測同心環。 | `0022` / `0001` — Lume of the 1 hour marker | 有 internalnum route |
-| diallume_texture_service | api | `diallume_texture_algo.py` / `DialLumeTextureProcessor` | U-Net 取得 dial-lume mask 並填洞；在該區域執行 KAZE + Delaunay texture/bump 分析。 | `0022` / `0001` — Lume of the 1 hour marker | 有 internalnum route |
-| front_stitch_service | cli | `front_stitch_algo.py` / `FrontStitchProcessor` | 彙整 5 張正面 macro 圖與 masks，使用 stage kinematic prior 進行拼接；再分析 dial center、lume 形狀、時／分／秒針幾何、同心環與可選 LLM OCR。 | `0004` / `0001` — Upper text<br>`0005` / `0001` — Lower text<br>`0006` / `0001` — Crown<br>`0007` / `0001` — Bottom right lug<br>`0008` / `0001` — Dial Left | 有 internalnum route |
-| stitched_band2_service | cli | `stitched_band2_algo.py` / `StitchedBand2Processor` | SAM class-agnostic instance segmentation：依 view/camera profile 在 bracelet ROI 內 resize 或 tiled 推論，做尺寸／位置過濾、IoU 去重與可選 LLM OCR。 | — | tasks only；無 services route |
-| sidepoint_service | cli | `sidepoint_algo.py` / `SidepointProcessor` | 把多角度側面圖以 phase correlation translation 配準並 alpha blend；強化低對比刻字後用 DocTR+SAM、LLM 或 hybrid OCR，並重組字元／單字／行。 | `0002` / `0001` — Top Side<br>`0003` / `0001` — Bottom Side | 有 internalnum route |
-| openbacktop_service | api | `openbacktop_algo.py` / `OpenBackTopProcessor` | 純 OpenCV 幾何分析：找 open-back 中心／外徑／同心環、中央黑圓、黑螺絲、金屬梯形角、cover edge/kink 與 holder cylinders。 | — | services.internalnums 為空 |
+| tasks service             | mode | 實作                                                       | 算法內容                                                                                                                          | internalnum1 / internalnum2                                                                                                                                  | 狀態                                                    |
+| ------------------------- | ---- | -------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------- |
+| lume_service              | cli  | —                                                        | 設定指向不存在的 `run_lume_cli.py` 與 `lume_config.yaml`；目前無法由此 task 追到可執行算法，不應直接推定為 dial-lume 算法。                                     | —                                                                                                                                                            | tasks only；無 services route；缺 CLI wrapper、task_config |
+| features_letter_service   | api  | `features_algo.py` / `FeaturesProcessor`                 | 共用 `FeaturesProcessor`：U-Net 分割文字特徵；計算筆畫寬度、骨架長度、X/Y 投影、輪廓特徵與可選的表面 bump/texture 指標。                                            | `0011` / `0001` — Y in Officially<br>`0013` / `0001` — M in Made at near 6                                                                                   | 有 internalnum route                                   |
+| features_crown_service    | api  | `features_algo.py` / `FeaturesProcessor`                 | 共用 `FeaturesProcessor`：U-Net 分割錶盤皇冠 Logo；分析面積、周長、圓度、凸缺陷與 crown tine 數量，並可做 bump/texture 分析。                                   | `0012` / `0001` — Logo on Dial                                                                                                                               | 有 internalnum route                                   |
+| features_marker_service   | api  | `features_algo.py` / `FeaturesProcessor`                 | 共用 `FeaturesProcessor`：U-Net 分割分鐘刻度；分析 rounded-rectangle 輪廓、四角圓角半徑、Hu moments／radial contour signature 與可選 texture。           | `0014` / `0001` — 60 minute marker<br>`0015` / `0001` — 1 minute marker                                                                                      | 有 internalnum route                                   |
+| movement1_service         | cli  | `movement1_algo.py` / `Movement1Processor`               | U-Net 背景 mask 反相後擷取數字／刻印（程式針對類似數字 3）；做骨架排序、厚度 profile、直線／曲線分段、頭尾切角、亮度 type 分類及 bump 分析。                                       | —                                                                                                                                                            | services.internalnums 為空                              |
+| movement2_service         | cli  | `movement2_algo.py` / `Movement2Processor`               | U-Net 分割 movement 刻字；connected-components 拆字，分析骨架／筆畫厚度與輪廓幾何，以亮度分 type；EasyOCR 多角度辨識並對文字區做 bump 分析。                            | —                                                                                                                                                            | services.internalnums 為空                              |
+| crown_service             | cli  | `crown_algo.py` / `CrystalProcessor`                     | Crown v1，純傳統 CV：亮／暗雙 template 多尺度多角度比對；檢查發光點亮度、缺點／暗點及 crown 旁 bezel 的週期峰值。                                                    | —                                                                                                                                                            | tasks only；無 services route                           |
+| crown2_service            | cli  | `crown2_algo.py` / `CrystalProcessor`                    | Crown v2，純傳統 CV：top-hat + Otsu 分割亮點、template 尺度對齊；量測每點位置偏差、半徑、長寬比、solidity，以及 bezel profile 峰值。                               | `0032` / `0001` — Crown on sapphire crystal                                                                                                                  | 有 internalnum route                                   |
+| links_service             | cli  | `links_algo.py` / `LinksProcessor`                       | U-Net 分割 bracelet link 與 slot；connected-components 計數，保留中心 ROI 內 link，骨架化後以 graph longest path 量測每節長度。                        | —                                                                                                                                                            | services.internalnums 為空                              |
+| bracelet_service          | cli  | `bracelet_algo.py` / `PinGeometryProcessor`              | 純 OpenCV：Laplacian variance 評估對焦；Otsu／形態學取得內外環，least-squares 擬合圓並量測同心度，可用 radial refinement 修正。                               | —                                                                                                                                                            | services.internalnums 為空                              |
+| doctr_service             | cli  | `doctr_algo.py` / `DoctrProcessor`                       | DocTR 偵測文字／行與字元框，Tesseract 作交叉字元分割；抽取骨架端點／交點、筆畫寬、Hu moments、Fourier descriptors、projection profiles 等字形特徵。                    | —                                                                                                                                                            | services.internalnums 為空                              |
+| ocr_service               | cli  | `ocr_algo.py` / `OCRProcessor`                           | DocTR 偵測 word（無結果時用 Tesseract），SAM 逐字分割，再以 `char_features` 計算骨架、筆畫與字元幾何特徵。                                                    | `0004` / `0001` — Upper text<br>`0005` / `0001` — Lower text                                                                                                 | 有 internalnum route                                   |
+| isolation_service         | cli  | `isolation_algo.py` / `IsolationProcessor`               | U-Net 合併指定 class mask 隔離目標表面，套用 Gaussian／亮度／HSV／ROI 等前處理，再以 KAZE + Delaunay bump pipeline 分析微結構與粗糙度。                          | `3009` / `0001` — Rachet wheel (Big yellow gear)<br>`3010` / `0001` — A letter or number in the serial<br>`2005` / `0001` — A letter or number in the serial | 有 internalnum route                                   |
+| bezel_marker_service      | api  | `bezel_marker_algo.py` / `BezelMarkerProcessor`          | U-Net 分割金色 bezel 字／刻度；骨架與 graph longest path 分析線段、角點、筆畫厚度，含數字 3 的拓樸特例，並做 bump/particle 分析。                                    | `0016` / `0001` — Bezel at 30 (middle of 3 in 30)<br>`0017` / `0001` — Bezel at 45 mark (centered)<br>`0027` / `0001` — bottom subdial: 20: 0 in 20          | 有 internalnum route                                   |
+| side_crown_service        | api  | `side_crown_algo.py` / `SideCrownProcessor`              | U-Net 分割側視 crown；把最大輪廓轉成極座標 radius-vs-angle，從 peaks／valleys 計算外內半徑、齒數、齒深、齒距對稱與圓度誤差。                                           | `0006` / `0001` — Crown                                                                                                                                      | 有 internalnum route                                   |
+| texture_service           | api  | `texture_algo.py` / `TextureProcessor`                   | 薄封裝至 `SurfaceTextureAnalyzer`：KAZE 微特徵、focus／Otsu 區域 mask、Delaunay 空間統計，輸出 bump 數量、密度與分析面積。                                   | `0026` / `0001` — Dial area with no text just inside of 1 marker                                                                                             | 有 internalnum route                                   |
+| lume_hour_shape_service   | api  | `lume_hour_shape_algo.py` / `LumeHourShapeProcessor`     | U-Net 分割 Mercedes hour-hand lume 與 Y 型金屬框；取最大 3 個扇形 sector，量測內尖角、兩直邊長、弧半徑及金屬框平均寬度。                                            | `0023` / `0001` — Hour hand lume - near lower text for mercedes hand                                                                                         | 有 internalnum route                                   |
+| lume_hour_texture_service | api  | `lume_hour_texture_algo.py` / `LumeHourTextureProcessor` | U-Net 分割 Mercedes hour-hand lume；取最大 3 個扇形 sector，逐區執行 KAZE + Delaunay texture/bump 分析並統計密度。                                  | `0023` / `0001` — Hour hand lume - near lower text for mercedes hand                                                                                         | 有 internalnum route                                   |
+| lume_hand_shape_service   | api  | `lume_hand_shape_algo.py` / `LumeHandShapeProcessor`     | U-Net 分割指針 lume 與深色框；依面積比分類圓形／矩形，量測尺寸、旋轉角、圓角半徑與 frame width。                                                                  | `0024` / `0001` — Minute hand lume - at end futher from center<br>`0025` / `0001` — Second hand lume                                                         | 有 internalnum route                                   |
+| lume_hand_texture_service | api  | `lume_hand_texture_algo.py` / `LumeHandTextureProcessor` | U-Net 取得 hand-lume mask 並填洞；只在 lume 區域執行 KAZE + Delaunay texture/bump 分析。                                                     | `0024` / `0001` — Minute hand lume - at end futher from center<br>`0025` / `0001` — Second hand lume                                                         | 有 internalnum route                                   |
+| diallume_shape_service    | api  | `diallume_shape_algo.py` / `DialLumeShapeProcessor`      | U-Net 取得 dial lume mask 並填洞；找圓形 lume、半徑／area ratio，並以 edge/contour 偵測同心環。                                                     | `0022` / `0001` — Lume of the 1 hour marker                                                                                                                  | 有 internalnum route                                   |
+| diallume_texture_service  | api  | `diallume_texture_algo.py` / `DialLumeTextureProcessor`  | U-Net 取得 dial-lume mask 並填洞；在該區域執行 KAZE + Delaunay texture/bump 分析。                                                           | `0022` / `0001` — Lume of the 1 hour marker                                                                                                                  | 有 internalnum route                                   |
+| front_stitch_service      | cli  | `front_stitch_algo.py` / `FrontStitchProcessor`          | 彙整 5 張正面 macro 圖與 masks，使用 stage kinematic prior 進行拼接；再分析 dial center、lume 形狀、時／分／秒針幾何、同心環與可選 LLM OCR。                        | `0004` / `0001` — Upper text<br>`0005` / `0001` — Lower text<br>`0006` / `0001` — Crown<br>`0007` / `0001` — Bottom right lug<br>`0008` / `0001` — Dial Left | 有 internalnum route                                   |
+| stitched_band2_service    | cli  | `stitched_band2_algo.py` / `StitchedBand2Processor`      | SAM class-agnostic instance segmentation：依 view/camera profile 在 bracelet ROI 內 resize 或 tiled 推論，做尺寸／位置過濾、IoU 去重與可選 LLM OCR。 | —                                                                                                                                                            | tasks only；無 services route                           |
+| sidepoint_service         | cli  | `sidepoint_algo.py` / `SidepointProcessor`               | 把多角度側面圖以 phase correlation translation 配準並 alpha blend；強化低對比刻字後用 DocTR+SAM、LLM 或 hybrid OCR，並重組字元／單字／行。                       | `0002` / `0001` — Top Side<br>`0003` / `0001` — Bottom Side                                                                                                  | 有 internalnum route                                   |
+| openbacktop_service       | api  | `openbacktop_algo.py` / `OpenBackTopProcessor`           | 純 OpenCV 幾何分析：找 open-back 中心／外徑／同心環、中央黑圓、黑螺絲、金屬梯形角、cover edge/kink 與 holder cylinders。                                        | —                                                                                                                                                            | services.internalnums 為空                              |
 
 ## 無 internalnum route 的 tasks service
 
@@ -2020,13 +2021,13 @@ Controller/.../workflow_manager.py
 
 ### A. micro_unet（0–5）
 
-|class id|對應部位 / 語意|使用的 task|
-|---|---|---|
-|1|金色/刻印文字前景 (foreground engraved text)|`bezel_marker_algo.py`（`gold_font_class_id`，錶圈金字）、`features_algo.py`（`texture_class_id`，letter/crown/marker 三種服務共用）|
-|2|夜光塗料 (lume paint)|`diallume_shape_algo.py`、`diallume_texture_algo.py`（錶盤夜光）、`lume_hand_shape_algo.py`、`lume_hand_texture_algo.py`（指針夜光）、`lume_hour_shape_algo.py`、`lume_hour_texture_algo.py`（時標夜光）|
-|3|機芯上數字「3」|`movement1_algo.py`（`number_class_id`，config 設為 `[3]`）|
-|4|⚠️ 同一 id、不同語意：機芯刻字文字（movement2）／時標金屬邊框（lume_hour）|`movement2_algo.py`（`text_class_id`）、`lume_hour_shape_algo.py`（`metal_frame_class_id`）|
-|5|⚠️ 同一 id、不同語意：機芯背景（movement2）／指針夜光暗色邊框（lume_hand）|`movement2_algo.py`（`background_class_id`）、`lume_hand_shape_algo.py`（`dark_frame_class_id`）|
+| class id | 對應部位 / 語意                                         | 使用的 task                                                                                                                                                                          |
+| -------- | ------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1        | 金色/刻印文字前景 (foreground engraved text)              | `bezel_marker_algo.py`（`gold_font_class_id`，錶圈金字）、`features_algo.py`（`texture_class_id`，letter/crown/marker 三種服務共用）                                                               |
+| 2        | 夜光塗料 (lume paint)                                 | `diallume_shape_algo.py`、`diallume_texture_algo.py`（錶盤夜光）、`lume_hand_shape_algo.py`、`lume_hand_texture_algo.py`（指針夜光）、`lume_hour_shape_algo.py`、`lume_hour_texture_algo.py`（時標夜光） |
+| 3        | 機芯上數字「3」                                          | `movement1_algo.py`（`number_class_id`，config 設為 `[3]`）                                                                                                                            |
+| 4        | ⚠️ 同一 id、不同語意：機芯刻字文字（movement2）／時標金屬邊框（lume_hour） | `movement2_algo.py`（`text_class_id`）、`lume_hour_shape_algo.py`（`metal_frame_class_id`）                                                                                            |
+| 5        | ⚠️ 同一 id、不同語意：機芯背景（movement2）／指針夜光暗色邊框（lume_hand） | `movement2_algo.py`（`background_class_id`）、`lume_hand_shape_algo.py`（`dark_frame_class_id`）                                                                                       |
 
 **⚠️ 疑似設定錯誤／超出範圍**（micro_unet 只有 6 類，有效 id 只到 5，但以下 task 設定的 id 超出範圍，且都沒有指定 `model_name`，會預設吃到 micro_unet）：
 
@@ -2067,6 +2068,111 @@ Controller/.../workflow_manager.py
 
 
 
+
+
+#### Unet 詳細class id 整理
+```
+在dev branch的/tasks/algos/裡面有多個使用unet model進行segmentation的task, 請幫我整理micro\_unet model, macro\_unet model, rehaut\_unet這三個不同unet model個別對應的class id(1,2..)對應部位/語意, 使用的task以及使用這些tasks的internalnum1,internalnum2.
+然後要怎麼知道micro\_unet有幾類? 是否要分析model pth file才知道? 請核實以下講法:有效 id 只到 5(要怎麼知道有效id?)，但以下 task 設定的 id 超出範圍，且都沒有指定 `model_name`　會不會是micro\_unet本來id就有到這麼多？
+另外關於rehaut\_unet\_config.yaml裡面關於unet的設定請移到AImodel\_config.yaml裡面, rehaut\_unet model file也統一放到.\checkpoint\rehaut\_unet folder裡面統一管理．
+SAM model的model file也放到.\checkpoint\SAM folder
+```
+在 `dev` 完成核實與設定整理。實際目錄名稱是 `tasks/task_algos/`。
+
+## 模型類別結論
+
+|模型|目前設定|checkpoint 實際輸出層|有效 ID|
+|---|---|---|---|
+|`micro_unet_v1`|6 classes|`[6, 16, 3, 3]`|0–5|
+|`macro_unet_v1`|10 classes|`[10, 16, 3, 3]`|0–9|
+|`rehaut_unet_v1`|3 classes|檔案尚不存在，無法核實|設定為 0–2|
+|`micro_unet_v0`|未註冊|17 channels|0–16|
+|`macro_unet_v0`|未註冊|17 channels|0–16|
+
+所以你的懷疑部分正確：`micro_unet` 舊版確實曾有 17 類，但目前 [AImodel_config.yaml (line 10)](D:/Provenance Project/ImagingLibWatch/config/AImodel_config.yaml:10) 使用的是 `micro_unet_v1.pth`，它確實只有 6 類。
+
+`.pth` 能核實輸出 channel 數，但這些 checkpoint 沒有 class-name metadata，無法只靠 `.pth` 得知每個 ID 的語意；語意仍需 training label map。下表是 repo task config 所宣告的語意，部分已有衝突。
+
+## micro_unet v1
+
+|ID|task config 宣告語意|使用 task 與 internalnum1/internalnum2|
+|---|---|---|
+|0|Background|無 task 直接取用|
+|1|Foreground／feature texture；bezel gold font|`features_letter_service`: 0011/0001、0013/0001；`features_crown_service`: 0012/0001；`features_marker_service`: 0014/0001、0015/0001；`bezel_marker_service`: 0016–0021/0001|
+|2|Lume／夜光區|`diallume_shape_service`: 0022/0001；`diallume_texture_service`: 0022/0002；`lume_hour_shape_service`: 0023/0001、1004/0001、2004/0001、3008/0001、3009/0001；`lume_hour_texture_service`: 0023/0002；`lume_hand_shape_service`: 0024/0001、0025/0001；`lume_hand_texture_service`: 0024/0002、0025/0002|
+|3|Number “3”|`movement1_service`: 3007/0001|
+|4|Hour-marker metal frame；movement engraving text，語意有衝突|`lume_hour_shape_service`: 同上；`movement2_service`: 2005/0001、3010/0001|
+|5|Hand dark frame；movement background，語意有衝突|`lume_hand_shape_service`: 0024/0001、0025/0001；`movement2_config` 有設定，但目前 processor 沒有讀取 `background_class_id`|
+
+主要語意來源可見 [lume_hour_shape_config.yaml (line 14)](D:/Provenance Project/ImagingLibWatch/config/lume_hour_shape_config.yaml:14)、[lume_hand_shape_config.yaml (line 14)](D:/Provenance Project/ImagingLibWatch/config/lume_hand_shape_config.yaml:14)、[movement1_config.yaml (line 10)](D:/Provenance Project/ImagingLibWatch/config/movement1_config.yaml:10)、[movement2_config.yaml (line 10)](D:/Provenance Project/ImagingLibWatch/config/movement2_config.yaml:10)。
+
+## macro_unet v1
+
+|ID|語意|使用 task 與 internalnum1/internalnum2|
+|---|---|---|
+|0|Background|`front_stitch_service` 排除類別|
+|1|Dial center|`front_stitch_service`: 0004/0001、0005/0001、0008/0001、0009/0001、0010/0001|
+|2|Hour hand|同上|
+|3|Minute hand|同上|
+|4|Second hand|同上|
+|5|Lume regions|同上|
+|6|Crown|`side_crown_service`: 0006/0001|
+|7–9|repo 沒有可靠 class name|沒有已確認、正確指定 `macro_unet` 的 task|
+
+Front class map 在 [front_stitch_config.yaml (line 52)](D:/Provenance Project/ImagingLibWatch/config/front_stitch_config.yaml:52)；crown 在 [side_crown_config.yaml (line 8)](D:/Provenance Project/ImagingLibWatch/config/side_crown_config.yaml:8)。
+
+## rehaut_unet
+
+|ID|語意|使用 task|
+|---|---|---|
+|0|Background|`rehaut_service`|
+|1|Minute marker|`rehaut_service`|
+|2|Rehaut text|`rehaut_service`|
+
+Internalnums：0039–0050，全部為 internalnum2 `0001`。設定在 [rehaut_config.yaml (line 114)](D:/Provenance Project/ImagingLibWatch/config/rehaut_config.yaml:114)。
+
+以上 internalnum 來自 tracked 的 [system_config.defaults.yaml (line 152)](D:/Provenance Project/ImagingLibWatch/config/system_config.defaults.yaml:152)；目前沒有 machine-local `system_config.yaml` 可覆寫。
+
+## 超出範圍的設定
+
+下列 task 沒指定 `model_name`，因此實際落到預設的 `micro_unet_v1`，其 ID 均無效：
+
+|Task|設定 ID|Internalnums／狀態|
+|---|---|---|
+|`links_service` / `links_algo`|6、7|defaults 未配置 internalnums|
+|`doctr_service` / `doctr_algo`|6|defaults 未配置 internalnums|
+|`isolation_service`|9、14、15|3009/0001、3010/0001、2005/0001|
+|`stitched_band_service`|7、8、9|未註冊於目前 defaults|
+|舊 `DialLumeProcessor`|預設 15|沒有對應 config／service registration|
+
+這些很可能是 17-class v0 contract 的遺留，但不能直接改成 `macro_unet`：例如 ID 6 在不同 task 被稱為 crown、link、background，語意互相衝突。
+
+另外，目前 [unet_wrapper.py (line 224)](D:/Provenance Project/ImagingLibWatch/algorithms/unet_wrapper.py:224) 不會驗證 ID 範圍；無效 ID 只會得到全黑 mask，不會報錯。
+
+## 已完成的路徑整理
+
+- `rehaut_unet` 設定已整併至 [AImodel_config.yaml (line 42)](D:/Provenance Project/ImagingLibWatch/config/AImodel_config.yaml:42)。
+- `config/rehaut_unet_config.yaml` 已移除。
+- Rehaut loader 與測試已改讀統一 registry。
+- SAM checkpoint 已實際搬到：  
+    `checkpoints/SAM/sam_vit_l_0b3195.pth`
+- 所有程式、task config、UI 預設值與相關文件均已更新到新 SAM 路徑。
+- 已建立 `checkpoints/rehaut_unet/`；但 repo 目前沒有 `rehaut_unet_v1.pth` 可搬入，需另行放入該目錄。
+- `checkpoints/` 被 `.gitignore` 排除，因此 checkpoint 實體搬移不會出現在 Git diff。
+
+驗證結果：
+
+- 10 份受影響 YAML：解析成功。
+- Python 語法檢查：成功。
+- Rehaut/SAM 路徑 contract：成功。
+- 舊 SAM/Rehaut config 路徑搜尋：無殘留。
+- 完整 Rehaut unittest 未執行成功：目前 Python environment 缺少 `cv2`。
+
+
+
+```
+
+```
 
 
 
