@@ -6,6 +6,10 @@
 | [[#### 整理tasks設定對照表]]                               |     |
 | [[#### 是否有針對stitched image的task service]]           |     |
 | [[#### stitched image有用unet辨識分針, 時針, Hour Markers]] |     |
+| [[#### unet class id整理]]                            |     |
+|                                                     |     |
+|                                                     |     |
+|                                                     |     |
 |                                                     |     |
 
 #### App 設定對照表（dev）
@@ -1997,3 +2001,75 @@ Controller/.../workflow_manager.py
 > 第五張到達時怎麼判斷完成 → 怎麼 stitch → stitched image 實際存哪個 filename → 有沒有接 U-Net → 有沒有註冊 DB/S3 → 後續 task 是什麼。
 
 目前這幾個檔案沒有出現在我能搜尋的 Library 內容中，所以我不會編造那最後一段實作。就目前查到的證據來說，**「自動 stitch」已經存在；「stitched image → full-face 17-class U-Net segmentation」則有舊 U-Net infrastructure，但目前沒有在 production task routing 中接起來。**
+
+
+
+
+
+#### unet class id整理
+```
+在/tasks/algos/裡面有多個使用unet model進行segmentation的task, 請幫我整理裡面所有unet class id(0,1,2....)所對應的task, 以及可能對應的部位是甚麼
+```
+## `task_algos` 中所有使用 U-Net segmentation 的 task 及其 class id 對應表
+
+系統共有 3 顆 U-Net 模型（`AImodel_config.yaml`、`rehaut_unet_config.yaml`）：
+
+- **micro_unet**：`classes: 6`（有效 id 0–5），大多數微距分析任務的預設模型
+- **macro_unet**：`classes: 10`（有效 id 0–9），用於巨集/大範圍分析
+- **rehaut_unet**：獨立小模型，`classes: 3`（id 0–2），僅供 `rehaut_algo.py` 使用
+
+### A. micro_unet（0–5）
+
+|class id|對應部位 / 語意|使用的 task|
+|---|---|---|
+|1|金色/刻印文字前景 (foreground engraved text)|`bezel_marker_algo.py`（`gold_font_class_id`，錶圈金字）、`features_algo.py`（`texture_class_id`，letter/crown/marker 三種服務共用）|
+|2|夜光塗料 (lume paint)|`diallume_shape_algo.py`、`diallume_texture_algo.py`（錶盤夜光）、`lume_hand_shape_algo.py`、`lume_hand_texture_algo.py`（指針夜光）、`lume_hour_shape_algo.py`、`lume_hour_texture_algo.py`（時標夜光）|
+|3|機芯上數字「3」|`movement1_algo.py`（`number_class_id`，config 設為 `[3]`）|
+|4|⚠️ 同一 id、不同語意：機芯刻字文字（movement2）／時標金屬邊框（lume_hour）|`movement2_algo.py`（`text_class_id`）、`lume_hour_shape_algo.py`（`metal_frame_class_id`）|
+|5|⚠️ 同一 id、不同語意：機芯背景（movement2）／指針夜光暗色邊框（lume_hand）|`movement2_algo.py`（`background_class_id`）、`lume_hand_shape_algo.py`（`dark_frame_class_id`）|
+
+**⚠️ 疑似設定錯誤／超出範圍**（micro_unet 只有 6 類，有效 id 只到 5，但以下 task 設定的 id 超出範圍，且都沒有指定 `model_name`，會預設吃到 micro_unet）：
+
+- `doctr_algo.py`：`target_class_id=6`（背景遮罩，與主 OCR 任務無關的附屬功能）
+- `links_algo.py`：`link_class_id=6`、`slot_class_id=7`（錶帶連結/孔洞）
+- `isolation_algo.py`：`background_class_id=[9,14,15]`（表面材質分離用背景）
+- `stitched_band_algo.py`（v1，已被 SAM-based 的 `stitched_band2_algo.py` 取代）：`target_class_ids=[7,8,9]`
+- `diallume_algo.py`：沒有對應的 config 檔（`config/diallume_config.yaml` 不存在），程式碼預設 `lume_class_id=[15]`，與同系列的 diallume_shape/texture（都是 2）不一致
+
+這些超出範圍的 id 很可能是舊模型（class 數較多）遺留下來的設定，或本來就該指定 `macro_unet` 卻漏寫，實際執行時可能靜默產生空遮罩（程式碼多半用 broad `except` 吞掉錯誤）。
+
+### B. macro_unet（0–9，明確定義於 config）
+
+|class id|對應部位|使用的 task|
+|---|---|---|
+|0|背景（被排除）|`front_stitch_algo.py`|
+|1|錶盤中心 (dial_center)|`front_stitch_algo.py`|
+|2|時針 (hour_hand)|`front_stitch_algo.py`|
+|3|分針 (minute_hand)|`front_stitch_algo.py`|
+|4|秒針 (second_hand)|`front_stitch_algo.py`|
+|5|錶盤夜光區域 (lume_regions)|`front_stitch_algo.py`|
+|6|側旁錶冠金色區域 (crown)|`side_crown_algo.py`（`crown_class_id`，config 明確指定 `model_name: macro_unet`）|
+|7–9|未在任何 config 中定義|（目前找不到明確使用）|
+
+### C. rehaut_unet（獨立小模型，0–2）
+
+|class id|對應部位|使用的 task|
+|---|---|---|
+|0|背景|`rehaut_algo.py`|
+|1|內圈分鐘刻度 (minute_marker)|`rehaut_algo.py`|
+|2|內圈刻字 (rehaut_text)|`rehaut_algo.py`|
+
+### 重要提醒
+
+- Class id **不是全域統一**的語意編號——即使多個 task 都寫著用同一顆 `micro_unet`/`macro_unet`，各自 config 裡的 id 仍是各自獨立設定的數字，容易對到不同意思（如上表 id=4、5 的衝突），這點在 `9.3.11_isolation_algo.md` 中也有被明確記錄過。
+- `helper/docs/09_tasks/` 底下已經有非常詳細的逐檔說明文件（如 9.3.1、9.3.5~9.3.7 diallume 系列、9.3.14~9.3.17 lume 系列等），之後若要再深入某個 task 可以直接參考。
+- 已將這份整理存進 repo memory（`/memories/repo/unet_class_ids.md`），下次可直接調用不必重新翻代碼。
+
+
+
+
+
+
+```
+
+```
