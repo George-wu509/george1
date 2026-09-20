@@ -8,8 +8,8 @@
 | [[#### stitched image有用unet辨識分針, 時針, Hour Markers]] |     |
 | [[#### unet class id整理]]                            |     |
 | [[#### Unet 詳細class id 整理]]                         |     |
-|                                                     |     |
-|                                                     |     |
+| [[#### WatchSegAI 的三模型訓練架構]]                        |     |
+| [[ #### 請詳細解釋從頭開始要的完整pipeline]]                     |     |
 |                                                     |     |
 
 #### App 設定對照表（dev）
@@ -2041,24 +2041,24 @@ Controller/.../workflow_manager.py
 
 ### B. macro_unet（0–9，明確定義於 config）
 
-|class id|對應部位|使用的 task|
-|---|---|---|
-|0|背景（被排除）|`front_stitch_algo.py`|
-|1|錶盤中心 (dial_center)|`front_stitch_algo.py`|
-|2|時針 (hour_hand)|`front_stitch_algo.py`|
-|3|分針 (minute_hand)|`front_stitch_algo.py`|
-|4|秒針 (second_hand)|`front_stitch_algo.py`|
-|5|錶盤夜光區域 (lume_regions)|`front_stitch_algo.py`|
-|6|側旁錶冠金色區域 (crown)|`side_crown_algo.py`（`crown_class_id`，config 明確指定 `model_name: macro_unet`）|
-|7–9|未在任何 config 中定義|（目前找不到明確使用）|
+| class id | 對應部位                  | 使用的 task                                                                    |
+| -------- | --------------------- | --------------------------------------------------------------------------- |
+| 0        | 背景（被排除）               | `front_stitch_algo.py`                                                      |
+| 1        | 錶盤中心 (dial_center)    | `front_stitch_algo.py`                                                      |
+| 2        | 時針 (hour_hand)        | `front_stitch_algo.py`                                                      |
+| 3        | 分針 (minute_hand)      | `front_stitch_algo.py`                                                      |
+| 4        | 秒針 (second_hand)      | `front_stitch_algo.py`                                                      |
+| 5        | 錶盤夜光區域 (lume_regions) | `front_stitch_algo.py`                                                      |
+| 6        | 側旁錶冠金色區域 (crown)      | `side_crown_algo.py`（`crown_class_id`，config 明確指定 `model_name: macro_unet`） |
+| 7–9      | 未在任何 config 中定義       | （目前找不到明確使用）                                                                 |
 
 ### C. rehaut_unet（獨立小模型，0–2）
 
-|class id|對應部位|使用的 task|
-|---|---|---|
-|0|背景|`rehaut_algo.py`|
-|1|內圈分鐘刻度 (minute_marker)|`rehaut_algo.py`|
-|2|內圈刻字 (rehaut_text)|`rehaut_algo.py`|
+| class id | 對應部位                   | 使用的 task         |
+| -------- | ---------------------- | ---------------- |
+| 0        | 背景                     | `rehaut_algo.py` |
+| 1        | 內圈分鐘刻度 (minute_marker) | `rehaut_algo.py` |
+| 2        | 內圈刻字 (rehaut_text)     | `rehaut_algo.py` |
 
 ### 重要提醒
 
@@ -2095,39 +2095,39 @@ SAM model的model file也放到.\checkpoint\SAM folder
 
 ## micro_unet v1
 
-|ID|task config 宣告語意|使用 task 與 internalnum1/internalnum2|
-|---|---|---|
-|0|Background|無 task 直接取用|
-|1|Foreground／feature texture；bezel gold font|`features_letter_service`: 0011/0001、0013/0001；`features_crown_service`: 0012/0001；`features_marker_service`: 0014/0001、0015/0001；`bezel_marker_service`: 0016–0021/0001|
-|2|Lume／夜光區|`diallume_shape_service`: 0022/0001；`diallume_texture_service`: 0022/0002；`lume_hour_shape_service`: 0023/0001、1004/0001、2004/0001、3008/0001、3009/0001；`lume_hour_texture_service`: 0023/0002；`lume_hand_shape_service`: 0024/0001、0025/0001；`lume_hand_texture_service`: 0024/0002、0025/0002|
-|3|Number “3”|`movement1_service`: 3007/0001|
-|4|Hour-marker metal frame；movement engraving text，語意有衝突|`lume_hour_shape_service`: 同上；`movement2_service`: 2005/0001、3010/0001|
-|5|Hand dark frame；movement background，語意有衝突|`lume_hand_shape_service`: 0024/0001、0025/0001；`movement2_config` 有設定，但目前 processor 沒有讀取 `background_class_id`|
+| ID  | task config 宣告語意                                      | 使用 task 與 internalnum1/internalnum2                                                                                                                                                                                                                                                           |
+| --- | ----------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 0   | Background                                            | 無 task 直接取用                                                                                                                                                                                                                                                                                   |
+| 1   | Foreground／feature texture；bezel gold font            | `features_letter_service`: 0011/0001、0013/0001；`features_crown_service`: 0012/0001；`features_marker_service`: 0014/0001、0015/0001；`bezel_marker_service`: 0016–0021/0001                                                                                                                      |
+| 2   | Lume／夜光區                                              | `diallume_shape_service`: 0022/0001；`diallume_texture_service`: 0022/0002；`lume_hour_shape_service`: 0023/0001、1004/0001、2004/0001、3008/0001、3009/0001；`lume_hour_texture_service`: 0023/0002；`lume_hand_shape_service`: 0024/0001、0025/0001；`lume_hand_texture_service`: 0024/0002、0025/0002 |
+| 3   | Number “3”                                            | `movement1_service`: 3007/0001                                                                                                                                                                                                                                                                |
+| 4   | Hour-marker metal frame；movement engraving text，語意有衝突 | `lume_hour_shape_service`: 同上；`movement2_service`: 2005/0001、3010/0001                                                                                                                                                                                                                        |
+| 5   | Hand dark frame；movement background，語意有衝突             | `lume_hand_shape_service`: 0024/0001、0025/0001；`movement2_config` 有設定，但目前 processor 沒有讀取 `background_class_id`                                                                                                                                                                                |
 
 主要語意來源可見 [lume_hour_shape_config.yaml (line 14)](D:/Provenance Project/ImagingLibWatch/config/lume_hour_shape_config.yaml:14)、[lume_hand_shape_config.yaml (line 14)](D:/Provenance Project/ImagingLibWatch/config/lume_hand_shape_config.yaml:14)、[movement1_config.yaml (line 10)](D:/Provenance Project/ImagingLibWatch/config/movement1_config.yaml:10)、[movement2_config.yaml (line 10)](D:/Provenance Project/ImagingLibWatch/config/movement2_config.yaml:10)。
 
 ## macro_unet v1
 
-|ID|語意|使用 task 與 internalnum1/internalnum2|
-|---|---|---|
-|0|Background|`front_stitch_service` 排除類別|
-|1|Dial center|`front_stitch_service`: 0004/0001、0005/0001、0008/0001、0009/0001、0010/0001|
-|2|Hour hand|同上|
-|3|Minute hand|同上|
-|4|Second hand|同上|
-|5|Lume regions|同上|
-|6|Crown|`side_crown_service`: 0006/0001|
-|7–9|repo 沒有可靠 class name|沒有已確認、正確指定 `macro_unet` 的 task|
+| ID  | 語意                   | 使用 task 與 internalnum1/internalnum2                                       |
+| --- | -------------------- | ------------------------------------------------------------------------- |
+| 0   | Background           | `front_stitch_service` 排除類別                                               |
+| 1   | Dial center          | `front_stitch_service`: 0004/0001、0005/0001、0008/0001、0009/0001、0010/0001 |
+| 2   | Hour hand            | 同上                                                                        |
+| 3   | Minute hand          | 同上                                                                        |
+| 4   | Second hand          | 同上                                                                        |
+| 5   | Lume regions         | 同上                                                                        |
+| 6   | Crown                | `side_crown_service`: 0006/0001                                           |
+| 7–9 | repo 沒有可靠 class name | 沒有已確認、正確指定 `macro_unet` 的 task                                            |
 
 Front class map 在 [front_stitch_config.yaml (line 52)](D:/Provenance Project/ImagingLibWatch/config/front_stitch_config.yaml:52)；crown 在 [side_crown_config.yaml (line 8)](D:/Provenance Project/ImagingLibWatch/config/side_crown_config.yaml:8)。
 
 ## rehaut_unet
 
-|ID|語意|使用 task|
-|---|---|---|
-|0|Background|`rehaut_service`|
-|1|Minute marker|`rehaut_service`|
-|2|Rehaut text|`rehaut_service`|
+| ID  | 語意            | 使用 task          |
+| --- | ------------- | ---------------- |
+| 0   | Background    | `rehaut_service` |
+| 1   | Minute marker | `rehaut_service` |
+| 2   | Rehaut text   | `rehaut_service` |
 
 Internalnums：0039–0050，全部為 internalnum2 `0001`。設定在 [rehaut_config.yaml (line 114)](D:/Provenance Project/ImagingLibWatch/config/rehaut_config.yaml:114)。
 
@@ -2137,13 +2137,13 @@ Internalnums：0039–0050，全部為 internalnum2 `0001`。設定在 [rehaut_c
 
 下列 task 沒指定 `model_name`，因此實際落到預設的 `micro_unet_v1`，其 ID 均無效：
 
-|Task|設定 ID|Internalnums／狀態|
-|---|---|---|
-|`links_service` / `links_algo`|6、7|defaults 未配置 internalnums|
-|`doctr_service` / `doctr_algo`|6|defaults 未配置 internalnums|
-|`isolation_service`|9、14、15|3009/0001、3010/0001、2005/0001|
-|`stitched_band_service`|7、8、9|未註冊於目前 defaults|
-|舊 `DialLumeProcessor`|預設 15|沒有對應 config／service registration|
+| Task                           | 設定 ID   | Internalnums／狀態                  |
+| ------------------------------ | ------- | -------------------------------- |
+| `links_service` / `links_algo` | 6、7     | defaults 未配置 internalnums        |
+| `doctr_service` / `doctr_algo` | 6       | defaults 未配置 internalnums        |
+| `isolation_service`            | 9、14、15 | 3009/0001、3010/0001、2005/0001    |
+| `stitched_band_service`        | 7、8、9   | 未註冊於目前 defaults                  |
+| 舊 `DialLumeProcessor`          | 預設 15   | 沒有對應 config／service registration |
 
 這些很可能是 17-class v0 contract 的遺留，但不能直接改成 `macro_unet`：例如 ID 6 在不同 task 被稱為 crown、link、background，語意互相衝突。
 
@@ -2169,10 +2169,678 @@ Internalnums：0039–0050，全部為 internalnum2 `0001`。設定在 [rehaut_c
 - 完整 Rehaut unittest 未執行成功：目前 Python environment 缺少 `cv2`。
 
 
+#### WatchSegAI 的三模型訓練架構
+```
+請幫我整理WatchSegAI目前有的功能性? 如果已經準備好了UNet的dataset, 也準備了從這裡開始要從./checkpointa/的pth file開始transfer learning然後要在local laptop做training的步驟是甚麼? 在./的四個py files各是甚麼? 哪個是做training要用到的?
+
+以及目前我的ImagingLibWatch其實有使用三個unet model, 在另一個repo的ImagingLibWatch/checkpoints/macro\_unet/, ImagingLibWatch/checkpoints/micro\_unet/, ImagingLibWatch/checkpoints/rehaut\_unet/裡面各有各自的不同版本unet pth files. 現在我重新準備了新的datasets要拿來training, micro\_unet model也會新增class到總共有18個class(class id=0到17), 而類別維持0\~9. rehaut\_unet也維持Background, Minute marker, Rehaut text三個類別. 這些都有各自的datasets要做training.&#x20;
+
+在本來的WatchSegAI的架構應該是訓練一個UNet, 現在請修改成可以針對三個不同的datasets, 有各自的config然後可以有各自完整的訓練pipeline可以訓練個別的unet file
+
+請幫我修改code
+```
+已完成 WatchSegAI 的三模型訓練架構。
+
+### 主要修改
+
+- 新增三份獨立設定：
+    
+    - [macro_unet.yaml (line 1)](/D:/Provenance Project/WatchSegAI/configs/macro_unet.yaml:1)：10 classes，ID 0–9
+    - [micro_unet.yaml (line 1)](/D:/Provenance Project/WatchSegAI/configs/micro_unet.yaml:1)：18 classes，ID 0–17
+    - [rehaut_unet.yaml (line 1)](/D:/Provenance Project/WatchSegAI/configs/rehaut_unet.yaml:1)：Background、Minute marker、Rehaut text
+- [train_unet.py (line 542)](/D:/Provenance Project/WatchSegAI/src/train_unet.py:542) 現在支援：
+    
+    - `--model macro_unet|micro_unet|rehaut_unet`
+    - AMP mixed-precision
+    - early stopping
+    - best／last checkpoint
+    - 嚴格 mask ID 檢查
+    - random-patch micro/rehaut 訓練
+    - 不同類別數的 transfer learning
+    - checkpoint 缺少時停止，不再偷偷從頭訓練
+- micro 舊 checkpoint 實際是 6-class head。測試確認轉成 18 classes 時成功載入 418/420 tensors，只重新初始化：
+    
+    - `segmentation_head.0.weight`
+    - `segmentation_head.0.bias`
+- [data_prep.py (line 92)](/D:/Provenance Project/WatchSegAI/src/data_prep.py:92)、[scan_masks.py (line 63)](/D:/Provenance Project/WatchSegAI/scan_masks.py:63) 和 [inference_unet.py (line 31)](/D:/Provenance Project/WatchSegAI/src/inference_unet.py:31) 都已支援三模型選擇。
+    
+
+### 根目錄四個 Python 檔
+
+- `dataset_labeling_ui.py`：SAM 輔助標註
+- `dataset_converter_ui.py`：image/mask 轉換及離線 augmentation
+- `scan_masks.py`：檢查 mask class ID
+- `train_unet_debug.py`：CUDA 除錯訓練入口
+
+正式 training 使用 `src/train_unet.py`；`train_unet_debug.py` 只在追查 CUDA 問題時使用。
+
+### 本機訓練流程
 
 ```
+conda activate watchSeg_env
+
+python scan_masks.py --model micro_unet
+python src/data_prep.py --model micro_unet --overwrite
+python src/train_unet.py --model micro_unet
+python src/inference_unet.py --model micro_unet --input data/micro_unet/processed/images/val
+```
+
+把 `micro_unet` 換成 `macro_unet` 或 `rehaut_unet` 即可訓練另外兩套模型。完整 checkpoint 放置、dataset 結構與部署步驟在 [usage.md (line 1)](/D:/Provenance Project/WatchSegAI/docs/usage.md:1)。
+
+### 驗證狀態
+
+- Python 靜態編譯通過
+- 四份 YAML 解析通過
+- 三組 augmentation class 範圍測試通過
+- macro checkpoint：420/420 tensors 成功載入
+- micro 6→18 class transfer：418/420 tensors 成功載入，輸出為 `[1, 18, H, W]`
+- 已修復 `watchSeg_env` 中損壞的 OpenCV 安裝
+
+目前 ImagingLibWatch 磁碟上只找到 macro、micro checkpoints，尚未找到 rehaut `.pth`。另外部署新版 micro 後，還需要把 ImagingLibWatch 的 `AImodel_config.yaml` 中 `classes: 6` 改成 `classes: 18` 並更新 checkpoint 檔名。当前主機也尚未偵測到 CUDA／`nvidia-smi`，正式 GPU 訓練前需先確認 NVIDIA driver。
+
+
+
+ #### 請詳細解釋從頭開始要的完整pipeline
+```
+所以根據新的code, 如果我現在要準備train新的micro_unet model, 有一個folder目前是所有的images, 而另一個folder是所有的masks(這是pixel value=0 or mask id的跟image同pixel大小的mask image). 請詳細解釋從頭開始要蝕作用這datasets到訓練完畢得到新的checkpoint的完整pipeline流程, 要包括config設定, 檢查, data augmentation , 或model效果不好時如何調整
+```
+以下是用目前新版程式，從兩個原始資料夾開始，完整訓練新版 `micro_unet` 的流程。
+
+## 1. 確認 dataset 格式
+
+你需要兩個資料夾：
 
 ```
+images/
+  watch_001.jpg
+  watch_002.jpg
+  watch_003.png
+
+masks/
+  watch_001.png
+  watch_002.png
+  watch_003.png
+```
+
+配對規則：
+
+- image 和 mask 的「副檔名前檔名」必須完全相同。
+- `watch_001.jpg` 可以配 `watch_001.png`。
+- 不可有兩張 image 使用相同 stem，例如同時存在 `watch_001.jpg` 和 `watch_001.png`。
+- 每張 image 必須剛好有一張 mask。
+- mask 必須是單通道灰階影像，不是彩色標註圖。
+- mask pixel value 就是 class ID。
+- 新 micro model 合法 ID 是 `0–17`，總共 18 classes。
+- `0` 是 Background。
+- mask 不要把 class ID 乘以 255。
+- image 與 mask 最好維持相同寬高；目前 trainer 發現不同時會用 nearest-neighbor 調整 mask，但最好在資料製作階段就修正。
+
+一張 mask 可以同時包含很多類別，例如：
+
+```
+pixel value 0  = background
+pixel value 1  = class 1
+pixel value 7  = class 7
+pixel value 17 = class 17
+```
+
+不能使用 255 表示 class 17，也不能每個 class 各放一張 binary mask；trainer 要的是一張整合後的 class-ID mask。
+
+---
+
+## 2. 放置 dataset
+
+最簡單的方法是放進專案既定位置：
+
+```
+WatchSegAI/
+  data/
+    micro_unet/
+      raw/
+        images/
+          watch_001.jpg
+          watch_002.jpg
+        masks/
+          watch_001.png
+          watch_002.png
+```
+
+也可以保留原本資料夾位置，直接修改 [micro_unet.yaml (line 1)](/D:/Provenance Project/WatchSegAI/configs/micro_unet.yaml:1)：
+
+```
+data:
+  raw_image_dir: "E:/MyDatasets/micro/images"
+  raw_mask_dir: "E:/MyDatasets/micro/masks"
+```
+
+Windows YAML 建議使用 `/`，避免 `\` 被當成 escape character。
+
+---
+
+## 3. 設定 micro config
+
+主要設定檔是：
+
+[micro_unet.yaml (line 1)](/D:/Provenance Project/WatchSegAI/configs/micro_unet.yaml:1)
+
+### Dataset 設定
+
+```
+data:
+  dataset_mode: "micro"
+  raw_image_dir: "data/micro_unet/raw/images"
+  raw_mask_dir: "data/micro_unet/raw/masks"
+  local_base_dir: "data/micro_unet/processed"
+
+  img_size: 1024
+  num_classes: 18
+
+  class_names:
+    - "background"
+    - "class_1"
+    - "class_2"
+    # ...
+    - "class_17"
+
+  train_crop: "random_patch"
+  batch_size: 2
+  num_workers: 2
+  val_split: 0.2
+  random_seed: 42
+
+  oversample_factor: 2
+  positive_crop_prob: 0.75
+  copy_paste_threshold: 0.10
+  copy_paste_prob: 0.5
+```
+
+重要設定：
+
+- `num_classes: 18`：模型輸出 channel 為 18。
+- `class_names`：應依你的真實 class 名稱替換。目前名稱只用於 metadata/inference label map，不影響訓練數值。
+- `img_size: 1024`：每個 training patch 是 `1024×1024`。
+- `train_crop: random_patch`：大圖不會整張壓縮成正方形，而是抽取 patch。
+- `val_split: 0.2`：80% training、20% validation。
+- `random_seed: 42`：相同 dataset 可以得到相同 split。
+- `oversample_factor: 2`：training dataset 的抽樣次數放大兩倍。
+- `positive_crop_prob: 0.75`：75% 機率讓 patch 包含非背景 pixel。
+- `copy_paste_prob: 0.5`：前景太少時，有 50% 機率從其他 positive sample 貼入物件。
+
+如果圖片本身已經是 `1024×1024`，random patch 基本上就會使用整張圖。
+
+### Transfer-learning checkpoint
+
+```
+model:
+  encoder: "efficientnet-b0"
+  encoder_weights: "imagenet"
+
+  load_checkpoint: true
+  require_checkpoint: true
+
+  checkpoint_path: "checkpoints/micro_unet/micro_unet_v1.pth"
+  save_dir: "checkpoints/micro_unet"
+  save_name: "micro_unet_v2.pth"
+```
+
+先把舊 micro checkpoint 放到：
+
+```
+checkpoints/micro_unet/micro_unet_v1.pth
+```
+
+例如：
+
+```
+New-Item -ItemType Directory -Force checkpoints/micro_unet
+
+Copy-Item `
+  ../ImagingLibWatch/checkpoints/micro_unet/micro_unet_v1.pth `
+  checkpoints/micro_unet/
+```
+
+目前舊的 `micro_unet_v1.pth` 實際是 6-class output head。新版 trainer 會：
+
+1. 建立 18-class U-Net。
+2. 載入 shape 相容的 encoder/decoder 權重。
+3. 跳過舊的 6-class segmentation head。
+4. 重新初始化新的 18-class head。
+
+正常 log 應該類似：
+
+```
+Loaded 418/420 tensors
+Skipped keys:
+segmentation_head.0.weight
+segmentation_head.0.bias
+```
+
+這是正確行為。
+
+### Training 設定
+
+```
+training:
+  epochs: 300
+  learning_rate: 0.001
+  weight_decay: 1.0e-4
+  patience: 20
+  scheduler_patience: 8
+  vis_interval: 5
+  amp: true
+```
+
+含義：
+
+- `epochs: 300`：最多訓練 300 epochs。
+- `learning_rate: 0.001`：初始 learning rate。
+- `weight_decay`：抑制 overfitting。
+- `scheduler_patience: 8`：validation loss 連續一段時間沒有改善時降低 LR。
+- `patience: 20`：20 epochs 沒有改善就 early stop。
+- `vis_interval: 5`：每 5 epochs 輸出一張 validation 預測圖。
+- `amp: true`：CUDA 下啟用 mixed precision，降低 VRAM 使用量。
+
+---
+
+## 4. 建立並檢查 Python 環境
+
+```
+conda activate watchSeg_env
+pip install -r env/requirements.txt
+```
+
+確認套件：
+
+```
+python -c "import cv2, torch, albumentations; print(cv2.__version__); print(torch.__version__); print(torch.cuda.is_available())"
+```
+
+GPU laptop 應該看到：
+
+```
+True
+```
+
+也可以執行：
+
+```
+nvidia-smi
+```
+
+如果 `torch.cuda.is_available()` 是 `False`，程式仍能用 CPU，但 1024×1024 U-Net 訓練會非常慢。這時需要檢查：
+
+- NVIDIA driver
+- PyTorch 是否安裝 CUDA build
+- PyTorch CUDA 版本是否和 driver 相容
+
+---
+
+## 5. 先檢查 raw masks
+
+執行：
+
+```
+python scan_masks.py --model micro_unet
+```
+
+正常結果應類似：
+
+```
+[Model] micro_unet allowed class IDs: 0..17
+
+=== Summary ===
+Files scanned: 500
+All unique values: [0, 1, 2, ..., 17]
+Missing class IDs: []
+Bad file count: 0
+```
+
+需要注意：
+
+- `Bad file count` 必須是 0。
+- 如果看到 ID 18、255 等數字，該 mask 無法用於 18-class training。
+- `Missing class IDs` 不一定會讓程式失敗，但代表整個 dataset 沒有該類別，模型自然不可能學會它。
+- 如果缺少 class 13，例如顯示 `[13]`，要先確認是資料真的沒有，還是標註 ID 錯誤。
+
+---
+
+## 6. 切分 train/validation dataset
+
+第一次執行：
+
+```
+python src/data_prep.py --model micro_unet
+```
+
+會產生：
+
+```
+data/micro_unet/processed/
+  images/
+    train/
+    val/
+  masks/
+    train/
+    val/
+```
+
+如果 processed 目錄已有舊資料，程式會拒絕混合。更新 dataset 後要明確執行：
+
+```
+python src/data_prep.py --model micro_unet --overwrite
+```
+
+這會重新建立 micro 的四個 split 資料夾，不會影響 macro 或 rehaut。
+
+切分後再次檢查：
+
+```
+python scan_masks.py --model micro_unet --split all
+```
+
+### 避免 dataset leakage
+
+目前是以單一檔案為單位隨機切分。如果同一隻錶有很多相似照片，例如：
+
+```
+watchA_01.jpg
+watchA_02.jpg
+watchA_03.jpg
+```
+
+它們可能分散到 train 和 validation，造成 validation 結果過度樂觀。
+
+理想做法是確保同一隻錶、同一拍攝 sequence、同一原始影像的 augmentation 全部分到同一側。尤其不要先大量產生 augmentation，再讓 `data_prep.py` 隨機切分。
+
+---
+
+## 7. Data augmentation 如何運作
+
+正式 trainer 已經包含 online augmentation，所以通常不需要先執行 `dataset_converter_ui.py`。
+
+micro training 每次讀取圖片時會依序進行：
+
+1. 選擇含有前景的圖片。
+2. 抽取 `1024×1024` random patch。
+3. 以一定機率對前景不足的 patch 做 copy-paste。
+4. Horizontal flip。
+5. Vertical flip。
+6. 隨機旋轉。
+7. Gaussian blur／一般 blur／defocus。
+8. Random gamma。
+9. Random brightness。
+10. ImageNet normalization。
+11. 轉為 PyTorch tensor。
+
+image 和 mask 的幾何操作會同步；mask 使用離散 class ID，不會用一般影像插值產生小數 class。
+
+Validation 不使用隨機 augmentation。對大圖會產生固定的 tiled patches，只做 resize/normalization，因此不同 epoch 的 validation 可比較。
+
+### 何時使用 dataset_converter_ui.py
+
+只有在需要：
+
+- 永久輸出一套轉換後資料
+- 人工檢查影像效果
+- 做特殊色調或曝光模擬
+- 增加很稀有類別的實體樣本
+
+才需要離線 augmentation。
+
+不要對同一份資料同時做非常強的 offline 和 online augmentation，否則影像可能偏離真實分布。
+
+---
+
+## 8. 先做一個 epoch smoke test
+
+正式跑 300 epochs 前先測試：
+
+```
+python src/train_unet.py --model micro_unet --epochs 1
+```
+
+確認：
+
+- 找得到 dataset。
+- 找得到舊 checkpoint。
+- 顯示載入 418/420 tensors。
+- mask 沒有越界。
+- CUDA 沒有 out-of-memory。
+- 能完成 training 和 validation。
+- 能寫出 checkpoint。
+
+輸出位置：
+
+```
+checkpoints/micro_unet/
+  micro_unet_v2.pth
+  last.pth
+  vis_results/
+```
+
+注意：一個 epoch smoke test 也可能產生 `micro_unet_v2.pth`。正式訓練會覆蓋相同檔案。
+
+---
+
+## 9. 執行正式 training
+
+```
+python src/train_unet.py --model micro_unet
+```
+
+訓練過程會顯示：
+
+```
+Epoch 1/300 [Train]
+Train Loss: ...
+Val Loss: ...
+```
+
+輸出檔：
+
+- `micro_unet_v2.pth`：validation loss 最佳的模型。
+- `last.pth`：最後完成的 epoch。
+- `vis_results/epoch_*_sample.jpg`：輸入、ground truth、prediction 比較。
+
+正式使用應優先選擇 `micro_unet_v2.pth`，不一定是 `last.pth`。
+
+checkpoint 內容包括：
+
+- `model_state_dict`
+- `optimizer_state_dict`
+- epoch
+- validation loss
+- model name
+- 18-class metadata
+- encoder name
+
+ImagingLibWatch 的 loader 已能讀取其中的 `model_state_dict`。
+
+---
+
+## 10. 訓練完成後做 inference
+
+```
+python src/inference_unet.py `
+  --model micro_unet `
+  --input data/micro_unet/processed/images/val
+```
+
+結果位於：
+
+```
+output/micro_unet/<timestamp>/
+```
+
+包含：
+
+- 原始 class-ID combined mask
+- 彩色 overlay
+- 每個 class 的 binary mask
+- `label_colors.txt`
+
+重點檢查：
+
+- class 邊界是否正確。
+- 小物件是否被漏掉。
+- 不同 class 是否互相混淆。
+- 背景是否產生大量 false positive。
+- validation 結果是否只在特定拍攝條件有效。
+- `vis_results` 和實際 inference 是否一致。
+
+---
+
+## 11. 模型效果不好時怎麼調整
+
+### Training loss 和 validation loss 都很高
+
+可能是模型學不動：
+
+- 先檢查 mask class ID 和語意對照。
+- 確認 image/mask 沒有配錯。
+- 確認 checkpoint 確實載入 418/420 tensors。
+- 將 learning rate 改成：
+
+```
+learning_rate: 0.0003
+```
+
+- 暫時降低 augmentation 強度。
+- 確認每個 class 有足夠 pixel 和影像數量。
+- 檢查 `1024×1024` patch 內是否真的看得到目標。
+
+### Training loss 降低，但 validation loss 上升
+
+這通常是 overfitting：
+
+```
+weight_decay: 0.0005
+patience: 10
+```
+
+並且：
+
+- 增加真實資料。
+- 增加不同光源、相機和曝光條件。
+- 檢查 train/val 是否來自相同錶款或相似連拍。
+- 適度增加 brightness、gamma、blur augmentation。
+- 不要只增加同一張圖的複製版本。
+
+### 小 class 經常消失
+
+可以提高：
+
+```
+oversample_factor: 3
+positive_crop_prob: 0.9
+copy_paste_prob: 0.7
+```
+
+但要注意，目前 positive sampling 是「任何非背景類別」，不是針對某個特定 class。如果 class 16、17 特別稀有，最有效的方法仍是：
+
+- 增加包含 16、17 的真實圖片。
+- 針對稀有類別製作合理 augmentation。
+- 進一步修改 trainer，加入 per-class sampler 或 weighted cross-entropy。
+
+### False positive 太多
+
+可嘗試：
+
+```
+copy_paste_prob: 0.2
+oversample_factor: 1
+positive_crop_prob: 0.6
+```
+
+並增加：
+
+- 完全沒有目標的 negative images。
+- 容易被誤認成目標的 hard negatives。
+- 真實背景變化。
+
+### 模糊影像效果差
+
+提高：
+
+```
+blur_limit: 7
+```
+
+但要確認 augmentation 後仍接近實際相機影像。太強的 blur 反而會讓模型學不到紋理。
+
+### 光線變化效果差
+
+可以調整：
+
+```
+brightness_limit: 0.3
+contrast_limit: 0.2
+gamma_limit: [70, 140]
+```
+
+建議一次只改一組設定，保留實驗紀錄。
+
+### CUDA out-of-memory
+
+先改：
+
+```
+batch_size: 1
+```
+
+仍然不足才降低：
+
+```
+img_size: 768
+```
+
+但 micro objects 通常很小，降低解析度可能直接損失細節，所以優先降低 batch size。
+
+Windows DataLoader 不穩時：
+
+```
+num_workers: 0
+```
+
+### Validation loss 不錯，但實際效果不好
+
+目前 best checkpoint 是依整體 validation loss 選擇，背景 pixel 很多時，整體 loss 可能掩蓋稀有 class 的問題。
+
+應額外評估：
+
+- 每個 class 的 IoU
+- Dice score
+- precision/recall
+- confusion matrix
+- 尤其 class 10–17 的個別表現
+
+目前 trainer 尚未把 per-class IoU 寫入 training log，因此不能只看 validation loss 判斷模型是否真的適用。
+
+---
+
+## 12. 部署回 ImagingLibWatch
+
+訓練確認後複製：
+
+```
+Copy-Item `
+  checkpoints/micro_unet/micro_unet_v2.pth `
+  ../ImagingLibWatch/checkpoints/micro_unet/
+```
+
+然後修改 ImagingLibWatch：
+
+```
+micro_unet:
+  encoder: "efficientnet-b0"
+  classes: 18
+  img_size: 1024
+  checkpoint_path: "checkpoints/micro_unet/micro_unet_v2.pth"
+```
+
+這裡非常重要：checkpoint 換成 18-class 後，ImagingLibWatch 的 `classes` 也必須從目前的 `6` 改成 `18`，否則載入 segmentation head 時會出現 shape mismatch。
+
+
 
 
 
