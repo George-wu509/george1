@@ -10,6 +10,8 @@
 | [[#### Unet 詳細class id 整理]]                         |     |
 | [[#### WatchSegAI 的三模型訓練架構]]                        |     |
 | [[ #### 請詳細解釋從頭開始要的完整pipeline]]                     |     |
+| [[#### 所有internalnum1 list整理]]                      |     |
+|                                                     |     |
 |                                                     |     |
 
 #### App 設定對照表（dev）
@@ -2840,6 +2842,78 @@ micro_unet:
 
 這裡非常重要：checkpoint 換成 18-class 後，ImagingLibWatch 的 `classes` 也必須從目前的 `6` 改成 `18`，否則載入 segmentation head 時會出現 shape mismatch。
 
+
+
+
+#### 所有internalnum1 list整理
+```
+請幫我整理在./config/internalnum_config.yaml裡面所有的internalnum1有哪些有兩個以上internalnum2拍照的, 用甚麼camera以及是不是hdr images, 以及所有的internalnum1個是用甚麼./config/system_config.defaults.yaml裡面的service分析, 如果有兩個以上internalnum2也要分別指出用甚麼service
+```
+整理結果如下。判斷 HDR 以每筆 `internalnum2.capture.capture_type` 為準；`point_defaults.hdr_enabled` 只代表該 point 支援 HDR。
+
+**有兩個以上 `internalnum2` 的 internalnum1**
+
+|internalnum1|internalnum2|Camera|HDR|分析 service|
+|---|---|---|---|---|
+|`0006`|`0001`, `0002`|`macro_cam_1`|否，兩筆都是 standard|`side_crown_service`|
+|`0009`|`0001`, `0002`|`macro_cam_1`|否，兩筆都是 standard|`front_stitch_service`|
+|`0010`|`0001`, `0002`|`macro_cam_1`|否，兩筆都是 standard|`front_stitch_service`|
+|`0011`|`0001` / `0002`|`micro_cam`|否 / 是，`0002` 是 HDR|`features_letter_service`|
+|`0012`|`0001` / `0002`|`micro_cam`|否 / 是|`features_crown_service`|
+|`0013`|`0001` / `0002`|`micro_cam`|否 / 是|`features_letter_service`|
+|`0014`|`0001` / `0002`|`micro_cam`|否 / 是|`features_marker_service`|
+|`0015`|`0001` / `0002`|`micro_cam`|否 / 是|`features_marker_service`|
+|`0016`|`0001` / `0002`|`micro_cam`|否 / 是|`bezel_marker_service`|
+|`0017`|`0001` / `0002`|`micro_cam`|否 / 是|`bezel_marker_service`|
+|`0022`|`0001` / `0002`|`micro_cam`|否 / 是|`diallume_shape_service` / `diallume_texture_service`|
+|`0023`|`0001` / `0002`|`micro_cam`|否 / 是|`lume_hour_shape_service` / `lume_hour_texture_service`|
+|`0024`|`0001` / `0002`|`micro_cam`|否 / 是|`lume_hand_shape_service` / `lume_hand_texture_service`|
+|`0025`|`0001` / `0002`|`micro_cam`|否 / 是|`lume_hand_shape_service` / `lume_hand_texture_service`|
+|`0026`|`0001` / `0002`|`micro_cam`|否 / 是|`texture_service`|
+|`0058`|`0001` / `0002`|`micro_cam`|否 / 是|未配置 service|
+|`3003`|`0001`, `0002`|`macro_cam_1`|否，兩筆都是 standard|未配置 service|
+|`3006`|`0001` / `0002`|`macro_cam_1` / `micro_cam`|否，兩筆都是 standard|未配置 service|
+
+其中 `0001`、`0002` 這類 HDR 配對可在 `internalnum_config.yaml:550` 至 `internalnum_config.yaml:1699` 看到；`0058`、`3003`、`3006` 的多筆設定則位於 `internalnum_config.yaml:3189`、`internalnum_config.yaml:4431`、`internalnum_config.yaml:4596`。
+
+**system defaults 中所有已配置的分析 service**
+
+| Service                     | internalnum1                                   |
+| --------------------------- | ---------------------------------------------- |
+| `back_caliber_service`      | `3002`                                         |
+| `back_serialnum_service`    | `2003`                                         |
+| `rotor_text_service`        | `2002`                                         |
+| `lug_back_service`          | `1002`                                         |
+| `lug_front_service`         | `0007`                                         |
+| `features_letter_service`   | `0011`, `0013`                                 |
+| `features_crown_service`    | `0012`                                         |
+| `features_marker_service`   | `0014`, `0015`                                 |
+| `movement1_service`         | `3007`                                         |
+| `movement2_service`         | `2005`, `3010`                                 |
+| `crown2_service`            | `0032`                                         |
+| `ocr_service`               | `0004`, `0005`                                 |
+| `isolation_service`         | `2005`, `3010`, `3009`                         |
+| `bezel_marker_service`      | `0016`, `0017`, `0018`, `0019`, `0020`, `0021` |
+| `side_crown_service`        | `0006`                                         |
+| `texture_service`           | `0026`                                         |
+| `lume_hour_shape_service`   | `0023`, `1004`, `2004`, `3008`, `3009`         |
+| `lume_hour_texture_service` | `0023`                                         |
+| `lume_hand_shape_service`   | `0024`, `0025`                                 |
+| `lume_hand_texture_service` | `0024`, `0025`                                 |
+| `diallume_shape_service`    | `0022`                                         |
+| `diallume_texture_service`  | `0022`                                         |
+| `front_stitch_service`      | `0004`, `0005`, `0008`, `0009`, `0010`         |
+| `sidepoint_service`         | `0002`, `0003`                                 |
+| `rehaut_service`            | `0039`–`0050`                                  |
+
+另外，`0004`、`0005` 同時被 `ocr_service` 與 `front_stitch_service` 使用；`2005`、`3010` 同時被 `movement2_service` 與 `isolation_service` 使用；`3009` 同時被 `isolation_service` 與 `lume_hour_shape_service` 使用。這些對應來自 `system_config.defaults.yaml:160` 到 `system_config.defaults.yaml:488`。
+
+沒有出現在上述 service 清單中的 `internalnum1`，在目前的 `system_config.defaults.yaml` 中沒有配置分析 service。
+
+
+```
+
+```
 
 
 
