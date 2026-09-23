@@ -11,7 +11,7 @@
 | [[#### WatchSegAI 的三模型訓練架構]]                        |     |
 | [[ #### 請詳細解釋從頭開始要的完整pipeline]]                     |     |
 | [[#### 所有internalnum1 list整理]]                      |     |
-|                                                     |     |
+| [[#### 會使用 bump_wrapper並產生亮點分析檔案的 service]]         |     |
 |                                                     |     |
 
 #### App 設定對照表（dev）
@@ -2909,6 +2909,230 @@ micro_unet:
 另外，`0004`、`0005` 同時被 `ocr_service` 與 `front_stitch_service` 使用；`2005`、`3010` 同時被 `movement2_service` 與 `isolation_service` 使用；`3009` 同時被 `isolation_service` 與 `lume_hour_shape_service` 使用。這些對應來自 `system_config.defaults.yaml:160` 到 `system_config.defaults.yaml:488`。
 
 沒有出現在上述 service 清單中的 `internalnum1`，在目前的 `system_config.defaults.yaml` 中沒有配置分析 service。
+
+
+
+
+#### 會使用 bump_wrapper並產生亮點分析檔案的 service
+```
+請幫我整理在./config/system_config.defaults.yaml裡面的service分析, 有哪些是有使用到./algorithms/bump_wrapper.py, 並會使用images裡面的亮點分析, 並輸出類似結尾是_bump_delaunay.jpg, _bump_points.jpg, _bump_distribution.png, 以及把這些結果都存到report的json file裡, 所以在json file裡有包含哪些項目
+```
+整理結果如下。
+
+**會使用 `bump_wrapper.py` 並產生亮點分析檔案的 service**
+
+共有 **11 個 service**：
+
+| Service                     | 使用的分析流程                                                 |
+| --------------------------- | ------------------------------------------------------- |
+| `features_letter_service`   | `FeaturesProcessor`，分析 background / center feature 兩個區域 |
+| `features_crown_service`    | 同上，crown 模式                                             |
+| `features_marker_service`   | 同上，marker 模式                                            |
+| `bezel_marker_service`      | Bezel mask 後執行 bump 分析                                  |
+| `isolation_service`         | U-Net mask、預處理後執行 bump 分析                               |
+| `texture_service`           | 直接對整張 image 執行 bump 分析                                  |
+| `lume_hour_texture_service` | 對最多 3 個 lume sector 分別執行 bump 分析                        |
+| `lume_hand_texture_service` | 對 lume hand mask 執行 bump 分析                             |
+| `diallume_texture_service`  | 對 dial lume mask 執行 bump 分析                             |
+| `movement1_service`         | 對 movement number-3 mask 執行 bump 分析                     |
+| `movement2_service`         | 對 movement text mask 執行 bump 分析                         |
+
+Service 定義位於 `system_config.defaults.yaml`，共同的 bump 設定位於 `bump_config.yaml`。
+
+以下 service **雖然可能使用同一個 `server_micro_analysis.py`，但目前不會執行 bump 亮點分析**：
+
+- `features_*` 若 `include_bump_metrics: false`
+- `lume_hour_shape_service`
+- `lume_hand_shape_service`
+- `diallume_shape_service`
+- `side_crown_service`
+- 其他沒有呼叫 `run_micro_pipeline()` 的 service
+
+**產生的檔案**
+
+核心函式是 `SurfaceTextureAnalyzer.save_micro_artifacts()`：
+
+<prefix>_bump_points.jpg
+
+<prefix>_bump_delaunay.jpg
+
+<prefix>_bump_distribution.png
+
+<prefix>_bump.json
+
+預設全部開啟：
+
+artifacts:
+
+  save_points: true
+
+  save_delaunay: true
+
+  save_distribution: true
+
+  save_json: true
+
+不同 service 的檔名前綴例如：
+
+Texture_<image>_bump_points.jpg
+
+DialLumeTex_<image>_bump_delaunay.jpg
+
+LumeHourTex_<image>_S0_bump_distribution.png
+
+Features_<image>_letter_bg_bump.json
+
+Bezel_<image>_bump.json
+
+Movement2_<image>_bump.json
+
+**`_bump.json` 包含的項目**
+
+由 `summarize_micro_result()` 產生，內容包括：
+
+{
+
+  "raw_kps_count": 0,
+
+  "filtered_kps_count": 0,
+
+  "analysis_area_mm2": 0.0,
+
+  "density_per_mm2": 0.0,
+
+  "mask_area_px": 0,
+
+  "triangle_count": 0,
+
+  "geometry_stats": {
+
+    "area": {
+
+      "loc": 0.0,
+
+      "metric": 0.0,
+
+      "scale": 0.0,
+
+      "hist": [],
+
+      "edges": []
+
+    },
+
+    "dist": {},
+
+    "ratio": {}
+
+  },
+
+  "points": [
+
+    {
+
+      "x": 0.0,
+
+      "y": 0.0,
+
+      "size": 0.0,
+
+      "angle": 0.0,
+
+      "response": 0.0,
+
+      "octave": 0
+
+    }
+
+  ],
+
+  "config_snapshot": {
+
+    "pixel_scale_mm_per_px": 0.000548,
+
+    "kaze": {},
+
+    "micro": {}
+
+  }
+
+}
+
+其中：
+
+- `raw_kps_count`：KAZE 原始亮點數
+- `filtered_kps_count`：距離與 mask 篩選後的亮點數
+- `analysis_area_mm2`：分析面積
+- `density_per_mm2`：每平方毫米亮點密度
+- `mask_area_px`：分析 mask 的像素面積
+- `triangle_count`：Delaunay 三角形數量
+- `geometry_stats`：面積、距離、三角形比例的 histogram 與 peak 統計
+- `points`：每個亮點的座標、大小、角度、response、octave
+- `config_snapshot`：本次分析使用的 bump/KAZE/micro 設定
+
+**各 service 的主 report JSON**
+
+Service 自己產生的 `<prefix>_report.json` 通常包含：
+
+{
+
+  "task": "...",
+
+  "source_image": "...",
+
+  "status": "success",
+
+  "metrics": {},
+
+  "visuals": {},
+
+  "details": {},
+
+  "reports": {}
+
+}
+
+`visuals` 會記錄三個影像檔名，例如：
+
+"visuals": {
+
+  "bump_points": "Texture_xxx_bump_points.jpg",
+
+  "bump_delaunay": "Texture_xxx_bump_delaunay.jpg",
+
+  "bump_distribution": "Texture_xxx_bump_distribution.png"
+
+}
+
+`reports` 會記錄完整 bump JSON：
+
+"reports": {
+
+  "bump_json": "Texture_xxx_bump.json"
+
+}
+
+要注意：**主 service report 通常只保存 bump 摘要與檔名，不會把所有 `points` 座標完整嵌入其中**。完整亮點座標、histogram、Delaunay 數量等資料是在同目錄的 `<prefix>_bump.json` 裡。
+
+各類主 report 的主要欄位：
+
+- `texture_service`：`bump_features_count`、`bump_density`、`analysis_area_mm2`、`texture_stats.geometry_stats`
+- `diallume_texture_service` / `lume_hand_texture_service`：上述 bump metrics，加上 `binary_mask`、`texture_vis`
+- `lume_hour_texture_service`：`sectors_analyzed`、`total_bump_count`，以及每個 sector 的面積、亮點數、密度、geometry、artifact 檔名
+- `features_*_service`：`metrics.bump_analysis.background` 與 `metrics.bump_analysis.center_feature`
+- `bezel_marker_service`：`bump_particle_count`、`bump_density`、`details.bump`
+- `isolation_service`：`metrics.bump_analysis`，包含 geometry、density、raw/filtered keypoint 數
+- `movement1_service`：`details.bump`、`bump_density`、亮點數與 movement geometry
+- `movement2_service`：`metrics.texture.density`、`metrics.texture.surface_features`、`raw_data.bump_geometry_stats`
+
+主要實作可參考：
+
+- `texture_algo.py`
+- `features_algo.py`
+- `lume_hour_texture_algo.py`
+- `isolation_algo.py`
+- `movement2_algo.py`
+
 
 
 ```
