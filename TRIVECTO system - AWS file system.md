@@ -1,14 +1,14 @@
 
-|                                           |     |
-| ----------------------------------------- | --- |
-| [[#### S3 檔案結構跟DB是否需要更新 - thinkpad]]      |     |
-| [[#### S3 檔案結構跟DB是否需要更新 - laptop]]        |     |
-| [[#### 多個branch有各自的local database. 怎麼合併]] |     |
-|                                           |     |
-|                                           |     |
-|                                           |     |
-|                                           |     |
-|                                           |     |
+|                                           |          |
+| ----------------------------------------- | -------- |
+| [[#### S3 檔案結構跟DB是否需要更新 - thinkpad]]      | thinkpad |
+| [[#### S3 檔案結構跟DB是否需要更新 - laptop]]        | laptop   |
+| [[#### 多個branch有各自的local database. 怎麼合併]] | laptop   |
+| [[#### [ AWS ] 分析S3與資料庫架構 (laptop)  ]]    | laptop   |
+|                                           |          |
+|                                           |          |
+|                                           |          |
+|                                           |          |
 
 
 #### S3 檔案結構跟DB是否需要更新 - thinkpad
@@ -545,11 +545,579 @@ D:/Moonlight/
 
 
 
+#### [ AWS ] 分析S3與資料庫架構 (laptop)  
+```
+在目前的App main.py當在watchentry scan完一個watch的所有views包含front, back....會將所有image files存放在<watchentry id>的Raw folder, 而用./tasks/裡面對每個images分析的task service產生的結果包括image results跟json files也會存在<watchentry id>的Analysis folder, 同時這些raw folder跟Analysis folder的所有images, results也會將資訊存到local database. 而這些Raw folder跟Analysis folder裡面的images, files也會上傳到AWS S3儲存, local DB也會跟AWS DynamoDB同步. 請幫我整理這些Raw folder跟Analysis folder裡面的images, files上傳到AWS S3儲存的檔案結構? 是統一存放在同一個AWS裡面的folder? 還是按照不同watchentry or template or 時間不同folder? 然後local DB以及AWS DynamoDB又是怎麼管理這些data資料, 譬如是否有指標可以容易找到local database裡面每張image或結果image對應的UUID? 是否有指標可以容易找到AWS DynamoDB裡面每張image或結果image對應的UUID?
+
+而我現在AWS S3上面看的主要資料夾結構是:  
+Amazon S3/Buckets/的下面有兩個:  
+auth-isolated-lab-001-426476636376-us-east-2  
+moonlight-system-v2
+
+Amazon S3/Buckets/moonlight-system-v2的下面有  
+AUTH_UI_20260908_164328_961/runs/
+
+authentication/training/
+
+Moonlight_system_v1/下面有307 folders
+
+Raw/下面有999+個png files
+
+sites/Moonlight system v1/
+
+watchshift/下面有這些資料夾  
+test_116613_T_v1/  
+test_16613_T_v1/  
+test1/  
+test1201/  
+test1351/  
+test1419_openbackcrown/  
+test1428/  
+tets16613T_v2/  
+test2/
+
+然後現在資料跟結果存放在AWS S3的檔案結構是否在管理上方便? 以及要支援多站點都進行掃描可以順暢的上傳到AWS S3管理? 而這樣的AWS檔案結構跟database設定對在local跟AWS協同的authentication pipeline是否也是優良的? 這樣的AWS檔案結構跟database設定對在local跟AWS協同的authentication pipeline是否也是優良的? 這樣的AWS檔案結構跟database設定對檔案, images等地搜尋功能(譬如尋找AWS S3上某個uuid的image file是屬於哪個watchid, 是屬於哪個template)是否也是優良的? 請深入分析並將結果整理, 並提供建議, 譬如像Raw似乎有兩個新舊版本或其他有新舊版本, 請建議只選一個. 所以最後要總結你建議的AWS S3上面看的主要資料夾結構
+```
+## 結論
+
+目前並不是一套統一的 S3 結構，而是至少四代／四種寫法同時存在：
+
+1. 舊版扁平結構：`Raw/<uuid>`、`Analysis/<uuid>`
+2. App task 結果結構：`Moonlight_system_v1/<WatchID>/Analysis/<ExpID>/...`
+3. 新版結構：`sites/<SiteID>/watches/<WatchID>/runs/<RunID>/...`
+4. Authentication 專用結構：`<WatchID>/runs/<ScanID>/authentication/...` 與 `authentication/...`
+
+因此目前：
+
+- Raw image 的新版 UUID/provenance 管理已經相對完整。
+- Analysis task 的 image/json 結果仍主要走舊表、舊 prefix，UUID 與來源 image 關聯不完整。
+- 多站點在「新版 Raw」部分已有雛形，但 Analysis、Authentication 還沒有完全納入同一個 Site/Run namespace。
+- 本機設定目前關閉 AWS sync；SQLite 裡有大量待同步 outbox，不代表資料已經上傳到 S3/DynamoDB。
+- 我建議 operational inspection data 最後只保留 `sites/<site>/watches/<watch>/runs/<run>/...` 這一套。`Raw/`、`Moonlight_system_v1/` 等只保留為歷史唯讀 prefix，停止新寫入。
+
+另外，`auth-isolated-lab-001-...` 是刻意隔離的 authentication PREPROD/qualification bucket，不應和 production bucket 合併。
+
+---
+
+## 目前實際的本機與 S3 結構
+
+本機 App capture 現在主要存成：
 
 ```
-
+Local_Data/<WatchID>/
+├── Raw/
+│   └── <asset_uuid>.png
+└── Analysis/
+    └── Exp_<timestamp>_<random8>/
+        ├── <TaskName>_<source_uuid>_<result>.png
+        ├── <TaskName>_<source_uuid>_report.json
+        ├── debug images
+        └── yaml/json/result files
 ```
 
+Raw image 由 [`process_and_sync_raw_image` (line 442)](D:/Provenance Laboratories projects/ImagingLibWatch/data_manager/local_storage.py:442) 產生 32 字元 UUID 檔名，再存進 `<WatchID>/Raw/`。
+
+新版 S3 key builder 在 [`build_artifact_s3_key` (line 392)](D:/Provenance Laboratories projects/ImagingLibWatch/data_manager/local_storage.py:392)，預設產生：
+
+```
+sites/<SiteID>/watches/<WatchID>/runs/<RunID>/raw/<asset_uuid>.png
+
+sites/<SiteID>/watches/<WatchID>/runs/<RunID>/
+  experiments/<ExperimentID>/<artifact_type>/<filename>
+```
+
+但 App 目前執行 task analysis 時，仍直接手工組合另一套 key：
+
+```
+<DeviceID>/<WatchID>/Analysis/<ExpID>/<task-output-filename>
+```
+
+實作在 [App/main.py (line 34923)](D:/Provenance Laboratories projects/ImagingLibWatch/App/main.py:34923)，所以您的 bucket 才會出現：
+
+```
+Moonlight_system_v1/<很多 WatchID folders>/Analysis/...
+```
+
+而不是全部進入 `sites/...`。
+
+### 您看到的各個 prefix 代表什麼
+
+|S3 prefix|來源／用途|判定|
+|---|---|---|
+|`Raw/`|舊版 `structured_s3_keys=false` 的 raw images|舊版，停止新寫入|
+|`Analysis/`|舊版 DataManager analysis reports/results|舊版，停止新寫入|
+|`Moonlight_system_v1/<WatchID>/Analysis/...`|App/task service 目前仍使用的 DeviceID 路徑|仍在使用，但應遷移|
+|`sites/<SiteID>/watches/...`|新版 Raw、camera pipeline reports 等|建議保留為唯一 operational 結構|
+|`<WatchID>/runs/<ScanID>/authentication/...`|每次掃描的 authentication features/results|應併入 `sites/.../runs/...`|
+|`authentication/training/...`|跨站點 training corpus、bundle、training runs|Authentication 全域資料，應獨立管理|
+|`watchshift/<TemplateID>/...`|Template/view 對應的 watchshift reference|合理，但建議加 template version|
+|`AUTH_UI_.../runs/`|很可能是 authentication UI/test 產生、以 WatchID 作為根目錄的 scan|推論；repo 找不到這個固定名稱|
+|`auth-isolated-lab-001-...` bucket|Authentication 隔離測試／PREPROD|應保留獨立 bucket|
+
+Watchshift 的正式 key 是：
+
+```
+watchshift/<TemplateID>/<view>.toppoint1.png
+```
+
+定義在 [internalnum_config.py (line 1897)](D:/Provenance Laboratories projects/ImagingLibWatch/DB/templates/internalnum_config.py:1897)。
+
+---
+
+## Local SQLite 現況
+
+資料庫同時保留兩代 schema。
+
+### 舊表
+
+```
+raw_images
+experiment_results
+```
+
+### 新版 normalized/provenance 表
+
+```
+watch_runs
+  └── experiments
+       └── point_instances
+            └── capture_instances
+                 └── image_assets
+                      └── analysis_results_v2
+
+artifact_records
+feature_observation_batches
+authentication_results
+sync_outbox
+```
+
+Schema 位於 [DB/db_manager.py (line 47)](D:/Provenance Laboratories projects/ImagingLibWatch/DB/db_manager.py:47)。
+
+這個新版模型方向是正確的：
+
+- point metadata 與 image metadata 分開。
+- 同一個 watch point 可以有多個 capture/image。
+- `asset_role` 可表達 `raw_single`、`raw_bracket`、`hdr_fused`。
+- 每個 image 有 `asset_id`。
+- analysis result 可用 `result_id` 並透過 `asset_id/source_asset_id` 指回來源 image。
+
+### 目前資料庫實際盤點
+
+這份 `DB/watchDB.db` snapshot 中：
+
+|項目|數量／狀態|
+|---|---|
+|`raw_images`|69|
+|`image_assets`|68|
+|採新 `sites/...` raw key|67|
+|舊 `Raw/...` raw key|2|
+|`experiment_results`|178|
+|`analysis_results_v2`|**0**|
+|`artifact_records`|69|
+|`feature_observation_batches`|32|
+|`authentication_results`|2|
+|`sync_outbox`|**907，全部 pending**|
+
+這表示 Raw 已大致進入新模型，但目前 App 產生的 task results 尚未透過 `register_analysis_result_v2()` 寫入新版 analysis 表。
+
+檔案和 DB 也不是完全一對一：
+
+- `Local_Data` 中有 534 個 Analysis files。
+- 只有 91 個不同檔案路徑出現在 `experiment_results`。
+- 443 個 Analysis files 在這份 DB snapshot 找不到對應 row。
+- 178 個 result rows 中，有 86 個是重複指向已出現過的檔案路徑。
+
+部分可能是舊資料庫遺留或 task debug outputs，但至少證明「所有 Analysis files 都已確實入庫」目前不成立。
+
+---
+
+## UUID 是否容易查找？
+
+### Raw image：新版相對良好
+
+Raw image 的：
+
+```
+檔名 UUID
+= image_assets.asset_id
+= DynamoDB sort_key
+= uuid_pk 中的 UUID
+```
+
+新版 `image_assets` 也有：
+
+- `watchid`
+- `run_id`
+- `template_id`
+- `template_version`
+- `view_name`
+- `point_name`
+- `capture_id`
+- `internalnum1/internalnum2`
+- `asset_role`
+- `s3_key`
+- `content_sha256`
+
+本機已有 `local_lookup --identifier <uuid>`，底層是 [`LocalProvenanceQueryService.lookup_uuid` (line 140)](D:/Provenance Laboratories projects/ImagingLibWatch/data_manager/provenance_query.py:140)。
+
+所以對新 Raw image 而言，從 UUID 找到 WatchID、Run、Template、Point、S3 key 是可行的。
+
+### Analysis result：目前不夠好
+
+目前 App 將 task outputs 寫入 `experiment_results` 時，沒有傳完整的：
+
+- `result_id`
+- `source_asset_id`
+- `run_id`
+- `experiment_id`
+- `template_id/version`
+
+結果 outbox 只臨時產生：
+
+```
+legacy_result_178
+legacy_result_177
+...
+```
+
+這不是全域 UUID，而只是本機 SQLite autoincrement 衍生值。多站點都可能產生 `legacy_result_178`。
+
+而 task output 檔名中常見的 32 字元 UUID，多數是「來源 Raw image UUID」，不是這張 result image 自己的 UUID。
+
+因此目前：
+
+- 可從某些 result filename 猜到來源 raw UUID。
+- 不能保證每個 result file 都有自己的全域唯一 UUID。
+- 很多 result row 沒有直接 source-asset linkage。
+- 本機 `lookup_uuid()` 主要查 `image_assets` 和 `artifact_records`，並不完整涵蓋這些 legacy result IDs。
+
+---
+
+## DynamoDB 現況
+
+`moonlight-WatchAnalysisResults` 的設計是：
+
+```
+PK: WatchID
+SK: sort_key = asset_id / result_id
+```
+
+每個 index item 另寫入：
+
+```
+uuid_pk = UUID#<asset_or_result_id>
+uuid_sk = WATCH#<WatchID>#TYPE#<type>#TS#<timestamp>
+
+source_asset_pk = ASSET#<source_asset_id>
+source_asset_sk = TYPE#...#ID#...
+```
+
+實作在 [cloud_db.py (line 165)](D:/Provenance Laboratories projects/ImagingLibWatch/data_manager/cloud_db.py:165)。
+
+程式提供：
+
+- `query_by_uuid()`，預設查 `UuidIndex`
+- `query_by_source_asset()`，預設查 `SourceAssetIndex`
+
+但是這兩個 GSI 只是程式假設存在；repo 沒有 main results table 的 IaC provisioning。此次 AWS CLI 也因本機沒有 `default` AWS profile，無法確認實際 table 是否真的有：
+
+```
+UuidIndex
+SourceAssetIndex
+BrandModelIndex
+```
+
+所以目前應理解為：
+
+- 程式「準備好寫入 UUID GSI 欄位」。
+- 但不能確認 AWS table「已建立對應 GSI」。
+- 若 GSI 不存在，`query_by_uuid()` 會直接失敗。
+- 即使 GSI 存在，legacy Analysis result 的 `legacy_result_N` 仍不是合格的全域 UUID。
+- 目前也沒有 TemplateID lookup GSI；依 template 查 assets 可能需要 DynamoDB Scan 或 Athena。
+
+---
+
+## Sync 與多站點評估
+
+目前機器設定為：
+
+```
+security.enable_cloud_sync: false
+sync.legacy_polling_enabled: false
+sync.outbox_enabled: false
+system.mode: simulation
+system.site_id: laptop
+```
+
+因此這台機器目前不會自動同步。907 筆 outbox 全部 pending，正是這個結果。
+
+新版 transactional outbox 本身設計不錯：
+
+1. 先寫 SQLite 與 outbox。
+2. 先上傳 S3。
+3. 驗證檔案大小和 SHA-256 metadata。
+4. S3 完成後才寫 DynamoDB catalog。
+5. 最多嘗試五次，失敗進 dead-letter 狀態。
+
+邏輯在 [outbox_dispatcher.py (line 47)](D:/Provenance Laboratories projects/ImagingLibWatch/data_manager/outbox_dispatcher.py:47)。
+
+但要支援多站點，還缺少：
+
+- 每台 production station 的穩定且唯一 `site_id/station_id`，不能使用 `laptop`。
+- 所有 task output 必須共同使用中央 S3 key builder。
+- Authentication operational keys 必須包含 SiteID。
+- 只能啟用 outbox writer；不要同時啟用 legacy polling。
+- DynamoDB GSI 必須由 IaC 正式建立及驗證。
+- `legacy_result_<local integer>` 必須淘汰。
+- Site、WatchID、RunID、ObjectID 都要具備跨站點唯一性。
+
+所以目前架構「有多站點基礎」，但還不能稱為可安全擴展的多站點 production 架構。
+
+---
+
+## Authentication pipeline 評估
+
+較好的部分：
+
+- `auth-isolated-lab-001-...` 使用獨立 bucket，是正確的 fail-closed PREPROD 隔離。
+- Training corpus 已使用適合 Athena/Glue 的 Hive partition：
+
+```
+authentication/training/samples/
+  feature_schema_version=<...>/
+  extractor_version=<...>/
+  series=<...>/
+  site_id=<...>/
+  dt=YYYY-MM-DD/
+  <sample_id>.json
+```
+
+定義在 [storage_layout.py (line 22)](D:/Provenance Laboratories projects/ImagingLibWatch/core/authentication/storage_layout.py:22)。
+
+- Bundle 有 immutable version prefix、signature 與 target pointer。
+- Authentication result/feature batch 都有穩定 hash-based ID。
+
+需要改善的部分：
+
+- Operational authentication data 目前是：
+
+```
+<WatchID>/runs/<ScanID>/authentication/features/...
+<WatchID>/runs/<ScanID>/authentication/results/...
+```
+
+見 [runtime.py (line 748)](D:/Provenance Laboratories projects/ImagingLibWatch/core/authentication/integration/runtime.py:748)。
+
+它沒有 SiteID，且和 Raw 的 `sites/<site>/watches/...` 不同根。
+
+- Analysis source lineage 不完整，會削弱 authentication evidence 的可追溯性。
+- 目前本機只有 provisional `NOT_EVALUATED` results，且相關 outbox 尚未同步。
+- Production authentication bundles/corpora 最好放在獨立 private bucket，不要和 UI/site hosting、一般 scan data 混用相同權限與 lifecycle。
+
+---
+
+## 我建議最後只保留的 operational S3 結構
+
+S3 並沒有真正的 folder，以下是 object-key prefix。建議唯一的新寫入結構為：
+
+```
+moonlight-system-v2/
+└── sites/
+    └── <site_id>/
+        └── watches/
+            └── <watch_id>/
+                └── runs/
+                    └── <run_id>/
+                        ├── manifest/
+                        │   └── run.json
+                        │
+                        ├── raw/
+                        │   └── <view>/
+                        │       └── <point>/
+                        │           └── <capture_id>/
+                        │               └── <asset_role>/
+                        │                   └── <asset_uuid>.<ext>
+                        │
+                        ├── analysis/
+                        │   └── <algorithm_name>/
+                        │       └── <result_type>/
+                        │           └── <result_uuid>.<ext>
+                        │
+                        ├── reports/
+                        │   └── <artifact_type>/
+                        │       └── <artifact_uuid>.<ext>
+                        │
+                        └── authentication/
+                            ├── features/
+                            │   └── <batch_id>.json
+                            └── results/
+                                └── <authentication_result_id>.json
+```
+
+Template 不建議放進每個 image key，因為 TemplateID/version 是 run metadata，不是 object ownership。應存在：
+
+```
+run.json
+watch_runs
+image_assets / analysis_results_v2
+DynamoDB catalog item
+```
+
+時間也不必再做一層 folder；以 `run_id`、`started_at`、`captured_at` 和 DynamoDB time index 管理。日期 partition 只用在 Athena lake 與 authentication training corpus。
+
+Watchshift 建議改成：
+
+```
+references/
+└── watchshift/
+    └── templates/
+        └── <template_id>/
+            └── versions/
+                └── <template_version>/
+                    └── <view>/
+                        └── toppoint1.png
+```
+
+Authentication production 資料最好使用另一個 bucket：
+
+```
+moonlight-auth-production/
+└── authentication/
+    ├── authored/
+    ├── training/samples/...
+    ├── training-runs/...
+    └── bundles/
+        ├── <bundle_version>/...
+        ├── <bundle_version>.sig
+        ├── current.json
+        └── targets/...
+```
+
+`auth-isolated-lab-001-...` 繼續作為 PREPROD 隔離 bucket，不合併。
+
+---
+
+## 哪些舊 prefix 應停止使用
+
+停止所有新寫入：
+
+```
+Raw/
+Analysis/
+Moonlight_system_v1/<WatchID>/Analysis/
+<WatchID>/Analysis/
+<WatchID>/runs/...              # operational authentication 舊根
+```
+
+保留但逐步搬遷：
+
+```
+watchshift/                     → references/watchshift/...
+authentication/training/...     → authentication 專用 bucket
+```
+
+不要直接在 S3 Console 用「移動」處理。S3 move 實際上是 copy + delete，會讓 SQLite/DynamoDB 裡的 `s3_key` 全部失效。正確方式是：
+
+1. 產生 S3 Inventory。
+2. 以 SQLite、DynamoDB、S3 Inventory 建 migration manifest。
+3. 複製到新 key。
+4. 驗證 size、SHA-256、UUID、WatchID、RunID。
+5. 更新 catalog。
+6. 經過觀察期後，用 lifecycle 移除舊 object。
+
+---
+
+## 資料庫最重要的改善
+
+短期、最小安全修改：
+
+1. App 所有 task outputs 改用 `register_analysis_result_v2()`。
+2. 每個 output file 自己取得真正的 `result_uuid`。
+3. 必須填入 `source_asset_id`、`watchid`、`run_id`、`experiment_id`、`template_id/version`。
+4. 所有 S3 key 只能由一個中央 builder 產生，刪除散落的手工 f-string。
+5. 加入 indexes：
+
+```
+analysis_results_v2(result_identifier)
+analysis_results_v2(s3_key)
+analysis_results_v2(watchid, run_id, algorithm_name)
+artifact_records(s3_key)
+artifact_records(capture_instance_id)
+```
+
+6. 對 `s3_key` 加合理的 unique/partial-unique constraint。
+7. 將 legacy tables 降為 compatibility mirror，不再當主要 writer。
+
+DynamoDB 長期建議拆開：
+
+```
+MoonlightWatchEntries
+MoonlightAssetCatalog
+MoonlightWatchTemplates
+MoonlightAuthentication...
+```
+
+其中 `MoonlightAssetCatalog` 最好直接：
+
+```
+PK: ObjectID = <asset/result/artifact UUID>
+```
+
+如此從 UUID 查找不需要 GSI，直接 `GetItem`。另建立：
+
+- WatchRunIndex
+- TemplateVersionIndex
+- SourceAssetIndex
+- SiteCapturedAtIndex
+
+每筆 catalog item必須包含：
+
+```
+object_id
+object_type
+source_object_id
+site_id
+station_id
+watch_id
+run_id
+experiment_id
+template_id
+template_version
+view_name
+point_name
+capture_id
+asset_role/result_type
+s3_bucket
+s3_key
+content_sha256
+captured_at
+sync_status
+```
+
+---
+
+## 最後判斷
+
+目前架構不是完全不良；新版 Raw、normalized DB、outbox、SHA-256 驗證與 authentication isolation 都是正確方向。但現在處於「遷移一半」：
+
+- Raw 已進新版。
+- Analysis 仍在舊版。
+- Authentication 有自己的第三套路徑。
+- DynamoDB UUID lookup 依賴未確認存在的 GSI。
+- 本機 cloud sync 完全停用。
+- S3 bucket 中混有歷史、production、test、reference、authentication 等多種 lifecycle。
+
+所以我建議選定並只保留：
+
+```
+sites/<site_id>/watches/<watch_id>/runs/<run_id>/...
+```
+
+作為所有 inspection operational data 的唯一結構；不要再寫入頂層 `Raw/` 或 `Moonlight_system_v1/`。Template 用 DB/manifest 關聯，時間用 Run 與 timestamp index，UUID 用 Asset Catalog 查詢。
+
+這次是只讀分析，沒有修改任何檔案。最大未驗證項是 AWS 上實際 DynamoDB GSI、bucket versioning/lifecycle/policy，因本機沒有可用 AWS profile；正式遷移前必須在 AWS Console 或有權限的 profile 下核對。
+
+10:09 AM
 
 
 
