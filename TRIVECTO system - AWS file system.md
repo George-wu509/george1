@@ -644,17 +644,17 @@ Moonlight_system_v1/<很多 WatchID folders>/Analysis/...
 
 ### 您看到的各個 prefix 代表什麼
 
-|S3 prefix|來源／用途|判定|
-|---|---|---|
-|`Raw/`|舊版 `structured_s3_keys=false` 的 raw images|舊版，停止新寫入|
-|`Analysis/`|舊版 DataManager analysis reports/results|舊版，停止新寫入|
-|`Moonlight_system_v1/<WatchID>/Analysis/...`|App/task service 目前仍使用的 DeviceID 路徑|仍在使用，但應遷移|
-|`sites/<SiteID>/watches/...`|新版 Raw、camera pipeline reports 等|建議保留為唯一 operational 結構|
-|`<WatchID>/runs/<ScanID>/authentication/...`|每次掃描的 authentication features/results|應併入 `sites/.../runs/...`|
-|`authentication/training/...`|跨站點 training corpus、bundle、training runs|Authentication 全域資料，應獨立管理|
-|`watchshift/<TemplateID>/...`|Template/view 對應的 watchshift reference|合理，但建議加 template version|
-|`AUTH_UI_.../runs/`|很可能是 authentication UI/test 產生、以 WatchID 作為根目錄的 scan|推論；repo 找不到這個固定名稱|
-|`auth-isolated-lab-001-...` bucket|Authentication 隔離測試／PREPROD|應保留獨立 bucket|
+| S3 prefix                                    | 來源／用途                                                | 判定                        |
+| -------------------------------------------- | ---------------------------------------------------- | ------------------------- |
+| `Raw/`                                       | 舊版 `structured_s3_keys=false` 的 raw images           | 舊版，停止新寫入                  |
+| `Analysis/`                                  | 舊版 DataManager analysis reports/results              | 舊版，停止新寫入                  |
+| `Moonlight_system_v1/<WatchID>/Analysis/...` | App/task service 目前仍使用的 DeviceID 路徑                  | 仍在使用，但應遷移                 |
+| `sites/<SiteID>/watches/...`                 | 新版 Raw、camera pipeline reports 等                     | 建議保留為唯一 operational 結構    |
+| `<WatchID>/runs/<ScanID>/authentication/...` | 每次掃描的 authentication features/results                | 應併入 `sites/.../runs/...`  |
+| `authentication/training/...`                | 跨站點 training corpus、bundle、training runs             | Authentication 全域資料，應獨立管理 |
+| `watchshift/<TemplateID>/...`                | Template/view 對應的 watchshift reference               | 合理，但建議加 template version  |
+| `AUTH_UI_.../runs/`                          | 很可能是 authentication UI/test 產生、以 WatchID 作為根目錄的 scan | 推論；repo 找不到這個固定名稱         |
+| `auth-isolated-lab-001-...` bucket           | Authentication 隔離測試／PREPROD                          | 應保留獨立 bucket              |
 
 Watchshift 的正式 key 是：
 
