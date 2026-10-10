@@ -4,7 +4,7 @@
 | [[#### 2026 美國 Senior AI Engineer 求職完整指南]] |     |
 |                                            |     |
 
-#### 2026 美國 Senior AI Engineer 求職完整指南
+#### 2026 USA Senior AI Engineer 求職完整指南
 ```
 請幫我整理2026年在美國要求職 computer vision方向的AI engineer及類似以AI跟computer vision, imaging processing為主的senior以上職位, 需求的技能是甚麼請詳細列出, 以及面試時可能會考到的是甚麼請詳細列出. 最後如果是LLM方向的相同職位又各是甚麼
 ```
@@ -20,6 +20,7 @@
 | Senior Machine Vision / Inspection Engineer          | [ industrial ]<br>工業瑕疵偵測、自動化影像分析                         | 結合Camera影像演算法, Lighting、Calibration、AI、Automation、AI、Motion Control、Robotics 與實際工業設備                                                                |
 | Senior Multimodal / Vision-Language Engineer         | [ VLM ]<br>結合影像與文字推理                                     | VLM、Multimodal AI	ViT、CLIP、VLM、LLM、Fine-tuning                                                                                                      |
 |                                                      |                                                          |                                                                                                                                                     |
+| openAI - Applied AI Engineer                         |                                                          | 強調 Agent、Retrieval、Evaluation、Reliability、Latency、Cost、Security，以及將 AI 從 Prototype 推進到 Production                                                   |
 
 # 2026 美國 Senior AI Engineer 求職完整指南
 
@@ -56,15 +57,15 @@ Computer Vision · Image Processing · Machine Learning · LLM · Generative AI
 
 ### Computer Vision 與 LLM 的核心差異
 
-|比較項目|Computer Vision AI Engineer|LLM AI Engineer|
-|---|---|---|
-|核心問題|讓 AI 理解影像、影片、3D 與感測器資料|讓 AI 理解、生成、推理與執行任務|
-|主要模型|CNN、ViT、YOLO、SAM、VLM|Transformer、LLM、Embedding、Reasoning Models|
-|主要工作|Detection、Segmentation、OCR、Tracking、Inspection|RAG、Agent、Fine-tuning、LLM Evaluation|
-|重要底層技術|OpenCV、影像處理、Camera、Geometry|Attention、Tokenization、Inference、Retrieval|
-|系統整合|Camera、Lighting、GPU、Edge、Robotics|API、Vector DB、Tool Calling、Cloud|
-|2026 新興方向|Vision Foundation Models、Physical AI、Multimodal|Agentic AI、Reasoning、Post-training、Agent Evaluation|
-|Senior 核心能力|能打造可靠的 End-to-End Vision System|能打造可靠的 End-to-End LLM System|
+| 比較項目        | Computer Vision AI Engineer                     | LLM AI Engineer                                     |
+| ----------- | ----------------------------------------------- | --------------------------------------------------- |
+| 核心問題        | 讓 AI 理解影像、影片、3D 與感測器資料                          | 讓 AI 理解、生成、推理與執行任務                                  |
+| 主要模型        | CNN、ViT、YOLO、SAM、VLM                            | Transformer、LLM、Embedding、Reasoning Models          |
+| 主要工作        | Detection、Segmentation、OCR、Tracking、Inspection  | RAG、Agent、Fine-tuning、LLM Evaluation                |
+| 重要底層技術      | OpenCV、影像處理、Camera、Geometry                     | Attention、Tokenization、Inference、Retrieval          |
+| 系統整合        | Camera、Lighting、GPU、Edge、Robotics               | API、Vector DB、Tool Calling、Cloud                    |
+| 2026 新興方向   | Vision Foundation Models、Physical AI、Multimodal | Agentic AI、Reasoning、Post-training、Agent Evaluation |
+| Senior 核心能力 | 能打造可靠的 End-to-End Vision System                 | 能打造可靠的 End-to-End LLM System                        |
 
 有一項特別值得注意：Computer Vision 和 LLM 正在 Multimodal AI／Vision-Language Model（VLM）領域交會。
 
@@ -412,42 +413,42 @@ Senior 應該會分析以下問題：
 
 #### A. Classical Vision / Image Processing
 
-|可能考題|面試官期待的回答重點|
-|---|---|
-|1. Gaussian Filter 與 Median Filter 有什麼差異？|線性／非線性、Gaussian Noise、Salt-and-pepper Noise|
-|2. Laplacian 與 Tenengrad 如何用於 Autofocus？|Focus Measure、Gradient、Noise、搜尋策略|
-|3. HDR Merge 如何處理不同曝光影像？|Exposure、Alignment、Weighting、Ghosting|
-|4. 如何校正 Camera Lens Distortion？|Intrinsic Matrix、Radial／Tangential Distortion|
-|5. Image Stitching 有哪幾個主要步驟？|Feature Matching、RANSAC、Homography、Blending|
-|6. 如何衡量影像 Sharpness？|Laplacian Variance、MTF、頻率響應|
-|7. RGB、HSV、Lab 各適合什麼分析？|色彩表示、亮度分離、Color Distance|
-|8. 為什麼更高解析度不一定代表更好的辨識率？|Optical Resolution、SNR、Blur、Data Quality|
+| 可能考題                                      | 面試官期待的回答重點                                    |
+| ----------------------------------------- | --------------------------------------------- |
+| 1. Gaussian Filter 與 Median Filter 有什麼差異？ | 線性／非線性、Gaussian Noise、Salt-and-pepper Noise   |
+| 2. Laplacian 與 Tenengrad 如何用於 Autofocus？  | Focus Measure、Gradient、Noise、搜尋策略             |
+| 3. HDR Merge 如何處理不同曝光影像？                  | Exposure、Alignment、Weighting、Ghosting         |
+| 4. 如何校正 Camera Lens Distortion？           | Intrinsic Matrix、Radial／Tangential Distortion |
+| 5. Image Stitching 有哪幾個主要步驟？              | Feature Matching、RANSAC、Homography、Blending   |
+| 6. 如何衡量影像 Sharpness？                      | Laplacian Variance、MTF、頻率響應                   |
+| 7. RGB、HSV、Lab 各適合什麼分析？                   | 色彩表示、亮度分離、Color Distance                      |
+| 8. 為什麼更高解析度不一定代表更好的辨識率？                   | Optical Resolution、SNR、Blur、Data Quality      |
 
 #### B. Deep Learning / ML
 
-|可能考題|面試官期待的回答重點|
-|---|---|
-|9. U-Net 為什麼適合 Semantic Segmentation？|Encoder／Decoder、Skip Connections|
-|10. YOLO 和 DETR 差異在哪裡？|Detection Architecture、Speed、Training、Matching|
-|11. CNN 與 Vision Transformer 如何選擇？|Inductive Bias、Data Requirement、Compute|
-|12. 小型目標只佔影像 1%，如何提高辨識率？|High-resolution Crops、Multi-scale、Sampling|
-|13. Dataset 只有 500 張時，如何訓練 Segmentation Model？|Transfer Learning、Augmentation、Validation|
-|14. Class Imbalance 如何處理？|Sampling、Focal Loss、Dice Loss、Threshold|
-|15. Training Accuracy 很高但 Test Accuracy 很低，怎麼辦？|Overfitting、Data Leakage、Distribution Shift|
-|16. 如何發現 Model Learning 了錯誤特徵？|Error Analysis、Saliency、Counterfactual Tests|
-|17. 如何比較兩個 Model 是否真的有提升？|Independent Test Set、Statistical Significance、Slice Analysis|
-|18. Model Confidence 很高卻經常判錯，如何改善？|Calibration、OOD Detection、Uncertainty|
+| 可能考題                                            | 面試官期待的回答重點                                                   |
+| ----------------------------------------------- | ------------------------------------------------------------ |
+| 9. U-Net 為什麼適合 Semantic Segmentation？           | Encoder／Decoder、Skip Connections                             |
+| 10. YOLO 和 DETR 差異在哪裡？                          | Detection Architecture、Speed、Training、Matching               |
+| 11. CNN 與 Vision Transformer 如何選擇？              | Inductive Bias、Data Requirement、Compute                      |
+| 12. 小型目標只佔影像 1%，如何提高辨識率？                        | High-resolution Crops、Multi-scale、Sampling                   |
+| 13. Dataset 只有 500 張時，如何訓練 Segmentation Model？  | Transfer Learning、Augmentation、Validation                    |
+| 14. Class Imbalance 如何處理？                       | Sampling、Focal Loss、Dice Loss、Threshold                      |
+| 15. Training Accuracy 很高但 Test Accuracy 很低，怎麼辦？ | Overfitting、Data Leakage、Distribution Shift                  |
+| 16. 如何發現 Model Learning 了錯誤特徵？                  | Error Analysis、Saliency、Counterfactual Tests                 |
+| 17. 如何比較兩個 Model 是否真的有提升？                       | Independent Test Set、Statistical Significance、Slice Analysis |
+| 18. Model Confidence 很高卻經常判錯，如何改善？              | Calibration、OOD Detection、Uncertainty                        |
 
 #### C. Model Deployment / Performance
 
-|可能考題|面試官期待的回答重點|
-|---|---|
-|19. PyTorch Inference 太慢，怎麼找瓶頸？|Profiling、GPU Utilization、Transfer Cost|
-|20. INT8 Quantization 對模型有什麼影響？|Accuracy／Latency Tradeoff、Calibration|
-|21. 要把 1 秒 Inference 降成 100 ms，怎麼做？|ROI、Model Choice、Compression、Hardware|
-|22. 如何設計多相機平行擷取系統？|Queue、Concurrency、Synchronization、Backpressure|
-|23. 如果 Production Camera 的顏色與 Training Camera 不同怎麼辦？|Color Calibration、Domain Shift、Retraining|
-|24. 如何確保新 Model 更新不會降低 Production 品質？|Golden Dataset、Regression、Canary、Rollback|
+| 可能考題                                                 | 面試官期待的回答重點                                     |
+| ---------------------------------------------------- | ---------------------------------------------- |
+| 19. PyTorch Inference 太慢，怎麼找瓶頸？                      | Profiling、GPU Utilization、Transfer Cost        |
+| 20. INT8 Quantization 對模型有什麼影響？                      | Accuracy／Latency Tradeoff、Calibration          |
+| 21. 要把 1 秒 Inference 降成 100 ms，怎麼做？                  | ROI、Model Choice、Compression、Hardware          |
+| 22. 如何設計多相機平行擷取系統？                                   | Queue、Concurrency、Synchronization、Backpressure |
+| 23. 如果 Production Camera 的顏色與 Training Camera 不同怎麼辦？ | Color Calibration、Domain Shift、Retraining      |
+| 24. 如何確保新 Model 更新不會降低 Production 品質？                | Golden Dataset、Regression、Canary、Rollback      |
 
 ### 5.4 Imaging / Machine Vision 特別容易深入追問的實務題
 
@@ -460,36 +461,23 @@ Senior 應該會分析以下問題：
 比較完整的回答應該包括：
 
 1. 檢查 Raw Image，不要先對增強後影像下結論。
-    
 2. 檢查 Exposure、Gain、Motion Blur、Depth of Field。
-    
 3. 檢查 Lens Resolution、Focus、Pixel Scale。
-    
 4. 分析影像中的字元實際佔多少 Pixels。
-    
 5. 檢查 Demosaic、Sharpening 是否產生 Artifact。
-    
 6. 使用 Ground-truth Crops 區分 Detection 與 Recognition Error。
-    
 7. 最後才決定要改善光學、資料，還是模型。
-    
 
 情境二：模型在實驗室有 99% Accuracy，上線後只有 92%。
 
 優秀回答不會直接說「重新訓練模型」，而是先調查：
 
 - Camera 或 Lighting 是否更換？
-    
 - 新設備是否存在 Calibration 差異？
-    
 - Production 資料是否涵蓋不同零件／外觀？
-    
 - 是否因少見 Class、低品質影像、標註錯誤而下降？
-    
 - Accuracy 是否掩蓋了重要的 False Negative？
-    
 - 如何建立監測、人工複核、資料回饋與安全回滾機制？
-    
 
 ### 5.5 ML System Design：Senior 以上的核心面試
 
@@ -500,33 +488,21 @@ Senior 應該會分析以下問題：
 這類題目可能需要你在白板上設計：
 
 Camera / Lighting / Motion Control
-
 Acquisition / Quality Check / Image Processing
-
 Detection / Segmentation / Feature Extraction
-
 Decision / Confidence / Anomaly Handling
-
 Storage / Review / Monitoring / Audit
-
 Dataset Versioning / Retraining / Deployment
 
 面試時還會針對每個環節深入追問：
 
 - What if one camera fails?
-    
 - How do you handle missing images?
-    
 - How do you make the pipeline recoverable?
-    
 - How do you choose decision thresholds?
-    
 - How do you monitor false negatives?
-    
 - How do you prevent data leakage between training and testing?
-    
 - How do you safely deploy a new model across 100 machines?
-    
 
 這些問題往往比記住某個神經網路的所有 Layer 更能反映 Senior 工程師的系統設計能力。
 
@@ -540,15 +516,15 @@ LLM 職位需要先區分兩大類，因為要求非常不同：
 
 ### 6.1 七種 LLM 相關職位
 
-|職位|工作內容|技術深度的重點|
-|---|---|---|
-|Senior Applied AI Engineer|企業 LLM Application、部署、評估|RAG、Agents、API、Production|
-|Senior LLM / Generative AI Engineer|模型整合、Fine-tuning、推論應用|Transformer、PyTorch、PEFT|
-|Senior AI Agent Engineer|Tool Calling、多步驟推理與執行|Agent Architecture、Evals、Safety|
-|Senior LLM Research Engineer|訓練與改良模型|Deep Learning、SFT、RL、Distributed Training|
-|Senior LLM Inference Engineer|高效能 LLM Serving|GPU、KV Cache、vLLM、Parallelism|
-|Senior Applied Scientist – NLP / LLM|模型研究、演算法與實驗|Statistics、Research、Training|
-|Senior Multimodal AI Engineer|影像、文字、語音整合|VLM、Vision Encoder、Multimodal Training|
+| 職位                                   | 工作內容                     | 技術深度的重點                                   |
+| ------------------------------------ | ------------------------ | ----------------------------------------- |
+| Senior Applied AI Engineer           | 企業 LLM Application、部署、評估 | RAG、Agents、API、Production                 |
+| Senior LLM / Generative AI Engineer  | 模型整合、Fine-tuning、推論應用    | Transformer、PyTorch、PEFT                  |
+| Senior AI Agent Engineer             | Tool Calling、多步驟推理與執行    | Agent Architecture、Evals、Safety           |
+| Senior LLM Research Engineer         | 訓練與改良模型                  | Deep Learning、SFT、RL、Distributed Training |
+| Senior LLM Inference Engineer        | 高效能 LLM Serving          | GPU、KV Cache、vLLM、Parallelism             |
+| Senior Applied Scientist – NLP / LLM | 模型研究、演算法與實驗              | Statistics、Research、Training              |
+| Senior Multimodal AI Engineer        | 影像、文字、語音整合               | VLM、Vision Encoder、Multimodal Training    |
 
 ### 6.2 實際職位要求
 
@@ -592,17 +568,17 @@ Amazon.jobs
 
 建議完整理解以下內容：
 
-|知識|需要掌握的深度|
-|---|---|
-|Transformer|Attention、Feed-forward、Residual、LayerNorm|
-|Self-attention|Query、Key、Value、Scaled Dot-product|
-|Positional Encoding|Sinusoidal、RoPE 等方法|
-|Tokenization|BPE、Token Count、Vocabulary|
-|Model Architecture|Encoder-only、Decoder-only、Encoder-decoder|
-|Generation|Greedy、Beam Search、Temperature、Top-p|
-|Embeddings|Semantic Similarity、Representation|
-|Context Window|Long Context、Truncation、Memory|
-|KV Cache|如何加速 Autoregressive Decoding|
+| 知識                  | 需要掌握的深度                                   |
+| ------------------- | ----------------------------------------- |
+| Transformer         | Attention、Feed-forward、Residual、LayerNorm |
+| Self-attention      | Query、Key、Value、Scaled Dot-product        |
+| Positional Encoding | Sinusoidal、RoPE 等方法                       |
+| Tokenization        | BPE、Token Count、Vocabulary                |
+| Model Architecture  | Encoder-only、Decoder-only、Encoder-decoder |
+| Generation          | Greedy、Beam Search、Temperature、Top-p      |
+| Embeddings          | Semantic Similarity、Representation        |
+| Context Window      | Long Context、Truncation、Memory            |
+| KV Cache            | 如何加速 Autoregressive Decoding              |
 
 若是 Research Engineer，應能進一步解釋模型的數學原理、計算複雜度與實作細節。
 
@@ -613,36 +589,28 @@ Amazon.jobs
 需要理解：
 
 - Document Loading、Parsing、Chunking、Metadata。
-    
 - Embedding Models、Vector Databases、FAISS。
-    
 - Dense Retrieval、BM25、Hybrid Search。
-    
 - Reranking、Query Rewriting、Multi-hop Retrieval。
-    
 - Retrieval Evaluation：Recall@K、MRR、NDCG。
-    
 - Answer Evaluation：Correctness、Groundedness、Citation Accuracy。
-    
 - Document Versioning、Freshness、Access Control。
-    
 - 如何處理 Hallucination、資料權限與過期文件。
-    
 
 面試官可能要求你設計一個能讀取公司內部幾十萬份文件的問答系統，而且不同員工只能看到自己有權限存取的文件。
 
 ### 7.3 Fine-tuning / Post-training
 
-|技能|需要知道什麼|
-|---|---|
-|SFT|Supervised Fine-tuning、Instruction Dataset|
-|LoRA|Low-rank Adaptation 如何降低可訓練參數量|
-|QLoRA|Quantization 與 LoRA 的配合|
-|DPO|Direct Preference Optimization|
-|RLHF|Reward Model、Preference、Policy Optimization|
-|RL / Reasoning|Reward Design、Verifiable Rewards、Policy Improvement|
-|Distillation|Teacher–Student Model、Quality／Cost Tradeoff|
-|Distributed Training|DDP、FSDP、ZeRO、Checkpointing|
+| 技能                   | 需要知道什麼                                              |
+| -------------------- | --------------------------------------------------- |
+| SFT                  | Supervised Fine-tuning、Instruction Dataset          |
+| LoRA                 | Low-rank Adaptation 如何降低可訓練參數量                      |
+| QLoRA                | Quantization 與 LoRA 的配合                             |
+| DPO                  | Direct Preference Optimization                      |
+| RLHF                 | Reward Model、Preference、Policy Optimization         |
+| RL / Reasoning       | Reward Design、Verifiable Rewards、Policy Improvement |
+| Distillation         | Teacher–Student Model、Quality／Cost Tradeoff         |
+| Distributed Training | DDP、FSDP、ZeRO、Checkpointing                         |
 
 並非每個職位都需要實作 RLHF 或大規模 Distributed Training。Applied AI 職位通常重視知道何時應用；Model Research 則可能要求真正實作、修改或優化。
 
@@ -651,40 +619,31 @@ Amazon.jobs
 這是 2026 年值得優先投資的 LLM 應用技能。
 
 需要具備：
-
 - Function Calling、Tool Calling、Structured Outputs。
-    
 - Agent State、Memory、Context Management。
-    
 - Workflow Orchestration、Retries、Timeouts。
-    
 - Multi-step Planning、Tool Result Verification。
-    
 - Human-in-the-loop、Approval Gates。
-    
 - MCP 等 Tool Integration Protocol。
-    
 - Prompt Injection Defense、Privilege Boundaries。
-    
 - Agent Evaluation、Task Completion、Failure Recovery。
-    
 
 真正的難點不是讓模型呼叫三個 Tools，而是讓它在 Tool 失敗、資訊不完整、任務執行到一半或權限不足時，仍然安全可靠。
 
 ### 7.5 LLM Inference / Production
 
-|技術|Senior 應理解的問題|
-|---|---|
-|vLLM / TensorRT-LLM|如何提高模型 Serving Efficiency|
-|Continuous Batching|如何同時處理大量 Requests|
-|KV Cache|GPU Memory 與 Decode Efficiency|
-|Quantization|INT8／INT4 的效能與品質交換|
-|Model Parallelism|Tensor、Pipeline、Data Parallelism|
-|Latency|TTFT、Time per Output Token、P95|
-|Throughput|Tokens/sec、Concurrent Users|
-|Cloud Deployment|Scaling、Monitoring、Rollback|
-|Reliability|Rate Limits、Retries、Fallback、Circuit Breakers|
-|Cost Optimization|Model Routing、Caching、Token Budget|
+| 技術                  | Senior 應理解的問題                                 |
+| ------------------- | --------------------------------------------- |
+| vLLM / TensorRT-LLM | 如何提高模型 Serving Efficiency                     |
+| Continuous Batching | 如何同時處理大量 Requests                             |
+| KV Cache            | GPU Memory 與 Decode Efficiency                |
+| Quantization        | INT8／INT4 的效能與品質交換                            |
+| Model Parallelism   | Tensor、Pipeline、Data Parallelism              |
+| Latency             | TTFT、Time per Output Token、P95                |
+| Throughput          | Tokens/sec、Concurrent Users                   |
+| Cloud Deployment    | Scaling、Monitoring、Rollback                   |
+| Reliability         | Rate Limits、Retries、Fallback、Circuit Breakers |
+| Cost Optimization   | Model Routing、Caching、Token Budget            |
 
 ### 7.6 LLM Evaluation 與安全性
 
@@ -693,19 +652,12 @@ Amazon.jobs
 公司不只要知道你的 Agent 可以回答問題，還會想知道：
 
 - 如何證明新 Prompt 比舊 Prompt 更好？
-    
 - 如何建立具有代表性的 Golden Test Set？
-    
 - 如何避免 LLM-as-a-Judge 的偏差？
-    
 - 如何測試 Agent 是否正確使用 Tools？
-    
 - 如何區分模型錯誤與 Retrieval 錯誤？
-    
 - 如何測試 Prompt Injection、資料外洩與越權操作？
-    
 - 如何量化模型成本、品質、Latency 和 Task Success Rate？
-    
 
 OpenAI 的 Applied AI 和 Agent Engineering 職缺都把 Evaluation、Failure Analysis 與可靠部署列為重要工作。
 
@@ -746,15 +698,15 @@ OpenAI
 
 ### 8.3 Agent / LLM System Design
 
-|可能考題|應準備的回答|
-|---|---|
-|16. 設計一個能呼叫多個 API 的 Agent。|State、Tools、Orchestration|
-|17. Agent 執行到第七步失敗怎麼辦？|Checkpoints、Retry、Idempotency|
-|18. Tool Calling 回傳錯誤 JSON 怎麼辦？|Schema Validation、Recovery|
-|19. 如何防止 Agent 執行未授權動作？|Permission、Isolation、Approval|
-|20. 如何防止 Prompt Injection？|Trust Boundaries、Tool Restrictions|
-|21. 怎麼測試 Multi-step Agent？|End-to-end Evals、Failure Injection|
-|22. 如何控制 Agent 的成本？|Token Budget、Model Routing、Limits|
+| 可能考題                            | 應準備的回答                             |
+| ------------------------------- | ---------------------------------- |
+| 16. 設計一個能呼叫多個 API 的 Agent。      | State、Tools、Orchestration          |
+| 17. Agent 執行到第七步失敗怎麼辦？          | Checkpoints、Retry、Idempotency      |
+| 18. Tool Calling 回傳錯誤 JSON 怎麼辦？ | Schema Validation、Recovery         |
+| 19. 如何防止 Agent 執行未授權動作？         | Permission、Isolation、Approval      |
+| 20. 如何防止 Prompt Injection？      | Trust Boundaries、Tool Restrictions |
+| 21. 怎麼測試 Multi-step Agent？      | End-to-end Evals、Failure Injection |
+| 22. 如何控制 Agent 的成本？             | Token Budget、Model Routing、Limits  |
 
 ### 8.4 Model Training / Research
 
@@ -786,21 +738,13 @@ OpenAI
 你應能設計出類似：
 
 User / Authentication / Authorization
-
 API Gateway / Agent Orchestrator
-
 RAG Pipeline
-
 ACL Filter · Retrieval · Rerank
-
 Tool Execution
-
 Schema · Approval · Sandbox
-
 LLM / Model Routing / Inference
-
 Verification / Response / Citations
-
 Evaluation / Tracing / Feedback / Monitoring
 
 面試官通常會追問：如果文件每天更新怎麼辦？如果 Vector Search 找錯資料呢？如果 Agent 呼叫的 Tool 失敗？如果使用者要求未授權操作？如果 Token Cost 增加三倍如何處理？
@@ -815,10 +759,6 @@ Senior Engineer 需要從 Architecture、Failure Recovery、Cost、Security、La
 
 例如 Anthropic 的公開應徵政策明確指出：準備面試可以使用 Claude，但 Take-home Assessment 和 Live Interview 原則上不可使用 AI，除非公司明確允許。
 
-![](https://www.google.com/s2/favicons?domain=https://www.anthropic.com&sz=32)
-
-Anthropic
-
 因此不應因為平常都用 Codex、Claude 或 Copilot 寫 Code，就停止練習獨立 Coding。
 
 ### 傳統 Coding 與 AI 職位面試應如何分配準備？
@@ -826,43 +766,27 @@ Anthropic
 下面是我建議的個人準備時間比例，不是招聘公司的正式面試權重。
 
 Senior Computer Vision / Applied ML Engineer
-
 Coding 20%
-
 CV/ML 35%
-
 Design 30%
-
 Leadership 15%
 
 Senior Applied LLM / Agent Engineer
-
 Coding 20%
-
 LLM 25%
-
 Design 40%
-
 Leadership 15%
 
 Senior LLM Research Engineer
-
 Coding 15%
-
 Research/ML 50%
-
 Design 25%
-
 Leadership 10%
 
 Coding
-
 專業理論
-
 System Design
-
 Leadership
-
 建議準備比例。若目標是 Amazon SDE III 或其他通用 Software Engineering 職位，Coding 應另外提高優先度。
 
 ## 十一、針對你的經驗，我建議優先考慮哪些方向？
@@ -888,20 +812,13 @@ Leadership
 
 例如 OpenAI 的 [Machine Learning Engineer – Multimodal Perception and Authentication](https://openai.com/careers/machine-learning-engineer-multimodal-perception-and-authentication-san-francisco/) 職缺，就涉及 Real-world Sensors、Specialized Perception Models、Multimodal Models、Robustness、Real-time Integration 與 Evaluation。
 
-![](https://www.google.com/s2/favicons?domain=https://openai.com&sz=32)
-
 OpenAI
-
 它的產品領域與你的手錶辨識系統不同，但所需的工程能力有不少交集。
-
 如果要讓你的履歷對這類職位更有競爭力，我會建議特別強化三項能力：
 
 1. 深入掌握 PyTorch Model Development： 能獨立修改、訓練、評估 Segmentation、Detection、Anomaly Detection Models，而不只是整合現有模型。
-    
 2. 增加 Vision Transformer / VLM 經驗： 實際做一個 CLIP、DINO 或 VLM 相關專案，並與傳統 CV 做比較。
-    
 3. 準備 Production AI 的量化成果： 例如 Image Quality 提升多少、Inference Latency 降低多少、False Positive Rate 改善多少、系統可靠性如何驗證。所有數字必須來自實測。
-    
 
 尤其是 Staff Engineer 職位，你需要證明自己不只是整合系統，而是曾經主導重要的架構決策，並讓其他工程師或團隊採用。
 
