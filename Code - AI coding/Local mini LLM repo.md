@@ -1,10 +1,13 @@
 
-|                                |     |
-| ------------------------------ | --- |
-| [[#### 建立MiniLLM 並實際跑通完整訓練]]   |     |
-| [[#### 解釋這個MiniLLM repo的檔案結構]] |     |
-|                                |     |
-|                                |     |
+|                                 |     |
+| ------------------------------- | --- |
+| [[#### 建立MiniLLM 並實際跑通完整訓練]]    |     |
+| [[#### 解釋這個MiniLLM repo的檔案結構]]  |     |
+| [[#### 詳細解釋parameters的意義及執行順序]] |     |
+| [[#### 怎麼訓練 Tokenizer]]         |     |
+|                                 |     |
+|                                 |     |
+|                                 |     |
 
 #### 建立MiniLLM 並實際跑通完整訓練
 ```
@@ -1200,19 +1203,19 @@ cd C:\LLM\MiniLLM
 
 不同訓練目標需要不同資料。
 
-預訓練使用一般文字：
+預訓練使用一般文字(./data/demo/pretrain.jsonl)：
 
 ```
 {"text":"Transformer uses attention to connect tokens."}
 ```
 
-SFT 使用指令與回答：
+SFT 使用指令與回答(./data/demo/sft.jsonl)：
 
 ```
 {"instruction":"Explain SFT.","output":"SFT trains a model on instruction-response examples."}
 ```
 
-DPO 使用偏好配對：
+DPO 使用偏好配對(./data/demo/dpo.jsonl)：
 
 ```
 {"prompt":"What is 2 + 3?","chosen":"5","rejected":"9"}
@@ -1305,7 +1308,6 @@ Token 不一定是一個完整單字，也不一定是一個中文字；byte-lev
 Memory map 讓程式能按位置讀取 token windows，而不必先把整個 binary 檔複製進一般 Python list。
 
 目前 smoke 有：
-
 - 8,388 個訓練 tokens。
 - 678 個 validation tokens。
 
@@ -1382,7 +1384,7 @@ Transformer block 裡：
 
 Loss 是 next-token cross entropy：
 
-\[ L_{\text{pretrain}} = -\frac{1}{N}\sum_t \log p_\theta(x_{t+1}\mid x_{\le t}) \]
+$L_{\text{pretrain}} = -\frac{1}{N}\sum_t \log p_\theta(x_{t+1}\mid x_{\le t})$
 
 一次 optimizer step 的工作順序是：
 
@@ -1400,7 +1402,7 @@ Loss 是 next-token cross entropy：
 
 單 GPU 的有效 batch 數大致是：
 
-\[ \text{effective batch} = \text{batch size} \times \text{gradient accumulation steps} \]
+$effective batch = \text{batch size} \times \text{gradient accumulation steps}$
 
 Laptop 設定是 \(2\times8=16\) 個 windows／optimizer update。預訓練每個 window 有 256 個 next-token targets，因此每次更新處理 4,096 個 targets。
 
@@ -1461,7 +1463,7 @@ SFT 示範一個回答；DPO 提供同一題的兩個回答，以及哪一個比
 
 令 prompt 為 \(x\)，chosen 為 \(y^+\)，rejected 為 \(y^-\)，DPO 比較的是：
 
-\[ \Delta = \left[ \log \pi_\theta(y^+\mid x) - \log \pi_{\text{ref}}(y^+\mid x) \right] - \left[ \log \pi_\theta(y^-\mid x) - \log \pi_{\text{ref}}(y^-\mid x) \right] \]
+$\Delta = \left[ \log \pi_\theta(y^+\mid x) - \log \pi_{\text{ref}}(y^+\mid x) \right] - \left[ \log \pi_\theta(y^-\mid x) - \log \pi_{\text{ref}}(y^-\mid x) \right]$
 
 本 repo 使用 sigmoid loss：
 
@@ -1660,4 +1662,1199 @@ API 將推理引擎變成可被其他程式呼叫的本機服務：
 
 因此可以研究「相同資料與訓練規模下，不同架構的表現」，但兩者權重不能互換。nanoGPT 分支目前沒有接上本 repo 的 SFT/DPO/LoRA 主流程，也沒有提供 MiniMind 分支的 KV cache 功能。
 
-若你要依照程式順序深入閱讀，建議先看 [命令入口](C:/LLM/MiniLLM/minillm/__main__.py)，接著看 [資料處理](C:/LLM/MiniLLM/minillm/data.py)、[模型整合](C:/LLM/MiniLLM/minillm/modeling.py) 與 [MiniMind Transformer](C:/LLM/MiniLLM/vendor/minimind/model/model_minimind.py)，再讀 [預訓練迴圈](C:/LLM/MiniLLM/minillm/pretrain.py)。理解這幾個部分後，讀 [後訓練](C:/LLM/MiniLLM/minillm/posttrain.py)、[評估](C:/LLM/MiniLLM/minillm/evaluate.py) 和 [推理](C:/LLM/MiniLLM/minillm/inference.py)，就能對應完整 lifecycle 中每一步的計算與產物。
+
+
+
+#### 詳細解釋parameters的意義及執行順序
+```
+請詳細解釋configs/smoke.json裡面的parameters的意義及用在哪裡並舉例說明(data是data/demo/pretrain.jsonl裡面有283筆資料):  
+"seed", "vocab_size", "block_size"=128, batch_size=4是1 bacth是跑四次pretrain.jsonl data=283x4筆資料是一個batch? pretrain_steps=40等於training stage跑40個batch資料? save_steps/eval_steps是甚麼? eval_batches=8代表eval stage跑8個batch? hidden_size是指token的dimension嗎? num_hidden_layers是指在Transformer有多少個block嗎? max_position_embeddings是甚麼?
+
+在哪裡決定要使用哪個 tokenizer? 每次看多少 tokens? 一次更新使用多少資料? 訓練幾個 steps? 要記錄與比較哪些指標? 那統一資料格式，例如把 `instruction/output` 轉成 `messages`甚麼時候需要做要怎麼做? 做精確去重和分組切分。切分概念是SHA256(seed + normalized document/prompt)→ 固定分配到 train 或 validationg是甚麼意思? 這裡做的是精確去重與相同 prompt 分組，那要怎麼做消除近似、語意相同或模板相似的資料
+
+所以要執行pretrain, sft, dpo, LORA有特別的順序嗎? 然後各要怎麼執行.
+```
+先釐清你最核心的疑問：
+
+**`batch_size=4` 是一次處理 4 個訓練樣本；在這個 repo 的預訓練中，一個樣本是從 token 串流抽出的文字視窗。`pretrain_steps=40` 則是做 40 次 optimizer 更新。**
+
+因此，這裡一次更新使用的預測目標數為：
+
+```
+batch_size × block_size × gradient_accumulation_steps
+= 4 × 128 × 1
+= 512 個 next-token 預測目標
+```
+
+下面都依照你目前 repo 的實際程式解釋，特別是 [smoke.json](C:/LLM/MiniLLM/configs/smoke.json)、[data.py](C:/LLM/MiniLLM/minillm/data.py)、[pretrain.py](C:/LLM/MiniLLM/minillm/pretrain.py) 與 [posttrain.py](C:/LLM/MiniLLM/minillm/posttrain.py)。
+
+---
+
+**一、283 筆原始資料，怎麼變成訓練 batch？**
+
+你目前的實際資料統計保存在 [manifest.json](C:/LLM/MiniLLM/artifacts/smoke/data/manifest.json)：
+
+|處理階段|數量|
+|---|---|
+|`data/demo/pretrain.jsonl` 原始紀錄|283 筆|
+|移除空白紀錄|1 筆|
+|移除清理後完全相同的紀錄|1 筆|
+|保留下來的文件|281 筆|
+|分配到 train|262 筆|
+|分配到 validation|19 筆|
+|train 編碼後，包含文件結尾 EOS|8,388 tokens|
+|validation 編碼後，包含 EOS|678 tokens|
+
+接下來，程式會把 train 文件依序編碼，串接成一條 token 串流：
+
+```
+文件 A 的 tokens → EOS →
+文件 B 的 tokens → EOS →
+文件 C 的 tokens → EOS → ……
+
+共 8,388 tokens
+```
+
+保存在：
+
+```
+artifacts/smoke/data/pretrain/train.bin
+```
+
+**到了預訓練時，程式讀取的是這條 token 串流，不是逐筆讀取原始 283 筆 JSONL。**
+
+`get_batch()` 會隨機選出 4 個起點，再從每個起點取出一段視窗。假設某次抽到：
+
+```
+起點 100：取 tokens[100:229]
+起點 900：取 tokens[900:1029]
+起點 3000：取 tokens[3000:3129]
+起點 6000：取 tokens[6000:6129]
+```
+
+每段先取 **129 tokens**，才能組成 128 組「目前 token → 下一個 token」：
+
+```
+原始視窗：t0, t1, t2, …, t127, t128
+
+輸入 x：  t0, t1, t2, …, t127
+目標 y：  t1, t2, t3, …, t128
+```
+
+所以一個 batch 的概念是：
+
+```
+x.shape = [4, 128]
+y.shape = [4, 128]
+```
+
+這 4 段可以重疊，也可以跨越文件邊界。這份程式利用 EOS 表示文件結尾，沒有另外建立文件邊界 attention mask。
+
+**283 筆是原始文件數；4 是每個 batch 的視窗數；128 是每個視窗的預測目標數。它們是不同單位。**
+
+---
+
+**二、batch、step、epoch 分別是甚麼？**
+
+|名詞|意義|在此 repo 的例子|
+|---|---|---|
+|Sample|一個訓練樣本|預訓練：一個 token 視窗；SFT：一組對話；DPO：一組偏好配對|
+|Microbatch|一次 forward/backward 使用的樣本集合|`batch_size=4`|
+|Optimizer step|累積梯度後，呼叫 optimizer 更新一次|`pretrain_steps=40`|
+|Epoch|將訓練資料完整走訪一次|SFT 等使用 DataLoader 時有此概念|
+
+目前：
+
+```
+gradient_accumulation_steps = 1
+```
+
+所以：
+
+```
+1 microbatch → backward → 1 optimizer step
+```
+
+如果改成：
+
+```
+"batch_size": 4,
+"gradient_accumulation_steps": 8
+```
+
+則是：
+
+```
+microbatch 1：4 段文字 → backward
+microbatch 2：4 段文字 → backward
+……
+microbatch 8：4 段文字 → backward
+
+累積完 → optimizer 更新一次
+```
+
+單 GPU 的有效 batch 為：
+
+```
+4 × 8 = 32 個樣本／optimizer step
+```
+
+預訓練每次更新的預測目標數為：
+
+```
+4 × 8 × 128 = 4,096 tokens
+```
+
+但 `pretrain_steps=40` 仍然代表 **40 次 optimizer 更新**，此時總共會執行 320 個 microbatches。
+
+對目前 smoke 配置：
+
+```
+40 steps × 4 視窗 × 128 預測目標
+= 20,480 個訓練目標出現次數
+```
+
+相對於 8,388 個 train tokens：
+
+```
+20,480 ÷ 8,388 ≈ 2.44
+```
+
+這只是約 2.44 倍的 token 訓練量。**因為視窗是隨機抽取、有重疊，所以不能說程式把整份資料完整走訪了 2.44 個 epochs。**
+
+---
+
+**三、`smoke.json` 每個參數的意義，以及用在哪裡**
+
+先看資料與執行設定：
+
+|參數|目前值|意義與程式位置|
+|---|---|---|
+|`seed`|42|控制資料切分、隨機權重初始化、預訓練視窗抽樣、後訓練資料抽樣等。見 `common.seed_all()` 與 `data.split_rows()`|
+|`device`|`"auto"`|有可用 CUDA 時使用 GPU，否則 CPU。見 `common.device_for()`|
+|`vocab_size`|1024|訓練 BPE tokenizer 時的目標詞表大小。見 `data.prepare()`|
+|`block_size`|128|預訓練每段視窗的預測目標數；SFT／LoRA 的完整序列長度上限；DPO 每個 prompt＋回答分支的長度上限|
+|`batch_size`|4|一次 microbatch 的樣本數。預訓練為 4 段視窗，SFT／LoRA 為 4 組對話，DPO 為 4 組偏好配對|
+|`gradient_accumulation_steps`|1|累積多少個 microbatches 後更新一次 optimizer|
+
+`seed=42` 的主要作用是讓實驗比較有一致基準。相同資料、設定、軟體與硬體環境下，能盡量重現同樣的初始化、切分與抽樣；單靠 seed 並不保證跨硬體結果逐位元相同。
+
+另外，`vocab_size=1024` 不代表一定產生 1,024 個 tokens。BPE 能學到多少合併，還受到資料量與 `min_frequency=2` 影響。你目前實際得到：
+
+```
+requested_vocab = 1024
+actual_vocab = 835
+```
+
+模型建立時採用的是 **`len(tokenizer)=835`**，因此輸出層會預測 835 種 token。這個 BPE 參數的定義可參考 [Hugging Face Tokenizers 文件](https://huggingface.co/docs/tokenizers/en/api/trainers)。
+
+模型結構參數如下：
+
+|參數|目前值|意義|
+|---|---|---|
+|`hidden_size`|128|每個 token 的 embedding／hidden state 向量有 128 個維度|
+|`num_hidden_layers`|2|堆疊 2 個 Transformer blocks|
+|`num_attention_heads`|4|每個 block 使用 4 個 Query attention heads|
+|`num_key_value_heads`|2|使用 2 組 Key／Value heads，由 4 個 Query heads 分組共用，稱為 GQA|
+|`intermediate_size`|384|Feed-forward network 內部的展開維度|
+|`max_position_embeddings`|512|模型位置編碼所支援的序列長度；目前推理程式也以此限制完整 context|
+
+這些參數由 `modeling.fresh_model()` 傳入 MiniMind，實際結構在 [model_minimind.py](C:/LLM/MiniLLM/vendor/minimind/model/model_minimind.py)。
+
+**你的理解是對的：`hidden_size` 是 token 表示向量的維度；`num_hidden_layers` 是 Transformer block 的數量。**
+
+概念上的資料流：
+
+```
+token ID
+   ↓
+Embedding：128 維
+   ↓
+Transformer block 1
+   ↓
+Transformer block 2
+   ↓
+最終 normalization
+   ↓
+輸出 835 個 vocabulary logits
+```
+
+token ID 本身只是一個整數，例如 `317`。Embedding 才把它轉成：
+
+```
+[0.012, -0.028, 0.007, ……]  共 128 個數值
+```
+
+經過每個 block，同一個 token 的向量會根據前文改變。
+
+每個 attention head 的維度為：
+
+```
+hidden_size ÷ num_attention_heads
+= 128 ÷ 4
+= 32
+```
+
+因此每個 token 有：
+
+```
+Query：4 heads × 32 維
+Key：  2 heads × 32 維
+Value：2 heads × 32 維
+```
+
+Feed-forward 則大致是：
+
+```
+128 維 → 384 維內部運算 → 128 維
+```
+
+**`block_size=128` 與 `max_position_embeddings=512` 的差別是：**
+
+```
+block_size：
+這次訓練使用多長的序列／視窗。
+
+max_position_embeddings：
+模型的位置編碼與本 repo 推理介面支援多長的完整序列。
+```
+
+MiniMind 使用 RoPE，這裡不是建立一個傳統的可訓練 `512 × 128` position embedding 表，而是預先建立位置旋轉所需的數值。
+
+例如推理時：
+
+```
+套用 chat template 後的 prompt：100 tokens
+max_new_tokens：48
+
+100 + 48 = 148 ≤ 512 → 允許
+```
+
+但只用短視窗訓練，不代表模型在接近 512 tokens 時已經學會良好使用長上下文。
+
+預訓練程式會實際送入 129 tokens，再由模型內部 shift 計算 128 個目標，因此調整設定時也要讓這個額外 token 放得進模型 context。
+
+---
+
+訓練步數與 learning rate：
+
+|參數|目前值|用途|
+|---|---|---|
+|`pretrain_steps`|40|預訓練總共呼叫 40 次 optimizer 更新|
+|`sft_steps`|20|SFT 總共 20 次 optimizer 更新|
+|`dpo_steps`|10|DPO 總共 10 次 optimizer 更新|
+|`lora_steps`|15|LoRA 總共 15 次 optimizer 更新|
+|`pretrain_lr`|0.0005|預訓練 learning rate 設定|
+|`sft_lr`|0.0002|SFT learning rate 設定|
+|`dpo_lr`|0.00005|DPO learning rate 設定|
+|`lora_lr`|0.0005|LoRA learning rate 設定|
+|`warmup_ratio`|0.1|前約 10% steps 使用 learning rate warmup|
+|`weight_decay`|0.01|AdamW 的權重衰減強度|
+|`max_grad_norm`|1.0|將整體梯度 norm 裁切到至多 1.0|
+
+`learning_rate` 控制 optimizer 更新參數的幅度，但 AdamW 也會參考梯度的移動平均，因此不能簡化成「每個權重固定減去 learning rate」。
+
+在原生預訓練迴圈中：
+
+```
+40 × 0.1 = 4 個 warmup steps
+```
+
+learning rate 先升高，再以 cosine schedule 下降。這份預訓練實作保留設定 learning rate 的 10% 作為下降下限；SFT／DPO／LoRA 使用 HF Trainer 的 cosine scheduler，細節不同。
+
+`max_grad_norm=1.0` 的例子：
+
+```
+裁切前 grad norm = 3.0
+→ 將所有梯度共同縮放，使整體 norm 約為 1.0
+→ optimizer 再使用裁切後的梯度更新
+```
+
+log 中的 `grad_norm_before_clip` 記錄裁切前數值，方便觀察梯度是否突然放大。
+
+---
+
+保存與評估設定：
+
+|參數|目前值|意義|
+|---|---|---|
+|`save_steps`|10|每隔 10 個 optimizer steps 保存 checkpoint|
+|`eval_steps`|10|每隔 10 個 optimizer steps 執行 validation 評估|
+|`eval_batches`|8|**目前只限制 raw text 評估最多使用的固定視窗數**|
+
+`save_steps=10` 的預訓練產物：
+
+```
+base/checkpoint-10/
+base/checkpoint-20/
+base/checkpoint-30/
+base/checkpoint-40/
+```
+
+其中包含模型與續訓需要的 optimizer、scheduler、step、RNG 等狀態。stage 根目錄另外保存最終模型。
+
+`eval_steps=10` 則表示：
+
+```
+更新到 step 10 → 暫停更新，跑 validation
+更新到 step 20 → 暫停更新，跑 validation
+……
+```
+
+validation 使用 `eval()` 與不計算梯度的模式，**不會更新模型權重**。
+
+預訓練還會在開始前評估一次，並在最後一步評估、保存。
+
+---
+
+**四、`eval_batches=8` 是否代表評估 8 個 batches？**
+
+這個參數名稱容易誤導，必須依目前程式分三種情況看。
+
+**1. Raw text 評估**
+
+`pretrain.raw_loss()` 一次只處理 **1 個固定視窗**，沒有使用訓練的 `batch_size=4`。
+
+你目前 validation 有 678 tokens，程式抽取：
+
+```
+起點 0：  tokens[0:129]
+起點 128：tokens[128:257]
+起點 256：tokens[256:385]
+起點 384：tokens[384:513]
+起點 512：tokens[512:641]
+```
+
+共 5 個視窗，每個計算 128 個預測目標：
+
+```
+5 × 128 = 640 個 validation 預測目標
+```
+
+所以目前 `eval_batches=8` 的實際效果是：
+
+> 最多評估 8 個固定視窗，但資料只足以提供 5 個。
+
+尾端未形成完整視窗的 tokens 不納入這個 raw loss。每次、每個模型階段都使用相同視窗，便於比較。
+
+**2. SFT／DPO／LoRA 訓練期間的評估**
+
+這些使用 HF Trainer：
+
+```
+per_device_eval_batch_size = batch_size = 4
+```
+
+而且會跑完整的各自 validation dataset，**不受 `eval_batches=8` 限制**。
+
+|階段|Validation 數量|每 batch 4 筆時|
+|---|---|---|
+|SFT|18 組對話|5 batches：4＋4＋4＋4＋2|
+|DPO|18 組偏好配對|5 batches|
+|LoRA|5 組 domain 對話|2 batches：4＋1|
+
+**3. 最後的共同比較**
+
+`evaluate.py` 的 SFT／domain completion loss 和 preference 指標，也使用完整 held-out 資料；其中 completion loss 是逐筆計算，再依回答 token 數彙總。
+
+---
+
+**五、LoRA 與 DPO 的專用參數**
+
+|參數|目前值|意義|
+|---|---|---|
+|`lora_r`|8|LoRA 更新矩陣的 rank|
+|`lora_alpha`|16|LoRA 更新的縮放參數|
+|`dpo_beta`|0.1|DPO 相對 reference model 的 log-probability 差值縮放係數|
+
+LoRA 大致使用：
+
+```
+W_new = W_original + (alpha / r) × B × A
+```
+
+這裡：
+
+```
+alpha / r = 16 / 8 = 2
+```
+
+假設原本 Linear 的權重是 `128 × 128`：
+
+```
+全量權重：128 × 128 = 16,384 parameters
+
+LoRA A：8 × 128
+LoRA B：128 × 8
+
+可訓練參數：1,024 + 1,024 = 2,048
+```
+
+原始 `W` 凍結，只更新 A、B。目前程式對 attention 與 feed-forward 的指定 projection 加入 LoRA。
+
+DPO 則同時有：
+
+```
+policy model：接受更新
+reference model：凍結，作為比較基準
+```
+
+`beta` 會乘上 policy 相對 reference 的 chosen／rejected 優勢，再進入 DPO loss。它同時影響 loss 尺度與最佳解，不能簡單理解成「越大就一定越準」或「越小就一定改得更多」。實際公式與用途見 [TRL 0.24 DPO 文件](https://huggingface.co/docs/trl/v0.24.0/en/dpo_trainer)。
+
+---
+
+**六、在哪裡決定 tokenizer？各階段會重新訓練嗎？**
+
+決定 tokenizer 的地方是：
+
+[data.py 的 `prepare()` (line 126)](C:/LLM/MiniLLM/minillm/data.py:126)
+
+目前程式明確選擇：
+
+```
+Tokenizer(models.BPE(...))
+pre_tokenizers.ByteLevel(add_prefix_space=False)
+trainers.BpeTrainer(
+    vocab_size=cfg["vocab_size"],
+    min_frequency=2,
+    ...
+)
+```
+
+所以目前使用的是：
+
+> 在本地資料上重新訓練的 Byte-level BPE tokenizer。
+
+訓練語料只使用：
+
+```
+pretrain/train 的 262 筆 raw text
+```
+
+沒有使用 validation，也沒有拿 SFT／DPO／domain 回答一起訓練 tokenizer。
+
+保存位置：
+
+```
+artifacts/<run>/tokenizer/
+```
+
+後續由：
+
+[modeling.py 的 `tokenizer_at()` (line 60)](C:/LLM/MiniLLM/minillm/modeling.py:60)
+
+載入同一個 tokenizer，供初始化、預訓練、SFT、DPO、LoRA、評估、推理共用。
+
+**這條 pipeline 在 `prepare` 時訓練一次 tokenizer；後續各 stage 不重新訓練。**
+
+原因是 token ID 與 embedding 有固定對應。例如：
+
+```
+token ID 317 ↔ 某個字串片段 ↔ embedding 第 317 列
+```
+
+如果中途换 tokenizer，ID 317 可能變成另一個片段，原來模型學到的對應就會錯亂。
+
+想改成現成 tokenizer，需要修改 `prepare()` 的建立方式，同時確認特殊 tokens、chat template 和模型 vocabulary。從零訓練實驗則應建立新 run，重新初始化模型。
+
+---
+
+**七、每次看多少 tokens、一次更新多少資料？各階段不同**
+
+|階段|一個樣本代表甚麼|`batch_size=4`、accumulation=1 的一次更新|
+|---|---|---|
+|Pretrain|隨機 token 視窗|4 段，固定共 512 個預測目標|
+|SFT|一組 prompt＋answer 對話|4 組對話，實際 token 數隨長度不同|
+|DPO|prompt＋chosen＋rejected|4 組偏好配對，policy 與 reference 都需要計算回答分數|
+|LoRA|一組 domain prompt＋answer|4 組 domain 對話，只更新 adapter|
+
+SFT／LoRA 的 `block_size=128` 是**長度上限**：
+
+```
+chat template + prompt + answer + EOS ≤ 128 tokens
+```
+
+例如某個 batch 的 4 筆長度為：
+
+```
+32、41、35、50 tokens
+```
+
+collator 會 padding 到：
+
+```
+input_ids.shape = [4, 50]
+```
+
+這裡沒有把每筆補到 128，也沒有 packing 多筆樣本成一段。
+
+此外，prompt 與 padding 的 labels 設為 `-100`，只計算最後 assistant 回答與 EOS 的 loss。Prompt 仍然是模型產生回答所需的上下文。
+
+如果某筆對話超過 128 tokens，目前程式會報錯，要求增加 context 或縮短資料，不會默默截斷。
+
+DPO 長度限制則是分別检查：
+
+```
+prompt + chosen + EOS ≤ 128
+prompt + rejected + EOS ≤ 128
+```
+
+不是把三個欄位全部串成一個 128-token 序列。
+
+---
+
+**八、`instruction/output` 何時轉成 `messages`？要怎麼做？**
+
+在這個 repo，**執行 `prepare` 時已經自動轉換**。
+
+位置是 `data.canonical_row()`，而且在去重、分組、切分之前執行。
+
+原始 SFT 資料：
+
+```
+{"instruction":"Calculate 1 + 4. Answer with a number.","output":"5"}
+```
+
+會變成：
+
+```
+{
+  "messages": [
+    {
+      "role": "user",
+      "content": "Calculate 1 + 4. Answer with a number."
+    },
+    {
+      "role": "assistant",
+      "content": "5"
+    }
+  ]
+}
+```
+
+若有 `input`：
+
+```
+{
+  "instruction": "將文字翻譯成英文",
+  "input": "你好",
+  "output": "Hello"
+}
+```
+
+目前程式會把 user content 組成：
+
+```
+將文字翻譯成英文
+你好
+```
+
+核心做法是：
+
+```
+prompt = row["instruction"]
+
+if row.get("input"):
+    prompt += "\n" + row["input"]
+
+messages = [
+    {"role": "user", "content": clean(prompt)},
+    {"role": "assistant", "content": clean(row["output"])}
+]
+```
+
+此 repo 也接受現成的 `messages`，不需要先另寫轉檔程式。TRL 支援多種資料格式；這裡為了統一清理、切分和 loss masking，先轉成自己的 canonical 格式，再預先 tokenize 後交給 Trainer。相關格式見 [TRL 0.24 SFT 文件](https://huggingface.co/docs/trl/v0.24.0/en/sft_trainer)。
+
+不同訓練目標保留不同格式：
+
+```
+Pretrain：{"text": "..."}
+SFT／domain：{"messages": [...]}
+DPO：{"prompt": "...", "chosen": "...", "rejected": "..."}
+```
+
+若資料集用 `question/answer`、`human/gpt` 等不同欄位或角色名稱，就要先轉成程式支援的欄位／角色，或擴充 `canonical_row()`。
+
+多輪 `messages` 也可以使用，但目前只把**最後一個 assistant 回答**作為 completion，前面的訊息都作為 context。
+
+---
+
+**九、精確去重與「SHA256 分组切分」是甚麼？**
+
+它們是兩個不同動作。
+
+**精確去重：清理後，整筆紀錄完全相同才移除。**
+
+先做：
+
+```
+Unicode NFKC 正規化
+→ 統一換行
+→ 移除部分控制字元
+→ 整理空白
+→ 移除空資料
+```
+
+再把紀錄轉成欄位順序固定的 JSON 字串，比較是否相同。
+
+例如：
+
+```
+{"instruction":"解釋 LoRA","output":"LoRA 使用低秩矩陣微調。"}
+{"instruction":"  解釋 LoRA  ","output":"LoRA 使用低秩矩陣微調。"}
+```
+
+清理後相同，留下其中一筆。
+
+但如果同一問題有不同回答：
+
+```
+{"instruction":"解釋 LoRA","output":"LoRA 使用低秩矩陣微調。"}
+{"instruction":"解釋 LoRA","output":"LoRA 凍結原始權重，只更新 adapter。"}
+```
+
+會保留兩筆，因為整筆內容不同。
+
+**分組切分：相同問題的所有回答，放在同一側。**
+
+上面兩筆會形成同一個 prompt group：
+
+```
+group =「解釋 LoRA」
+  ├─ 回答 A
+  └─ 回答 B
+```
+
+整組分配到 train 或 validation，避免：
+
+```
+train 已看過問題＋回答 A
+validation 再用相同問題＋回答 B
+```
+
+對多輪 SFT，group key 是最後回答之前的完整 context。對 pretrain，key 是清理後的完整文件；對 DPO，key 是 prompt。
+
+單輪 user prompt 在 SFT／domain／DPO 使用相同 key，所以同一個精確 prompt 在這些資料集中會分到同一側。
+
+切分程式的核心是：
+
+```
+digest = hashlib.sha256(f"{seed}:{key}".encode()).digest()
+number = int.from_bytes(digest[:8], "big")
+bucket = number % 10
+
+if bucket == 0:
+    validation
+else:
+    train
+```
+
+例如你問過的這個 prompt：
+
+```
+Calculate 2 + 3. Answer with a number.
+```
+
+用 seed 42 計算：
+
+```
+SHA256 的輸入：
+42:Calculate 2 + 3. Answer with a number.
+
+前 8 bytes：
+b9750d778ffc1b10
+
+轉成整數後 % 10：
+2
+
+因此分到 train
+```
+
+SHA256 在此提供的是**固定的分桶規則，不是在判斷語意**。
+
+它的優點是：
+
+- 相同 seed＋key 永遠分到同一側。
+- 重排資料列，不會改變已有群組的歸屬。
+- 加入新資料，不會重新洗牌所有舊資料。
+- 同一 group 不會跨越 train／validation。
+
+10 個 buckets 中選 1 個當 validation，所以比例期望約 10%，但不是強制精確 90／10。你目前是：
+
+```
+train：262
+validation：19
+
+validation 比例約 6.76%
+```
+
+還要留意：**這只能防止相同 key 跨 split，不能保證預訓練語料沒有包含 validation 問題的答案。** 示範資料的 raw arithmetic 文件，本來就包含與 SFT 題目相關的算式，所以這些評估適合驗證流程。
+
+---
+
+**十、怎麼消除近似、語意相同、模板相似資料？**
+
+目前 repo 尚未實作這三類去重。可以在 `canonical_row()` 清理完成後、正式 train／validation 切分前加入。
+
+建議把「刪掉冗餘資料」與「讓相似資料同側」分開處理：
+
+```
+清理與統一格式
+→ 精確去重
+→ 近似／語意／模板比對
+→ 確認哪些是真的冗餘，選擇保留樣本
+→ 對仍保留的相關樣本建立 group
+→ 以 group key 分配 train／validation
+→ 訓練 tokenizer
+```
+
+|類型|例子|可採用的方法|
+|---|---|---|
+|文字近似|同一篇文章改幾個字、加編號|字元／詞 n-gram、Jaccard；大資料量用 MinHash＋LSH|
+|語意重複|「解釋預訓練」與「甚麼是從零訓練語言模型？」|用獨立 embedding model 產生向量，再找相似候選|
+|模板相似|`Lab question 0/1/2: explain LoRA.`|移除非語意性的編號、網址、樣板欄位，建立模板 key|
+
+近似比對可以先切成字元 n-grams，計算：
+
+```
+Jaccard(A, B) = 共有 n-grams 數量 ÷ 合併後 n-grams 數量
+```
+
+在 283 筆的小資料上，可以直接兩兩比較，最多約 4 萬組。資料大量增加後，再用 MinHash／LSH 先找候選，避免所有資料兩兩比較；[Hugging Face DataTrove](https://github.com/huggingface/datatrove) 提供相關 pipeline 範例。
+
+語意比對則需要一個額外的 embedding model：
+
+```
+文本 A → 向量 A
+文本 B → 向量 B
+→ cosine similarity
+→ 相似候選
+→ 確認是否冗餘
+```
+
+這個模型只用於資料處理；你的 MiniMind 仍然可以從隨機權重開始訓練。向量相似度只是候選判斷依據，需要人工抽查或其他規則確認，尤其要保護否定詞、數字與不同事實。這類方法可參考 [SemDeDup 論文](https://arxiv.org/abs/2303.09540)。
+
+你目前 demo 很適合觀察模板重複：
+
+```
+Lab question 0: explain Transformer.
+Lab question 8: explain Transformer.
+```
+
+移除 `Lab question <number>:` 後，它們的問題与回答相同，可以考慮只保留一筆。
+
+但：
+
+```
+Calculate 1 + 2.
+Calculate 1 + 3.
+```
+
+雖然模板相似，答案不同，數字又是任務核心，不能直接刪成一筆。
+
+這類資料可依評估目標選擇：
+
+```
+測試同一題目的不同說法：
+相同運算元的改寫題目放同一組。
+
+測試對新數值的泛化：
+保留部分數值或運算元組合，專門作 validation／test。
+```
+
+也不宜把所有算術題僅因共用同一模板就全部放進一個 group，否則可能無法形成有效的 train／validation 切分。
+
+若要擴充 repo，主要修改 `data.split_rows()` 的分組邏輯，並在 manifest 增加去重方法、門檻、保留策略與移除數量。新流程也應以新 run 重新準備資料。
+
+---
+
+**十一、要記錄與比較哪些指標？**
+
+目前已有的訓練記錄：
+
+|指標|用途|
+|---|---|
+|Train loss|訓練目標是否下降|
+|Validation loss|在未用來更新權重的資料上表現如何|
+|Gradient norm|是否出現梯度突然放大、長期大量裁切|
+|Learning rate|對照 warmup／scheduler 與 loss 變化|
+|Tokens／samples per second|訓練吞吐量|
+|Runtime|實驗所需時間|
+|Peak VRAM|比較各階段配置的 GPU 記憶體需求|
+|SFT token accuracy／entropy|觀察回答 token 的預測行為|
+|DPO chosen／rejected rewards、margin|觀察偏好學習是否朝 chosen 移動|
+
+記錄位置：
+
+```
+artifacts/<run>/<stage>/metrics.jsonl
+artifacts/<run>/<stage>/final_metrics.json
+artifacts/<run>/tensorboard/<stage>/
+```
+
+跨階段比較則使用同一評估基準：
+
+|比較項目|希望觀察的改變|
+|---|---|
+|Raw validation loss／perplexity|預訓練是否改善語言建模|
+|SFT completion loss|是否更會產生指定回答|
+|Domain completion loss|LoRA 是否改善領域回答|
+|Chosen win rate／log-prob margin|偏好回答是否更受模型偏好|
+|固定 prompts 的生成結果|實際輸出是否符合期待|
+|KV cache token 一致性與時間|cache 是否正確、是否加速|
+|參數數量與可訓練比例|比較全量更新與 LoRA|
+
+目前結果可見 [comparison.md](C:/LLM/MiniLLM/artifacts/smoke/evaluation/comparison.md)。例如：
+
+```
+initialized raw loss：6.7693
+base raw loss：       4.2932
+```
+
+表示在同一 raw validation protocol 上，預訓練有改善。
+
+```
+base SFT completion loss：6.4739
+sft SFT completion loss： 4.8764
+```
+
+表示 SFT 改善了這份 instruction／response 評估。
+
+**不同訓練目標的 loss 不能直接比數字大小。** DPO loss 0.69 與預訓練 loss 4.29，意義與尺度不同。
+
+如果目標是算術正確性，還應另外加入「回答是否等於正確數值」的 task accuracy。目前的 token loss 或 chosen win rate，不能直接取代這個指標。
+
+---
+
+**十二、Pretrain、SFT、DPO、LoRA 有固定順序嗎？**
+
+對從零建立模型的主要教學流程，建議：
+
+```
+prepare
+   ↓
+隨機初始化 initialized
+   ↓
+pretrain → base
+   ↓
+SFT → sft
+   ├─ DPO → dpo
+   └─ 領域 LoRA → lora
+```
+
+這也正是目前 repo 的預設：
+
+|執行階段|預設 parent|資料|
+|---|---|---|
+|Pretrain|initialized|pretrain|
+|SFT|base|sft|
+|DPO|sft|dpo|
+|LoRA|sft|domain|
+
+所以即使先執行 DPO，再執行 LoRA，**預設 LoRA 仍從 SFT 載入，不會自動接在 DPO 後面。**
+
+概念上：
+
+- Pretraining：訓練目標是 next-token prediction。
+- SFT：訓練目標是學習指定的回答。
+- DPO：訓練目標是學習 chosen／rejected 偏好。
+- LoRA：決定用甚麼方式更新參數。
+
+因此 LoRA 可以用來執行 SFT 或 DPO，並不一定是一個最後才做的階段。
+
+不過目前 repo 的 `lora` 命令具體代表：
+
+> 使用 domain instruction／response 資料，做 LoRA SFT。
+
+目前 `dpo` 命令做的是全量參數更新；要做 LoRA DPO，需要另外擴充 `posttrain.py`。
+
+你也可以選擇：
+
+```
+base → SFT → DPO → domain LoRA
+```
+
+對應命令：
+
+```
+.\scripts\lab.ps1 lora --run <run名稱> --parent dpo
+```
+
+領域微調可能改變原本的偏好表現，因此最後仍要重新評估兩者。
+
+---
+
+**十三、各階段怎麼執行？**
+
+在 `C:\LLM\MiniLLM` 的 PowerShell 執行。下面用新的實驗名稱，保留已完成的 `smoke` 結果：
+
+```
+$labRun = 'lesson-20261013'
+```
+
+如果這個名稱已使用，換成另一個未使用的名稱。
+
+**1. 準備資料、去重、切分、訓練 tokenizer**
+
+```
+.\scripts\lab.ps1 prepare --run $labRun --config .\configs\smoke.json
+```
+
+預設讀取：
+
+```
+data/demo/pretrain.jsonl
+data/demo/sft.jsonl
+data/demo/dpo.jsonl
+data/demo/domain.jsonl
+```
+
+輸出：
+
+```
+artifacts/lesson-20261013/config.json
+artifacts/lesson-20261013/data/
+artifacts/lesson-20261013/tokenizer/
+```
+
+**2. 建立與保存隨機初始化模型**
+
+```
+.\scripts\lab.ps1 init --run $labRun
+```
+
+保存 `initialized/`，方便與後續模型比較。
+
+**3. 執行預訓練**
+
+```
+.\scripts\lab.ps1 pretrain --run $labRun
+```
+
+使用 40 steps，輸出 `base/`。
+
+**4. 從 base 執行 SFT**
+
+```
+.\scripts\lab.ps1 sft --run $labRun --parent base
+```
+
+使用 20 steps，輸出 `sft/`。
+
+**5. 從 SFT 執行 DPO**
+
+```
+.\scripts\lab.ps1 dpo --run $labRun --parent sft
+```
+
+使用 10 steps，輸出 `dpo/`。
+
+**6. 從 SFT 建立 domain LoRA 分支**
+
+```
+.\scripts\lab.ps1 lora --run $labRun --parent sft
+```
+
+使用 15 steps，輸出 `lora/` adapter。
+
+如果你希望 LoRA 接在 DPO 後面，就在執行此階段前把 parent 改成 `dpo`。同一個 run 的 `lora/` 已完成後，程式會阻止覆寫。
+
+**7. 重新產生共同比較**
+
+```
+.\scripts\lab.ps1 evaluate --run $labRun
+```
+
+結果位於：
+
+```
+artifacts/lesson-20261013/evaluation/comparison.md
+```
+
+各個訓練命令也會自動評估剛完成的 stage，並保留其他已保存的比較結果。
+
+**8. 推理比較**
+
+Base 可以先觀察原始文字續寫：
+
+```
+.\scripts\lab.ps1 infer --run $labRun --stage base --raw-prompt --prompt "Arithmetic example:" --greedy
+```
+
+再比較聊天階段：
+
+```
+.\scripts\lab.ps1 infer --run $labRun --stage sft --prompt "Calculate 2 + 3. Answer with a number." --greedy
+
+.\scripts\lab.ps1 infer --run $labRun --stage dpo --prompt "Calculate 2 + 3. Answer with a number." --greedy
+
+.\scripts\lab.ps1 infer --run $labRun --stage lora --prompt "Explain LoRA." --greedy
+```
+
+**9. 查看訓練曲線**
+
+在另一個 PowerShell 視窗：
+
+```
+.\scripts\monitor.ps1 -Run lesson-20261013
+```
+
+如果想一次執行預設主流程：
+
+```
+.\scripts\lab.ps1 all --run lesson-all-20261013 --config .\configs\smoke.json
+```
+
+它依序執行：
+
+```
+prepare → init → pretrain → SFT → DPO → LoRA(parent=SFT) → compare
+```
+
+nanoGPT 是另外的架構對照分支：
+
+```
+.\scripts\lab.ps1 nanogpt --run $labRun
+.\scripts\lab.ps1 evaluate --run $labRun
+```
+
+最後，`prepare` 會把設定保存到該 run 的 `config.json`，後續訓練使用這份設定。**修改原始 `configs/smoke.json` 不會改變已準備好的 run；調整詞表、模型結構、context 或資料處理規則時，應建立新 run。**
+
+
+
+
+#### 怎麼訓練 Tokenizer
+```
+請詳細介紹要怎麼訓練 Tokenizer, 怎麼理解這句話: Token 不一定是一個完整單字，也不一定是一個中文字；byte-level BPE 可以把文字拆成較小片段，再學習常見片段的合併規則, 以及在repo的prepare(). 1. 建立 byte-level BPE。
+
+2. 使用完整 byte alphabet。
+
+3. 只從 pretraining 的 train partition 學習 vocabulary。
+
+4. 加入 PAD、BOS、EOS 和 chat special tokens。
+
+5. 保存 tokenizer 和 chat template。
+
+以具體例子詳細介紹. 以及是否有通用 tokenizer, 不然如果做transfer learning或因要對齊兩個model或其他原因換 tokenizer, 那不就embedding 的每一列就可能對應到不同文字, 要怎麼解決這類問題?
+```
+訓練 Tokenizer 的核心目標是建立一本「字典」，讓模型能將人類的文字轉換成神經網路能理解的數字（Token IDs）。
+
+### 第一部分：理解「Token 不一定是完整單字或中文字，Byte-level BPE 是如何運作的」
+
+**Byte-Level BPE (Byte-Pair Encoding)** 的核心思想是：**由下而上，從最基本的 Byte（位元組）開始，統計相鄰片段出現的頻率，將最常一起出現的片段合併成一個新的 Token。**
+
+#### 具體例子解析：
+
+1. **為什麼不一定是完整單字（以英文為例）：**
+    
+    - 假設我們有一句話："unhappiness is everywhere"。
+        
+    - 如果字典裡沒有 "unhappiness" 這個完整單字，BPE 演算法在訓練時會發現 "un"（字首）、"happi"（字根）、"ness"（字尾）這幾個片段在語料庫中很常出現。
+        
+    - 因此，"unhappiness" 可能會被切分成三個 Token：`["un", "happi", "ness"]`。
+        
+    - **好處：** 模型可以用有限的字典大小（例如 32,000 個 Token），透過組合字根字首，去理解並生成無限的罕見字或新造詞，而不會遇到 OOV（Out-Of-Vocabulary，未知詞）問題。
+        
+2. **為什麼不一定是完整中文字（以中文與 Byte 為例）：**
+    
+    - 在電腦底層，文字是透過 UTF-8 編碼儲存的。一個英文字母佔 1 個 Byte，而**一個中文字通常佔 3 個 Bytes**。
+        
+    - 例如：「我」的 UTF-8 十六進位編碼是 `E6 88 91`（三個 Bytes）。
+        
+    - **常見字：** 如果「我」在訓練語料中出現頻率極高，BPE 會將 `E6`、`88`、`91` 這三個 Bytes 合併，並在字典中給它一個獨立的 Token ID（例如 ID: 5312）。這時，一個 Token 就是一個完整的中文字。
+        
+    - **罕見字或 Emoji：** 假設遇到極罕見的字「龘」（編碼為 `E9 BE 98`）。因為出現頻率太低，BPE 演算法沒有將它們合併。這時，「龘」就會被拆解成 3 個基礎的 Byte Token：`[<Byte_E9>, <Byte_BE>, <Byte_98>]`。這時，Token 就不是一個完整的中文字，而是位元組片段。
+        
+
+### 第二部分：詳解 `prepare()` 腳本中的 5 個步驟
+
+這五個步驟是從零訓練一個標準 LLM Tokenizer 的標準流程（例如 Llama、Qwen 等模型底層的做法）：
+
+#### 1. 建立 byte-level BPE
+
+- **實作意義：** 選擇 BBPE 演算法作為基礎架構。相比於 WordPiece（BERT 使用）或 Unigram，BBPE 能完美處理多語言和程式碼，並且透過 Byte 級別保證資訊不遺失。
+    
+
+#### 2. 使用完整 byte alphabet (0~255)
+
+- **實作意義：** 字典的最初始狀態（Base Vocabulary）就是這 256 個基本的 Bytes（`0x00` 到 `0xFF`）。
+    
+- **具體例子：** 即使模型遇到完全沒見過的外星文字或亂碼，只要它是電腦檔案，底層一定是這 256 個 Bytes 的組合。這樣做徹底消滅了 `<UNK>`（未知 Token），確保模型可以編碼與解碼任何二進位資料。
+    
+
+#### 3. 只從 pretraining 的 train partition 學習 vocabulary
+
+- **實作意義：** 嚴格遵守機器學習的資料隔離原則（Data Leakage Prevention）。
+    
+- **具體例子：** Tokenizer 也是從資料中「學習」出來的（學習哪些片段最常合併）。如果你把 Validation 或 Test set 的資料也拿去訓練 Tokenizer，Tokenizer 就會對測試集中的特定專有名詞產生「過度優化」的合併規則，導致評估模型真實泛化能力時失準。
+    
+
+#### 4. 加入 PAD、BOS、EOS 和 chat special tokens
+
+- **實作意義：** 語言模型需要結構化的控制訊號，這些訊號不屬於日常自然語言，必須手動強行加入字典，並且**設定為不可被分割（never_split）**。
+    
+- **具體例子：**
+    
+    - `<pad>`：補齊長度用的填充符號（Padding）。
+        
+    - `<s>` (BOS - Begin of Sentence)：告訴模型句子開始。
+        
+    - `</s>` (EOS - End of Sentence)：告訴模型句子結束，模型生成這個 Token 時就會停止輸出。
+        
+    - `<|im_start|>` / `<|im_end|>`：Chat 模式專用的角色標記。例如 `<|im_start|>user\n你好<|im_end|>`，幫助模型區分人類提示和系統預設詞。
+        
+
+#### 5. 保存 tokenizer 和 chat template
+
+- **實作意義：** 訓練完成後，將合併規則（Merges）和字對應表（Vocabulary）存成檔案（通常是 `tokenizer.json` 或 `tokenizer.model`）。同時保存 Chat Template（通常是 Jinja2 語法），確保推論時，使用者的對話能被正確格式化加上 Special Tokens。
+    
+
+### 第三部分：是否有「通用 Tokenizer」與 Transfer Learning 的 Embedding 對齊問題
+
+你的直覺**完全正確**。如果強行換掉 Tokenizer，原本 Pre-trained Model 的 Embedding Layer（詞向量矩陣）每一列對應的意義就會徹底錯亂，模型會瞬間變成智障，因為權重和詞彙對不上了。
+
+#### 1. 有沒有通用的 Tokenizer？
+
+**嚴格來說，沒有單一的通用 Tokenizer。** 每個模型家族都有自己訓練出來的 Tokenizer。
+
+- OpenAI 有 `tiktoken` (例如 `cl100k_base`，涵蓋 10 萬個 Token)。
+    
+- LLaMA 有自己的 SentencePiece 模型 (32k 詞表)。
+    
+- Qwen 有自己優化的 BBPE (高達 152k 詞表，對多語言支援極佳)。
+    
+
+雖然沒有絕對通用，但很多新模型為了省麻煩或為了相容性，會**直接沿用** OpenAI 的 `tiktoken` 規則，或者 LLaMA 的 Tokenizer。
+
+#### 2. 如果要做 Transfer Learning 或 Domain Adaptation，該怎麼解決 Embedding 對不上的問題？
+
+業界解決這類問題，絕對不會「憑空換掉」整個 Tokenizer，而是採用「詞表擴充」（Vocabulary Extension）的策略。
+
+**具體解決方案與例子（以 Chinese-LLaMA 為例）：** 原始的 LLaMA 主要是針對英文訓練的，詞表大小只有 32,000。它懂中文，但效率極差（一個中文字可能會被拆成 3 個 Byte Tokens，導致算力浪費且 Context Length 縮水）。
+
+如果你想把 LLaMA 遷移到中文領域（Transfer Learning），你會這樣做：
+
+1. **保留原始 Tokenizer 與 Embedding：** 原來的 32,000 個 Tokens 及其在模型中的 Embedding 矩陣（Shape: `[32000, 4096]`）**完全保持不變**。這保留了模型原本強大的英文與邏輯能力。
+    
+2. **訓練並加入新的 Tokens：** 拿大量的中文語料去訓練一個新的 Tokenizer，選出最常見的 20,000 個中文詞彙（例如：「人工」、「智能」、「台灣」）。
+    
+3. **合併 Tokenizer（擴充詞表）：** 把這 20,000 個新詞彙加到原來的字典後面，新的 Tokenizer 詞表大小變成 `52,000`。
+    
+4. **擴充 Embedding 矩陣（關鍵對齊步驟）：** 將模型的 Embedding 矩陣擴充為 `[52000, 4096]`。
+    
+    - 前 32,000 列：直接複製 LLaMA 原本的預訓練權重。
+        
+    - 後 20,000 列（新加的中文詞）：通常會**將它們初始化為組成這些詞的原本 Byte Token 的 Embedding 平均值**（Mean Pooling），或者採用較小的隨機常態分佈初始化。
+        
+5. **繼續 Pre-training (Continual Pre-training, CPT)：** 凍結或以極小的 Learning Rate 更新前 32k 的權重，重點訓練那 20,000 個新詞的 Embedding，讓模型學會將新詞向量對齊到原有的語義空間中。
+    
+
+總結來說：**你無法在保留模型權重的情況下「替換」Tokenizer，你只能**「擴充」它。擴充時，舊矩陣不動，新矩陣追加在後方並重新訓練對齊，這是目前 LLM 在做跨語言或特殊領域（如醫療、程式碼）遷移學習的標準作法。
+
+
+
+
+
+```
+
+```
