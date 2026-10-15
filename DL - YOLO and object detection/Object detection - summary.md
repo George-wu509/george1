@@ -18,16 +18,24 @@ New:
 
 ==================================================
 
-| **模型**        | **Backbone 類型**       | Stage | Anchor                 | **說明**                                        |
-| ------------- | --------------------- | ----- | ---------------------- | --------------------------------------------- |
-| RCNN          | VGG<br>ResNet<br>     | 2     | Yes                    | 使用 VGG/ResNet，原始含 FC 層，檢測時移除 FC，保留特徵圖。        |
-| YOLO          | Darknet<br>CSPDarknet | 1     | Yes <br><br>v8以上<br>NO | 全卷積設計，無 FC 層，專為檢測優化，直接輸出多尺度特徵圖。               |
-| FCOS          | VGG<br>ResNet         | 1     | NO                     | 使用 ResNet/ResNeXt，移除 FC 層，搭配 FPN，直接適配無錨框檢測。   |
-| SSD           | VGG<br>ResNet         | 1     | Yes                    | 使用 VGG，移除 FC 層，附加多尺度特徵層，適配單階段檢測。              |
-| RetinaNet     | ResNet                | 1     | Yes                    | 使用 ResNet，移除 FC 層，搭配 FPN 和 Focal Loss，提升檢測精度。 |
-| EfficientDet  | EfficientNet          | 1     | Yes                    | 基於 EfficientNet，移除 FC 層，加入 BiFPN，高效檢測設計。      |
-| MobileNet-SSD | MobileNet             | 1     | Yes                    | 基於 MobileNet，移除 FC 層，輕量化設計，適配移動設備檢測。          |
-| DETR          | Transformer           | 1     | NO                     | 使用 Transformer 架構，無 FC 層，直接基於注意力機制進行檢測。       |
+| **模型**                          | **Backbone 類型**                                                                  | Detector Architecture<br>           | Anchor                                                              | **說明**                                                                                                                                                                                                                                                                                               |
+| ------------------------------- | -------------------------------------------------------------------------------- | ----------------------------------- | ------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| RCNN                            | AlexNet / VGG / ResNet / ResNeXt 等 CNN<br>                                       | Faster R-CNN: RPN + RoI Head        | Yes                                                                 | Two-stage detector。第一階段產生 region proposals，第二階段進行分類與 bounding-box regression。Faster R-CNN 常使用 ResNet + FPN。早期 R-CNN 曾使用 AlexNet/VGG；不能籠統寫成固定 VGG/ResNet。                                                                                                                                             |
+| YOLO                            | Darknet → CSPDarknet / CSP-based CNN 等                                           | YOLO8: YOLO Head                    | YOLOv1：No traditional anchors；YOLOv2–v7：Yes；YOLOv8+ 多數為 Anchor-free | One-stage real-time detector。YOLO 世代差異很大；現代 Ultralytics YOLO 通常採 CNN backbone + neck + decoupled detection head，v8 之後以 anchor-free detection 為主。                                                                                                                                                     |
+| FCOS                            | 通常 ResNet / ResNeXt + FPN                                                        | FPN + FCOS Head                     | NO                                                                  | Fully Convolutional One-Stage detector。代表性的 **anchor-free** detector，以 feature-map location 直接預測 l/t/r/b 距離及 centerness，不需要 anchor boxes。                                                                                                                                                            |
+| SSD                             | 原始：VGG-16；亦有 MobileNet / ResNet 等 variants                                       |                                     | Yes                                                                 | Single Shot MultiBox Detector。原始 SSD 使用 VGG-16，並加入額外 convolution layers 產生多尺度 feature maps；使用 default boxes，概念上等同 anchors。                                                                                                                                                                           |
+| RetinaNet                       | ResNet + FPN                                                                     | FPN + RetinaNet Head                | Yes                                                                 | Anchor-based one-stage detector。最重要貢獻是 **Focal Loss**，處理 one-stage detection 嚴重的 foreground/background class imbalance。                                                                                                                                                                              |
+| EfficientDet                    | EfficientNet                                                                     |                                     | Yes                                                                 | EfficientNet backbone + **BiFPN** + compound scaling，同時縮放 input resolution、backbone、BiFPN 與 detection head，追求 accuracy / compute efficiency。                                                                                                                                                         |
+| MobileNet-SSD                   | MobileNet V1/V2/V3 等 CNN                                                         |                                     | Yes                                                                 | 基於 MobileNet，移除 FC 層，輕量化設計，適配移動設備檢測。                                                                                                                                                                                                                                                                 |
+| DETR                            | 原始：**ResNet CNN backbone**；後續 variants 可搭 ViT/Swin 等                             | Transformer Enc-Dec                 | NO                                                                  | 原始 DETR 是 **CNN backbone → Transformer Encoder → Transformer Decoder → Object Queries**。利用 Hungarian matching 做 set prediction，不需要 anchors，也通常不需要傳統 NMS。Transformer 是 detection architecture，不是原始 DETR 的 backbone。                                                                                   |
+| RT-DETR / RT-DETRv2             | 常見 **HGNetv2 CNN backbone** + Hybrid Encoder + Transformer Decoder               | Hybrid Encoder + DETR Decoder       | NO                                                                  | Real-Time DETR。為即時 detection 重構 DETR encoder，使用高效率 hybrid encoder、query selection 與 DETR decoder；仍屬 end-to-end anchor-free detector。                                                                                                                                                                 |
+| RT-DETRv4                       | **Student：HGNetv2 CNN backbone**；Training Teacher：**DINOv3 ViT VFM**             | Hybrid Encoder + DETR Decoder       | NO                                                                  | 不能說「DINOv3 是 RT-DETRv4 backbone」。實際 inference backbone 仍是 HGNetv2；DINOv3 ViT-B/16 是 **training-time Vision Foundation Model teacher**，透過 knowledge distillation 將較強 semantic representation 傳給 student detector，deployment 時 teacher 不需要存在。官方 config 明確包含 `backbone: HGNetv2` 與 `DINOv3TeacherModel` |
+| RF-DETR                         | **DINOv2 Vision Transformer backbone**；部分極小型版本使用 PE-Core-T                       | DETR-style Transformer              | NO                                                                  | 這個才是很好的「**Vision Foundation Model / ViT 直接當 detector backbone**」例子。RF-DETR 使用 pretrained DINOv2 ViT 作 backbone，再搭 DETR-style detection architecture，主打 real-time accuracy/latency trade-off。                                                                                                         |
+| D-FINE                          | **HGNetv2 CNN backbone** + Hybrid Encoder + D-FINE Transformer Decoder           | Hybrid Encoder + D-FINE Transformer | NO                                                                  | (2024/2025) 以更細緻的分布表示改善 bounding box regression                                                                                                                                                                                                                                                      |
+| YOLO-World                      | YOLO-style CNN backbone（CSP 系列） + **RepVL-PAN** + text encoder / text embeddings | RepVL-PAN + YOLO Head               | Anchor-free（YOLOv8-style）                                           | 2024 CVPR 的 **real-time open-vocabulary detector**。把 YOLO 與 vision-language modeling 結合，可輸入文字 vocabulary，例如 `"watch crown"`、`"screw"` 後做 zero-shot/open-vocabulary detection。核心之一是 **RepVL-PAN** 讓 visual 與 linguistic features 互動。                                                                  |
+| Small Object Detection / SAHI   | **不是固定 backbone**；可搭 YOLO、FCOS、DETR 等 detector                                   | 取決於底層 detector                      | detector取決於底層 detector                                              | **SAHI 不是 detection model，而是 slicing inference / training strategy。** 將高解析度影像切成 overlapping tiles，各自 detection，再透過 NMS/NMM 等方法合併結果。特別適合 4K/8K、衛星、工業 inspection、小缺陷。                                                                                                                                  |
+| Oriented Bounding Box Detection | **不是固定 backbone**；可搭 YOLO、FCOS、DETR 等 detector                                   | 取決於 detector                        | 可 Anchor-based 或 Anchor-free                                        | **OBB 是 detection task/formulation，不是一個特定 model。** 預測 `(x,y,w,h,θ)` 或 polygon，而非普通水平框。適合旋轉工業零件、文字、PCB、衛星影像、船舶等                                                                                                                                                                                       |
+[[RT-DETR, RF-DETR backbones]]
 
 [[R-CNN]]:    [[Mask R-CNN]]
 VGG/ResNet 加上 RoI Pooling(或RPN + RoI Align)   
@@ -56,6 +64,15 @@ Head Model:
 [[RT-DETR]]: (Real-Time DETR) : 對實時目標檢測進行優化。結構上融入了YOLO系列的設計理念，在編碼器部分大量使用了類似YOLO的backbone和neck，在解碼端做了針對性的優化，使其擁有更快的處理速度，同時保持了較高的檢測精度。著重於提高推理速度，適用於需要快速響應的應用場景。
 
 [[RF-DETR]]: 此類算法的出現都是為了增加DETR系列的檢測的精準度，將RF(receptive field)感受野融入了DETR網絡結構中，加強網路對於目標多尺度的檢測能力。在原有的DETR結構中做了結構性的改進，融合了多尺度的感受野訊息。針對檢測效果加強，但相較於RT-DETR這類實時目標檢測算法在檢測速度上會有所差異。
+
+YOLO26: Ultralytics 在 2026 年 1 月發布 YOLO26，將 optional NMS-free end-to-end inference、減少對 edge hardware 不友善的運算，以及小物件偵測改良納入核心設計。這很適合拿來理解 2026 年實際 detection 系統的工程取捨。
+
+RF-DETR: RF-DETR 是由 Roboflow 發展的 Real-Time Detection Transformer，採用預訓練視覺特徵與 DETR 系列架構來兼顧 accuracy 和 latency，並已列為 ICLR 2026 論文。它代表 Transformer Detector 已不再只能被視為速度比較慢的研究型架構。
+
+RT-DETRv4: 它將 Vision Foundation Models 的能力用於改善輕量化 real-time detectors。這帶出一個很重要的 2026 面試主題：如何在訓練階段利用大型 pretrained model，卻不讓 production inference 承擔大型模型的全部成本？
+
+
+
 
 ==================================================
 其他:
@@ -668,65 +685,76 @@ https://zhuanlan.zhihu.com/p/626659049
 
 ### QA-list
 
-| Q                                                                 | Ans |
-| ----------------------------------------------------------------- | --- |
-| DETR是怎么做的                                                         |     |
-| 能不能讲下二分图匹配（Sinkhorn原理）                                            |     |
-| 做NMS-free还有什么策略                                                   |     |
-| Coding>>> **NMS過程**                                               |     |
-| NMS的細節, SoftNMS跟NMS的差別                                            |     |
-| YOLOv4用到哪些优化方法？                                                   |     |
-| 谈谈YOLO系列的改进, 并且解释一下YOLO为什么可以这么快？                                  |     |
-| 介绍下NMS，并写出NMS的伪代码，和计算IOU的函数                                       |     |
-| 谈谈SSD中是如何确定正负样本的？                                                 |     |
-| 相比于Anchor-based方法，Anchor-free的优势在哪？                               |     |
-| faster RCNN原理介绍                                                   |     |
-| RPN（Region Proposal Network）网络的作用、实现细节                            |     |
-| 说一下RoI Pooling是怎么做的？有什么缺陷？有什么作用                                   |     |
-| Faster R-CNN是如何解决正负样本不平衡的问题？                                      |     |
-| faster-rcnn中bbox回归用的是什么公式，说一下该网络是怎么回归bbox的？                       |     |
-| 简述faster rcnn的前向计算过程 简述faster rcnn训练步骤                            |     |
-| Faster rcnn有什么不足的地方吗？如何改进？                                        |     |
-| 简要阐述一下One-Stage、Two-Stage模型                                       |     |
-| YOLOV1、YOLOV2、YOLOV3复述一遍 YOLOv1到v3的发展历程以及解决的问题                    |     |
-| 简要阐述一下FPN网络具体是怎么操作的 FPN网络的结构。                                     |     |
-| 简要阐述一下SSD网络, 阐述一下ssd和retinanet的区别                                 |     |
-| 简要阐述一下RetinaNet                                                   |     |
-| faster rcnn和yolo，ssd之间的区别和联系                                      |     |
-| 分析一下SSD,YOLO,Faster rcnn等常用检测网络对小目标检测效果不好的原因                      |     |
-| Coding>>> **IoU算法**                                               |     |
-| 讲一下目标检测优化的方向                                                      |     |
-| anchor设置的意义                                                       |     |
-| 如果只能修改RPN网络的话，怎么修改可以提升网络小目标检出率                                    |     |
-| 如何理解concat和add这两种常见的feature map特征融合方式                             |     |
-| 阐述一下如何检测小物体                                                       |     |
-| 阐述一下目标检测任务中的多尺度                                                   |     |
-| 如果有很长，很小，或者很宽的目标，应该如何处理目标检测中如何解决目标尺度大小不一的情况 小目标不好检测               |     |
-| 检测的框角度偏移了45度，这种情况怎么处理                                             |     |
-| YOLO、SSD和Faster-RCNN的区别，他们各自的优势和不足分别是什么？                          |     |
-| 介绍一下CenterNet的原理，它与传统的目标检测有什么不同点？                                 |     |
-| CenterNet中heatmap（热力图）如何生成？                                       |     |
-| 你最常用的几种目标检测算法是什么？为什么选择这些算法，你选择它们的场景分别是什么？                         |     |
-| yolov4和v5均引入了CSP结构，介绍一下它的原理和作用                                    |     |
-| EfficientDet为什么可以做到速度兼精度并存                                        |     |
-| 介绍Faster R-CNN和Cascade R-CNN                                      |     |
-| SSD相比于YOLO做了哪些改进？                                                 |     |
-| 了解哪些开源的移动端轻量型目标检测？                                                |     |
-| 目标检测单阶段和双阶段优缺点，双阶段的为什么比单阶段的效果要好？                                  |     |
-| 目标检测中如何处理正负样本不平衡的问题？                                              |     |
-| 和SSD比网络更加深了，虽然anchors比SSD少了许多，但是加深的网络深度明显会增加更多的计算量，那么为什么会比SSD快3倍？ |     |
-| 你认为当前目标检测算法发展的趋势是什么？现阶段存在什么难点？                                    |     |
-| DETR用二分图匹配实现label assignment，简述其过程                                |     |
-| 如何修改Yolov5目标检测，从而实现旋转目标检测？                                        |     |
-| 在目标Crowded的场景下，经常在两个真正目标中间会出现误检的原因?                               |     |
-| 如果在分类任务中几个类别有重叠（类间差异小）怎么办，如何设计网络结构                                |     |
-| Anchor-free的target assign怎么解决多个目标中心点位置比较靠近的问题                     |     |
-| 目标检测设置很多不同的anchor，能否改善小目标及非正常尺寸目标的性能，除计算速度外还存在什么问题                |     |
-| Focal loss的参数如何调，以及存在什么问题                                         |     |
-| Yolov5中的objectness的作用                                             |     |
-| 目标检测中旋转框IOU的计算方式                                                  |     |
-| DETR的检测算法的创新点                                                     |     |
-| FCOS如何解决重叠样本，以及centerness的作用                                      |     |
+| Q                                                                                                          | Ans |
+| ---------------------------------------------------------------------------------------------------------- | --- |
+| DETR是怎么做的                                                                                                  |     |
+| 能不能讲下二分图匹配（Sinkhorn原理）                                                                                     |     |
+| 做NMS-free还有什么策略                                                                                            |     |
+| Coding>>> **NMS過程**                                                                                        |     |
+| NMS的細節, SoftNMS跟NMS的差別                                                                                     |     |
+| YOLOv4用到哪些优化方法？                                                                                            |     |
+| 谈谈YOLO系列的改进, 并且解释一下YOLO为什么可以这么快？                                                                           |     |
+| 介绍下NMS，并写出NMS的伪代码，和计算IOU的函数                                                                                |     |
+| 谈谈SSD中是如何确定正负样本的？                                                                                          |     |
+| 相比于Anchor-based方法，Anchor-free的优势在哪？                                                                        |     |
+| faster RCNN原理介绍                                                                                            |     |
+| RPN（Region Proposal Network）网络的作用、实现细节                                                                     |     |
+| 说一下RoI Pooling是怎么做的？有什么缺陷？有什么作用                                                                            |     |
+| Faster R-CNN是如何解决正负样本不平衡的问题？                                                                               |     |
+| faster-rcnn中bbox回归用的是什么公式，说一下该网络是怎么回归bbox的？                                                                |     |
+| 简述faster rcnn的前向计算过程 简述faster rcnn训练步骤                                                                     |     |
+| Faster rcnn有什么不足的地方吗？如何改进？                                                                                 |     |
+| 简要阐述一下One-Stage、Two-Stage模型                                                                                |     |
+| YOLOV1、YOLOV2、YOLOV3复述一遍 YOLOv1到v3的发展历程以及解决的问题                                                             |     |
+| 简要阐述一下FPN网络具体是怎么操作的 FPN网络的结构。                                                                              |     |
+| 简要阐述一下SSD网络, 阐述一下ssd和retinanet的区别                                                                          |     |
+| 简要阐述一下RetinaNet                                                                                            |     |
+| faster rcnn和yolo，ssd之间的区别和联系                                                                               |     |
+| 分析一下SSD,YOLO,Faster rcnn等常用检测网络对小目标检测效果不好的原因                                                               |     |
+| Coding>>> **IoU算法**                                                                                        |     |
+| 讲一下目标检测优化的方向                                                                                               |     |
+| anchor设置的意义                                                                                                |     |
+| 如果只能修改RPN网络的话，怎么修改可以提升网络小目标检出率                                                                             |     |
+| 如何理解concat和add这两种常见的feature map特征融合方式                                                                      |     |
+| 阐述一下如何检测小物体                                                                                                |     |
+| 阐述一下目标检测任务中的多尺度                                                                                            |     |
+| 如果有很长，很小，或者很宽的目标，应该如何处理目标检测中如何解决目标尺度大小不一的情况 小目标不好检测                                                        |     |
+| 检测的框角度偏移了45度，这种情况怎么处理                                                                                      |     |
+| YOLO、SSD和Faster-RCNN的区别，他们各自的优势和不足分别是什么？                                                                   |     |
+| 介绍一下CenterNet的原理，它与传统的目标检测有什么不同点？                                                                          |     |
+| CenterNet中heatmap（热力图）如何生成？                                                                                |     |
+| 你最常用的几种目标检测算法是什么？为什么选择这些算法，你选择它们的场景分别是什么？                                                                  |     |
+| yolov4和v5均引入了CSP结构，介绍一下它的原理和作用                                                                             |     |
+| EfficientDet为什么可以做到速度兼精度并存                                                                                 |     |
+| 介绍Faster R-CNN和Cascade R-CNN                                                                               |     |
+| SSD相比于YOLO做了哪些改进？                                                                                          |     |
+| 了解哪些开源的移动端轻量型目标检测？                                                                                         |     |
+| 目标检测单阶段和双阶段优缺点，双阶段的为什么比单阶段的效果要好？                                                                           |     |
+| 目标检测中如何处理正负样本不平衡的问题？                                                                                       |     |
+| 和SSD比网络更加深了，虽然anchors比SSD少了许多，但是加深的网络深度明显会增加更多的计算量，那么为什么会比SSD快3倍？                                          |     |
+| 你认为当前目标检测算法发展的趋势是什么？现阶段存在什么难点？                                                                             |     |
+| DETR用二分图匹配实现label assignment，简述其过程                                                                         |     |
+| 如何修改Yolov5目标检测，从而实现旋转目标检测？                                                                                 |     |
+| 在目标Crowded的场景下，经常在两个真正目标中间会出现误检的原因?                                                                        |     |
+| 如果在分类任务中几个类别有重叠（类间差异小）怎么办，如何设计网络结构                                                                         |     |
+| Anchor-free的target assign怎么解决多个目标中心点位置比较靠近的问题                                                              |     |
+| 目标检测设置很多不同的anchor，能否改善小目标及非正常尺寸目标的性能，除计算速度外还存在什么问题                                                         |     |
+| Focal loss的参数如何调，以及存在什么问题                                                                                  |     |
+| Yolov5中的objectness的作用                                                                                      |     |
+| 目标检测中旋转框IOU的计算方式                                                                                           |     |
+| DETR的检测算法的创新点                                                                                              |     |
+| FCOS如何解决重叠样本，以及centerness的作用                                                                               |     |
+| YOLO 與 DETR 的主要差異是什麼？何時會選擇哪一個？                                                                             |     |
+| Anchor-based 與 Anchor-free Detector 有什麼不同？                                                                 |     |
+| DETR 為什麼使用 Hungarian Matching？為什麼可避免傳統 NMS？                                                                |     |
+| End-to-end Detection 是什麼？是否一定比較快？                                                                          |     |
+| YOLO26、RF-DETR、RT-DETRv4 在 architecture、deployment 和 dataset requirement 上要如何比較？                           |     |
+| 為什麼小物件只佔 2048×2048 影像的 1%，模型常常偵測不到？如何利用 multi-scale、tiling、higher-resolution crop、FPN、label assignment 改善？ |     |
+| COCO mAP 較高的模型，是否必然比較適合工業 AOI？                                                                             |     |
+|                                                                                                            |     |
+|                                                                                                            |     |
+|                                                                                                            |     |
+|                                                                                                            |     |
 
 一位算法工程师从30+场秋招面试中总结出的超强面经——目标检测篇（含答案）
 https://zhuanlan.zhihu.com/p/374017926

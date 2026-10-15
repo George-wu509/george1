@@ -7,6 +7,55 @@ tracking-by-attention
 2. GroundingDINO + Tracker
 
 
+建議新增：
+
+|技術|用途|面試重點|
+|---|---|---|
+|BoT-SORT / OC-SORT|Multi-Object Tracking|Association、Motion Model、Appearance Features|
+|CoTracker3|Tracking arbitrary image points|Point Tracking vs Object Tracking|
+|SAM 3 Video Tracking|以概念指定影片中需要追蹤的物件|Text-guided Video Segmentation|
+|Video Foundation Models|通用 Video Representation|Temporal Modeling、Pretraining|
+|Temporal Action Localization|判斷動作在影片中何時開始、結束|Temporal Boundaries、Frame Sampling|
+|Long-video Understanding|長影片理解|Memory、Video Tokens、Temporal Grounding|
+
+為什麼要加 CoTracker3？
+
+你原本的 Object Tracking 主要是 tracking-by-detection。
+
+例如：
+
+```
+YOLO Detection
+    ↓
+Bounding Boxes
+    ↓
+ByteTrack / DeepSORT
+    ↓
+Object IDs and Trajectories
+```
+
+但 CoTracker3 解決的是不同問題：在影片中追蹤任意影像點的位置，包括不一定屬於完整可辨識物件的點。它可以對一組 points 進行 joint tracking，對 Visual Geometry、Robotics、Motion Analysis 有用。
+
+因此面試應能區分四種不同任務：
+
+- Object Tracking：追蹤物件 ID 與 bounding box。
+    
+- Point Tracking：追蹤像素或特徵點。
+    
+- Video Object Segmentation：追蹤物件 mask。
+    
+- Optical Flow：估計像素的運動場。
+    
+
+這四者可以互相結合，但輸出與 evaluation metrics 不同。
+
+面試時尤其要準備 HOTA、IDF1、MOTA、ID Switch，以及 Tracking 如何處理 Occlusion、Camera Motion 和 Object Re-entry。
+
+
+
+
+
+
 
 影片物件偵測 (Video Object Detection, VOD) 是電腦視覺中的一個核心且充滿挑戰的領域，尤其在手術影片這種專業場景下，其複雜性和要求更高。
 

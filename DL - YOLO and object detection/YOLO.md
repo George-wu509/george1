@@ -48,8 +48,8 @@ https://www.mdpi.com/2504-4990/5/4/83
 | [[### YOLO compare to MobileNet]]       |     |
 | [[### CSPDarknet and PAN]]              |     |
 | [[### YOLO分割成SxS網格]]                    |     |
-|                                         |     |
-|                                         |     |
+| YOLOv10 / YOLO11                        |     |
+| YOLO26                                  |     |
 |                                         |     |
 Reference:
 YOLOv13 从训练到模型部署全流程实战：PyTorch → ONNX → TensorRT - 坚强的秋叶的文章 - 知乎

@@ -18,6 +18,30 @@
 
 <5> DETR 是第一個應用Transformer到object detection的Model. 流程是1. 用CNN(ResNet)生成feature images, 再經過經典Encoder, Decoder, 然後接上head model輸出bounding box跟類別
 
+<6> SAM 3 在 2025 年 11 月發布。它和 SAM/SAM2 的重要差異不只是 segmentation accuracy，而是新增 Promptable Concept Segmentation：使用文字描述或 exemplar，可以尋找並分割符合概念的所有物件，甚至跨影片維持其追蹤身分。
+
+| 建議新增                         | 重點                                              |
+| ---------------------------- | ----------------------------------------------- |
+| SAM 3                        | Text / Exemplar Promptable Concept Segmentation |
+| SAM 3D                       | 單張影像的 3D 物體與人體重建，歸在 3D 分類亦可                     |
+| Foundation Model Fine-tuning | Full Fine-tuning、Adapter、LoRA、Frozen Encoder    |
+| Efficient Segmentation       | RT-DETR Seg、RF-DETR Seg、YOLO Seg                |
+| Boundary-aware Segmentation  | Boundary Loss、Boundary F-score、細小結構品質           |
+| Domain-specific Segmentation | Medical、Industrial、Remote Sensing、Microscopy    |
+#### 為什麼還是要保留 U-Net？
+
+即使 SAM 3 更通用，也不代表應把 U-Net 從你的清單刪除。
+
+對醫療顯微影像、精密工業量測、微小缺陷及固定種類的 segmentation，專門訓練的 U-Net 類模型仍然很值得比較，因為你可能更需要：
+
+- 嚴格的 pixel-level accuracy 和邊界精度。
+    
+- 較低的運算成本、可控制的 inference latency。
+    
+- 對特定材料、照明與相機條件的可靠性。
+    
+- 一致且可驗證的模型輸出。
+
 |                 |     |
 | --------------- | --- |
 | [[### QA-list]] |     |
@@ -460,20 +484,22 @@ Transformer 模型最初在自然語言處理（NLP）領域取得了巨大的�
 
 ### QA-list
 
-| Q                               | Ans |
-| ------------------------------- | --- |
-| 简述Deeplab v1,v2,c3网络            |     |
-| 条件随机场(CRF)后处理的目的                |     |
-| U-Net網路設計思路                     |     |
-| 简述encode和decode思想               |     |
-| FCN与CNN最大的区别？                   |     |
-| 分割出来的结果通常会有不连续的情况，怎么处理？开运算闭运算   |     |
-| 简单阐述一下mIOU,写出mIOU的计算公式          |     |
-| 空洞卷积的具体实现                       |     |
-| 简要阐述一下图像分割中常用的Loss              |     |
-| 为什么UNet++可以被剪枝，怎么去决定剪多少？        |     |
-| 在Unet网络结构中，四次降采样对于分割网络到底是不是必须的？ |     |
-| SAM分割一切网络中的Promot类型以及如何输入进网络    |     |
+| Q                                                                                                                                                                                                                                                                   | Ans |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --- |
+| 简述Deeplab v1,v2,c3网络                                                                                                                                                                                                                                                |     |
+| 条件随机场(CRF)后处理的目的                                                                                                                                                                                                                                                    |     |
+| U-Net網路設計思路                                                                                                                                                                                                                                                         |     |
+| 简述encode和decode思想                                                                                                                                                                                                                                                   |     |
+| FCN与CNN最大的区别？                                                                                                                                                                                                                                                       |     |
+| 分割出来的结果通常会有不连续的情况，怎么处理？开运算闭运算                                                                                                                                                                                                                                       |     |
+| 简单阐述一下mIOU,写出mIOU的计算公式                                                                                                                                                                                                                                              |     |
+| 空洞卷积的具体实现                                                                                                                                                                                                                                                           |     |
+| 简要阐述一下图像分割中常用的Loss                                                                                                                                                                                                                                                  |     |
+| 为什么UNet++可以被剪枝，怎么去决定剪多少？                                                                                                                                                                                                                                            |     |
+| 在Unet网络结构中，四次降采样对于分割网络到底是不是必须的？                                                                                                                                                                                                                                     |     |
+| SAM分割一切网络中的Promot类型以及如何输入进网络                                                                                                                                                                                                                                        |     |
+| 你有 1,000 張工業零件影像，要精確 segment 0.1 mm 的細小刮痕。你會選擇 U-Net、SAM 3、YOLO Seg，還是 fine-tuned Vision Foundation Model？為什麼？ <br><br>Senior Engineer 應該能從 Ground Truth、object scale、Mask Quality、Latency、Training Cost、Domain Shift、Threshold Calibration 等角度解釋選擇，而不是直接選擇參數最多的模型。 |     |
+|                                                                                                                                                                                                                                                                     |     |
 
 
 一位算法工程师从30+场秋招面试中总结出的语义分割超强面经（含答案） - 极市平台的文章 - 知乎
