@@ -106,8 +106,8 @@ s = "cbaebabacd",
 p = "abc"
 解釋: 
 step1: 在char_counts的dict儲存p中每个字母出现的次数 {"a":1, "b":1, "c":1}
-step2: create雙指針, 左指針left = 0 跟match_count = 0
-step3: 從for loop右指針right = 0開始, 檢查值(current_char='c')是否在char_counts的dict裡面, 如果是則將dict中的'c'次數減1. 然後如果次數=>0, match_count+1
+step2: create雙指針, 左指針left(window左側id) = 0 跟match_count(windows裡面有多少個match) = 0
+step3: 從for loop右指針right(window右側id)  = 0開始, 檢查right的值是否在char_counts的dict裡面, 如果是則將dict中的'c'次數減1. 然後如果次數=>0, match_count+1
 step4: 如果滑動窗口(right-left+1)的長度跟p的長度相同, 而且match_count跟p的長度相同, 加入result
 step5: 當滑動窗口跟p的長度相同, 並檢查完match_count, 試著將左指針left移除
 

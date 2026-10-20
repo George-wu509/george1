@@ -44,8 +44,6 @@ def climb_stairs(self, n: int) -> int:
 ```
 pass
 
-
-
 ```python
 def climb_stairs(self, n: int) -> int:
 	if n == 0:
