@@ -149,3 +149,44 @@ step5: 當滑動窗口跟p的長度相同, 並檢查完match_count, 試著將左
 5. 返回 `result` 列表。
 
 這個方法比原始程式碼更健壯，因為它精確地追蹤了 `p` 中每個字符的需求，並在 `match_count` 達到 `p` 的長度時才判斷為異位詞，避免了只檢查窗口長度導致的錯誤。
+
+
+
+
+
+如果p="abc", char_counts = {}那以下兩種寫法哪種正確呢?為何
+
+for char in p:
+   char_counts[char] = char_counts.get(char, 0) + 1
+
+for char in p:
+   char_counts[char] = char_counts[char] + 1
+   
+
+**第一種寫法是正確的**，第二種寫法執行時會直接引發 **`KeyError` 程式崩潰**。
+### 原因解析
+
+#### ❌ 第二種寫法（錯誤）：`char_counts[char] = char_counts[char] + 1`
+
+當程式執行到第一圈迴圈（`char = 'a'`）時：
+
+1. 等號右邊要先計算 `char_counts['a'] + 1`。
+    
+2. 系統試圖去 `char_counts` 字典裡讀取 `'a'` 的值。
+    
+3. 但此時 `char_counts` 是**空的字典 `{}`**，裡面根本還沒有 `'a'` 這個鍵（Key）。
+    
+4. Python 發現鍵不存在，就會立刻丟出 **`KeyError: 'a'`** 並強制中斷程式。
+    
+
+#### ⭕ 第一種寫法（正確）：`char_counts[char] = char_counts.get(char, 0) + 1`
+
+`dict.get(key, default)` 方法專門用來安全處理「鍵可能不存在」的情況：
+
+1. **當鍵不存在時**：`char_counts.get('a', 0)` 不會報錯，而是直接回傳你設定的預設值 **`0`**。
+    
+    - 計算變成 `0 + 1 = 1`，並寫入 `char_counts['a'] = 1`。
+        
+2. **當鍵已存在時**：`char_counts.get('a', 0)` 會直接取出目前的累積次數（例如 `1`）。
+    
+    - 計算變成 `1 + 1 = 2`，成功更新次數。

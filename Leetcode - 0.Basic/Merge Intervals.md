@@ -33,6 +33,28 @@ step1: 先對intervals排序, 並create 空的result = []
 step2: 從頭開始for loop檢查intervals, 如果result是空的直接加入
 step3: 比對for loop裡的interval跟result的最後一個. 如果沒有overlap則append加入result, 如果有overlap則跟result最後一個合併.
 
+
+### `intervals = sorted(intervals, key=lambda x: x.start)` 的意思
+
+這行程式碼的作用是**將所有區間依照「起點（`start`）」從小到大（升冪）排序**。
+
+#### 拆解說明：
+
+1. **`sorted(intervals, ...)`**：
+    
+    - Python 內建的排序函式，會讀取 `intervals` 並回傳一個**排序後的新串列**。
+        
+    - 最後賦值回 `intervals` 變數覆蓋舊資料。
+        
+2. **`key=lambda x: x.start` (指定排序基準)**：
+    
+    - **`lambda x:`**：Python 的匿名函式，`x` 代表 `intervals` 中的「每一個區間物件」。
+        
+    - **`x.start`**：告訴 `sorted` 函式「請拿每個物件的 `.start` 屬性值來比較大小」。
+
+
+
+
 ### **Lintcode 156 Merge Intervals 解法分析**
 
 #### **問題理解**

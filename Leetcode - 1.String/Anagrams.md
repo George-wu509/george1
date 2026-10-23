@@ -18,16 +18,22 @@ Lintcode 171
 
 
 ```python
-def anagrams(self, strs):
-	dict = {}
-	for word in strs:
-		sortedword = ''.join(sorted(word))
-		dict[sortedword] = [word] if sortedword not in dict else dict[sortedword] + [word]
-	res = []
-	for item in dict:
-		if len(dict[item]) >= 2:
-			res += dict[item]
-	return res
+from collections import defaultdict
+
+class Solution:
+    def anagrams(self, strs):
+        group = defaultdict(list)
+
+        for word in strs:
+            sorted_word = "".join(sorted(word))
+            group[sorted_word].append(word)
+
+        res = []
+        for word_list in group.values():
+            if len(word_list) >= 2:
+                res.extend(word_list)
+
+        return res
 ```
 pass
 解釋: 
@@ -38,10 +44,18 @@ step2: for loop 遍歷list每個字串. 每個字串用sorted()排序. 如果排
 word = "eat",   
 sorted("eat") 得到 ["a","e"."t"]
 sortedword = ''.join(sorted(word)) 得到 "aet"
+`''.join(['a', 'e', 't'])` 會將排序後的字元串列重新拼回一個**字串** `"aet"`
+- `sorted("eat")` $\rightarrow$ `['a', 'e', 't']` （List，無法作為 Key）
+- `''.join(sorted("eat"))` $\rightarrow$ `"aet"` （String，可作為 Key）
 
 解釋2:
 dict[sortedword] = [word] if sortedword not in dict else dict[sortedword] + [word]
 例如，如果 `dict` 中已经有 `{'aet': ['eat']}`，现在遇到了 `word` 是 "tea"，那么 `dict[sortedword]` (`['eat']`) 会与 `['tea']` 相加，结果是 `['eat', 'tea']`，然后这个新列表会重新赋值给 `dict[sortedword]`，使 `dict` 变为 `{'aet': ['eat', 'tea']}`。
+
+
+
+
+
 
 
 本題 **`anagrams(self, strs) -> List[str]`** 的目標是：
