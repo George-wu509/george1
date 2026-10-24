@@ -8,6 +8,16 @@
 | dict0['id3'] = 'B'<br>dict0.pop('id1')                                                                                                                                         |     |
 | Tuple -> '他bo'                                                                                                                                                                 |     |
 
+|     |                                                                                                                                                                                                                                                        |
+| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+|     | list1 = [1,2,3,4]<br>   list1[0] = 1, <br>   list1.append(5) ->  list1 = [1,2,3,4,5]<br>   list1.pop() -> list1 = [1,2,3,4] or list1.pop(index)<br>   list1.remove(3) -> list1 = [1,2,4] or list1.remove(value)                                        |
+|     | tuple1 = (1,2,3,4)<br>   tuple1[0] = 1<br>   cannot append or pop or remove                                                                                                                                                                            |
+|     | set1 = {1,2,3,4}<br>   1 in set1<br>   set1.add(5) -> set1 = {1,2,3,4,5}<br>   set1.remove(5) -> set1 = {1,2,3,4}<br>   set1.pop() -> set1隨機pop                                                                                                        |
+|     | dict1 = {id1:1, id2:2, id3:3}<br>   dict1[id1] = 1<br>   dict1[id4] = 'B' -> dict1 = {id1:1, id2:2, id3:3, id4: 'B'}<br>   dict1.pop(id4) -> dict1 = {id1:1, id2:2, id3:3}                                                                             |
+|     | 所以.append()跟.pop()是跟index有關-> append加在最後面, pop(index)<br>所以.add()跟.remove()是跟value有關 -> add直接加value, remove(value)<br>所以create new: list0=[],  tuple0 = (),  dist0 = {},  set0 = set()<br>所以移除: delete list1, delete tuple1, delete set1, delete dict1 |
+|     |                                                                                                                                                                                                                                                        |
+
+
 
 以下是80道Python基礎面試問題，涵蓋了Python語法、數據類型、控制流、函數與模組等基礎知識：
 
