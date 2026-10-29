@@ -181,6 +181,17 @@ Dynamic Programming
 
 這是我建議你整理進 LeetCode / LintCode 筆記的正式版本。它涵蓋你列出的全部 12 種 Data Structure，也保留必要的演算法選擇。
 
+|   |   |
+|---|---|
+|Rule 1|Search / Find / Lookup|
+|Rule 2|Sequence / Order / Processing|
+|Rule 3|Max / Min / Priority / Top K|
+|Rule 4|Subarray / Range Query / Update|
+|Rule 5|Relative Position / Rank / Order Statistics|
+|Rule 6|Tree / Hierarchy / Traversal|
+|Rule 7|Graph / Connectivity / Components|
+|Rule 8|Optimization / Shortest Path / Feasibility|
+
 | RULES choices                                                                            | Methods                                                                                                                                                                                                                                                                                                                                                                                                                                          |
 | ---------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | Rule 1<br>當題目要求搜<br>尋、查找或有<br>序查詢<br>Search<br>Find<br>Lookup                            | 未排序資料：判斷 Key 是否存在、出現次數或 Key→Value<br>-> Hash Map / Hash Set<br><br>已排序 Array：查特定值、Lower Bound、Upper Bound<br>-> Array + Binary Search<br><br>答案空間具有單調可行性<br>-> Binary Search on Answer<br><br>動態插入／刪除，需保持排序並尋找前驅／後繼<br>-> Balanced BST / Ordered Set<br><br>題目提供 BST，利用 Key 大小關係搜尋<br>-> Binary Search Tree (BST)<br><br>搜尋字串 Prefix、字典或自動補全<br>-> Trie<br><br>                                                                                  |
@@ -192,6 +203,24 @@ Dynamic Programming
 | Rule 7<br>當題目探討連<br>通性、群組、<br>朋友圈或Graph<br>Connectivity<br>Components                    | 靜態 Graph：Reachability / Connected Components<br>-> DFS / BFS<br><br>無向圖持續加邊，動態查兩點連通或群組大小<br>-> Union Find / DSU<br><br>無向圖新增 Edge，判斷是否形成 Cycle<br>-> Union Find / DSU<br><br>Unweighted Graph：最短路徑／最少步數<br>-> BFS + Queue<br><br>Directed Graph：Strongly Connected Components<br>-> Tarjan / Kosaraju (DFS)<br><br>存在刪邊或時間批次變化，需離線處理連通性<br>-> Reverse Processing / Rollback DSU                                                                  |
 | Rule 8<br>當題目要求最<br>佳化、最短<br>路徑、最大收<br>益或可行性<br>Optimization<br>Optimal <br>Solution<br> | 具 Optimal Substructure + Overlapping Subproblems<br>-> Dynamic Programming (DP)<br><br>能證明局部最佳選擇可達到全域最佳<br>-> Greedy<br><br>無權 Graph 最短路徑／最少步數<br>-> BFS + Queue<br><br>Non-negative Weighted Graph 最短路徑或相關變體<br>-> Dijkstra + Min Heap（瓶頸路徑可用 Max Heap）<br><br>存在負權邊、負權環，或限制邊數的最短路徑<br>-> Bellman-Ford / K-round Relaxation<br><br>答案存在單調可行性，可用二分搜尋最佳界線<br>-> Binary Search on Answer<br><br>DAG：依依賴順序求最長／最短路徑或狀態累積<br>-> Topological Sort + DP |
 |                                                                                          |                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+
+|#|Data Structure|核心用途|對應 Rules|
+|---|---|---|---|
+|1|Array / Prefix Sum|Random Access、靜態區間總和|2、4|
+|2|Linked List / Doubly Linked List|已知節點位置的快速插入／刪除、節點指標操作|2|
+|3|Queue / Deque / Monotonic Queue|FIFO、BFS、Sliding Window Extreme|2、3、4、6、7、8|
+|4|Stack / Monotonic Stack|LIFO、DFS、Next Greater / Smaller|2、5、6|
+|5|Heap|Global Min / Max、Top K、Priority|3、8|
+|6|Binary Tree / BST|Hierarchical Traversal、Ordered Search|1、6|
+|7|Hash Map / Hash Set|Exact Lookup、Frequency、Prefix Sum Lookup|1、4|
+|8|Trie|Prefix Search、Dictionary|1|
+|9|Union Find|Dynamic Connectivity、Components|7|
+|10|Segment Tree|Dynamic Range Query、Range Update|3、4|
+|11|Balanced Tree|Dynamic Ordered Data、Floor / Ceiling、Rank（需擴充）|1、3、5、6|
+|12|BIT / Fenwick Tree|Dynamic Prefix / Range Sum、Frequency Counting|4、5|
+
+
+
 
 ## Rule 1：當題目要求搜尋、查找或有序查詢（Search / Find / Lookup）
 
@@ -249,16 +278,8 @@ Dynamic Programming
 | 靜態資料，只需要一次極值統計或單次掃描最佳值   | Array Linear Scan<br><br>Big O：O(N) 時間；O(1) 額外空間                              | 1. #397 Longest Continuous Increasing Subsequence — 最長連續遞增長度<br><br>2. #149 Best Time to Buy and Sell Stock — 單次買賣最大收益<br><br>3. #585 Maximum Number in Mountain Sequence — 找山形陣列最大值 |
 
 這裡最重要的是區分：
-Heap
-全域最高優先級
+![[Pasted image 20261029110117.png]]
 
-Monotonic Deque
-滑動視窗極值
-
-Segment Tree
-任意區間極值
-
-三者的關鍵差異不在於都能找最大值，而是支援的更新方式與查詢範圍不同。
 例如 LeetCode 239（Sliding Window Maximum）通常使用 Monotonic Deque，並不需要 Segment Tree。
 
 ## Rule 4：當題目要求 Subarray、Range Query 或區間修改
