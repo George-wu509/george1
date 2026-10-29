@@ -176,51 +176,22 @@ Dynamic Programming
 ```
 以下是我lintcode/lintcode解題時整理的12個data structure. 而在下面的表格則是高階選擇心法與判定規則 (How to Choose)的五個Rules, 請幫我檢查是否合理以及是否能將12個data structure融合進去高階選擇心法與判定規則 (How to Choose)以及更優化這些Rules. 1. Array / PreSum 2. Linked list / Doubly linked list 3. queue / deque / Monotone queue 4. Stack / Monotone stack 5. Heap(堆) 6. Binary Tree(BT) / Binary Search tree(BST) 7. Hash table / Hash map 8. Trie 9. Union find 10. segment tree 11. balanced tree 12 BIT
 ```
-你的五條 How to Choose（資料結構選擇規則）整體方向是正確的，而且已經抓到 LeetCode / LintCode 解題時最重要的幾個關鍵：Search、Min/Max、Range Query、Relative Position、Connectivity。
-
-不過，如果目標是建立一套能夠應付 LeetCode Medium / Hard，以及 Senior Software Engineer 技術面試的完整判斷系統，我建議做三個改進：
-
-1. 從原本的 5 Rules 擴充成 8 Rules。 原本五條無法自然涵蓋 Linked List、一般 Stack / Queue、Binary Tree / BST、Balanced Tree，也缺少對資料操作方式的判斷。
-    
-2. 將 Data Structure 與 Algorithm Pattern 分開理解，但整合在同一套選擇規則中。 例如 Binary Search、Two Pointers、DFS / BFS、DP 是演算法或解題模式，而 Hash Map、Heap、Segment Tree 才是資料結構。
-    
-3. 加入 Static vs Dynamic、Query vs Update、Order vs Membership 的判定條件。 這比單純根據題目出現 Search、Maximum、Subarray 等關鍵字更精確。
-    
-
-我會保留你原本的五個方向，再補上三個重要方向，形成一套完整的解題架構。
-
-# 一、原本五條 Rules 的正確性檢查
-
-|原規則|評價|主要需要改進的地方|
-|---|---|---|
-|Rule 1：Search / Find|基本正確|缺少 BST / Balanced Tree；Binary Search 也能用於單調答案空間|
-|Rule 2：Max / Min / Optimal|部分正確|Heap 不適合任意刪除；DP 不是所有最佳化問題的預設答案|
-|Rule 3：Subarray / Range|需要補強|Prefix Sum + Hash Map 能處理負數；BIT 與 Segment Tree 的適用範圍不同|
-|Rule 4：Relative Position|需要補強|Next Greater 與 Inversion Count 是不同類型；任意區間的排名查詢不能直接套一般 BIT|
-|Rule 5：Connectivity|需要補強|Union Find 適用於動態加入連線，不直接支援任意刪除連線；DFS 與 BFS 的用途也不完全相同|
-
-其中有幾個特別值得修正。
-
-Rule 2：Heap 的動態資料
-Heap 支援 `push`、`pop min/max`，但如果要刪除任意指定元素，普通 Heap 通常無法直接在 \(O(\log N)\) 完成，因為還需要找到元素的位置。若題目涉及任意刪除、查找前驅／後繼，Balanced Tree 通常比較合適。
-
-Rule 3：Two Pointers 的適用條件
-原本寫「正數陣列」是常見且安全的判斷，但更精確的條件是：
-> 當左右指標移動時，判定條件具有可利用的單調性，才適合使用 Sliding Window。
-例如非負數陣列求最短長度且 Sum ≥ K，可以使用 Sliding Window；但包含負數時，這種做法通常失效。
-
-Rule 4：Inversion Count 的定義
-逆序對是滿足：
-\[ i<j,\quad A[i]>A[j] \]
-的元素對，不等同於一般的「任意區間中有多少個元素比 X 小」。
-全域逆序對可以使用 Merge Sort 或 BIT；但任意區間加上數值門檻的查詢，通常需要更進階的資料結構。
-
-Rule 5：Union Find 的限制
-Union Find 很適合反覆新增 Edge，再查詢兩個節點是否連通；但如果 Edge 會被刪除，一般 DSU 無法直接維護正確的連通性，需要考慮 Offline Reverse Processing、Rollback DSU 或其他 Dynamic Connectivity 技術。
 
 # 二、建議採用的完整 8 Rules（How to Choose）
 
 這是我建議你整理進 LeetCode / LintCode 筆記的正式版本。它涵蓋你列出的全部 12 種 Data Structure，也保留必要的演算法選擇。
+
+| RULES choices                                                                            | Methods                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| ---------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Rule 1<br>當題目要求搜<br>尋、查找或有<br>序查詢<br>Search<br>Find<br>Lookup                            | 未排序資料：判斷 Key 是否存在、出現次數或 Key→Value<br>-> Hash Map / Hash Set<br><br>已排序 Array：查特定值、Lower Bound、Upper Bound<br>-> Array + Binary Search<br><br>答案空間具有單調可行性<br>-> Binary Search on Answer<br><br>動態插入／刪除，需保持排序並尋找前驅／後繼<br>-> Balanced BST / Ordered Set<br><br>題目提供 BST，利用 Key 大小關係搜尋<br>-> Binary Search Tree (BST)<br><br>搜尋字串 Prefix、字典或自動補全<br>-> Trie<br><br>                                                                                  |
+| Rule 2：<br>當題目涉及資<br>料順序、節點<br>操作或處理流<br>程<br>Sequence<br>Order<br>Processing            | 依 Index 存取、原地修改或分割陣列<br>-> Array / Two Pointers<br><br>已知節點位置，需調整鏈結、插入或刪除<br>-> Linked List / Doubly Linked List<br><br>先進先出 FIFO，依加入順序處理<br>-> Queue<br><br>後進先出 LIFO、括號或巢狀運算<br>-> Stack<br><br>頭尾兩側插入、刪除或維護雙端候選<br>-> Deque<br><br>Linked List 中點、環、倒數節點<br>-> Fast / Slow Pointers                                                                                                                                                           |
+| Rule 3<br>當題目要求極<br>值、優先順序<br>或 <br>Top K<br>Max/Min<br>Priority                         | 動態插入，反覆取出全域最高優先級元素<br>-> Heap / Priority Queue<br><br>找 Top K 最大／最小或動態維護 K 個候選<br>-> Size-K Heap<br><br>需要有序 Min/Max，且支援任意元素刪除<br>-> Balanced BST / Multiset<br><br>固定／規律移動視窗求最大值或最小值<br>-> Monotonic Deque<br><br>資料動態修改，查任意區間 Min/Max/Sum<br>-> Segment Tree<br><br>靜態資料，只需要一次極值統計或單次掃描最佳值<br>-> Array Linear Scan                                                                                                                             |
+| Rule 4<br>當題目要求 <br>Subarray、<br>Range Query <br>或區間修改                                   | 靜態 1D Array，多次查任意區間 Sum<br>-> Prefix Sum<br><br>靜態 2D Matrix，查子矩形總和<br>-> 2D Prefix Sum<br><br>最長／最短連續區間，視窗條件具有單調性<br>-> Two Pointers / Sliding Window<br><br>子陣列 Sum = K，包含負數也要處理<br>-> Prefix Sum + Hash Map<br><br>單點修改，反覆查 Prefix Sum / Range Sum<br>-> BIT / Fenwick Tree<br><br>單點修改，任意 Range Sum/Min/Max/GCD<br>-> Segment Tree<br><br>整段 Range Update，且需要區間聚合；或僅要求離線最終結果<br>-> Lazy Segment Tree / Difference Array                      |
+| Rule 5<br>當題目涉及相<br>對位置、排名<br>、順序統計<br>Relative Position<br>Rank<br>Order                | 找每個元素左／右第一個 Greater / Smaller<br>-> Monotonic Stack<br><br>Histogram 或 Matrix：尋找邊界、計算矩形<br>-> Monotonic Stack<br><br>逆序對、右側較小值的離線統計<br>-> Merge Sort Counting<br><br>由左到右動態統計比當前值小／大的元素個數<br>-> BIT + Coordinate Compression<br><br>動態有序資料：Floor / Ceiling / Predecessor / Successor<br>-> Balanced BST / Ordered Set<br><br>動態查第 K 小、Rank，維護子樹大小<br>-> Order-Statistic Tree / Augmented BST                                                     |
+| Rule 6<br>當題目有階層<br>父子節點或樹<br>狀結構<br>Tree<br>Hierarchy<br>Traversal                      | Binary Tree：Preorder / Inorder / Postorder<br>-> DFS + Recursion / Stack<br><br>Binary Tree：Level Order / Zigzag / 按層分組<br>-> BFS + Queue / Deque<br><br>BST：利用鍵值大小關係搜尋、插入、刪除<br>-> Binary Search Tree (BST)<br><br>BST 需維持高度平衡，或從已排序資料建立平衡樹<br>-> Balanced BST / Balanced BST Construction<br><br>Tree Height / Diameter / Path Sum / Subtree Result<br>-> Tree DFS / Tree DP<br><br>按邊數尋找最近葉節點或逐層探索<br>-> BFS + Queue<br>                      |
+| Rule 7<br>當題目探討連<br>通性、群組、<br>朋友圈或Graph<br>Connectivity<br>Components                    | 靜態 Graph：Reachability / Connected Components<br>-> DFS / BFS<br><br>無向圖持續加邊，動態查兩點連通或群組大小<br>-> Union Find / DSU<br><br>無向圖新增 Edge，判斷是否形成 Cycle<br>-> Union Find / DSU<br><br>Unweighted Graph：最短路徑／最少步數<br>-> BFS + Queue<br><br>Directed Graph：Strongly Connected Components<br>-> Tarjan / Kosaraju (DFS)<br><br>存在刪邊或時間批次變化，需離線處理連通性<br>-> Reverse Processing / Rollback DSU                                                                  |
+| Rule 8<br>當題目要求最<br>佳化、最短<br>路徑、最大收<br>益或可行性<br>Optimization<br>Optimal <br>Solution<br> | 具 Optimal Substructure + Overlapping Subproblems<br>-> Dynamic Programming (DP)<br><br>能證明局部最佳選擇可達到全域最佳<br>-> Greedy<br><br>無權 Graph 最短路徑／最少步數<br>-> BFS + Queue<br><br>Non-negative Weighted Graph 最短路徑或相關變體<br>-> Dijkstra + Min Heap（瓶頸路徑可用 Max Heap）<br><br>存在負權邊、負權環，或限制邊數的最短路徑<br>-> Bellman-Ford / K-round Relaxation<br><br>答案存在單調可行性，可用二分搜尋最佳界線<br>-> Binary Search on Answer<br><br>DAG：依依賴順序求最長／最短路徑或狀態累積<br>-> Topological Sort + DP |
+|                                                                                          |                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
 
 ## Rule 1：當題目要求搜尋、查找或有序查詢（Search / Find / Lookup）
 
@@ -247,14 +218,14 @@ Union Find 很適合反覆新增 Edge，再查詢兩個節點是否連通；但�
 
 核心判斷：資料需要 Random Access、頻繁修改相鄰節點，還是依照特定順序取出？
 
-|判定條件（When to Choose）|選擇（Data Structure + Big O）|例題（每列 3 題）|
-|---|---|---|
-|依 Index 存取、原地修改或分割陣列|Array / Two Pointers<br><br>Big O：Index O(1)；一般遍歷 O(N)|1. #100 Remove Duplicates from Sorted Array — 原地移除重複數字<br><br>2. #148 Sort Colors — 原地排列三種顏色<br><br>3. #162 Set Matrix Zeroes — 將含零位置的整列整行設零|
-|已知節點位置，需調整鏈結、插入或刪除|Linked List / Doubly Linked List<br><br>Big O：已知適當節點時修改 O(1)；搜尋 O(N)|1. #35 Reverse Linked List — 反轉鏈表<br><br>2. #36 Reverse Linked List II — 反轉指定鏈表區段<br><br>3. #372 Delete Node in a Linked List — 刪除指定非尾節點|
-|先進先出 FIFO，依加入順序處理|Queue<br><br>Big O：入隊／出隊均攤 O(1)|1. #642 Moving Average from Data Stream — 求資料流滑動平均<br><br>2. #540 Zigzag Iterator — 輪流讀取兩個列表<br><br>3. #494 Implement Stack using Queues — 用 Queue 實作 Stack|
-|後進先出 LIFO、括號或巢狀運算|Stack<br><br>Big O：Push / Pop / Top O(1)|1. #423 Valid Parentheses — 判斷括號是否合法<br><br>2. #575 Decode String — 解碼巢狀重複字串<br><br>3. #978 Basic Calculator — 計算含括號的算式|
-|頭尾兩側插入、刪除或維護雙端候選|Deque<br><br>Big O：兩端操作均攤 O(1)|1. #999 Design Circular Deque — 設計循環雙端佇列<br><br>2. #71 Binary Tree Zigzag Level Order Traversal — 交替方向層次遍歷<br><br>3. #362 Sliding Window Maximum — 以單調雙端佇列求視窗最大值|
-|Linked List 中點、環、倒數節點|Fast / Slow Pointers<br><br>Big O：O(N) 時間；O(1) 額外空間|1. #1609 Middle of the Linked List — 找鏈表中點<br><br>2. #102 Linked List Cycle — 判斷有無環<br><br>3. #103 Linked List Cycle II — 找環的入口|
+| 判定條件（When to Choose）  | 選擇（Data Structure + Big O）                                           | 例題（每列 3 題）                                                                                                                                                       |
+| --------------------- | -------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 依 Index 存取、原地修改或分割陣列  | Array / Two Pointers<br><br>Big O：Index O(1)；一般遍歷 O(N)               | 1. #100 Remove Duplicates from Sorted Array — 原地移除重複數字<br><br>2. #148 Sort Colors — 原地排列三種顏色<br><br>3. #162 Set Matrix Zeroes — 將含零位置的整列整行設零                     |
+| 已知節點位置，需調整鏈結、插入或刪除    | Linked List / Doubly Linked List<br><br>Big O：已知適當節點時修改 O(1)；搜尋 O(N) | 1. #35 Reverse Linked List — 反轉鏈表<br><br>2. #36 Reverse Linked List II — 反轉指定鏈表區段<br><br>3. #372 Delete Node in a Linked List — 刪除指定非尾節點                         |
+| 先進先出 FIFO，依加入順序處理     | Queue<br><br>Big O：入隊／出隊均攤 O(1)                                      | 1. #642 Moving Average from Data Stream — 求資料流滑動平均<br><br>2. #540 Zigzag Iterator — 輪流讀取兩個列表<br><br>3. #494 Implement Stack using Queues — 用 Queue 實作 Stack      |
+| 後進先出 LIFO、括號或巢狀運算     | Stack<br><br>Big O：Push / Pop / Top O(1)                             | 1. #423 Valid Parentheses — 判斷括號是否合法<br><br>2. #575 Decode String — 解碼巢狀重複字串<br><br>3. #978 Basic Calculator — 計算含括號的算式                                          |
+| 頭尾兩側插入、刪除或維護雙端候選      | Deque<br><br>Big O：兩端操作均攤 O(1)                                       | 1. #999 Design Circular Deque — 設計循環雙端佇列<br><br>2. #71 Binary Tree Zigzag Level Order Traversal — 交替方向層次遍歷<br><br>3. #362 Sliding Window Maximum — 以單調雙端佇列求視窗最大值 |
+| Linked List 中點、環、倒數節點 | Fast / Slow Pointers<br><br>Big O：O(N) 時間；O(1) 額外空間                  | 1. #1609 Middle of the Linked List — 找鏈表中點<br><br>2. #102 Linked List Cycle — 判斷有無環<br><br>3. #103 Linked List Cycle II — 找環的入口                                  |
 
 特別注意 Linked List 的複雜度：
 
@@ -268,14 +239,14 @@ Union Find 很適合反覆新增 Edge，再查詢兩個節點是否連通；但�
 
 核心判斷：要找全域極值、滑動視窗極值，還是任意區間極值？
 
-|判定條件（When to Choose）|選擇（Data Structure + Big O）|例題（每列 3 題）|
-|---|---|---|
-|動態插入，反覆取出全域最高優先級元素|Heap / Priority Queue<br><br>Big O：Peek O(1)；Push / Pop O(log N)|1. #1872 Minimum Cost to Connect Sticks — 最低成本合併木棍<br><br>2. #919 Meeting Rooms II — 最少會議室數量<br><br>3. #81 Find Median from Data Stream — 以雙 Heap 維護中位數|
-|找 Top K 最大／最小或動態維護 K 個候選|Size-K Heap<br><br>Big O：O(N log K) 時間；O(K) 空間|1. #544 Top k Largest Numbers — 找陣列前 K 大<br><br>2. #545 Top k Largest Numbers II — 動態維護前 K 大<br><br>3. #612 K Closest Points — 找最近的 K 個點|
-|需要有序 Min/Max，且支援任意元素刪除|Balanced BST / Multiset<br><br>Big O：增刪 O(log N)；取極值 O(1) 或 O(log N)，視 API 而定|1. #360 Sliding Window Median — 滑動視窗刪除舊數字<br><br>2. #1513 Exam Room — 動態管理座位區間<br><br>3. #1280 Data Stream as Disjoint Intervals — 維護有序區間|
-|固定／規律移動視窗求最大值或最小值|Monotonic Deque<br><br>Big O：整趟 O(N)|1. #362 Sliding Window Maximum — 各視窗最大值<br><br>2. #347 Maximum Number Expectation — 視窗極值統計<br><br>3. #3493 Longest Subarray — 用 Deque 輔助最長區間查找|
-|資料動態修改，查任意區間 Min/Max/Sum|Segment Tree<br><br>Big O：建樹 O(N)；Query / Update O(log N)|1. #202 Segment Tree Query — 區間最小值<br><br>2. #247 Segment Tree Query II — 區間最大值<br><br>3. #207 Interval Sum II — 動態修改與區間求和|
-|靜態資料，只需要一次極值統計或單次掃描最佳值|Array Linear Scan<br><br>Big O：O(N) 時間；O(1) 額外空間|1. #397 Longest Continuous Increasing Subsequence — 最長連續遞增長度<br><br>2. #149 Best Time to Buy and Sell Stock — 單次買賣最大收益<br><br>3. #585 Maximum Number in Mountain Sequence — 找山形陣列最大值|
+| 判定條件（When to Choose）     | 選擇（Data Structure + Big O）                                                    | 例題（每列 3 題）                                                                                                                                                                           |
+| ------------------------ | ----------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 動態插入，反覆取出全域最高優先級元素       | Heap / Priority Queue<br><br>Big O：Peek O(1)；Push / Pop O(log N)              | 1. #1872 Minimum Cost to Connect Sticks — 最低成本合併木棍<br><br>2. #919 Meeting Rooms II — 最少會議室數量<br><br>3. #81 Find Median from Data Stream — 以雙 Heap 維護中位數                              |
+| 找 Top K 最大／最小或動態維護 K 個候選 | Size-K Heap<br><br>Big O：O(N log K) 時間；O(K) 空間                                | 1. #544 Top k Largest Numbers — 找陣列前 K 大<br><br>2. #545 Top k Largest Numbers II — 動態維護前 K 大<br><br>3. #612 K Closest Points — 找最近的 K 個點                                             |
+| 需要有序 Min/Max，且支援任意元素刪除   | Balanced BST / Multiset<br><br>Big O：增刪 O(log N)；取極值 O(1) 或 O(log N)，視 API 而定 | 1. #360 Sliding Window Median — 滑動視窗刪除舊數字<br><br>2. #1513 Exam Room — 動態管理座位區間<br><br>3. #1280 Data Stream as Disjoint Intervals — 維護有序區間                                            |
+| 固定／規律移動視窗求最大值或最小值        | Monotonic Deque<br><br>Big O：整趟 O(N)                                          | 1. #362 Sliding Window Maximum — 各視窗最大值<br><br>2. #347 Maximum Number Expectation — 視窗極值統計<br><br>3. #3493 Longest Subarray — 用 Deque 輔助最長區間查找                                       |
+| 資料動態修改，查任意區間 Min/Max/Sum | Segment Tree<br><br>Big O：建樹 O(N)；Query / Update O(log N)                     | 1. #202 Segment Tree Query — 區間最小值<br><br>2. #247 Segment Tree Query II — 區間最大值<br><br>3. #207 Interval Sum II — 動態修改與區間求和                                                           |
+| 靜態資料，只需要一次極值統計或單次掃描最佳值   | Array Linear Scan<br><br>Big O：O(N) 時間；O(1) 額外空間                              | 1. #397 Longest Continuous Increasing Subsequence — 最長連續遞增長度<br><br>2. #149 Best Time to Buy and Sell Stock — 單次買賣最大收益<br><br>3. #585 Maximum Number in Mountain Sequence — 找山形陣列最大值 |
 
 這裡最重要的是區分：
 Heap
@@ -294,15 +265,15 @@ Segment Tree
 
 核心判斷：資料是否修改？區間是固定還是任意？查詢的是 Sum、Min/Max 還是其他統計？
 
-|判定條件（When to Choose）|選擇（Data Structure + Big O）|例題（每列 3 題）|
-|---|---|---|
-|靜態 1D Array，多次查任意區間 Sum|Prefix Sum<br><br>Big O：建立 O(N)；每次 Query O(1)|1. #943 Range Sum Query - Immutable — 查靜態區間和<br><br>2. #206 Interval Sum — 查多個指定區間的和<br><br>3. #604 Window Sum — 計算各固定視窗總和|
-|靜態 2D Matrix，查子矩形總和|2D Prefix Sum<br><br>Big O：建立 O(MN)；每次 Query O(1)|1. #665 Range Sum Query 2D - Immutable — 查矩形區域總和<br><br>2. 補充 LC #1314 Matrix Block Sum — 計算各格子周圍矩形和<br><br>3. 補充 LC #1074 Number of Submatrices That Sum to Target — 統計指定總和的子矩形|
-|最長／最短連續區間，視窗條件具有單調性|Two Pointers / Sliding Window<br><br>Big O：通常 O(N)|1. #406 Minimum Size Subarray Sum — 最短達標子陣列<br><br>2. #384 Longest Substring Without Repeating Characters — 最長無重複子字串<br><br>3. #386 Longest Substring with At Most K Distinct Characters — 最長 K 種字元子字串|
-|子陣列 Sum = K，包含負數也要處理|Prefix Sum + Hash Map<br><br>Big O：平均 O(N) 時間；O(N) 空間|1. #838 Subarray Sum Equals K — 統計總和為 K 的子陣列<br><br>2. #911 Maximum Size Subarray Sum Equals K — 最長總和為 K 的子陣列<br><br>3. #994 Contiguous Array — 最長 0/1 數量相同區間|
-|單點修改，反覆查 Prefix Sum / Range Sum|BIT / Fenwick Tree<br><br>Big O：Update / Query O(log N)|1. #840 Range Sum Query - Mutable — 單點更新與區間和<br><br>2. #817 Range Sum Query 2D - Mutable — 二維更新與矩形和<br><br>3. #249 Count of Smaller Numbers Before Self — 前面較小數量統計|
-|單點修改，任意 Range Sum/Min/Max/GCD|Segment Tree<br><br>Big O：建樹 O(N)；Update / Query O(log N)|1. #202 Segment Tree Query — 查區間最小值<br><br>2. #247 Segment Tree Query II — 查區間最大值<br><br>3. #207 Interval Sum II — 更新元素並查區間總和|
-|整段 Range Update，且需要區間聚合；或僅要求離線最終結果|Lazy Segment Tree / Difference Array<br><br>Big O：Lazy Update / Query O(log N)；離線差分總計 O(N+Q)|1. #903 Range Addition — 批次區間加值後輸出最終陣列<br><br>2. 補充 LC #2569 Handling Sum Queries After Update — 區間位元反轉與求和<br><br>3. 補充 LC #732 My Calendar III — 動態求最大重疊區間數|
+| 判定條件（When to Choose）               | 選擇（Data Structure + Big O）                                                                   | 例題（每列 3 題）                                                                                                                                                                                             |
+| ---------------------------------- | -------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 靜態 1D Array，多次查任意區間 Sum            | Prefix Sum<br><br>Big O：建立 O(N)；每次 Query O(1)                                                | 1. #943 Range Sum Query - Immutable — 查靜態區間和<br><br>2. #206 Interval Sum — 查多個指定區間的和<br><br>3. #604 Window Sum — 計算各固定視窗總和                                                                             |
+| 靜態 2D Matrix，查子矩形總和                | 2D Prefix Sum<br><br>Big O：建立 O(MN)；每次 Query O(1)                                            | 1. #665 Range Sum Query 2D - Immutable — 查矩形區域總和<br><br>2. 補充 LC #1314 Matrix Block Sum — 計算各格子周圍矩形和<br><br>3. 補充 LC #1074 Number of Submatrices That Sum to Target — 統計指定總和的子矩形                       |
+| 最長／最短連續區間，視窗條件具有單調性                | Two Pointers / Sliding Window<br><br>Big O：通常 O(N)                                           | 1. #406 Minimum Size Subarray Sum — 最短達標子陣列<br><br>2. #384 Longest Substring Without Repeating Characters — 最長無重複子字串<br><br>3. #386 Longest Substring with At Most K Distinct Characters — 最長 K 種字元子字串 |
+| 子陣列 Sum = K，包含負數也要處理               | Prefix Sum + Hash Map<br><br>Big O：平均 O(N) 時間；O(N) 空間                                        | 1. #838 Subarray Sum Equals K — 統計總和為 K 的子陣列<br><br>2. #911 Maximum Size Subarray Sum Equals K — 最長總和為 K 的子陣列<br><br>3. #994 Contiguous Array — 最長 0/1 數量相同區間                                          |
+| 單點修改，反覆查 Prefix Sum / Range Sum    | BIT / Fenwick Tree<br><br>Big O：Update / Query O(log N)                                      | 1. #840 Range Sum Query - Mutable — 單點更新與區間和<br><br>2. #817 Range Sum Query 2D - Mutable — 二維更新與矩形和<br><br>3. #249 Count of Smaller Numbers Before Self — 前面較小數量統計                                     |
+| 單點修改，任意 Range Sum/Min/Max/GCD      | Segment Tree<br><br>Big O：建樹 O(N)；Update / Query O(log N)                                    | 1. #202 Segment Tree Query — 查區間最小值<br><br>2. #247 Segment Tree Query II — 查區間最大值<br><br>3. #207 Interval Sum II — 更新元素並查區間總和                                                                          |
+| 整段 Range Update，且需要區間聚合；或僅要求離線最終結果 | Lazy Segment Tree / Difference Array<br><br>Big O：Lazy Update / Query O(log N)；離線差分總計 O(N+Q) | 1. #903 Range Addition — 批次區間加值後輸出最終陣列<br><br>2. 補充 LC #2569 Handling Sum Queries After Update — 區間位元反轉與求和<br><br>3. 補充 LC #732 My Calendar III — 動態求最大重疊區間數                                           |
 
 BIT vs Segment Tree 的判斷
 
@@ -319,38 +290,39 @@ BIT vs Segment Tree 的判斷
 
 核心判斷：要找最近的比較對象、計算多少個元素符合大小關係，還是維護動態排名？
 
-|判定條件（When to Choose）|選擇（Data Structure + Big O）|例題（每列 3 題）|
-|---|---|---|
-|找每個元素左／右第一個 Greater / Smaller|Monotonic Stack<br><br>Big O：整趟 O(N)|1. #1206 Next Greater Element I — 右邊第一個更大值<br><br>2. #1201 Next Greater Element II — 循環陣列下一個更大值<br><br>3. #1060 Daily Temperatures — 下一個更暖日的距離|
-|Histogram 或 Matrix：尋找邊界、計算矩形|Monotonic Stack<br><br>Big O：1D O(N)；M×N 矩陣 O(MN)|1. #122 Largest Rectangle in Histogram — 最大柱狀圖矩形<br><br>2. #510 Maximal Rectangle — 最大全 1 矩形<br><br>3. #1860 The Number of 0-submatrix — 統計全 0 子矩形|
-|逆序對、右側較小值的離線統計|Merge Sort Counting<br><br>Big O：O(N log N) 時間；O(N) 空間|1. #1297 Count of Smaller Numbers After Self — 統計右側較小數量<br><br>2. #249 Count of Smaller Numbers Before Self — 統計左側較小數量<br><br>3. 補充 LC #493 Reverse Pairs — 計算滿足倍數大小關係的逆序數對|
-|由左到右動態統計比當前值小／大的元素個數|BIT + Coordinate Compression<br><br>Big O：O(N log N) 時間；O(N) 空間|1. #249 Count of Smaller Numbers Before Self — 統計前方較小值<br><br>2. #1297 Count of Smaller Numbers After Self — 統計後方較小值<br><br>3. 補充 LC #1649 Create Sorted Array through Instructions — 插入時查左右大小分布|
-|動態有序資料：Floor / Ceiling / Predecessor / Successor|Balanced BST / Ordered Set<br><br>Big O：增刪／有序查詢 O(log N)|1. #448 Inorder Successor in BST — BST 中序後繼<br><br>2. #900 Closest Binary Search Tree Value — 找最近鍵值<br><br>3. #1513 Exam Room — 依排序座位區間安排位置|
-|動態查第 K 小、Rank，維護子樹大小|Order-Statistic Tree / Augmented BST<br><br>Big O：Kth / Rank / Update O(log N)，須平衡|1. #902 Kth Smallest Element in a BST — 查第 K 小節點<br><br>2. #360 Sliding Window Median — 用有序排名維護中位數<br><br>3. #1297 Count of Smaller Numbers After Self — 用排名查較小數量|
+| 判定條件（When to Choose）                             | 選擇（Data Structure + Big O）                                                         | 例題（每列 3 題）                                                                                                                                                                                       |
+| ------------------------------------------------ | ---------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 找每個元素左／右第一個 Greater / Smaller                    | Monotonic Stack<br><br>Big O：整趟 O(N)                                               | 1. #1206 Next Greater Element I — 右邊第一個更大值<br><br>2. #1201 Next Greater Element II — 循環陣列下一個更大值<br><br>3. #1060 Daily Temperatures — 下一個更暖日的距離                                                   |
+| Histogram 或 Matrix：尋找邊界、計算矩形                     | Monotonic Stack<br><br>Big O：1D O(N)；M×N 矩陣 O(MN)                                  | 1. #122 Largest Rectangle in Histogram — 最大柱狀圖矩形<br><br>2. #510 Maximal Rectangle — 最大全 1 矩形<br><br>3. #1860 The Number of 0-submatrix — 統計全 0 子矩形                                               |
+| 逆序對、右側較小值的離線統計                                   | Merge Sort Counting<br><br>Big O：O(N log N) 時間；O(N) 空間                             | 1. #1297 Count of Smaller Numbers After Self — 統計右側較小數量<br><br>2. #249 Count of Smaller Numbers Before Self — 統計左側較小數量<br><br>3. 補充 LC #493 Reverse Pairs — 計算滿足倍數大小關係的逆序數對                      |
+| 由左到右動態統計比當前值小／大的元素個數                             | BIT + Coordinate Compression<br><br>Big O：O(N log N) 時間；O(N) 空間                    | 1. #249 Count of Smaller Numbers Before Self — 統計前方較小值<br><br>2. #1297 Count of Smaller Numbers After Self — 統計後方較小值<br><br>3. 補充 LC #1649 Create Sorted Array through Instructions — 插入時查左右大小分布 |
+| 動態有序資料：Floor / Ceiling / Predecessor / Successor | Balanced BST / Ordered Set<br><br>Big O：增刪／有序查詢 O(log N)                           | 1. #448 Inorder Successor in BST — BST 中序後繼<br><br>2. #900 Closest Binary Search Tree Value — 找最近鍵值<br><br>3. #1513 Exam Room — 依排序座位區間安排位置                                                      |
+| 動態查第 K 小、Rank，維護子樹大小                             | Order-Statistic Tree / Augmented BST<br><br>Big O：Kth / Rank / Update O(log N)，須平衡 | 1. #902 Kth Smallest Element in a BST — 查第 K 小節點<br><br>2. #360 Sliding Window Median — 用有序排名維護中位數<br><br>3. #1297 Count of Smaller Numbers After Self — 用排名查較小數量                                |
 
 需要注意：一般 Balanced BST 不一定直接提供 `kth` 或 `rank`，通常必須在節點額外維護 Subtree Size，或者使用支援這些操作的資料結構。
 
 另外，Monotonic Stack 和 Monotonic Queue 的核心差異是：
 
-||Monotonic Stack|Monotonic Queue|
-|---|---|---|
-|核心用途|找相對位置、Nearest Greater / Smaller|取得移動區間內的極值|
-|元素移除原因|新元素破壞單調性|新元素破壞單調性，或舊元素離開視窗|
-|典型題目|Next Greater Element|Sliding Window Maximum|
-|整體複雜度|\(O(N)\)|\(O(N)\)|
+|        | Monotonic Stack                 | Monotonic Queue        |
+| ------ | ------------------------------- | ---------------------- |
+| 核心用途   | 找相對位置、Nearest Greater / Smaller | 取得移動區間內的極值             |
+| 元素移除原因 | 新元素破壞單調性                        | 新元素破壞單調性，或舊元素離開視窗      |
+| 典型題目   | Next Greater Element            | Sliding Window Maximum |
+| 整體複雜度  | O(N)                            | O(N)                   |
 
-## Rule 6：當題目有階層、父子節點或樹狀結構（Tree / Hierarchy / Traversal）
+
+## Rule 6當題目有階層、父子節點或樹狀結構（Tree / Hierarchy / Traversal）
 
 核心判斷：題目是一般 Tree Traversal、BST 的有序搜尋，還是需要不同的遍歷順序？
 
-|判定條件（When to Choose）|選擇（Data Structure + Big O）|例題（每列 3 題）|
-|---|---|---|
-|Binary Tree：Preorder / Inorder / Postorder|DFS + Recursion / Stack<br><br>Big O：O(N) 時間；O(h) 輔助空間|1. #66 Binary Tree Preorder Traversal — 先序遍歷<br><br>2. #67 Binary Tree Inorder Traversal — 中序遍歷<br><br>3. #68 Binary Tree Postorder Traversal — 後序遍歷|
-|Binary Tree：Level Order / Zigzag / 按層分組|BFS + Queue / Deque<br><br>Big O：O(N) 時間；最多 O(W) Queue 空間|1. #70 Binary Tree Level Order Traversal II — 自底向上層次遍歷<br><br>2. #71 Binary Tree Zigzag Level Order Traversal — 鋸齒層次遍歷<br><br>3. #649 Binary Tree Vertical Order Traversal — 依垂直欄位分組|
-|BST：利用鍵值大小關係搜尋、插入、刪除|Binary Search Tree (BST)<br><br>Big O：O(h)；最壞 O(N)|1. #1524 Search in a Binary Search Tree — 搜尋節點<br><br>2. #85 Insert Node in a Binary Search Tree — 插入節點<br><br>3. #87 Remove Node in Binary Search Tree — 刪除節點|
-|BST 需維持高度平衡，或從已排序資料建立平衡樹|Balanced BST / Balanced BST Construction<br><br>Big O：動態操作 O(log N)；有序陣列建樹 O(N)|1. #1359 Convert Sorted Array to Binary Search Tree — 有序陣列建平衡 BST<br><br>2. #106 Convert Sorted List to Binary Search Tree — 有序鏈表建平衡 BST<br><br>3. #1513 Exam Room — 以有序集合動態管理座位|
-|Tree Height / Diameter / Path Sum / Subtree Result|Tree DFS / Tree DP<br><br>Big O：通常 O(N) 時間；O(h) 遞迴空間|1. #97 Maximum Depth of Binary Tree — 最大深度<br><br>2. #1181 Diameter of Binary Tree — 最長節點距離<br><br>3. #94 Binary Tree Maximum Path Sum — 最大路徑和|
-|按邊數尋找最近葉節點或逐層探索|BFS + Queue<br><br>Big O：O(N) 時間；最多 O(W) 空間|1. #155 Minimum Depth of Binary Tree — 根到最近葉節點的深度<br><br>2. #70 Binary Tree Level Order Traversal II — 分層處理樹節點<br><br>3. #71 Binary Tree Zigzag Level Order Traversal — 逐層交替遍歷|
+| 判定條件（When to Choose）                               | 選擇（Data Structure + Big O）                                                      | 例題（每列 3 題）                                                                                                                                                                           |
+| -------------------------------------------------- | ------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Binary Tree：Preorder / Inorder / Postorder         | DFS + Recursion / Stack<br><br>Big O：O(N) 時間；O(h) 輔助空間                          | 1. #66 Binary Tree Preorder Traversal — 先序遍歷<br><br>2. #67 Binary Tree Inorder Traversal — 中序遍歷<br><br>3. #68 Binary Tree Postorder Traversal — 後序遍歷                                 |
+| Binary Tree：Level Order / Zigzag / 按層分組            | BFS + Queue / Deque<br><br>Big O：O(N) 時間；最多 O(W) Queue 空間                       | 1. #70 Binary Tree Level Order Traversal II — 自底向上層次遍歷<br><br>2. #71 Binary Tree Zigzag Level Order Traversal — 鋸齒層次遍歷<br><br>3. #649 Binary Tree Vertical Order Traversal — 依垂直欄位分組 |
+| BST：利用鍵值大小關係搜尋、插入、刪除                               | Binary Search Tree (BST)<br><br>Big O：O(h)；最壞 O(N)                              | 1. #1524 Search in a Binary Search Tree — 搜尋節點<br><br>2. #85 Insert Node in a Binary Search Tree — 插入節點<br><br>3. #87 Remove Node in Binary Search Tree — 刪除節點                       |
+| BST 需維持高度平衡，或從已排序資料建立平衡樹                           | Balanced BST / Balanced BST Construction<br><br>Big O：動態操作 O(log N)；有序陣列建樹 O(N) | 1. #1359 Convert Sorted Array to Binary Search Tree — 有序陣列建平衡 BST<br><br>2. #106 Convert Sorted List to Binary Search Tree — 有序鏈表建平衡 BST<br><br>3. #1513 Exam Room — 以有序集合動態管理座位     |
+| Tree Height / Diameter / Path Sum / Subtree Result | Tree DFS / Tree DP<br><br>Big O：通常 O(N) 時間；O(h) 遞迴空間                            | 1. #97 Maximum Depth of Binary Tree — 最大深度<br><br>2. #1181 Diameter of Binary Tree — 最長節點距離<br><br>3. #94 Binary Tree Maximum Path Sum — 最大路徑和                                       |
+| 按邊數尋找最近葉節點或逐層探索                                    | BFS + Queue<br><br>Big O：O(N) 時間；最多 O(W) 空間                                     | 1. #155 Minimum Depth of Binary Tree — 根到最近葉節點的深度<br><br>2. #70 Binary Tree Level Order Traversal II — 分層處理樹節點<br><br>3. #71 Binary Tree Zigzag Level Order Traversal — 逐層交替遍歷       |
 
 這一條補足你原本缺少的 Binary Tree / BST 判斷規則。
 
@@ -364,14 +336,14 @@ BIT vs Segment Tree 的判斷
 
 核心判斷：只需要知道是否連通，還是要找到實際路徑、遍歷順序或最短距離？
 
-|判定條件（When to Choose）|選擇（Data Structure + Big O）|例題（每列 3 題）|
-|---|---|---|
-|靜態 Graph：Reachability / Connected Components|DFS / BFS<br><br>Big O：完整遍歷 O(V+E)|1. #433 Number of Islands — 計算島嶼數量<br><br>2. #431 Connected Component in Undirected Graph — 求連通分量<br><br>3. #176 Route Between Two Nodes in Graph — 判斷兩節點是否可達|
-|無向圖持續加邊，動態查兩點連通或群組大小|Union Find / DSU<br><br>Big O：每次均攤 O(α(N))|1. #589 Connecting Graph — 動態加邊與連通查詢<br><br>2. #590 Connecting Graph II — 查所在群組大小<br><br>3. #591 Connecting Graph III — 動態查連通分量數量|
-|無向圖新增 Edge，判斷是否形成 Cycle|Union Find / DSU<br><br>Big O：每次均攤 O(α(N))|1. #684 Redundant Connection — 找出造成環的邊<br><br>2. #178 Graph Valid Tree — 判斷無向圖是否為樹<br><br>3. #444 Graph Valid Tree II — 動態檢查新增邊後是否仍為樹|
-|Unweighted Graph：最短路徑／最少步數|BFS + Queue<br><br>Big O：O(V+E)|1. #611 Knight Shortest Path — 騎士最短步數<br><br>2. #630 Knight Shortest Path II — 限制移動方向的最短步數<br><br>3. #120 Word Ladder — 最短單字轉換序列|
-|Directed Graph：Strongly Connected Components|Tarjan / Kosaraju (DFS)<br><br>Big O：O(V+E)|1. 補充 LC #802 Find Eventual Safe States — 找出不會進入環的安全節點<br><br>2. 補充 LC #2360 Longest Cycle in a Graph — 找有向圖最長環<br><br>3. 補充 LC #2127 Maximum Employees to Be Invited to a Meeting — 分析有向環與鏈|
-|存在刪邊或時間批次變化，需離線處理連通性|Reverse Processing / Rollback DSU<br><br>Big O：依演算法而異；逆序加邊通常近線性|1. #1014 Bricks Falling When Hit — 逆序恢復磚塊連通性<br><br>2. 補充 LC #1970 Last Day Where You Can Still Cross — 逆序恢復可通行格子<br><br>3. 補充 LC #2092 Find All People With Secret — 依時間批次維護連通群組|
+| 判定條件（When to Choose）                         | 選擇（Data Structure + Big O）                                      | 例題（每列 3 題）                                                                                                                                                                                   |
+| -------------------------------------------- | --------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 靜態 Graph：Reachability / Connected Components | DFS / BFS<br><br>Big O：完整遍歷 O(V+E)                              | 1. #433 Number of Islands — 計算島嶼數量<br><br>2. #431 Connected Component in Undirected Graph — 求連通分量<br><br>3. #176 Route Between Two Nodes in Graph — 判斷兩節點是否可達                                |
+| 無向圖持續加邊，動態查兩點連通或群組大小                         | Union Find / DSU<br><br>Big O：每次均攤 O(α(N))                      | 1. #589 Connecting Graph — 動態加邊與連通查詢<br><br>2. #590 Connecting Graph II — 查所在群組大小<br><br>3. #591 Connecting Graph III — 動態查連通分量數量                                                            |
+| 無向圖新增 Edge，判斷是否形成 Cycle                      | Union Find / DSU<br><br>Big O：每次均攤 O(α(N))                      | 1. #684 Redundant Connection — 找出造成環的邊<br><br>2. #178 Graph Valid Tree — 判斷無向圖是否為樹<br><br>3. #444 Graph Valid Tree II — 動態檢查新增邊後是否仍為樹                                                        |
+| Unweighted Graph：最短路徑／最少步數                   | BFS + Queue<br><br>Big O：O(V+E)                                 | 1. #611 Knight Shortest Path — 騎士最短步數<br><br>2. #630 Knight Shortest Path II — 限制移動方向的最短步數<br><br>3. #120 Word Ladder — 最短單字轉換序列                                                             |
+| Directed Graph：Strongly Connected Components | Tarjan / Kosaraju (DFS)<br><br>Big O：O(V+E)                     | 1. 補充 LC #802 Find Eventual Safe States — 找出不會進入環的安全節點<br><br>2. 補充 LC #2360 Longest Cycle in a Graph — 找有向圖最長環<br><br>3. 補充 LC #2127 Maximum Employees to Be Invited to a Meeting — 分析有向環與鏈 |
+| 存在刪邊或時間批次變化，需離線處理連通性                         | Reverse Processing / Rollback DSU<br><br>Big O：依演算法而異；逆序加邊通常近線性 | 1. #1014 Bricks Falling When Hit — 逆序恢復磚塊連通性<br><br>2. 補充 LC #1970 Last Day Where You Can Still Cross — 逆序恢復可通行格子<br><br>3. 補充 LC #2092 Find All People With Secret — 依時間批次維護連通群組            |
 
 \(\alpha(N)\) 是 Inverse Ackermann Function，在實際資料規模下非常接近常數。
 
@@ -385,15 +357,15 @@ BIT vs Segment Tree 的判斷
 
 核心判斷：問題是否存在可重複利用的子問題、貪心選擇性質、最短路徑特性，或單調的可行性條件？
 
-|判定條件（When to Choose）|選擇（Data Structure + Big O）|例題（每列 3 題）|
-|---|---|---|
-|具 Optimal Substructure + Overlapping Subproblems|Dynamic Programming (DP)<br><br>Big O：O(S×T)，S 為狀態數、T 為每狀態轉移成本|1. #77 Longest Common Subsequence — 最長公共子序列<br><br>2. #119 Edit Distance — 最少字串編輯步數<br><br>3. #92 Backpack — 背包容量內最大可裝體積|
-|能證明局部最佳選擇可達到全域最佳|Greedy<br><br>Big O：常見 O(N) 或 O(N log N)，視問題而定|1. #116 Jump Game — 判斷能否跳至終點<br><br>2. #150 Best Time to Buy and Sell Stock II — 多次買賣最大利潤<br><br>3. #1872 Minimum Cost to Connect Sticks — 每次合併最短兩根木棍|
-|無權 Graph 最短路徑／最少步數|BFS + Queue<br><br>Big O：O(V+E)|1. #611 Knight Shortest Path — 最少騎士移動次數<br><br>2. #120 Word Ladder — 最少單字轉換步數<br><br>3. #513 Perfect Squares — 最少完全平方數組合|
-|Non-negative Weighted Graph 最短路徑或相關變體|Dijkstra + Min Heap（瓶頸路徑可用 Max Heap）<br><br>Big O：通常 O((V+E) log V)|1. #1057 Network Delay Time — 計算訊號傳到所有節點時間<br><br>2. #1418 Path With Maximum Minimum Value — 最大化路徑最小值<br><br>3. #789 The Maze III — 以滾動距離求迷宮最短路徑|
-|存在負權邊、負權環，或限制邊數的最短路徑|Bellman-Ford / K-round Relaxation<br><br>Big O：標準 O(VE)；K 輪鬆弛 O(KE)|1. 補充 LC #787 Cheapest Flights Within K Stops — 限制轉機數求最低票價<br><br>2. 補充 CSES #1673 High Score — 處理圖中可能無界的最大得分<br><br>3. 補充 CSES #1197 Cycle Finding — 偵測負權環|
-|答案存在單調可行性，可用二分搜尋最佳界線|Binary Search on Answer<br><br>Big O：O(T_check log R)|1. #183 Wood Cut — 求可行最大木段長度<br><br>2. #437 Copy Books — 最小化最大抄寫時間<br><br>3. #1046 Minimize Max Distance to Gas Station — 最小化最大間距|
-|DAG：依依賴順序求最長／最短路徑或狀態累積|Topological Sort + DP<br><br>Big O：通常 O(V+E)|1. 補充 LC #2050 Parallel Courses III — 課程最早完成時間<br><br>2. 補充 LC #1857 Largest Color Value in a Directed Graph — 路徑中的最大顏色次數<br><br>3. 補充 LC #329 Longest Increasing Path in a Matrix — DAG 最長遞增路徑|
+| 判定條件（When to Choose）                             | 選擇（Data Structure + Big O）                                          | 例題（每列 3 題）                                                                                                                                                                                      |
+| ------------------------------------------------ | ------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 具 Optimal Substructure + Overlapping Subproblems | Dynamic Programming (DP)<br><br>Big O：O(S×T)，S 為狀態數、T 為每狀態轉移成本      | 1. #77 Longest Common Subsequence — 最長公共子序列<br><br>2. #119 Edit Distance — 最少字串編輯步數<br><br>3. #92 Backpack — 背包容量內最大可裝體積                                                                        |
+| 能證明局部最佳選擇可達到全域最佳                                 | Greedy<br><br>Big O：常見 O(N) 或 O(N log N)，視問題而定                      | 1. #116 Jump Game — 判斷能否跳至終點<br><br>2. #150 Best Time to Buy and Sell Stock II — 多次買賣最大利潤<br><br>3. #1872 Minimum Cost to Connect Sticks — 每次合併最短兩根木棍                                           |
+| 無權 Graph 最短路徑／最少步數                               | BFS + Queue<br><br>Big O：O(V+E)                                     | 1. #611 Knight Shortest Path — 最少騎士移動次數<br><br>2. #120 Word Ladder — 最少單字轉換步數<br><br>3. #513 Perfect Squares — 最少完全平方數組合                                                                        |
+| Non-negative Weighted Graph 最短路徑或相關變體            | Dijkstra + Min Heap（瓶頸路徑可用 Max Heap）<br><br>Big O：通常 O((V+E) log V) | 1. #1057 Network Delay Time — 計算訊號傳到所有節點時間<br><br>2. #1418 Path With Maximum Minimum Value — 最大化路徑最小值<br><br>3. #789 The Maze III — 以滾動距離求迷宮最短路徑                                                |
+| 存在負權邊、負權環，或限制邊數的最短路徑                             | Bellman-Ford / K-round Relaxation<br><br>Big O：標準 O(VE)；K 輪鬆弛 O(KE) | 1. 補充 LC #787 Cheapest Flights Within K Stops — 限制轉機數求最低票價<br><br>2. 補充 CSES #1673 High Score — 處理圖中可能無界的最大得分<br><br>3. 補充 CSES #1197 Cycle Finding — 偵測負權環                                     |
+| 答案存在單調可行性，可用二分搜尋最佳界線                             | Binary Search on Answer<br><br>Big O：O(T_check log R)               | 1. #183 Wood Cut — 求可行最大木段長度<br><br>2. #437 Copy Books — 最小化最大抄寫時間<br><br>3. #1046 Minimize Max Distance to Gas Station — 最小化最大間距                                                               |
+| DAG：依依賴順序求最長／最短路徑或狀態累積                           | Topological Sort + DP<br><br>Big O：通常 O(V+E)                        | 1. 補充 LC #2050 Parallel Courses III — 課程最早完成時間<br><br>2. 補充 LC #1857 Largest Color Value in a Directed Graph — 路徑中的最大顏色次數<br><br>3. 補充 LC #329 Longest Increasing Path in a Matrix — DAG 最長遞增路徑 |
 
 這條規則與前面七條不同：它是演算法策略選擇規則，不是純資料結構選擇規則。
 
