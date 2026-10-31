@@ -3,6 +3,7 @@ Lintcode 406
 给定一个由 `n` 个正整数组成的数组和一个正整数 `s` ，请找出该数组中满足其和 ≥ s 的最小长度子数组。如果无解，则返回 -1。
 
 比較:  Lintcode 1507  Shortest Subarray with Sum at Least K
+[[比較Lintcode 406 vs 1507]]
 
 **样例 1:**
 ```python

@@ -48,3 +48,16 @@ class Solution:
         self.quickSort(a, left, end)
 ```
 pass
+
+Quick Sort:
+	Step1:  **left, right** = start, end  以及  **pivot** = A[start + (end-start)/2]
+	
+	Step2:  left index往右走, 遇到A[left]比pivot大則停下來
+	
+	Right index 往左走, 遇到A[right]比pivot小則停下來
+	
+	Step3:  把停下來的A[left]  跟 A[right] 交換, 然後 left index +1, right index –1
+	
+	Step4:  **quick_sort**(A, start, right)  recursive: 從start到新的right
+	
+	**quick_sort**(A, left, end)     recursive: 從新的left到end

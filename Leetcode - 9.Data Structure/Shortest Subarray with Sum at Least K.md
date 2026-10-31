@@ -3,7 +3,7 @@ Lintcode 1507
 如果没有和至少为 `K` 的非空子数组，返回 `-1` 。
 
 比較:  Lintcode 406  Minimum Size Subarray Sum
-
+[[比較Lintcode 406 vs 1507]]
 
 **样例 1:**
 ```python
