@@ -50,8 +50,11 @@ class Solution:
         return minLength
 ```
 pass
-解釋:  (解釋在下面)
-step1: i是左指針用for loop, j是右指針
+解釋: 
+用雙指針(滑動視窗), 第一個指針i是左邊(i是左指針用for loop), 第二個指針j是右邊
+1. 第一個指針i從左(id=0)一步步for loop移到右. 從一開始i在0的位置, 第二個指針j 也從id=0開始慢慢往右直到並計算sum直到sum>s. 紀錄長度=minLength
+2. 第一個指針i往右移一步(id=1), sum減掉= id=0的值, 然後第二個指針j 從剛剛j停留的位置繼續往右移直到sum>s. 紀錄長度=minLength = min(minLength, j-i)
+3. 繼續直到第一個指針i到最右端, minLength就是最小長度
 
 
 
