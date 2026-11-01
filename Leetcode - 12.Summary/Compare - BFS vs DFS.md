@@ -2,6 +2,7 @@
 |                                 |     |
 | ------------------------------- | --- |
 | [[#### BFS vs DFS pseudo code]] |     |
+| [[#### BFS vs DFS何時使用]]         |     |
 |                                 |     |
 #### BFS vs DFS pseudo code
 ```
@@ -76,3 +77,18 @@ step5: 則加入到visited裡面 -> num用append加入nums[i] -> 遞迴DFS      
 ![[Pasted image 20261101110143.png|397]]
 
 ![[Pasted image 20261101111953.png|382]]
+
+
+
+
+#### BFS vs DFS何時使用
+```
+BFS vs DFS何時使用
+```
+
+能用BFS (沒有遞迴)的一定不要用DFS(有遞迴)（除非面试官特别要求）
+
+![[Pasted image 20261101115147.png]]
+
+![[Pasted image 20261101115211.png]]
+
