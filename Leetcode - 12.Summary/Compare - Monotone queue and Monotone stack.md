@@ -46,14 +46,21 @@
 2. **要找大還是找小？** 找下一個「更大」的數，用**單調遞減**；找下一個「更小」的數，用**單調遞增**。
     
 
-|             |                                                                                                                                               |
-| ----------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
-| 單調隊列 (遞減)   | 362**(h) 滑动窗口的最大值<br> [[Sliding Window Maximum]]<br>                                                                                          |
-| 單調隊列 (遞增)   | 3542(e) 非负前缀和 [[Non-Negative Prefix Sum]]<br>1507*(h) 和至少为 K 的最短子数组 [[Shortest Subarray with Sum at Least K]]                                 |
-| 隊列<br>(遞增)  |                                                                                                                                               |
-| 單調棧<br>(遞減) | 1206(e) 下一个更大元素 I [[Next Greater Element I]]<br>363**(m) 接雨水 [[Trapping Rain Water]]<br>1274(m) 查找和最小的K对数字 [[Find K Pairs with Smallest Sum]] |
-| 單調棧<br>(遞增) |                                                                                                                                               |
-|             |                                                                                                                                               |
+| 資料結構_______      |                                                                                                                                                                                                                                                                              |
+| ---------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 單調隊列 <br>(遞減)    | (維護滑動區間內的最大值)<br><br>362**(h) 滑动窗口的最大值 [[Sliding Window Maximum]]<br>                                                                                                                                                                                                        |
+| 單調隊列 <br>(遞增)    | (維護滑動區間內的最小值,常配合前綴和找最大差值)<br><br>3542(e) 非负前缀和 [[Non-Negative Prefix Sum]]<br>1507*(h) 和至少为 K 的最短子数组 [[Shortest Subarray with Sum at Least K]]<br>621(h) 最大子数组 V [[Maximum Subarray V]]<br>(求長度限制內的子數列最大和，需維護前綴和的最小值，所以用遞增隊列)                                                |
+| 雙單調隊列<br>(遞增遞減)  | 3493(m) 最长子数组 [[Longest Subarray]]<br>(同時維護區間最大與最小值, 需同時用一個遞增隊列維護最小值，一個遞減隊列維護最大值)                                                                                                                                                                                            |
+|                  |                                                                                                                                                                                                                                                                              |
+| 單調棧<br>(遞減)      | 1206(e) 下一个更大元素 I [[Next Greater Element I]]<br>1201(m) 下一个更大元素 II [[Next Greater Element II]]<br>363**(m) 接雨水 [[Trapping Rain Water]]<br>364*(h) 接雨水II [[Trapping Rain Water II]]<br>1060(m) 每日温度<br>1740*(m) 股票价格跨度 [[Online Stock Span]]<br>285*(m)高楼大厦 [[Tall Building]] |
+| 單調棧<br>(遞增)      | 122*(h) 直方图中最大的矩形面积(較矮柱子代表矩形邊界截止)<br>1852*(m) 最终优惠价 [[Final Discounted Price]]<br>(找下一個更便宜的價格來打折)                                                                                                                                                                            |
+|                  |                                                                                                                                                                                                                                                                              |
+| 排序+單調棧           | 1778*(h)奇偶跳 [[Odd Even Jump]]<br>(這題找的不是「索引的下一個」，而是「值大小的下一個」)                                                                                                                                                                                                                |
+| Min-Heap         | (優先隊列 Priority Queue)<br><br>1274(m) 查找和最小的K对数字 [[Find K Pairs with Smallest Sum]]<br>(單調棧無法跨越兩個陣列做全域最小值的動態排序)<br>1272(m) 有序矩阵中的第K小元素 [[Kth Smallest Element in a Sorted Matrix]]<br>(矩陣具備行列雙向遞增特性，不需要用棧去維護單調性)                                                              |
+| Segment Tree     | 1297(h) 比自己小的元素个数 [[Count of Smaller Numbers After Self]]<br>(單調棧只能找「下一個」更小的，無法「計算總共有幾個」更小的)                                                                                                                                                                                 |
+| Trie             | 346*(h) 区间极值异或 [[xorsum of Interval extremum]]<br>(異或 (XOR) 運算是在看二進位位元的匹配，單純比較數值大小的單調棧毫無用武之地)                                                                                                                                                                                |
+| Queue + Hash Set | 3659(e) 电话目录管理系统 [[Design Phone Directory]]<br>(沒有單調性需求)                                                                                                                                                                                                                     |
+| DP               | 564(m) 组合总和 IV [[Combination Sum IV]]<br>(這是排列組合的計數問題，不是尋找極值或下一個大小元素)<br>347*(h) 最大值期望 [[Maximum Number Expectation]]<br>(期望值計算屬於機率論，通常與數學公式或狀態轉移有關)                                                                                                                         |
 
 
 以下將這四種選擇與 LeetCode 經典題型對應拆解：
