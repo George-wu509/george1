@@ -83,11 +83,6 @@ Min Stack 是一個支援 `push(x)`, `pop()`, `top()`, `getMin()` 四種操作�
 #### **範例**
 
 假設我們依次執行以下操作：
-
-python
-
-複製編輯
-
 `push(3) push(5) push(2) push(1) pop() getMin()`
 
 |操作|主棧 (stack)|最小值棧 (minStack)|`getMin()`|
@@ -122,13 +117,10 @@ python
 ### **其他解法思路**
 
 1. **使用單棧與 Pair**
-    
     - 棧中的每個元素存 `(x, minValue)`，即當前值與當前最小值。
     - `getMin()` 直接讀取頂部的 `minValue`，但空間複雜度仍是 **O(n)**。
 2. **單棧壓縮版**
-    
     - 只在 `x <= minStack.top()` 時存入 `minStack`，減少額外空間使用。
     - `pop()` 時，若彈出元素與 `minStack.top()` 相同，則 `minStack` 也要彈出。
 3. **數組模擬棧**
-    
     - 直接用陣列模擬棧，每次 `getMin()` 時遍歷陣列 **O(n)**，但不需要額外空間。
