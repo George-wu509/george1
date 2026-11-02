@@ -20,11 +20,11 @@ leetcode 363
 
 **解释：** 在索引 2 和 3 之间可以接住 1 单位的雨水，在索引 5 和 7 之间可以接住 5 单位的雨水，总共接住 6 单位的雨水。
 
-![[Pasted image 20250217145851.png]]
+![[Pasted image 20250217145851.png|467]]
 ![[Pasted image 20261102100417.png]]
 **核心公式**：
 - 被彈出的低窪處：`bottom = stack.pop()`(第一次彈出pop的id)
-- 新的左邊界牆：`left = stack.top()` (第一次彈出的top()的id)
+- 新的左邊界牆：`left = stack.top()` (第一次彈出後top()的id)
 - 寬度：`width = i - left - 1`
 - 高度：`height = min(height[i], height[left]) - height[bottom]`
 - 積水面積：`area = width * height`
