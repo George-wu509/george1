@@ -15,7 +15,8 @@ Lintcode 540
 ```
 
 
-
+這方法(Method1)比較符合 LeetCode 281 題目的要求，而 Method 2 是符合 Python 標準 Iterator Protocol（迭代器協定）的寫法
+Method1
 ```python
 class ZigzagIterator:
 
@@ -54,9 +55,10 @@ step3:
 再把v=[2]存回queue = [ [3,4,5,6], [2] ]
 
 
-如果是用Iterator
+Method2如果是用Iterator
+是符合 Python 標準 Iterator Protocol（迭代器協定）的寫法
 ```python
-"""
+
 class ZigzagIterator:
 
     def __init__(self, v1, v2):
@@ -97,6 +99,35 @@ result = list(iterator)
 
 ```
 
+解釋
+```python
+self.queue = [v for v in (v1, v2) if v]
+```
+Example: v1=[1,2], v2=[3,4,5]
+self.queue = [ [1,2], [3,4,5]]
+在這裡for v先v=v1, 然後if v成立所以加入變成queue=[ [1,2] ]
+接著v = v2, 然後if v成立所以加入變成queue=[ [1,2], [3,4,5] ]
+
+這行程式碼的作用是**過濾掉空列表，僅將非空的向量加入隊列中**。以 `v1 = [1, 2]`、`v2 = [3, 4, 5, 6]` 為例：
+
+1. **初始建構（`__init__`）：**
+    - 檢查 `v1`：`[1, 2]` 非空（Evaluates to `True`）。
+    - 檢查 `v2`：`[3, 4, 5, 6]` 非空（Evaluates to `True`）
+    - `self.queue` 初始狀態為：`[[1, 2], [3, 4, 5, 6]]`
+        
+2. **交替取出過程（Zigzag 執行流程）：**
+
+|**呼叫過程**|**彈出的向量 v**|**取出的值 value**|**v 剩餘內容**|**處理方式**|**self.queue 變化**|
+|---|---|---|---|---|---|
+|**第 1 次**|`[1, 2]`|`1`|`[2]`|非空，重新放回隊尾 (`append`)|`[[3, 4, 5, 6], [2]]`|
+|**第 2 次**|`[3, 4, 5, 6]`|`3`|`[4, 5, 6]`|非空，重新放回隊尾 (`append`)|`[[2], [4, 5, 6]]`|
+|**第 3 次**|`[2]`|`2`|`[]`|**空列表，不放回隊列**|`[[4, 5, 6]]`|
+|**第 4 次**|`[4, 5, 6]`|`4`|`[5, 6]`|非空，重新放回隊尾 (`append`)|`[[5, 6]]`|
+|**第 5 次**|`[5, 6]`|`5`|`[6]`|非空，重新放回隊尾 (`append`)|`[[6]]`|
+|**第 6 次**|`[6]`|`6`|`[]`|**空列表，不放回隊列**|`[]` (結束)|
+
+最終輸出順序即為：`[1, 3, 2, 4, 5, 6]`。
+
 `for` 迴圈的內部機制如下：
 ```python
 iter_obj = iter(iterator)  # 這裡會調用 __iter__()
@@ -109,7 +140,7 @@ while True:
 ```
 
 
-## **詳細解釋 `def __iter__(self): return self`**
+詳細解釋 `def __iter__(self): return self`
 
 ### **1. `__iter__()` 是 Python 迭代器協議 (Iterator Protocol) 的一部分**
 
