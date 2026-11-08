@@ -1,4 +1,5 @@
 
+比較: [[Compare 二叉樹的直徑vs樹上最長路徑]]
 
 **样例 1:**
 ```
@@ -26,27 +27,17 @@
 
 ```python
 class Solution:
-
     max_len = 0
-
     def diameter_of_binary_tree(self, root: TreeNode) -> int:
-
         self.dfs(root)
-
         return self.max_len
 
     def dfs(self, node):
-
         if not node:
-
             return 0
-
         left_depth  = self.dfs(node.left)
-
         right_depth = self.dfs(node.right)
-
         self.max_len = max(self.max_len, left_depth + right_depth)
-
         return max(left_depth, right_depth) + 1
 ```
 pass
