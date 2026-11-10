@@ -55,7 +55,14 @@ def climb_stairs(self, n: int) -> int:
 		result[i%2] = result[0] + result[1]
 	return result[i%2]
 ```
-
+解釋:
+step1: Fib[n] = Fib[n-1] + Fib[n-2]的關係, 但只操作在result(兩個數值)
+step2: 如果n=0->0, n=1->1, n=2->2
+step3: result = [ 1, 2 ], 而當n=5時, for迴圈i =0, 1, 2
+step4: i=0, result[0] = 1+2=3 -> result=[ 3, 2 ]
+step5: i=1, result[1] = 3+2=5 -> result=[ 3, 5 ]
+step6: i=2, result[0] = 3+5=8 -> result=[ 8, 5 ]
+step6: 所以答案=8
 
 n=3 -> result=3
 1. 1, 1, 1
