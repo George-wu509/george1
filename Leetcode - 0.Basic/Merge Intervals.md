@@ -1,6 +1,8 @@
 Lintcode 156
 我们以一个 `Interval` 类型的列表 `intervals` 来表示若干个区间的集合，其中单个区间为 `(start, end)`。你需要**合并所有重叠的区间**，并返回一个**不重叠的区间数组**，该数组需**恰好覆盖输入中的所有区间**。
 
+比較: [[Compare - Merge two Intervals]]
+
 **样例1:**
 
 ```python
