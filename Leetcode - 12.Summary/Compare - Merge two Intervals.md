@@ -31,8 +31,8 @@ B. Merge Intervals
 
 ## A. Merge Two Sorted Interval Lists
 
-### 解法 Idea
-
+參考: [[Merge Two Sorted Interval Lists]]
+#### 解法 Idea
 由於兩條列表各自已經按起點 `start` 升序排列，直接使用 **雙指標 `i` 與 `j`** 指向兩列表的當前元素：
 
 1. **選擇較小起點**：比較 `list1[i]` 與 `list2[j]` 的 `start`，優先挑出起點較小的區間。
@@ -70,8 +70,8 @@ list2: [2,3] -> [5,6]  (j=0)
 
 ## B. Merge Intervals
 
-### 解法 Idea
-
+參考: [[Merge Intervals]]
+##### 解法 Idea
 輸入只有一個雜亂無章的單一列表。
 1. **排序**：按區間起點 `x.start` 升序排序 $O(N \log N)$。排序後，所有潛在重疊的區間會相鄰排列。
 2. **單次掃描**：遍歷排序後的區間，維護結果列表 `result`：
