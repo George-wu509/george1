@@ -1,9 +1,8 @@
 Lintcode 1507
-返回 `A` 的最短的非空连续子数组的**长度**，该子数组的和至少为 `K` 。
-如果没有和至少为 `K` 的非空子数组，返回 `-1` 。
+返回 `A` 的最短的非空连续子数组的**长度**，该子数组的和至少为 `K` 。如果没有和至少为 `K` 的非空子数组，返回 `-1` 。
 
 比較:  Lintcode 406  Minimum Size Subarray Sum
-[[比較Lintcode 406 vs 1507]]
+[[Compare 最短子數組和]]
 
 **样例 1:**
 ```python
@@ -18,47 +17,13 @@ Lintcode 1507
 输出：-1
 ```
 
-**Method1(雙指針): 是最優解，具有 O(N) 的時間複雜度和 O(1) 的空間複雜度**
+Method1(雙指針): 不能使用, 因為滑動窗口要有單調性
 
-Method2(前綴和和哈希表):因為它通常用於查找固定和的子數組。如果要求是找到和等於 s 的子數組，哈希表才會發揮其最大優勢。
+Method2(前綴和+哈希表):因為它通常用於查找固定和的子數組。如果要求是找到和等於 s 的子數組，哈希表才會發揮其最大優勢。
 
-Method3(單調隊列):通常用於解決滑動窗口中的最大值/最小值問題，例如「滑動窗口最大值」或者「找到一個區間，使得區間內的最小值滿足某個條件」。對於求「和」的問題，單調隊列的直接應用較少
+Method3(前綴和+單調隊列):通常用於解決滑動窗口中的最大值/最小值問題，例如「滑動窗口最大值」或者「找到一個區間，使得區間內的最小值滿足某個條件」。對於求「和」的問題，單調隊列的直接應用較少. **標準最優解法**（時間複雜度 $O(N)$，空間複雜度 $O(N)$）
 
-nums= [2,3,1,2,4,3], s = 7
-雙指針解法
-```python
-class Solution:
-
-    def minimum_size(self, nums: List[int], s: int) -> int:
-        if nums is None or len(nums) == 0:
-            return -1
-
-        n = len(nums)
-        minLength = n + 1
-        sum = 0
-        j = 0
-        for i in range(n):
-            while j < n and sum < s:
-                sum += nums[j]
-                j += 1
-            if sum >= s:
-                minLength = min(minLength, j - i)
-
-            sum -= nums[i]
-            
-        if minLength == n + 1:
-            return -1
-            
-        return minLength
-```
-pass
-解釋: 
-step1: i是左指針用for loop, j是右指針 
-
-
-
-
-前綴和解法 + 單調隊列
+Method3:前綴和解法 + 單調隊列 (最佳解法)
 a= [2,3,1,2,4,3], k = 7
 ```python
 from collections import deque
@@ -82,23 +47,15 @@ def shortest_subarray(self, a, k):
 	return shortest
 ```
 pass
+解釋:
+子數組 `a[i...j]` 的和可以表示為前綴和之差：$P[j + 1] - P[i] \ge K$。目標是找到下標差 $(j + 1) - i$ 最小的組合. 
 
 
 
-### Method 1: `minSubArrayLen_hashmap` (基於哈希表的方法)
+巧思在於使用 `deque([(0, -1)])` 直接儲存 `(前綴和, 下標)` 元組，省去了顯式建立前綴和數組 `P` 的空間分配，邏輯非常精簡
 
-**核心思想：** 這種方法使用了前綴和和哈希表。它遍歷數組，計算每個位置的前綴和。對於每個前綴和 `prefix_sum`，它會在哈希表中查找是否存在一個 `pre_sum`，使得 `prefix_sum - pre_sum >= s`。如果存在，這意味著從 `pre_sum` 對應的索引到當前索引的子數組的和滿足條件。它試圖找到滿足這個條件的最小長度。
 
-**優點：**
-
-- **概念相對直觀：** 對於熟悉前綴和和哈希表的開發者來說，理解其查找邏輯相對容易。
-
-**缺點：**
-
-- **時間複雜度高：** 在內層循環中，它會遍歷 `prefix_sum_index` 中的所有元素。在最壞的情況下，哈希表中可能包含 `n` 個元素，導致時間複雜度達到 O(n2)。這對於較大的輸入會導致超時。
-- **無法處理負數：** 雖然 LintCode Minimum Size Subarray Sum 的題目通常假設數組元素為正數，但如果數組中包含負數，`prefix_sum_index` 的設計可能無法找到正確的最小長度，因為 `pre_sum <= prefix_sum - s` 這個條件可能不夠精確。當處理負數時，需要更複雜的邏輯來維護一個單調遞增的前綴和。
-
-### Method 2: `shortest_subarray` (基於單調隊列的方法)
+### Method 3: `shortest_subarray` (基於單調隊列的方法)
 
 **核心思想：** 這種方法也使用了前綴和，但它引入了一個**單調隊列 (monotonic queue)**。隊列中存儲的是 `(prefix_sum, index)` 對，並且保證隊列中的 `prefix_sum` 是單調遞增的。
 
