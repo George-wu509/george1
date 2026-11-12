@@ -23,7 +23,8 @@
     - 只有**前綴和 + 單調隊列**能透過雙端剪枝，在 $O(N)$ 時間內完美解決。
 
 Leetcode 406 [[Minimum Size Subarray Sum]]
-给定一个由 `n` 个正整数组成的数组和一个正整数 `s` ，请找出该数组中满足其和 ≥ s 的最小长度子数组
+给定一个由 `n` 个<mark style="background: #FFF3A3A6;">正整数</mark>组成的数组和一个正整数 `s` ，请找出该数组中满足其和 ≥ s 的最小长度子数组
+Example: [2,3,1,2,4,3], s = 7  -> 2  ([ 3,4 ])
 最佳解法:  雙指針 / 滑動窗口
 ```python
 class Solution:
@@ -58,6 +59,7 @@ class Solution:
 
 Leetcode 1507  [[Shortest Subarray with Sum at Least K]]
 返回 `A` 的最短的非空连续子数组的**长度**，该子数组的和至少为 `K`
+Example: [2,3,1,2,4,3], s = 7 -> 1
 最佳解法:  前綴和 + 單調隊列
 ```python
 from collections import deque
