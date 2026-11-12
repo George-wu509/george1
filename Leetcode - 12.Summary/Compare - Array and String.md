@@ -20,56 +20,69 @@
 
 5. @找非固定k個數的和(固定) -> DFS
 ```
+
+|                          |                                |
+| ------------------------ | ------------------------------ |
+| 1. Array                 |                                |
+| 2. String                |                                |
+| 3. Prefix Sum Array      | a. 子数组之和为K<br>b. 子数组和大於K的最短子数组 |
+| 4. Sorting               |                                |
+| 5. Binary Search         | a. 经典二分查找                      |
+| 6. Two Pointers          | a. 两数之和<br>b. 滑动窗口内数的和         |
+| 7. Linked List           |                                |
+| 8. Queue                 |                                |
+| 9. Monotone queue        | a. 滑动窗口的最大值                    |
+| 10. BFS                  |                                |
+| 11. DFS                  | a. K數之和                        |
+| 12. Stack                |                                |
+| 13. Monotonic stack      |                                |
+| 14. Hash Map             |                                |
+| 15. Union find           |                                |
+| 16. Iterator             |                                |
+| 17. Binary Tree          |                                |
+| 18. Binary Search Tree   |                                |
+| 19. Heap                 |                                |
+| 20. Trie                 |                                |
+| 21. Segment Tree         |                                |
+| 22. Balanced Binary Tree |                                |
+| 23. Binary Indexed Tree  |                                |
+| 24. Graph                |                                |
+| 25. Dp                   |                                |
+| 26. Math                 |                                |
+
 ### 觀念修正與細節補充
 
 #### 1. 找子陣列（非固定長度）的和 = 固定 target
 
 - **修正說明**：
-    
     - **正負數皆有（含負數）**：雙指標無法使用（因為視窗不具單調性）。**前綴和 + 哈希表（Prefix Sum + HashMap）** 是最佳解，時間複雜度 $O(N)$，空間複雜度 $O(N)$。
-        
     - **單調隊列（Monotonic Queue）**：單調隊列**並非**在所有狀況下都優於哈希表。它主要用於**滑動視窗最大值/最小值**，或是**含有負數且求「和 $\ge K$ 的最短子陣列」**（如 LeetCode 862）。對於「精確等於固定和」的題目，前綴和 + 哈希表才是標準解答。
-        
     - **全為非負數**：直接使用**雙指標/滑動視窗（Two Pointers）**，時間 $O(N)$，空間 $O(1)$。
-        
 
 #### 2. 找子陣列（非固定長度）的和 = 非固定（求最大值 / 最小值 / 範圍）
 
 - **修正說明**：
-    
     - **全為非負數（且和 $\ge K$ / $\le K$）**：適用**可變長度滑動視窗**，時間 $O(N)$，空間 $O(1)$。
-        
     - **含負數（求最大子陣列和）**：滑動視窗失效，改用 **Kadane's 演算法（Dynamic Programming）**，時間 $O(N)$，空間 $O(1)$。
-        
     - **含負數（求和 $\ge K$ 的最短子陣列）**：改用 **前綴和 + 單調雙端隊列（Monotonic Deque）**，時間 $O(N)$，空間 $O(N)$。
-        
 
 #### 3. 找子陣列（固定長度 $K$）的和 / 條件
 
 - **修正說明**：
-    
     - 正確名稱為 **固定長度滑動視窗（Fixed-Size Sliding Window）**。
-        
     - 右指標移入一個元素、左指標移出一個元素，維護長度為 $K$ 的視窗。時間 $O(N)$，空間 $O(1)$ 或 $O(\vert{}\Sigma\vert{})$（字元集大小）。
-        
 
 #### 4. 找固定 $K$ 個數的和 = 固定 target（2Sum / 3Sum / K-Sum）
 
 - **修正說明**：
-    
     - **2Sum**：若陣列未排序，使用 **哈希表** 最快（時間 $O(N)$，空間 $O(N)$）；若要求空間 $O(1)$ 或不使用額外空間，先 **Sort + 雙指標**（時間 $O(N \log N)$）。
-        
     - **3Sum / 4Sum / K-Sum**：先 **Sort + 雙指標** 為標準解法，可方便去重與剪枝。時間複雜度為 $O(N^{K-1})$。
-        
 
 #### 5. 找非固定 $K$ 個數的和 = 固定 target
 
 - **修正說明**：
-    
     - **要求「列出所有組合/路徑」**：使用 **DFS / 回溯法（Backtracking）**，時間為指數級 $O(2^N)$ 或 $O(N!)$。
-        
     - **僅要求「組合總數」或「最少元素個數」**：改用 **動態規劃（DP，如零錢兌換 / 背包問題）**，時間複雜度優化至 $O(N \times Target)$。
-        
 
 ### 陣列 / 字串題型決策對照表
 
@@ -91,30 +104,21 @@
 #### 類別 1：前綴和 + 哈希表 vs. 滑動視窗
 
 - **LeetCode 560 / LintCode 838**: Subarray Sum Equals K _(前綴和 + 哈希表，含負數經典題)_
-    
 - **LeetCode 209 / LintCode 406**: Minimum Size Subarray Sum _(滑動視窗，全正數)_
-    
 - **LeetCode 862**: Shortest Subarray with Sum at Least K _(前綴和 + 單調隊列，含負數 Hard 題)_
-    
 
 #### 類別 2：固定長度滑動視窗
 
 - **LeetCode 438 / LintCode 647**: Find All Anagrams in a String _(固定長度字串視窗)_
-    
 - **LeetCode 1456**: Maximum Number of Vowels in a Substring of Given Length
-    
 
 #### 類別 3：多數之和 (K-Sum)
 
 - **LeetCode 1 / LintCode 56**: Two Sum _(哈希表 $O(N)$)_
-    
 - **LeetCode 15 / LintCode 57**: 3Sum _(排序 + 雙指標 $O(N^2)$)_
-    
 - **LeetCode 18 / LintCode 58**: 4Sum _(排序 + 雙指標 $O(N^3)$)_
-    
 
 #### 類別 4：DFS 回溯 vs. 動態規劃 (組合和)
 
 - **LeetCode 39 / LintCode 135**: Combination Sum _(要求列出所有組合 $\rightarrow$ DFS)_
-    
 - **LeetCode 322 / LintCode 669**: Coin Change _(求最少硬幣數 $\rightarrow$ 完全背包 DP)_
