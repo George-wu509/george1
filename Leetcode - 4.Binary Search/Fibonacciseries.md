@@ -29,9 +29,8 @@ fib[1]=0, fib[2]=1, fib[3]=1, fib[4]=2, ..
 
 
 ```python
-"""
 class Solution:
-    def dfs(self, n, fib):
+    def fibonacci(self, n, fib):
         if fib[n] != -1:
             return fib[n]
         if n <= 2:
@@ -40,9 +39,9 @@ class Solution:
         fib[n] = self.dfs(n - 1, fib) + self.dfs(n - 2, fib)
         return fib[n]
     
-    def fibonacci(self, n):
+    def run_fibonacci(self, n):
         result = [-1] * (n + 1)
-        self.dfs(n, result)
+        self.fib(n, result)
         return result[n]
 ```
 pass

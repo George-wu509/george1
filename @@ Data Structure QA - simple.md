@@ -1,18 +1,18 @@
 
-|                                                                                                                                                                                                                                                        | [[9. 數據結構- 隊列 堆Heap 棧Stack 哈希表Hash]]<br><br>[[Compare - All Data structure]]<br><br>[[Compare - complexity]]<br>                    |                                                           |
-| ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------- |
-| Array  [[###### 數組]]<br>String  [[###### 字符串]]<br>Prefix Sum Array  [[###### 前綴和數組]]<br>Sorting [[###### 排序]]<br>line sweep [[###### 掃描線]]                                                                                                             |                                                                                                                                     | (18)<br>(36)<br>(16)<br>(2)<br>(1)                        |
-| Bindary Search [[###### 二分法]]                                                                                                                                                                                                                          | Array二分查找, 搜索二维矩阵, 斐波纳契数列                                                                                                           | (22)                                                      |
-| Two Pointers [[###### 雙指針]]                                                                                                                                                                                                                            | 回文串, K数之和, 分割数组, 去除重复                                                                                                               | (30)                                                      |
-| Linked List  [[###### 鍊表]]<br>Doubly linked list  雙向链表                                                                                                                                                                                                 | LRU                                                                                                                                 | (24)<br>(2)                                               |
-| Queue  [[###### 隊列]]<br>deque  雙向隊列<br>Monotone queue  [[###### 單調隊列]]                                                                                                                                                                                 | [[###### BFS ]] 层次遍历, 最短路径, 滑动窗口<br>*能用BFS就不要用DFS<br>连通块, 拓扑排序一定要用BFS 否則會錯誤<br><br>BFS有兩種方法 - queue or deque                        | (8)<br>(6)<br>(26)                                        |
-| Stack [[###### 棧]]<br>Monotonic stack  [[###### 單調棧]]                                                                                                                                                                                                  | [[###### DFS]], 组合排列(10%), Binary Tree(90%)<br><br>DFS有兩種方法- recursion, no recursion                                                | (13)<br>(18)<br>(16)                                      |
-| Hash Map [[###### 哈希表]]<br>Union find  [[###### 併查集]]<br>Iterator  [[###### 迭代器]]                                                                                                                                                                      |                                                                                                                                     | (15)<br>(22)<br>(12)                                      |
-| Binary Tree [[###### 二叉树]]<br>Binary Search Tree  [[###### 二叉搜索树]]<br>Heap [[###### 堆]]<br>Trie [[###### 字典树]]<br>Segmetn Tree  [[###### 线段树]]<br>Balanced Binary Tree [[###### 平衡二叉树]]<br>Binary Indexed Tree  [[###### 树状数组]]<br>Graph  [[###### 圖]] |                                                                                                                                     | (14)<br>(24)<br>(19)<br>(15)<br>(10)<br>(2)<br>(4)<br>(5) |
-| DP [[###### 動態規劃]]                                                                                                                                                                                                                                     |                                                                                                                                     | (8)                                                       |
-| Math 數學  [[###### 數學]]                                                                                                                                                                                                                                 |                                                                                                                                     | (1)                                                       |
-|                                                                                                                                                                                                                                                        | [[Compare - Array and String]]<br><br>[[Compare - deque and Monotone Queue]]<br><br>[[Compare - Monotone queue and Monotone stack]] |                                                           |
-|                                                                                                                                                                                                                                                        |                                                                                                                                     |                                                           |
+|                                                                                                                                                                                                                                                                                        | [[9. 數據結構- 隊列 堆Heap 棧Stack 哈希表Hash]]<br><br>[[Compare - All Data structure]]<br><br>[[Compare - complexity]]<br>                    |                                                           |
+| -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------- |
+| 1. Array  [[###### 數組]]<br>2. String  [[###### 字符串]]<br>3. Prefix Sum Array  [[###### 前綴和數組]]<br>4. Sorting [[###### 排序]]<br>line sweep [[###### 掃描線]]                                                                                                                                 |                                                                                                                                     | (18)<br>(36)<br>(16)<br>(2)<br>(1)                        |
+| 5. Bindary Search [[###### 二分法]]                                                                                                                                                                                                                                                       | Array二分查找, 搜索二维矩阵, 斐波纳契数列                                                                                                           | (22)                                                      |
+| 6. Two Pointers [[###### 雙指針]]                                                                                                                                                                                                                                                         | 回文串, K数之和, 分割数组, 去除重复                                                                                                               | (30)                                                      |
+| 7. Linked List  [[###### 鍊表]]<br>Doubly linked list  雙向链表                                                                                                                                                                                                                              | LRU                                                                                                                                 | (24)<br>(2)                                               |
+| 8. Queue  [[###### 隊列]]<br>deque  雙向隊列<br>9. Monotone queue  [[###### 單調隊列]]                                                                                                                                                                                                           | 10. [[###### BFS ]] 层次遍历, 最短路径, 滑动窗口<br>*能用BFS就不要用DFS<br>连通块, 拓扑排序一定要用BFS 否則會錯誤<br><br>BFS有兩種方法 - queue or deque                    | (8)<br>(6)<br>(26)                                        |
+| 12. Stack [[###### 棧]]<br>13. Monotonic stack  [[###### 單調棧]]                                                                                                                                                                                                                          | 11. [[###### DFS]], 组合排列(10%), Binary Tree(90%)<br><br>DFS有兩種方法- recursion, no recursion                                            | (13)<br>(18)<br>(16)                                      |
+| 14. Hash Map [[###### 哈希表]]<br>15. Union find  [[###### 併查集]]<br>16. Iterator  [[###### 迭代器]]                                                                                                                                                                                          |                                                                                                                                     | (15)<br>(22)<br>(12)                                      |
+| 17. Binary Tree [[###### 二叉树]]<br>18. Binary Search Tree  [[###### 二叉搜索树]]<br>19. Heap [[###### 堆]]<br>20. Trie [[###### 字典树]]<br>21. Segment Tree  [[###### 线段树]]<br>22. Balanced Binary Tree [[###### 平衡二叉树]]<br>23. Binary Indexed Tree  [[###### 树状数组]]<br>24. Graph  [[###### 圖]] |                                                                                                                                     | (14)<br>(24)<br>(19)<br>(15)<br>(10)<br>(2)<br>(4)<br>(5) |
+| 25. DP [[###### 動態規劃]]                                                                                                                                                                                                                                                                 |                                                                                                                                     | (8)                                                       |
+| 26. Math 數學  [[###### 數學]]                                                                                                                                                                                                                                                             |                                                                                                                                     | (1)                                                       |
+|                                                                                                                                                                                                                                                                                        | [[Compare - Array and String]]<br><br>[[Compare - deque and Monotone Queue]]<br><br>[[Compare - Monotone queue and Monotone stack]] |                                                           |
+|                                                                                                                                                                                                                                                                                        |                                                                                                                                     |                                                           |
 
 
 |                  |                                                                                                                                                                                                                                                                                                               |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
@@ -24,7 +24,7 @@
 |                  |                                                                                                                                                                                                                                                                                                               |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
 
 
-# **<mark style="background: #FF5582A6;">數組（Array）</mark>的詳細介紹**
+# **<mark style="background: #FF5582A6;">1. 數組（Array）</mark>的詳細介紹**
 ###### 數組
 
 | 题目编号                 | 题目名称（英文）                                                   | 题目简述（中文）                                 | 样例                                                                              | 解法                                          |
@@ -35,7 +35,7 @@
 | 101<br><br>(e)       | 删除排序数组中的重复数字（二) [[Remove Duplicates from Sorted Array II]] | 删除排序数组中出现超过两次的重复项，使每个元素最多出现两次，并返回新的数组长度。 | 输入: <br>[1,1,1,2,2,3] <br><br>输出: <br>5 <br>([1,1,2,2,3])                       | 使用双指针，一个指向当前遍历位置，一个指向更新位置，控制每个元素的出现次数不超过两次。 |
 | 397<br>*<br>(e)<br>G | 最长上升连续子序列 [[Longest Continuous Increasing Subsequence]]    | 找到一個數組中，最长的连续严格上升子序列的长度。                 | 输入: <br>nums = [ 1,5,2,3,4 ]  <br><br>输出: 3   <br>([2,3,4])<br><br>O(n),O(1)    | 使用遍历一次数组的方法，记录当前的连续上升子序列长度，动态更新最大值。         |
 
-# **<mark style="background: #FF5582A6;">字符串（String）</mark>的詳細介紹**
+# **<mark style="background: #FF5582A6;">2. 字符串（String）</mark>的詳細介紹**
 ###### 字符串
 
 | 题目编号                | 题目名称（英文）                              | 题目简述（中文）                                         | 样例                                                                                                                                    | 解法                                           |
@@ -46,7 +46,7 @@
 | 171<br>**<br>(m)    | 乱序字符串 [[Anagrams]]                    | 给定一个字符串列表，找出其中所有乱序的字符串组。                         | 输入:  <br>strs = <br>["eat", "tea", "tan", <br>"ate", "nat", "bat"]  <br><br>输出: <br>[ ["eat","tea","ate"],<br>["tan","nat"],["bat"] ] | 将字符串排序后作为key存入字典，按key分组。                     |
 | 10<br><br>(m)       | 字符串的不同排列 [[String Permutation II]]    | 给定一个字符串，返回其所有不同的排列（考虑字符重复）。                      | 输入:  <br>s = "aab"  <br><br>输出: <br>["aab", "aba", "baa"]                                                                             | 使用DFS生成排列，并用集合去重或在递归中跳过重复字符。                 |
 
-# **<mark style="background: #BBFABBA6;">前綴和數組（Prefix Sum Array）</mark>的詳細介紹**
+# **<mark style="background: #BBFABBA6;">3. 前綴和數組（Prefix Sum Array）</mark>的詳細介紹**
 ###### 前綴和數組
 
 see [[Prefix summary]]
@@ -68,14 +68,14 @@ see [[Prefix summary]]
 | 1844<br>*<br>(m)        | [[Subarray Sum Equals to K II]] 子数组和为K的最短子数组                   | 给定一个整数数组和一个整数k，你需要找到和为k的最短非空子数组，并返回它的长度。 | 输入:  <br>nums = [1, 1, 1, 2], k = 3  <br>输出: 2  <br><br>(**和為0找最短**[1,2])<br>O(n),O(n) | 使用前缀和与哈希表记录出现的和，通过快速查找加速匹配和为K的子数组数量。(用Two pointers?)                                                                                                             |
 | 406<br>*<br>(m)         | [[Minimum Size Subarray Sum]] 子数组和大於K的最短子数组  <br><br>(數組全部正整數) | 找出数组中和大于或等于 S 的最小连续子数组长度。                | 输入:  <br>nums = [2,3,1,2,4,3], <br>s = 7  <br>输出: 2  ([4,3])<br><br>(**和大於S找最短**)      | (406全部正整數: Two pointers, 1507有負數: Prefix + Mono deque)<br>[[Compare 最短子數組和]]<br><br>使用滑动窗口(i=j=0, i in for loop然後在loop裡面j往右)动态调整窗口范围，记录最短长度。(最長最短用Two pointers.) |
 
-###### 排序 
+# 4. 排序 
 參考 [[排序]]
 
 | **题目编号**        | **题目名称 (英文/中文)**                 | **题目简述 (中文)**           | **样例**                                                                | **解法**                                                                               |
 | --------------- | -------------------------------- | ----------------------- | --------------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
 | 463<br>*<br>(e) | 整數排序 [[Classical Sort Integers]] | 对给定的整数数组进行排序，并返回排序后的数组。 | 输入:  <br>nums = [3,2,1,4,5]  <br>输出: [1,2,3,4,5]<br><br>O(nlogn),O(n) | 快速sort: 左右指针計算位置中間的值pivot, 如果左邊指針值>pivot且右邊指針值<pivot, 則左右指針的值調換, 並開始遞迴在左右兩大半sort<br> |
 
-### 二分法的題目
+### 5. 二分法的題目
 
 ###### 二分法
 
@@ -88,7 +88,7 @@ see [[Prefix summary]]
 | 62<br>*<br>(m)  | [[Search in Rotated Sorted Array]]<br>搜索旋转排序数组 | 有序数组以某个元素作为支点进行了旋转. 给定一个目标值target进行搜索，假设数组中不存在重复的元素。 | 输入：<br>[4, 5, 1, 2, 3]<br>target = 1<br><br>输出：2                      | Array從頭尾開始用雙指針start, end取中位數mid,先判斷mid是左半邊(arraymid大於array[end])或右半邊. 如果在mid左半邊, 如果target在start跟mid之間則將end換成mid繼續, 否則start換成mid. 如果在mid右半邊, 如果target在mid跟end之間則將start換成mid繼續, 否則end換成mid. |     |
 | 366<br><br>(e)  | [[Fibonacciseries]]<br>斐波纳契数列                  | 斐波纳契数列是指：前2个数是 0 和 1 。第 i 个数是第 i-1 个数和第i-2 个数的和      | 输入: <br>series=<br>0, 1, 1, 2, <br>3, 5, 8, 13, <br>21, 34..          | 尋找Fibonacci數列的第N的數. 可以建立一個fib=[0,1]. for迴圈從2開始到n+1. i=2時0+1=1更新成[1,1],i=3時更新成[1,2], i=4時更新成[3,2]. 其中1+2=array[3]使用fib[i%2] = fib[0]+fib[1]更新數值輪流存在fib[0]跟fib[1]                           |     |
 
-### 雙指針的題目
+### 6. 雙指針的題目
 ###### 雙指針
 參考 [[雙指針]]
 
@@ -113,7 +113,7 @@ see [[Prefix summary]]
 | 64<br>*<br>(e)  | 合并排序数组（简单版） [[Merge Sorted Array (easy version)]] | 将两个已排序数组合并为一个排序数组。                                  | 输入<br>A = [1,2,3]<br>m = 3<br>B = [4,5]<br>n = 2<br><br>输出:<br>[1,2,3,4,5]                                            | 从两个数组的index=0,0开始比较，将较大元素依次插入 nums1 的后半部分。             |
 
 
-# **<mark style="background: #FF5582A6;">链表（Linked List）</mark>的详细介绍**
+# **<mark style="background: #FF5582A6;">7. 链表（Linked List）</mark>的详细介绍**
 
 ###### 鍊表
 
@@ -125,7 +125,7 @@ see [[Prefix summary]]
 
 
 
-# **<mark style="background: #FF5582A6;">队列（Queue）</mark>的详细介绍**
+# **<mark style="background: #FF5582A6;">8. 队列（Queue）</mark>的详细介绍**
 
  ###### 隊列
 
@@ -137,7 +137,7 @@ see [[Prefix summary]]
 
 
 
-# **<mark style="background: #ADCCFFA6;">单调队列（Monotone Queue）</mark>的详细介绍**
+# **<mark style="background: #ADCCFFA6;">9. 单调队列（Monotone Queue）</mark>的详细介绍**
 
 ###### 單調隊列
 
@@ -147,7 +147,7 @@ see [[Prefix summary]]
 | 362<br>**<br>(h) | 滑动窗口的最大值 [[Sliding Window Maximum]]                                     | 给定一个整数数组和滑动窗口大小，找出每个窗口中的最大值。                                 | 输入: <br>nums = <br>[1,3,-1,-3,<br>5,3,6,7]<br><br>k = 3 <br>输出: <br>[3,3,5,5,6,7] | 單調隊列 <br>(遞減) - 使用双端队列（deque）實作Monotonic queue, 维护当前窗口的最大值索引。遍历数组时，移除队列中不在当前窗口范围内的元素，并移除队列中小于当前元素的所有元素，然后将当前元素索引添加到队列。当前元素索引大于等于窗口大小时，队首即为当前窗口最大值。 |
 | 1507<br>*<br>(h) | 和至少为 K 的最短子数组 [[Shortest Subarray with Sum at Least K]]<br><br>(數組包含負數) | 给定一个整数数组，找到和至少为K的最短子数组长度，若不存在返回-1。                           | 输入:  <br>nums = <br>[2, 3, 1, 2, 4, 3]<br>k = 7  <br><br>输出: 2                    | 單調隊列 <br>(遞增) (406全部正整數: Two pointers, 1507有負數: Prefix + Mono deque)<br>[[Compare 最短子數組和]]<br><br>使用单调队列记录前缀和，动态检查当前子数组和是否满足条件并更新最短长度。     |
 
-### BFS(寬度優先搜索)的題目
+### 10. BFS(寬度優先搜索)的題目
 ###### BFS 
 參考 [[BFS]], [[Compare - BFS vs DFS]]
 
@@ -160,7 +160,7 @@ see [[Prefix summary]]
 | 616<br>*<br>(m)            | 课程表 II [[Course Schedule II]]    | 判断是否可以完成所有课程，并返回完成课程的顺序。你只要返回一种就可以了。             | 输入: <br>n = 4,<br>prerequisites = <br>[ [1,0],[2,0],<br>[3,1],[3,2] ] <br><br>输出: <br>[0,1,2,3] or <br>[0,2,1,3]       | 使用 BFS 实现**拓扑排序**，记录节点的入度，依次完成课程。 |
 
 
-### DFS(深度優先搜索)的題目
+### 11. DFS(深度優先搜索)的題目
 
 ###### DFS
 參考 [[DFS]], [[Compare - BFS vs DFS]], [[Compare - DFS(常見題目比較)]]
@@ -186,7 +186,7 @@ Combinations: 組合
 
 
 
-# **<mark style="background: #FF5582A6;">栈（Stack）</mark>的详细介绍**
+# **<mark style="background: #FF5582A6;">12. 栈（Stack）</mark>的详细介绍**
 
 ###### 棧
 
@@ -197,7 +197,7 @@ Combinations: 組合
 | 980<br>**<br>(m)    | 基础计算器II [[Basic CalculatorII]] | 实现一个基础计算器来计算一个简单表达式字符串。                           | 输入: <br>"3+2*2" <br><br>输出: 7                                                                      | 我们可以用一个栈，保存这些（进行乘除运算后的）整数的值。对于加减号后的数字，将其直接压入栈中；对于乘除号后的数字，可以直接与栈顶元素计算，并替换栈顶元素为计算后的结果。 |
 
 
-# **<mark style="background: #ADCCFFA6;">单调栈（Monotonic Stack）</mark>的详细介绍**
+# **<mark style="background: #ADCCFFA6;">13. 单调栈（Monotonic Stack）</mark>的详细介绍**
 
 ###### 單調棧
 
@@ -208,7 +208,7 @@ Combinations: 組合
 | 1852<br>*<br>(m)<br> | 最终优惠价 [[Final Discounted Price]]         | 给定一个商品价格列表，计算每个商品的最终价格，最终价格为原价减去右侧第一个小于等于当前商品价格的值，如果没有则保留原价。 | 输入: <br>prices = <br>[8, 4, 6, 2, 3]  <br><br>输出: <br>[4, 2, 4, 2, 3]         | 單調棧<br>(遞增) - 使用单调递增栈，记录索引以查找右侧第一个符合条件的价格。                                     |
 
 
-# **<mark style="background: #FF5582A6;">哈希表（Hash Map）</mark>的详细介绍**
+# **<mark style="background: #FF5582A6;">14. 哈希表（Hash Map）</mark>的详细介绍**
 
 ###### 哈希表
 
@@ -220,7 +220,7 @@ Combinations: 組合
 | 547<br>**<br>(e) | 两数组的交集 [[Intersection of Two Arrays]]  | 给定两个数组，返回它们的交集，结果中不包含重复元素。          | 输入:  <br>nums1 = <br>[1,2,2,1]<br>nums2 = [2,2] <br> <br>输出: [2]                                           | 使用哈希表记录第一个数组的元素，遍历第二个数组时检查是否存在于哈希表中。 |
 
 
-# **<mark style="background: #ADCCFFA6;">并查集（Union-Find）</mark>的详细介绍**
+# **<mark style="background: #ADCCFFA6;">15. 并查集（Union-Find）</mark>的详细介绍**
 
 ###### 併查集
 
@@ -232,7 +232,7 @@ Combinations: 組合
 | 590<br>*<br>(m)  | 连接图II [[Connecting Graph II]]                                           | 在图的基础上增加边权，并支持动态合并和连通性查询。 | 输入:<br>ConnectingGraph2(5)<br>query(1)<br>connect(1, 2)<br>query(1)<br>connect(2, 4)<br>query(1)<br>connect(1, 4)<br>query(1)<br><br>输出:<br>[1,2,3,3] | 并查集基础上记录每个集合的边权和，查询时检查连通性并计算边权和。 |
 
 
-# **<mark style="background: #ADCCFFA6;">迭代器（Iterator）</mark>的详细介绍**
+# **<mark style="background: #ADCCFFA6;">16. 迭代器（Iterator）</mark>的详细介绍**
 ###### 迭代器
 
 | 题目编号               | 题目名称（英文）                                | 题目简述（中文）                        | 样例                                                                        | 解法                      |
@@ -242,7 +242,7 @@ Combinations: 組合
 | 601<br>*<br>(m)    | [[Flatten 2D Vector]]摊平二维向量             | 将二维数组展开为一个扁平化的迭代器。              | 输入:<br>vec2d = <br>[ [1,2],[3],[4,5,6] ]<br><br>输出:<br>[ 1,2,3,4,5,6 ]    | 使用索引记录当前行和列，动态访问元素。     |
 
 
-# **<mark style="background: #FF5582A6;">二叉树（Binary Tree）</mark>的详细介绍**
+# **<mark style="background: #FF5582A6;">17. 二叉树（Binary Tree）</mark>的详细介绍**
 
 ###### 二叉树
 [[5. 二叉樹 Binary Search Tree]] 
@@ -256,7 +256,7 @@ Combinations: 組合
 | 1469<br><br>(m)    | 树上最长路径 [[Longest Path On The Tree]]                  | 找出树中任意两个节点之间的最长路径长度。  | 输入:  <br>edges = [<br>[1,2],[2,3],<br>[2,4],[4,5]]  <br><br>输出: 3                     | 使用两次 DFS：第一次找出最远节点，第二次从最远节点计算最长路径。 |
 
 
-# **<mark style="background: #BBFABBA6;">二叉搜索树（Binary Search Tree）</mark>的详细介绍**
+# **<mark style="background: #BBFABBA6;">18. 二叉搜索树（Binary Search Tree）</mark>的详细介绍**
 ###### 二叉搜索树
 
 | 题目编号             | 题目名称（英文）                                     | 题目简述（中文）                       | 最简单样例                                                                  | 解法                              |
@@ -268,7 +268,7 @@ Combinations: 組合
 | 1181<br>*<br>(e) | 二叉树的直径 [[Diameter of Binary Tree]]           | 找出二叉树中两个节点之间的最长路径长度。           | 输入:  <br>root = <br>[1,2,3,4,5]  <br><br>输出: 3                         | 使用后序遍历计算每个节点的左右子树深度，动态更新最长路径长度。 |
 
 
-# **<mark style="background: #FF5582A6;">堆（Heap）</mark>的详细介绍**
+# **<mark style="background: #FF5582A6;">19. 堆（Heap）</mark>的详细介绍**
 ###### 堆
 
 | 题目编号            | 题目名称（英文）                                        | 题目简述（中文）                    | 最简单样例                                                                                                   | 解法                               |
@@ -278,7 +278,7 @@ Combinations: 組合
 | 1274<br><br>(m) | 查找和最小的K对数字 [[Find K Pairs with Smallest Sum]]   | 找到两个已排序数组中和最小的 k 对数对。       | 输入:  <br>nums1 = [1,7,11]  <br>nums2 = [2,4,6]  <br>k = 3  <br><br>输出:  [<br>[1,2],<br>[1,4],<br>[1,6]] | Min-Heap - 使用最小堆或单调栈动态生成数对并维护大小。 |
 
 
-# **<mark style="background: #ADCCFFA6;">字典树（Trie）</mark>的详细介绍**
+# **<mark style="background: #ADCCFFA6;">20. 字典树（Trie）</mark>的详细介绍**
 ###### 字典树
 
 
@@ -290,7 +290,7 @@ Combinations: 組合
 
 
 
-# **<mark style="background: #ADCCFFA6;">线段树（Segment Tree）</mark>的详细介绍**
+# **<mark style="background: #ADCCFFA6;">21. 线段树（Segment Tree）</mark>的详细介绍**
 ###### 线段树
 
 | 题目编号            | 题目名称（英文）                                             | 题目简述（中文）                | 最简单样例                                                              | 解法                       |
@@ -300,7 +300,7 @@ Combinations: 組合
 | 212<br>*<br>(e) | [[Space Replacement ]]空格替换                           | 将字符串中的空格替换为 `%20`。      | 输入:  <br>s = "Mr John Smith"  <br><br>输出:  <br>"Mr%20John%20Smith" | 使用双指针从后向前遍历字符串，替换空格。     |
 
 
-# **<mark style="background: #ADCCFFA6;">平衡二叉树（Balanced Binary Tree）</mark>的详细介绍**
+# **<mark style="background: #ADCCFFA6;">22. 平衡二叉树（Balanced Binary Tree）</mark>的详细介绍**
 ###### 平衡二叉树
 
 | **题目编号**        | **题目名称 (英文/中文)**               | **题目简述 (中文)**                        | **样例**                                                                     | **解法**                                     |
@@ -310,7 +310,7 @@ Combinations: 組合
 
 
 
-# **<mark style="background: #ADCCFFA6;">树状数组（Binary Indexed Tree）</mark>的详细介绍**
+# **<mark style="background: #ADCCFFA6;">23. 树状数组（Binary Indexed Tree）</mark>的详细介绍**
 ###### 树状数组
 
 | **题目编号**             | **题目名称 (英文/中文)**                                       | **题目简述 (中文)**                   | **样例**                                                                                                                                                      | **解法**                                   |
@@ -322,7 +322,7 @@ Combinations: 組合
 
 
 
-# **<mark style="background: #ADCCFFA6;">圖（Graph）</mark>的詳細介紹**
+# **<mark style="background: #ADCCFFA6;">24. 圖（Graph）</mark>的詳細介紹**
 ###### 圖
 
 | 题目编号            | 题目名称（英文和中文）                                           | 题目简述（中文）                       | 最简单样例                                                                                                    | 解法                             |
@@ -334,7 +334,7 @@ Combinations: 組合
 | 836<br><br>(h)  | [[Partition to K Equal Sum Subsets]] (分割为K个等和子集)      | 判断是否可以将数组分成 k 个子集，使每个子集的和相等。   | 输入:  <br>nums = <br>[4, 3, 2, 3, 5, 2, 1]  <br>k = 4  <br><br>输出:  true                                  | 使用回溯和动态规划检查可能的分区方案。            |
 
 
-### 動態規劃的題目
+### 25. 動態規劃的題目
 ###### 動態規劃
 
 | **题目编号**            | **题目名称 (英文/中文)**                                      | **题目简述 (中文)**                         | **样例**                                                       | **解法**                              |
@@ -348,7 +348,7 @@ Combinations: 組合
 | 1164<br><br>(m)<br> | [[Wiggle Subsequence]]摆动序列                            | 给定一个数组，找到最长的摆动子序列，摆动子序列的相邻数字之差总是正负交替。 | 输入:  <br>nums = <br>[1,7,4,9,2,5]  <br><br>输出:  6            | 使用动态规划记录以当前值结尾的最长摆动子序列长度。           |
 | 151<br>*<br>(m)     | 买卖股票的最佳时机 III [[Best Time to Buy and Sell Stock III]] | 找到最多完成两笔交易的情况下可以获得的最大利润。              | 输入:  <br>prices = <br>[3,3,5,0,0,3,1,4]  <br><br>输出: 6       | 使用动态规划结合双指针，分别计算每次交易的最大利润。          |
 
-###### 數學
+###### 26. 數學
 
 | **题目编号**       | **题目名称 (英文/中文)**        | **题目简述 (中文)**                                   | **样例**                | **解法**                                                                     |
 | -------------- | ----------------------- | ----------------------------------------------- | --------------------- | -------------------------------------------------------------------------- |
