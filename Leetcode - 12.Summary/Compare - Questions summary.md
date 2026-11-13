@@ -199,6 +199,10 @@ def twoSum(self, numbers, target):
 [1] while left < right, 題目要求找出兩個不同位置的元素, 如果使用while left <= right可能會指向同個元素. 不需要使用 while left + 1 < right，因為這題沒有計算 mid 導致指標停滯的問題
 
 
+
+BFS(deque) vs DFS(stack)
+![[Pasted image 20261113192557.png]]
+
 | 4. BFS             | 島嶼的個數(433)      |
 | ------------------ | --------------- |
 [[Number of Islands]]
@@ -224,8 +228,9 @@ BFS(grid, x, y, visited):
          visited.add((next_x, next_y))
 ```
 [1] BFS 用 Queue (FIFO), 要移除的元素從deque的左側popleft, 然後這個元素的相鄰元素(example島嶼個數)從右邊append加入
-[2]
-
+[2] BFS(沒有遞迴)在島嶼問題可以想成是seed然後往外擴散, 然後bfs function開始第一步就create新deque, 以及visited.  
+[3] bfs第二步while queue, 然後x,y=queue.popleft()
+[4] bfs第三步for loop, queue.append周圍的next_x, next_y
 
 完整Solution
 ```python
@@ -298,7 +303,11 @@ DFS(nums, visited, num, results):
          DFS()
          nums.pop()
 ```
-[1] DFS 用 Stack（後進先出 LIFO）
+[1] DFS 用 Stack（後進先出 LIFO). 目標是盡快湊齊一個完整的組合（例如 [A, B, C]），然後退回上一步（Backtrack），換另一個選項（例如換成 [A, C, B]) 所以用stack, 移除最右側的元素, 然後從右側加入append新的元素
+[2] DFS(遞迴)在permutation問題dfs function一開始是停止條件(因為是遞迴), 接著就是for loop每個元素, 然後用visited看有沒有跑過
+[3] dfs第二步, num.append()並記錄visited
+[4] dfs第三步, DFS()
+[5] dfs第四步, num.pop()並記錄visited
 
 完整Solution
 ```python
