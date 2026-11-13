@@ -5,7 +5,8 @@
 | [[#### 整理1 - 數組/子數組和相關]]      |     |
 | [[#### 整理2 - 數組/子數組和相關(按類別)]] |     |
 | [[#### 整理3 - 完整重要題目]]         |     |
-|                               |     |
+| [[#### 整理4 - 每天算法模板練習]]       |     |
+| [[#### 整理5 - 其他整理]]           |     |
 |                               |     |
 
 #### 整理1 - 數組/子數組和相關
@@ -97,7 +98,7 @@
 | 1. Quick Sorting   | 整數排序 (463)      |
 | 2. Binary Search   | 经典二分查找 (457)    |
 | 3. Two pointers    | 两数之和(56)        |
-| 4. BFS             | 岛屿的个数(433)      |
+| 4. BFS             | 島嶼的個數(433)      |
 | 5. DFS             | 全排列  (15)       |
 | 6. Monotonic stack | 下一个更大元素  (1206) |
 |                    |                 |
@@ -107,10 +108,11 @@
 | 1. Quick Sorting | 整數排序 (463) |
 | ---------------- | ---------- |
 [[Classical Sort Integers]]
+nums = [ 3,2,1,4,5 ]    -> [ 1,2,3,4,5 ] 
 ```python
 class Solution:
     def sort_integers(self, nums):
-        if nums == None or len(nums) == 0:
+        if not nums:
             return
         self.quickSort(nums, 0, len(nums) - 1)
         
@@ -135,38 +137,43 @@ class Solution:
         self.quickSort(nums, start, right)
         self.quickSort(nums, left, end)
 ```
-
+[1] if start >= end是為了避免子陣列只剩下一個元素會無限遞迴
+[2] while left <= right, 左右指標**必須**交錯（亦即 `left > right`），才能將陣列完全切分成兩個獨立、不重疊的半部
+[3] nums[left] < pivot, 如果使用 `<=`，與 pivot 數值相同的元素會被直接跳過
 
 | 2. Binary Search | 经典二分查找 (457) |
 | ---------------- | ------------ |
 [[Classical Binary Search]]
+nums = [ 1,2,2,3,4,4 ], target=2    -> 1 or 2
 ```python
     def binarySearch(self, nums, target):
         if not nums:
             return -1
-        start, end = 0, len(nums) - 1
+        left, right = 0, len(nums) - 1
 
-        while start + 1 < end:
-            mid = (start + end) // 2
+        while left + 1 < right:
+            mid = (left + right) // 2
             if nums[mid] < target:
-                start = mid
+                left = mid
             elif nums[mid] == target:
-                end = mid
+                right = mid
             else:
-                end = mid
+                right = mid
 
-        if nums[start] == target:
-            return start
-        if nums[end] == target:
-            return end
+        if nums[left] == target:
+            return left
+        if nums[right] == target:
+            return right
 
         return -1
 ```
+[1] while left +1 < right, 為了徹底根除死迴圈的問題(當L,R指針相鄰如果在外層while loop沒有被擋住, 則死迴圈), 透過使用 `left + 1 < right`，迴圈會精準地在 `left` 和 `right` 相鄰時
 
 
 | 3. Two pointers    | 两数之和(56)        |
 | ------------------ | --------------- |
 [[Two Sum]]
+nums = [ 2,7,11,15], target = 9   -> [ 0,1 ]
 ```python
 def twoSum(self, numbers, target):
 	if not numbers:
@@ -189,10 +196,10 @@ def twoSum(self, numbers, target):
 	
 	return [-1, -1]
 ```
+[1] while left < right, 題目要求找出兩個不同位置的元素, 如果使用while left <= right可能會指向同個元素. 不需要使用 while left + 1 < right，因為這題沒有計算 mid 導致指標停滯的問題
 
-
-| 4. BFS             | 岛屿的个数(433)      |
-| ------------------ | --------------- |
+| 4. BFS | 島嶼的個數(433) |
+| ------ | ---------- |
 [[Number of Islands]]
 算法idea
 ```python
@@ -205,7 +212,7 @@ for j
 BFS(grid, x, y, visited):
    qu = deque([x,y])
    visited.add((x,y))
-   while qu:
+   while queue:
       x,y = queue.popleft()
       for delta_x, delta_y in DIRECTIONS:
          next_x = x + delta_x
@@ -269,6 +276,7 @@ class Solution:
 | 5. DFS | 全排列  (15) |
 | ------ | --------- |
 [[Permutations]]
+nums = [ 1,2,3 ]   -> [[1,2,3],[1,3,2],[2,1,3],[2,3,1], [3,1,2],[3,2,1] ]
 算法idea
 ```python
 results = []
@@ -278,10 +286,11 @@ DFS(nums, visited, num, results):
    到tree底則append加入results
    
    for i in nums全部
-      visited[i] = True
-      nums.append(num[i])
-      DFS()
-      nums.pop()
+      if not visited[i]:
+         visited[i] = True
+         nums.append(num[i])
+         DFS()
+         nums.pop()
 ```
 完整Solution
 ```python
@@ -316,6 +325,8 @@ print(result)
 | 6. Monotonic stack | 下一个更大元素  (1206) |
 | ------------------ | --------------- |
 [[Next Greater Element I]]
+在`nums2`的相应位置找到`nums1`所有元素的下一个更大数字
+nums = [ 4,1,2 ], nums2 = [ 1,3,4,2 ]     -> [ -1, 3, -1]
 ```python
     def next_greater_element(self, nums1: List[int], nums2: List[int]) -> List[int]:
         result = {}
@@ -327,3 +338,18 @@ print(result)
             stack.append(num)
         return [result[num] for num in nums1]
 ```
+
+
+
+
+#### 整理5 - 其他整理
+```
+
+```
+
+|                    |                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| ------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `if not nums:` 的寫法 | **`if not nums:` 的寫法** 沒錯，`if not nums:` 是 PEP 8 (Python 官方程式碼風格指南) 推薦檢查空序列的標準寫法。在 Python 裡，空列表 `[]`、空字串 `""`、數字 `0` 以及 `None` 在布林判斷時，都會被自動視為 `False`。<br><br>- _不推薦：_ `if my_list == [] or my_list == None:`<br>- _推薦寫法：_ `if not my_list:`<br>    <br><br>其他推薦的簡潔條件檢查寫法：<br>- **字串：** `if not string_val:` （可同時攔截 `""` 和 `None`）。<br>- **字典：** `if not my_dict:` （可同時攔截 `{}` 和 `None`）。<br>- **賦予預設值：** `x = user_input or "default_string"` （若前方變數為空，則自動賦予後方的預設值） |
+|                    |                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+|                    |                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+

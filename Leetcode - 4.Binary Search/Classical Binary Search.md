@@ -47,6 +47,16 @@ pass
 
 使用 `while start < end` 会导致某些情况下算法无法正确收敛到目标值，或者漏检目标值。以下是两个具体的例子，说明在 `start < end` 的情况下可能会失败的场景：
 
+一些問題
+```
+在[Binary Search], if not nums: return -1是否可以換成if not nums: return? 另外if not nums是否是很好的寫法可以取代很多條件檢查譬如if nums == None....也幫我整理一些簡潔或推薦的條件檢查寫法. 接下來為何要使用while left + 1 < right而不是while left < right不是while left <= right等
+```
+**回傳 `None` vs `-1`** 如果找不到目標值，回傳 `-1` 能明確表示這是一個「無效的索引」。如果你將 `if not nums: return -1` 改成 `return`，它會輸出 `None`。如果呼叫此函式的外層程式碼嘗試使用這個結果（例如 `nums[result]` 或是 `result + 1`），Python 會拋出 `TypeError: unsupported operand type` 的型別錯誤。
+
+**`if not nums:` 的寫法** 沒錯，`if not nums:` 是 PEP 8 (Python 官方程式碼風格指南) 推薦檢查空序列的標準寫法。在 Python 裡，空列表 `[]`、空字串 `""`、數字 `0` 以及 `None` 在布林判斷時，都會被自動視為 `False`。
+
+**為何使用 `while left + 1 < right:`** 這個特定的模板是為了徹底根除死迴圈的問題。在傳統的 `while left < right` 二分搜尋中，如果 `left = 0`，`right = 1`，此時計算出的 `mid = 0 + (1-0)//2` 為 `0`，接著執行 `left = mid` (亦即 `left = 0`)，指標根本沒有移動！迴圈就會永遠卡在這裡。 透過使用 `left + 1 < right`，迴圈會精準地在 `left` 和 `right` 相鄰時（例如索引 0 和 1）終止。你永遠不會計算出一個讓指標卡住的 `mid`。跳出迴圈後，只需要補上簡單的後處理檢查即可：`if nums[left] == target` 以及 `if nums[right] == target`。
+
 ---
 
 ### 例子 1：数组中没有目标值

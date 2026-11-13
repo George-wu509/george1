@@ -55,6 +55,25 @@ nums.**sort**()
 這裡不能用return [ nums[left][1], nums[right][1] ].sort() 只能用return sorted([nums[left][1], nums[right][1]]) 因為sort()只會更新nums, 但return None
 在code裡面nums = sorted(nums) 可以改成nums.sort() 沒問題
 
+一些問題
+```
+在[]裡面nums = [(number, index) for index, number in enumerate(nums)]這樣一開始的nums和最左邊結果都用nums會不會有問題? 還是需要用不同的變數? while loop為何要用while left < right? 而不是while left <= right or while left+1 < right? 如果最後不加return [-1, -1]會有問題嗎?
+```
+重複使用 nums在 Python 中執行上完全沒有問題。它只是把區域變數名稱 `nums` 重新綁定 (rebind) 到一個新生成的 tuple 陣列上，並不會在記憶體中摧毀或覆寫外部呼叫者原本的陣列。不過，從程式碼可讀性的角度來看，這種「變數遮蔽 (Shadowing)」容易讓閱讀的人感到困惑。改成使用新變數名如 `indexed_nums = ...` 是更好的實務作法
+
+**為何使用 `while left < right:`？** TwoSum 的題目要求找出兩個**不同位置**的元素使其相加等於 target。
+
+- 如果使用 `while left <= right`，左右指標可能會在正中間相遇並指向同一個元素。假設目標值 target 是 `10`，而剛好中間的 `nums[left]` 是 `5`，程式會把 `5 + 5` 加起來，然後錯誤地把同一個索引回傳了兩次。
+    
+- 這裡不需要使用 `while left + 1 < right`，因為這題沒有計算 `mid` 導致指標停滯的問題。`left` 和 `right` 每次條件判斷後，都會嚴格地執行 `+1` 或 `-1` 來移動，所以在數學物理上絕對不可能發生無限迴圈。
+    
+
+**最後不加 `return [-1, -1]` 會怎樣？** 如果整個陣列都找遍了還是沒有符合的配對，`while` 迴圈結束後函式就會自然終止。在 Python 中，如果函式結束時沒有遇到明確的 `return` 語句，預設就會回傳 `None`。
+
+- _舉例來說：_ 如果外部程式執行 `result_x, result_y = TwoSum(self, [1, 2, 3], 100)`，Python 會嘗試將 `None` 解包並賦值給兩個變數。這會立刻拋出錯誤 `TypeError: cannot unpack non-iterable NoneType object`。提供一個預設的 `[-1, -1]` 可以確保函式永遠回傳格式一致的陣列 (List)。
+
+
+
 
 ## **问题描述**
 
