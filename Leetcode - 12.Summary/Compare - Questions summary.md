@@ -198,9 +198,11 @@ def twoSum(self, numbers, target):
 ```
 [1] while left < right, 題目要求找出兩個不同位置的元素, 如果使用while left <= right可能會指向同個元素. 不需要使用 while left + 1 < right，因為這題沒有計算 mid 導致指標停滯的問題
 
-| 4. BFS | 島嶼的個數(433) |
-| ------ | ---------- |
+
+| 4. BFS             | 島嶼的個數(433)      |
+| ------------------ | --------------- |
 [[Number of Islands]]
+
 算法idea
 ```python
 visited = set()
@@ -221,6 +223,10 @@ BFS(grid, x, y, visited):
          queue.append((next_x, next_y))
          visited.add((next_x, next_y))
 ```
+[1] BFS 用 Queue (FIFO), 要移除的元素從deque的左側popleft, 然後這個元素的相鄰元素(example島嶼個數)從右邊append加入
+[2]
+
+
 完整Solution
 ```python
 from collections import deque
@@ -292,6 +298,8 @@ DFS(nums, visited, num, results):
          DFS()
          nums.pop()
 ```
+[1] DFS 用 Stack（後進先出 LIFO）
+
 完整Solution
 ```python
 class Solution:
