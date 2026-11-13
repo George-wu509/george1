@@ -5,7 +5,7 @@
 
 **样例 1**
 ```python
-输入：array = [1,2,7,8,5], k = 3
+输入：array = \
 输出：[10,17,20]
 解析：
 1 + 2 + 7 = 10
@@ -30,3 +30,7 @@
 
 ```
 pass
+解釋:
+step1: 先create n-k+1大小的sums list
+step2: 先計算sums[0] = 從i=0到k-1的值的sum (第一個滑動窗口和)
+step3: 接下來for loop從i=1到n-k+1, sums[i] = 前一個sums[i-1]減掉要離開的id=i-1的值, 再加上要進來id=i+k-1的值
