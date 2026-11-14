@@ -670,10 +670,10 @@ LC 287 雖然輸入是陣列，但可以把數值視為下一個節點的索引�
 
 ## **8. Queue/deque（佇列／雙端佇列）— 2 題**
 
-|題號|中文題名|English Title|
-|---|---|---|
-|102 ★|二元樹的層序遍歷|Binary Tree Level Order Traversal|
-|199|二元樹的右視圖|Binary Tree Right Side View|
+| 題號    | 中文題名     | English Title                     |
+| ----- | -------- | --------------------------------- |
+| 102 ★ | 二元樹的層序遍歷 | Binary Tree Level Order Traversal |
+| 199   | 二元樹的右視圖  | Binary Tree Right Side View       |
 
 這兩題都使用 Queue 執行 BFS；Python 可使用 `collections.deque`。
 
@@ -689,11 +689,11 @@ LC 287 雖然輸入是陣列，但可以把數值視為下一個節點的索引�
 
 ## **10. BFS（廣度優先搜尋）— 3 題**
 
-|題號|中文題名|English Title|
-|---|---|---|
-|127|單字接龍|Word Ladder|
-|286|牆與門|Walls and Gates|
-|994|腐爛的橘子|Rotting Oranges|
+| 題號  | 中文題名  | English Title   |
+| --- | ----- | --------------- |
+| 127 | 單字接龍  | Word Ladder     |
+| 286 | 牆與門   | Walls and Gates |
+| 994 | 腐爛的橘子 | Rotting Oranges |
 
 這三題分別涵蓋：
 
