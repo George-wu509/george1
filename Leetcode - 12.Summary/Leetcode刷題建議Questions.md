@@ -805,35 +805,35 @@ Blind 75 + NeetCode 150 沒有以 Iterator Design 為主要題型的題目。
 
 ## **18. Binary Search Tree（二元搜尋樹）— 3 題**
 
-|題號|中文題名|English Title|
-|---|---|---|
-|98 ★|驗證二元搜尋樹|Validate Binary Search Tree|
-|230 ★|二元搜尋樹中第 K 小的元素|Kth Smallest Element in a BST|
-|235 ★|二元搜尋樹的最近共同祖先|Lowest Common Ancestor of a Binary Search Tree|
+| 題號    | 中文題名           | English Title                                  |
+| ----- | -------------- | ---------------------------------------------- |
+| 98 ★  | 驗證二元搜尋樹        | Validate Binary Search Tree                    |
+| 230 ★ | 二元搜尋樹中第 K 小的元素 | Kth Smallest Element in a BST                  |
+| 235 ★ | 二元搜尋樹的最近共同祖先   | Lowest Common Ancestor of a Binary Search Tree |
 
 ## **19. Heap（堆積／優先佇列）— 9 題**
 
-|題號|中文題名|English Title|
-|---|---|---|
-|215|陣列中的第 K 大元素|Kth Largest Element in an Array|
-|253 ★|會議室 II|Meeting Rooms II|
-|295 ★|資料串流的中位數|Find Median from Data Stream|
-|355|設計 Twitter|Design Twitter|
-|621|任務排程器|Task Scheduler|
-|703|資料串流中的第 K 大元素|Kth Largest Element in a Stream|
-|973|最接近原點的 K 個點|K Closest Points to Origin|
-|1046|最後一塊石頭的重量|Last Stone Weight|
-|1851|包含每個查詢的最小區間|Minimum Interval to Include Each Query|
+| 題號    | 中文題名          | English Title                          |
+| ----- | ------------- | -------------------------------------- |
+| 215   | 陣列中的第 K 大元素   | Kth Largest Element in an Array        |
+| 253 ★ | 會議室 II        | Meeting Rooms II                       |
+| 295 ★ | 資料串流的中位數      | Find Median from Data Stream           |
+| 355   | 設計 Twitter    | Design Twitter                         |
+| 621   | 任務排程器         | Task Scheduler                         |
+| 703   | 資料串流中的第 K 大元素 | Kth Largest Element in a Stream        |
+| 973   | 最接近原點的 K 個點   | K Closest Points to Origin             |
+| 1046  | 最後一塊石頭的重量     | Last Stone Weight                      |
+| 1851  | 包含每個查詢的最小區間   | Minimum Interval to Include Each Query |
 
 建議特別熟練 Python `heapq`，以及 Min Heap、Max Heap、Two Heaps 和 Top K Problems。
 
 ## **20. Trie（字首樹）— 3 題**
 
-|題號|中文題名|English Title|
-|---|---|---|
-|208 ★|實作 Trie（字首樹）|Implement Trie (Prefix Tree)|
-|211 ★|新增與搜尋單字－資料結構設計|Design Add and Search Words Data Structure|
-|212 ★|單字搜尋 II|Word Search II|
+| 題號    | 中文題名           | English Title                              |
+| ----- | -------------- | ------------------------------------------ |
+| 208 ★ | 實作 Trie（字首樹）   | Implement Trie (Prefix Tree)               |
+| 211 ★ | 新增與搜尋單字－資料結構設計 | Design Add and Search Words Data Structure |
+| 212 ★ | 單字搜尋 II        | Word Search II                             |
 
 LC 212 是 Trie + DFS / Backtracking 的重要綜合題。
 
@@ -877,17 +877,17 @@ LC 307 可使用 Segment Tree 或 Binary Indexed Tree。LC 729、715 也有其�
 
 ## **24. Graph（圖論）— 9 題**
 
-|題號|中文題名|English Title|
-|---|---|---|
-|133 ★|複製圖|Clone Graph|
-|207 ★|課程表|Course Schedule|
-|210|課程表 II|Course Schedule II|
-|269 ★|外星文字典|Alien Dictionary|
-|332|重新安排行程|Reconstruct Itinerary|
-|743|網路延遲時間|Network Delay Time|
-|778|水位上升的泳池中游泳|Swim in Rising Water|
-|787|K 站中轉內最便宜的航班|Cheapest Flights Within K Stops|
-|1584|連接所有點的最小費用|Min Cost to Connect All Points|
+| 題號    | 中文題名         | English Title                   |
+| ----- | ------------ | ------------------------------- |
+| 133 ★ | 複製圖          | Clone Graph                     |
+| 207 ★ | 課程表          | Course Schedule                 |
+| 210   | 課程表 II       | Course Schedule II              |
+| 269 ★ | 外星文字典        | Alien Dictionary                |
+| 332   | 重新安排行程       | Reconstruct Itinerary           |
+| 743   | 網路延遲時間       | Network Delay Time              |
+| 778   | 水位上升的泳池中游泳   | Swim in Rising Water            |
+| 787   | K 站中轉內最便宜的航班 | Cheapest Flights Within K Stops |
+| 1584  | 連接所有點的最小費用   | Min Cost to Connect All Points  |
 
 這一組涵蓋 Topological Sort、Shortest Path、Minimum Spanning Tree、Eulerian Path 等進階圖論。
 
@@ -895,31 +895,31 @@ LC 307 可使用 Segment Tree 或 Binary Indexed Tree。LC 729、715 也有其�
 
 這是你指定的 26 類中題目數最多的一組。
 
-|題號|中文題名|English Title|
-|---|---|---|
-|5 ★|最長回文子字串|Longest Palindromic Substring|
-|10|正規表示式匹配|Regular Expression Matching|
-|62 ★|不同路徑|Unique Paths|
-|70 ★|爬樓梯|Climbing Stairs|
-|72|編輯距離|Edit Distance|
-|91 ★|解碼方法|Decode Ways|
-|97|交錯字串|Interleaving String|
-|115|不同的子序列|Distinct Subsequences|
-|139 ★|單字拆分|Word Break|
-|152 ★|乘積最大子陣列|Maximum Product Subarray|
-|198 ★|打家劫舍|House Robber|
-|213 ★|打家劫舍 II|House Robber II|
-|300 ★|最長遞增子序列|Longest Increasing Subsequence|
-|309|買賣股票的最佳時機（含冷凍期）|Best Time to Buy and Sell Stock with Cooldown|
-|312|戳氣球|Burst Balloons|
-|322 ★|零錢兌換|Coin Change|
-|329|矩陣中的最長遞增路徑|Longest Increasing Path in a Matrix|
-|416|分割等和子集|Partition Equal Subset Sum|
-|494|目標和|Target Sum|
-|518|零錢兌換 II|Coin Change II|
-|647 ★|回文子字串|Palindromic Substrings|
-|746|使用最小花費爬樓梯|Min Cost Climbing Stairs|
-|1143 ★|最長共同子序列|Longest Common Subsequence|
+| 題號     | 中文題名            | English Title                                 |
+| ------ | --------------- | --------------------------------------------- |
+| 5 ★    | 最長回文子字串         | Longest Palindromic Substring                 |
+| 10     | 正規表示式匹配         | Regular Expression Matching                   |
+| 62 ★   | 不同路徑            | Unique Paths                                  |
+| 70 ★   | 爬樓梯             | Climbing Stairs                               |
+| 72     | 編輯距離            | Edit Distance                                 |
+| 91 ★   | 解碼方法            | Decode Ways                                   |
+| 97     | 交錯字串            | Interleaving String                           |
+| 115    | 不同的子序列          | Distinct Subsequences                         |
+| 139 ★  | 單字拆分            | Word Break                                    |
+| 152 ★  | 乘積最大子陣列         | Maximum Product Subarray                      |
+| 198 ★  | 打家劫舍            | House Robber                                  |
+| 213 ★  | 打家劫舍 II         | House Robber II                               |
+| 300 ★  | 最長遞增子序列         | Longest Increasing Subsequence                |
+| 309    | 買賣股票的最佳時機（含冷凍期） | Best Time to Buy and Sell Stock with Cooldown |
+| 312    | 戳氣球             | Burst Balloons                                |
+| 322 ★  | 零錢兌換            | Coin Change                                   |
+| 329    | 矩陣中的最長遞增路徑      | Longest Increasing Path in a Matrix           |
+| 416    | 分割等和子集          | Partition Equal Subset Sum                    |
+| 494    | 目標和             | Target Sum                                    |
+| 518    | 零錢兌換 II         | Coin Change II                                |
+| 647 ★  | 回文子字串           | Palindromic Substrings                        |
+| 746    | 使用最小花費爬樓梯       | Min Cost Climbing Stairs                      |
+| 1143 ★ | 最長共同子序列         | Longest Common Subsequence                    |
 
 建議依 DP 的五個子類練習：
 
@@ -935,19 +935,19 @@ LC 307 可使用 Segment Tree 或 Binary Indexed Tree。LC 729、715 也有其�
 
 ## **26. Math（數學／位元運算）— 11 題**
 
-|題號|中文題名|English Title|
-|---|---|---|
-|7|整數反轉|Reverse Integer|
-|43|字串相乘|Multiply Strings|
-|50|x 的 n 次方|Pow(x, n)|
-|136|只出現一次的數字|Single Number|
-|190 ★|反轉位元|Reverse Bits|
-|191 ★|位元 1 的數量|Number of 1 Bits|
-|202|快樂數|Happy Number|
-|268 ★|缺失的數字|Missing Number|
-|338 ★|位元計數|Counting Bits|
-|371 ★|兩整數之和|Sum of Two Integers|
-|2013|偵測正方形|Detect Squares|
+| 題號    | 中文題名     | English Title       |
+| ----- | -------- | ------------------- |
+| 7     | 整數反轉     | Reverse Integer     |
+| 43    | 字串相乘     | Multiply Strings    |
+| 50    | x 的 n 次方 | Pow(x, n)           |
+| 136   | 只出現一次的數字 | Single Number       |
+| 190 ★ | 反轉位元     | Reverse Bits        |
+| 191 ★ | 位元 1 的數量 | Number of 1 Bits    |
+| 202   | 快樂數      | Happy Number        |
+| 268 ★ | 缺失的數字    | Missing Number      |
+| 338 ★ | 位元計數     | Counting Bits       |
+| 371 ★ | 兩整數之和    | Sum of Two Integers |
+| 2013  | 偵測正方形    | Detect Squares      |
 
 其中 LC 136、190、191、268、338、371 建議再加上 Secondary Tag：**Bit Manipulation**。LC 7、43、50、202 偏向數學運算，LC 2013 則偏向幾何與 Hash Map。
 
