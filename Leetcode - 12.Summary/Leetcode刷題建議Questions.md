@@ -735,41 +735,41 @@ LC 287 雖然輸入是陣列，但可以把數值視為下一個節點的索引�
 
 ## **12. Stack（堆疊）— 3 題**
 
-|題號|中文題名|English Title|
-|---|---|---|
-|20 ★|有效的括號|Valid Parentheses|
-|150|逆波蘭表示式求值|Evaluate Reverse Polish Notation|
-|155|最小堆疊|Min Stack|
+| 題號   | 中文題名     | English Title                    |
+| ---- | -------- | -------------------------------- |
+| 20 ★ | 有效的括號    | Valid Parentheses                |
+| 150  | 逆波蘭表示式求值 | Evaluate Reverse Polish Notation |
+| 155  | 最小堆疊     | Min Stack                        |
 
 ## **13. Monotonic Stack（單調堆疊）— 3 題**
 
-|題號|中文題名|English Title|
-|---|---|---|
-|84|柱狀圖中最大的矩形|Largest Rectangle in Histogram|
-|739|每日溫度|Daily Temperatures|
-|853|車隊|Car Fleet|
+| 題號  | 中文題名      | English Title                  |
+| --- | --------- | ------------------------------ |
+| 84  | 柱狀圖中最大的矩形 | Largest Rectangle in Histogram |
+| 739 | 每日溫度      | Daily Temperatures             |
+| 853 | 車隊        | Car Fleet                      |
 
 其中 LC 739 與 84 是非常典型的 Monotonic Stack 題目；LC 853 則可用排序搭配到達時間的單調堆疊思路。
 
 ## **14. Hash Map（雜湊表）— 5 題**
 
-|題號|中文題名|English Title|
-|---|---|---|
-|1 ★|兩數之和|Two Sum|
-|49 ★|字母異位詞分組|Group Anagrams|
-|128 ★|最長連續序列|Longest Consecutive Sequence|
-|217 ★|存在重複元素|Contains Duplicate|
-|347 ★|前 K 個高頻元素|Top K Frequent Elements|
+| 題號    | 中文題名      | English Title                |
+| ----- | --------- | ---------------------------- |
+| 1 ★   | 兩數之和      | Two Sum                      |
+| 49 ★  | 字母異位詞分組   | Group Anagrams               |
+| 128 ★ | 最長連續序列    | Longest Consecutive Sequence |
+| 217 ★ | 存在重複元素    | Contains Duplicate           |
+| 347 ★ | 前 K 個高頻元素 | Top K Frequent Elements      |
 
 這裡包括 Hash Map、Hash Set、Frequency Counter 與 Bucket Sort。
 
 ## **15. Union Find（並查集）— 3 題**
 
-|題號|中文題名|English Title|
-|---|---|---|
-|261 ★|有效樹圖|Graph Valid Tree|
-|323 ★|無向圖中連通分量的數量|Number of Connected Components in an Undirected Graph|
-|684|冗餘連線|Redundant Connection|
+| 題號    | 中文題名        | English Title                                         |
+| ----- | ----------- | ----------------------------------------------------- |
+| 261 ★ | 有效樹圖        | Graph Valid Tree                                      |
+| 323 ★ | 無向圖中連通分量的數量 | Number of Connected Components in an Undirected Graph |
+| 684   | 冗餘連線        | Redundant Connection                                  |
 
 核心必須熟悉 Disjoint Set Union（DSU）的 `find()`、`union()`、Path Compression 與 Union by Size/Rank。
 
@@ -789,17 +789,17 @@ Blind 75 + NeetCode 150 沒有以 Iterator Design 為主要題型的題目。
 
 ## **17. Binary Tree（二元樹）— 9 題**
 
-|題號|中文題名|English Title|
-|---|---|---|
-|100 ★|相同的樹|Same Tree|
-|104 ★|二元樹的最大深度|Maximum Depth of Binary Tree|
-|105 ★|從前序與中序遍歷序列構造二元樹|Construct Binary Tree from Preorder and Inorder Traversal|
-|124 ★|二元樹中的最大路徑和|Binary Tree Maximum Path Sum|
-|226 ★|翻轉二元樹|Invert Binary Tree|
-|297 ★|二元樹的序列化與反序列化|Serialize and Deserialize Binary Tree|
-|543|二元樹的直徑|Diameter of Binary Tree|
-|572 ★|另一棵樹的子樹|Subtree of Another Tree|
-|1448|統計二元樹中的好節點|Count Good Nodes in Binary Tree|
+| 題號    | 中文題名            | English Title                                             |
+| ----- | --------------- | --------------------------------------------------------- |
+| 100 ★ | 相同的樹            | Same Tree                                                 |
+| 104 ★ | 二元樹的最大深度        | Maximum Depth of Binary Tree                              |
+| 105 ★ | 從前序與中序遍歷序列構造二元樹 | Construct Binary Tree from Preorder and Inorder Traversal |
+| 124 ★ | 二元樹中的最大路徑和      | Binary Tree Maximum Path Sum                              |
+| 226 ★ | 翻轉二元樹           | Invert Binary Tree                                        |
+| 297 ★ | 二元樹的序列化與反序列化    | Serialize and Deserialize Binary Tree                     |
+| 543   | 二元樹的直徑          | Diameter of Binary Tree                                   |
+| 572 ★ | 另一棵樹的子樹         | Subtree of Another Tree                                   |
+| 1448  | 統計二元樹中的好節點      | Count Good Nodes in Binary Tree                           |
 
 這組主要使用 Recursive DFS、Postorder Traversal 和 Tree Construction。
 
