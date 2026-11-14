@@ -30,3 +30,47 @@ CLAUDE.md、Skills、MCP，到底先學哪個？照這六站走，課和文件�
 畫面來源：Anthropic Academy、Claude Code 官方文件、Claude 官方影片「What are skills?」、awesome-claude-code GitHub、ccstatusline GitHub
 
 追蹤 @ai.lanrenbao 看更多
+
+
+
+
+```
+
+```
+link: https://www.facebook.com/share/r/1E5Quth7L7/
+
+NVIDIA 竟然一次公開 449 個 AI Skills，連安全掃描工具都準備好了！![😱](https://static.xx.fbcdn.net/images/emoji.php/v9/t2c/1/16/1f631.png)
+
+最近 NVIDIA 推出官方 AI Skills 資源庫，讓 Claude Code、Codex 等 AI Agent 可以直接安裝使用！
+
+簡單來說，Skill 就像是 AI 的技能包，安裝後就能讓 AI 學會執行特定任務。
+
+但你知道嗎？AI Skills 其實可能藏著資安風險！
+
+今年一份學術研究分析了 31,132 個第三方 Skills，結果發現：
+
+![⚠️](https://static.xx.fbcdn.net/images/emoji.php/v9/tdc/1/16/26a0.png) 26.1% 至少存在一個安全漏洞
+
+![⚠️](https://static.xx.fbcdn.net/images/emoji.php/v9/tdc/1/16/26a0.png) 5.2% 出現高嚴重度、疑似惡意的特徵
+
+注意，這份研究分析的是第三方市集，並非 NVIDIA 官方推出的 449 個 Skills。
+
+為了提升使用安全性，NVIDIA 也開源了一款工具：
+
+![🔥](https://static.xx.fbcdn.net/images/emoji.php/v9/t50/1/16/1f525.png) SkillSpector
+
+它可以幫你：
+
+![✅](https://static.xx.fbcdn.net/images/emoji.php/v9/t33/1/16/2705.png) 靜態掃描 Skill 檔案中的潛在安全問題
+
+![✅](https://static.xx.fbcdn.net/images/emoji.php/v9/t33/1/16/2705.png) 檢查可能存在的風險
+
+![✅](https://static.xx.fbcdn.net/images/emoji.php/v9/t33/1/16/2705.png) 搭配簽章機制驗證官方 Skill 是否遭到修改
+
+不過 NVIDIA 也提醒，SkillSpector 仍有一些限制：
+
+它不會實際執行 Skill，非英文內容可能漏掉風險，也不提供執行環境隔離。
+
+隨著 AI Agent 越來越普及，未來大家可能會像安裝 App 一樣，不斷幫 AI 安裝新技能。
+
+但在追求功能強大的同時，安全性也值得注意！
