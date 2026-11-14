@@ -710,22 +710,22 @@ LC 287 雖然輸入是陣列，但可以把數值視為下一個節點的索引�
 
 這裡包含 Recursive DFS、Grid DFS 與 Backtracking。
 
-|題號|中文題名|English Title|
-|---|---|---|
-|17|電話號碼的字母組合|Letter Combinations of a Phone Number|
-|22|括號生成|Generate Parentheses|
-|39 ★|組合總和|Combination Sum|
-|40|組合總和 II|Combination Sum II|
-|46|全排列|Permutations|
-|51|N 皇后|N-Queens|
-|78|子集|Subsets|
-|79 ★|單字搜尋|Word Search|
-|90|子集 II|Subsets II|
-|130|被圍繞的區域|Surrounded Regions|
-|131|分割回文串|Palindrome Partitioning|
-|200 ★|島嶼數量|Number of Islands|
-|417 ★|太平洋大西洋水流問題|Pacific Atlantic Water Flow|
-|695|島嶼的最大面積|Max Area of Island|
+| 題號    | 中文題名       | English Title                         |
+| ----- | ---------- | ------------------------------------- |
+| 17    | 電話號碼的字母組合  | Letter Combinations of a Phone Number |
+| 22    | 括號生成       | Generate Parentheses                  |
+| 39 ★  | 組合總和       | Combination Sum                       |
+| 40    | 組合總和 II    | Combination Sum II                    |
+| 46    | 全排列        | Permutations                          |
+| 51    | N 皇后       | N-Queens                              |
+| 78    | 子集         | Subsets                               |
+| 79 ★  | 單字搜尋       | Word Search                           |
+| 90    | 子集 II      | Subsets II                            |
+| 130   | 被圍繞的區域     | Surrounded Regions                    |
+| 131   | 分割回文串      | Palindrome Partitioning               |
+| 200 ★ | 島嶼數量       | Number of Islands                     |
+| 417 ★ | 太平洋大西洋水流問題 | Pacific Atlantic Water Flow           |
+| 695   | 島嶼的最大面積    | Max Area of Island                    |
 
 建議把這類分成兩組來練：
 
