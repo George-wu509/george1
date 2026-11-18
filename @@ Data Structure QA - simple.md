@@ -57,7 +57,7 @@
 | 415<br>*<br>(m)<br>★ | 有效回文串  [[Valid Palindrome]]                                    | 判断一个字符串是否为回文，只考虑字母和数字字符，忽略大小写。                   | 输入: "A man, a plan, a canal: Panama" <br><br>输出: true                                                                                 | 使用双指针从字符串两端向中间移动，跳过非字母数字字符，比较字符是否相同。                   |
 | 837<br>*<br>(m)<br>★ | 回文子串  [[Palindromic Substrings]]                               | 给定一个字符串，计算字符串中回文子串的个数。                           | 输入: "aba" <br><br>输出: 4<br><br>("a", "b", "a", "aba")                                                                                 | 使用中心扩展法或动态规划，逐个检查每个子串是否为回文并计数。                         |
 | 773<br><br>(e)<br>★  | 有效的字母异位词  [[Valid Anagram]]                                    | 判断两个字符串是否是字母异位词，即两个字符串包含的字符相同，顺序可以不同。            | 输入: <br>s = "anagram", <br>t = "nagaram" <br><br>输出: true                                                                             | 使用两个dict统计两个字符串中各字符的出现次数，比较是否相同。                       |
-| 271<br>★             | 字串的編碼與解碼  [[Encode and Decode Strings]]                        | 設計演算法將字串陣列編碼為單一字串，並能解碼回原陣列                       | 輸入：`["lint","code"]`<br><br>輸出：`["lint","code"]`                                                                                      | 長度前綴法：編碼時在每個字串前加上「長度 + 分隔符（如 `4#`）」，解碼時依長度精準截取         |
+| 271<br>★             | 字串的編碼與解碼  [[Encode and Decode Strings]]                        | 設計演算法將字串陣列編碼為單一字串，並能解碼回原陣列                       | 輸入：["ab", "3#c"] -> "2#ab3#3#c"<br><br>輸出：["ab", "3#c"]                                                                               | 長度前綴法：編碼時在每個字串前加上「長度 + 分隔符（如 `4#`）」，解碼時依長度精準截取         |
 
 
 # **<mark style="background: #BBFABBA6;">3. 前綴和數組（Prefix Sum Array）</mark>的詳細介紹**
