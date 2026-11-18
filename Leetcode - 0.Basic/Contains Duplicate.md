@@ -15,7 +15,6 @@ Lintcode 1320
 ```
 
 ```python
-"""
     def contains_duplicate(self, nums: List[int]) -> bool:
         s = set()
         for x in nums:

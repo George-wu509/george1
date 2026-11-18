@@ -62,6 +62,11 @@ class Solution:
         for i in range(n):
             matrix[i].reverse()
 ```
+解釋(my):
+1. 先矩陣Transpose    [1,2]  -> [1,3]
+                 [3,4]       [2,4]
+2. 再矩陣左右翻轉     [1,3]  -> [3,1]
+                 [2,4]       [4,2]
 
 ```Python
 # 解法二：由外向內逐層四向輪換（Four-Way Layer Rotation）

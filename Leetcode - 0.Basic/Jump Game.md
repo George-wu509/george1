@@ -59,8 +59,16 @@ def canJump(self, nums: list[int]) -> bool:
             goal = i
     return goal == 0
 ```
+解釋(my):
+max_reach代表可以到達的最遠id, 所以只要max_reach可以大於nums的最後id代表會到達, 為True
 
-解釋（以解法一為例）: step1: 維護一個變數 `max_reach`，記錄目前為止**最遠能到達的索引位置**，初始為 `0` step2: 遍歷陣列 `nums = [2, 3, 1, 1, 4]`，終點索引為 `4` step3: `i = 0, jump = 2` -> `0 <= max_reach(0)`，更新 `max_reach = max(0, 0 + 2) = 2` step4: `i = 1, jump = 3` -> `1 <= max_reach(2)`，更新 `max_reach = max(2, 1 + 3) = 4` step5: 此時 `max_reach(4) >= 終點(4)`，代表已經可以覆蓋到終點，直接提前返回 `True`
+
+解釋（以解法一為例）:
+step1: 維護一個變數 `max_reach`，記錄目前為止**最遠能到達的索引位置**，初始為 `0` 
+step2: 遍歷陣列 `nums = [2, 3, 1, 1, 4]`，終點索引為 `4` 
+step3: `i = 0, jump = 2` -> `0 <= max_reach(0)`，更新 `max_reach = max(0, 0 + 2) = 2`
+step4: `i = 1, jump = 3` -> `1 <= max_reach(2)`，更新 `max_reach = max(2, 1 + 3) = 4` 
+step5: 此時 `max_reach(4) >= 終點(4)`，代表已經可以覆蓋到終點，直接提前返回 `True`
 
 解釋（以解法二為例）: 考慮從終點倒推回來，只要某個位置 `i` 能跳到當前的目標 `goal`（即 `i + nums[i] >= goal`），就把 `goal` 往前移動到 `i`。最後只要檢查 `goal` 能否一路退回到起點 `0` 即可。
 

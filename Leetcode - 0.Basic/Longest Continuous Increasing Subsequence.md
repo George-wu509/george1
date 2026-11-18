@@ -19,15 +19,15 @@ Lintcode 397
 ```
 
 ```python
-    def longest_increasing_continuous_subsequence(self, a):
-        if not a:
+    def longest_increasing_continuous_subsequence(self, nums):
+        if not nums:
             return 0
         longest, incr, desc = 1, 1, 1
-        for i in range(1, len(a)):
-            if a[i] > a[i - 1]:
+        for i in range(1, len(nums)):
+            if nums[i] > nums[i - 1]:
                 incr += 1
                 desc = 1
-            elif a[i] < a[i - 1]:
+            elif nums[i] < nums[i - 1]:
                 incr = 1
                 desc += 1
             else:

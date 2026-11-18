@@ -19,7 +19,6 @@ Lintcode 162
 
 ```python
     def set_zeroes(self, matrix):
-        # write your code here
         if len(matrix)==0:
             return
         rownum = len(matrix)
