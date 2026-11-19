@@ -35,8 +35,15 @@ def count_palindromic_substrings(self, str: str) -> int:
 ```
 pass
 解釋:  s = "aba"
-step1: for loop(i=0,1,2,3,4)包含字元本身("a","b","a")還包括字元中間("ab","ba")為中心擴展法的中心點. 
+step1: for loop(i=0,1,2,3,4)包含字元本身("a","b","a")還包括字元中間("ab","ba")為中心擴展法的中心點. 所以是n + (n-1)
+i=0: left=0 ,right=0
+i=1: left=0 ,right=1
+i=2: left=1 ,right=1
+i=3: left=1 ,right=2
+i=4: left=2 ,right=2
+
 step2: 在每個中心點white loop往左右擴展, 如果左=右則+1
+step3: 如果在前一步左=右則+1, 則左右指針往外擴展再check一次
 
 
 **程式碼解法解釋 (中心擴展法 - Expand Around Center)**

@@ -1,6 +1,8 @@
 Lintcode 384
 给定一个字符串，请找出其中无重复字符的最长子字符串。
 
+比較: [[Compare - 左右指針調換]]
+
 **样例 1:**
 ```python
 """
@@ -16,26 +18,49 @@ Lintcode 384
 解释: 最长子串是 "b".
 ```
 
+
 ```python
-    def length_of_longest_substrin(self, s):
-        unique_chars = set([])
-        j = 0
-        n = len(s)
-        longest = 0
-        for i in range(n):
-            while j < n and s[j] not in unique_chars:
-                unique_chars.add(s[j])
-                j += 1
-            longest = max(longest, j - i)
-            unique_chars.remove(s[i])
+def length_of_longest_substring(self, s: str) -> int:
+    unique_chars = set()
+    left = 0
+    longest = 0
+    
+    for right in range(len(s)):
+        while s[right] in unique_chars:
+            unique_chars.remove(s[left])
+            left += 1
             
-        return longest
+        unique_chars.add(s[right])
+        longest = max(longest, right - left + 1)
+        
+    return longest
+```
+
+解釋版
+```python
+def length_of_longest_substring(self, s: str) -> int:
+    unique_chars = set()
+    left = 0
+    longest = 0
+    
+    # 外層 for 負責擴展右邊界 right
+    for right in range(len(s)):
+        # 若新加入的 s[right] 導致重複，內層 while 負責收縮左邊界 left
+        while s[right] in unique_chars:
+            unique_chars.remove(s[left])
+            left += 1
+            
+        unique_chars.add(s[right])
+        # 此時合法視窗為閉區間 [left, right]，長度為 right - left + 1
+        longest = max(longest, right - left + 1)
+        
+    return longest
 ```
 pass
 解釋:
-step1: create一個set儲存窗口. 有兩個指標 i（左邊界）和 j（右邊界）來定義滑動視窗 s[i:j]
-step2: 外層迴圈 for i in range(n) 迭代左邊界 i。內層 while 迴圈負責擴展右邊界 j
-step3: while j往右擴展直到某個字元在set裡面, 這時換成i往右
+step1: create一個set儲存窗口. 有兩個指標(外層 `for` 迭代右指標right、內層 `while` 收縮左指標left)
+step2: 外層 for 負責擴展右邊界 right, 若新加入的 s[right] 導致重複，內層 while 負責收縮左邊界 left
+step3: 合法視窗為閉區間 [left, right]，長度為 right - left + 1
 
 
 

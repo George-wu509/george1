@@ -61,20 +61,16 @@ result= [24,12,8,6]
 ## **解法解析**
 
 這裡使用 **前綴乘積（Prefix Product）+ 後綴乘積（Suffix Product）** 來解決問題。
-
 ### **思路**
 
 1. **定義 `B[i]` 的計算方式**
-    
     - `B[i]` 需要計算 **不包含 `nums[i]` 的所有元素乘積**。
     - 若我們直接遍歷數組，對每個 `i` 計算所有不包含 `nums[i]` 的乘積，則時間複雜度為 **O(n²)**，這是不可接受的。
 2. **使用 `前綴積`（Prefix Product）**
-    
     - `prefix[i]`：表示 **從索引 `0` 到 `i-1` 的乘積**（不包含 `nums[i]`）。
     - `prefix[0] = 1`（因為 `nums[0]` 左邊沒有數字）。
     - 透過 `prefix[i] = prefix[i-1] * nums[i-1]` 計算前綴積。
 3. **使用 `後綴積`（Suffix Product）**
-    
     - `suffix[i]`：表示 **從索引 `i+1` 到 `n-1` 的乘積**（不包含 `nums[i]`）。
     - `suffix[n-1] = 1`（因為 `nums[n-1]` 右邊沒有數字）。
     - 透過 `suffix[i] = suffix[i+1] * nums[i+1]` 計算後綴積。
