@@ -2,6 +2,9 @@ Lintcode 41
 给定一个整数数组，找到一个具有最大和的子数组，返回其最大和。  
 每个子数组的数字在数组中的位置应该是连续的
 
+比較:  Lintcode 1507  Shortest Subarray with Sum at Least K
+[[Compare 最短子數組和]]
+
 **样例 1：**
 输入：
 ```python
