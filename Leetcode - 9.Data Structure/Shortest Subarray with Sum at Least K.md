@@ -35,20 +35,20 @@ Method3:前綴和解法 + 單調隊列 (最佳解法)
 a= [2,3,1,2,4,3], k = 7
 ```python
 from collections import deque
-def shortest_subarray(self, a, k):
+def shortest_subarray(self, nums, k):
 	mono_queue = deque([(0, -1)])
 	shortest = float('inf')
 	prefix_sum = 0
-	for end in range(len(a)):
-		prefix_sum += a[end]
+	for right in range(len(nums)):
+		prefix_sum += nums[right]
 		# pop left
 		while mono_queue and prefix_sum - mono_queue[0][0] >= k:
 			min_prefix_sum, index = mono_queue.popleft()
-			shortest = min(shortest, end - index)
+			shortest = min(shortest, right - index)
 		# push right
 		while mono_queue and mono_queue[-1][0] >= prefix_sum:
 			mono_queue.pop()
-		mono_queue.append((prefix_sum, end))
+		mono_queue.append((prefix_sum, right))
 	
 	if shortest == float('inf'):
 		return -1
@@ -66,7 +66,7 @@ pass
     - 當 `隊尾前綴和 >= 當前前綴和` 時，彈出隊尾。
     - **為什麼能 pop？** 當前的 `prefix_sum` 不僅數值更小（更容易湊出 $\ge K$ 的差值），而且位置更靠右（與未來位置構成的子數組更短）。此時隊尾元素在「數值」與「位置」上都被當前元素完全支配（Dominated），隊尾元素再無保留價值。
 
-### Method 3: `shortest_subarray` (基於單調隊列的方法)
+### Method: `shortest_subarray` (基於單調隊列的方法)
 
 **核心思想：** 這種方法也使用了前綴和，但它引入了一個**單調隊列 (monotonic queue)**。隊列中存儲的是 `(prefix_sum, index)` 對，並且保證隊列中的 `prefix_sum` 是單調遞增的。
 

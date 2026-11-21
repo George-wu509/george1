@@ -21,17 +21,17 @@ Lintcode 911
 
 ```python
     def max_sub_array_len(self, nums, k):
-        m = {}
+        prefix_hash = {}
         ans = 0
-        m[k] = 0
+        prefix_hash[k] = 0
         n = len(nums)
         sum = [0 for i in range(n + 1)]
         for i in range(1, n + 1):
             sum[i] = sum[i - 1] + nums[i - 1]
-            if sum[i] in m:
-                ans = max(ans, i - m[sum[i]])
-            if sum[i] + k not in m:
-                m[sum[i] + k] = i
+            if sum[i] in prefix_hash:
+                ans = max(ans, i - prefix_hash[sum[i]])
+            if sum[i] + k not in prefix_hash:
+                prefix_hash[sum[i] + k] = i
         return ans
 ```
 pass
