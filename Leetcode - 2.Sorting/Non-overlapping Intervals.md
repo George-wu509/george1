@@ -39,8 +39,21 @@ intervals = [[1, 2], [2, 3]]
 
 解释： 你不需要移除任何區間，因為 `[1, 2]` 和 `[2, 3]` 僅在端點 `2` 相接，題目定義為互不重疊。
 
-Python
+```python
+class Solution:
+   def eraseOverlapIntervals(self, intervals: list[list[int]]) -> int:
+      intervals.sort(key=lambda x:x[1])
+      removed = 0
+      prev_end = float("-inf")
 
+      for start, end in intervals:
+         if start >= prev_end:
+            prev_end = end
+         else:
+            removed += 1
+      return removed
+```
+解釋版
 ```Python
 class Solution:
     def eraseOverlapIntervals(self, intervals: list[list[int]]) -> int:
@@ -62,11 +75,7 @@ class Solution:
         return removed
 ```
 
-pass
-
-Python
-
-```
+```Python
 # 另一種寫法：依照「起始時間（左端點）」排序，重疊時貪心保留結束時間較小者
 class Solution:
     def eraseOverlapIntervals(self, intervals: list[list[int]]) -> int:
@@ -87,11 +96,27 @@ class Solution:
         return removed
 ```
 
-解釋: step1: 問題等價於「**在所有區間中，最多能選出幾個互不重疊的區間**」（最少移除數 = 總區間數 - 最多保留數） step2: 以 `intervals = [[1, 2], [2, 3], [3, 4], [1, 3]]` 為例，先依結束時間排序得到 `[[1, 2], [2, 3], [1, 3], [3, 4]]` step3: 初始化 `removed = 0`、`prev_end = -inf` step4: 讀取 `[1, 2]`：`start = 1 >= -inf`（不重疊），保留它，更新 `prev_end = 2` step5: 讀取 `[2, 3]`：`start = 2 >= 2`（端點相接不算重疊），保留它，更新 `prev_end = 3` step6: 讀取 `[1, 3]`：`start = 1 < 3`（發生重疊！因為前面保留的區間佔用了到 `3` 的空間，而 `[1, 3]` 的起點在 `3` 之前），必須移除，`removed` 變為 `1`，`prev_end` 維持 `3` step7: 讀取 `[3, 4]`：`start = 3 >= 3`（不重疊），保留它，更新 `prev_end = 4`，所以答案 = `1`
+解釋: 
+step1: 問題等價於「**在所有區間中，最多能選出幾個互不重疊的區間**」（最少移除數 = 總區間數 - 最多保留數） 
+step2: 以 `intervals = [[1, 2], [2, 3], [3, 4], [1, 3]]` 為例，先依結束時間排序得到 `[[1, 2], [2, 3], [1, 3], [3, 4]]` 
+step3: 初始化 `removed = 0`、`prev_end = -inf` 
+step4: 讀取 `[1, 2]`：`start = 1 >= -inf`（不重疊），保留它，更新 `prev_end = 2` 
+step5: 讀取 `[2, 3]`：`start = 2 >= 2`（端點相接不算重疊），保留它，更新 `prev_end = 3` 
+step6: 讀取 `[1, 3]`：`start = 1 < 3`（發生重疊！因為前面保留的區間佔用了到 `3` 的空間，而 `[1, 3]` 的起點在 `3` 之前），必須移除，`removed` 變為 `1`，`prev_end` 維持 `3` 
+step7: 讀取 `[3, 4]`：`start = 3 >= 3`（不重疊），保留它，更新 `prev_end = 4`，所以答案 = `1`
 
 解釋: 為什麼要按「結束時間（右端點）」排序，而不是按「起始時間」或「區間長度」排序？
 
 因為**越早結束的區間，留給後面其他區間的可用時間軸空間就越大**。如果選了一個很早開始但很晚才結束的巨無霸區間（例如 `[1, 100]`），它會卡死後面所有短區間；反之，每次都挑選「最早結束」的合法區間，就能把右邊界 `prev_end` 壓在最小的位置，從而容納最多不重疊區間。
+```Plaintext
+時間軸:   1       2       3       4
+          |-------|       |       |   [1, 2] -> 保留 (prev_end 更新為 2)
+          |       |-------|       |   [2, 3] -> 保留 (start 2 >= prev_end 2，無重疊，更新為 3)
+          |---------------|       |   [1, 3] -> 移除！(start 1 < prev_end 3，重疊，removed + 1)
+          |       |       |-------|   [3, 4] -> 保留 (start 3 >= prev_end 3，無重疊，更新為 4)
+```
+
+
 
 ### **LeetCode 435 / LintCode 1479 - Non-overlapping Intervals（無重疊區間）**
 
