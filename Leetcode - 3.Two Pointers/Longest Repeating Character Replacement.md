@@ -23,38 +23,75 @@
 子字符串"BBBB" 含有最长的重复字符, 长度为4。
 ```
 
-
 ```python
-def character_replacement(self, s, k):
-	counter = {}
-	answer = 0
-	j = 0
-	max_freq = 0
-	for i in range(len(s)):
-		while j < len(s) and j - i - max_freq <= k:
-			counter[s[j]] = counter.get(s[j], 0) + 1 
-			max_freq = max(max_freq, counter[s[j]])
-			j += 1 
-		
-		# 如果替换 除出现次数最多的字母之外的其他字母 的数目>k,
-		# 说明有一个不能换，答案与j-i-1进行比较；
-		# 否则说明直到字符串末尾替换数目都<=k，可以全部换掉 
-		# 答案与子串长度j-i进行比较
-		if j - i - max_freq > k:
-			answer = max(answer, j - 1 - i)
-		else:
-			answer = max(answer, j - i) 
-			
-		# 起点后移一位，当前起点位置的字母个数-1
-		counter[s[i]] -= 1
-	return answer
+def characterReplacement(self, s: str, k: int) -> int:
+    counter = {}
+    left = 0
+    max_freq = 0
+    answer = 0
+    
+    for right in range(len(s)):
+        counter[s[right]] = counter.get(s[right], 0) + 1
+        max_freq = max(max_freq, counter[s[right]])
+        
+        while (right - left + 1) - max_freq > k:
+            counter[s[left]] -= 1
+            left += 1
+            
+        answer = max(answer, right - left + 1)
+        
+    return answer
+```
+解釋版
+```python
+def characterReplacement(self, s: str, k: int) -> int:
+    counter = {}
+    left = 0
+    max_freq = 0
+    answer = 0
+    
+    # 1. 右指針主動向右探索，每次納入一個新字元
+    for right in range(len(s)):
+        counter[s[right]] = counter.get(s[right], 0) + 1
+        max_freq = max(max_freq, counter[s[right]])
+        
+        # 2. 當視窗「不合法」時（需要替換的字元數 > k），左指針被迫收縮
+        # 當前視窗總長度為 right - left + 1
+        while (right - left + 1) - max_freq > k:
+            counter[s[left]] -= 1
+            left += 1
+            
+        # 3. 走到這裡時，視窗 [left, right] 絕對是合法的，直接更新最大長度
+        answer = max(answer, right - left + 1)
+        
+    return answer
 ```
 pass
 
 解釋:   s="AABABBA", k=1
-1. 創立counter儲存字元頻率
-2. 第一個指針i 從最左開始(id=0). 然後第二個指針j 從(id=0)一步步往右移並加入counter. 直到A比B多了超過k+1 (i=0, j=5). 加入答案answer. 
-3. 第一個指針i 往右移(id=1)並從counter移除, 第二個指針j在(id=5)一步步往右移並加入counter. 直到A比B多了超過k+1 (i=0, j=5). update答案answer. 
+**解法（`right` 右指針在 `for` 迴圈外、`left` 左指針在 `while` 迴圈內）**，以 `s = "AABABBA", k = 1` 為例的逐步運作解釋如下：
+
+1. **初始化變數：** 創立 `counter` 儲存字元頻率，左指針 `left = 0`，紀錄歷史最高單一字元頻率 `max_freq = 0`，以及最終答案 `answer = 0`。
+    
+2. **右指針 `right` 向右擴張直到不合法（`right = 0` 到 `4`）：**
+    
+    - 右指針 `right` 透過 `for` 迴圈從 `index = 0` 開始，一步步往右移動，每次都將 `s[right]` 加入 `counter` 並更新 `max_freq`。
+        
+    - 當 `right` 走到 `0, 1, 2, 3`（視窗為 `"AABA"`，長度 4，`max_freq = 3`）時，需要替換的非主力字元數為 `4 - 3 = 1`（沒有超過 `k = 1`），視窗皆合法，持續更新 `answer = 4`。
+        
+    - 接著 `right` 繼續往右移到 **`index = 4`**（納入 `'B'`，視窗變成 `"AABAB"`，長度 5，此時 `counter = {'A': 3, 'B': 2}`，`max_freq = 3`）。此時需要替換的字元數為 `5 - 3 = 2`，**超過了 `k = 1`（視窗不合法）**。
+        
+3. **觸發內層 `while`，左指針 `left` 右移收縮：**
+    
+    - 因為視窗不合法，進入 `while` 迴圈：將左指針 `left`（目前在 `index = 0` 的 `'A'`）從 `counter` 中減 1，並把 `left` 往右移到 **`index = 1`**。
+        
+    - 收縮後視窗變成 `"ABAB"`（`left = 1, right = 4`，長度 4，`max_freq` 維持 3），替換數變回 `4 - 3 = 1 <= k`，視窗重新合法，跳出 `while` 並更新 `answer = max(4, 4) = 4`。
+        
+4. **重複「右擴張、左收縮」直到 `right` 走完整個字串（`right = 5` 到 `6`）：**
+    
+    - `right` 繼續往右移到 **`index = 5`**（納入 `'B'`，視窗 `"ABABB"`，長度 5，`counter = {'A': 2, 'B': 3}`，`max_freq = 3`），替換數為 `5 - 3 = 2 > k`（不合法），觸發 `while` 將 `left` 移至 **`index = 2`**（吐出 `'A'`，視窗變 `"BABB"`，長度 4），更新 `answer = 4`。
+        
+    - `right` 移到最後 **`index = 6`**（納入 `'A'`，視窗 `"BABBA"`，長度 5），不合法，觸發 `while` 將 `left` 移至 **`index = 3`**（吐出 `'B'`，視窗變 `"ABBA"`，長度 4），最終回傳 `answer = 4`。
 
 ### **問題描述**
 
@@ -85,7 +122,6 @@ pass
 以下是代碼的邏輯詳細分解：
 
 1. **初始化變量**：
-    
     - `counter`：用於記錄窗口內每個字符的出現次數。
     - `answer`：存儲目前找到的最大有效子串長度。
     - `j`：右指針，用於擴展窗口。

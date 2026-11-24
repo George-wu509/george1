@@ -4,6 +4,8 @@ LeetCode 11 / LintCode 383 給定一個長度為 `n` 的整數陣列 `height`。
 找出其中的兩條線，使得它們與 `x` 軸共同構成的容器可以容納最多的水。返回容器可以儲存的最大水量。
 **說明**：你不能傾斜容器。
 
+比較: 363接雨水 [[Trapping Rain Water]]
+
 **範例 1：** 輸入：
 ```Python
 height = [1, 8, 6, 2, 5, 4, 8, 3, 7]
@@ -43,8 +45,6 @@ height = [4, 3, 2, 1, 4]
 ### 解法一：相向雙指針（Optimal - $O(n)$）
 
 ```python
-from typing import List
-
 class Solution:
     def maxArea(self, height: List[int]) -> int:
         left, right = 0, len(height) - 1
@@ -64,20 +64,22 @@ class Solution:
 ```
 解釋版
 ```Python
-from typing import List
-
 class Solution:
     def maxArea(self, height: List[int]) -> int:
+        # 1. 初始化左右指針在陣列最兩端，max_water 紀錄歷史最大水量
         left, right = 0, len(height) - 1
         max_water = 0
         
+        # 2. 當兩條線還沒重疊時持續尋找
         while left < right:
-            # 容器寬度為兩指針距離，高度取決於較短的那一側（木桶效應）
+            # 計算目前兩線之間的寬度
             width = right - left
+            # 容器高度取決於較短的那根柱子
             current_height = min(height[left], height[right])
+            # 更新最大儲水量
             max_water = max(max_water, width * current_height)
             
-            # 總是移動較短那一側的指針，才有機會找到更高的邊界來彌補寬度縮小
+            # 3. 核心貪心決策：誰比較矮，就淘汰誰（往內移動一格）
             if height[left] < height[right]:
                 left += 1
             else:
@@ -86,6 +88,10 @@ class Solution:
         return max_water
 ```
 解釋(my):
+step1: 左右指針(left, right)從左邊右邊往中間移動
+step2: 維持while left < right, 並計算每一次max_water
+step3: 比對左指針跟右指針高度(height[left], height[right]). 哪個比較小就往中間移動
+
 
 ```
                           left(8)與 right(8)一樣高，    8 |    █ ~ ~ ~ ~ █    <--   水量 = 40
@@ -100,6 +106,19 @@ class Solution:
 idx: 0 1 2 3 4 5 6 7 8
 ```
 
+```
+高度(y)
+8 |  █             █
+7 |  █ ~ ~ ~ ~ ~ ~ █  <-- 第 7 層：7 個 ~
+6 |  █ ~ ~ ~ ~ ~ ~ █  <-- 第 6 層：7 個 ~
+5 |  █ ~ ~ ~ ~ ~ ~ █  <-- 第 5 層：7 個 ~
+4 |  █ ~ ~ ~ ~ ~ ~ █  <-- 第 4 層：7 個 ~
+3 |  █ ~ ~ ~ ~ ~ ~ █  <-- 第 3 層：7 個 ~
+2 |  █ ~ ~ ~ ~ ~ ~ █  <-- 第 2 層：7 個 ~
+1 |  █ ~ ~ ~ ~ ~ ~ █  <-- 第 1 層：7 個 ~
+  +------------------
+idx: 1 2 3 4 5 6 7 8  (寬度 = 8 - 1 = 7 格)
+```
 
 
 
