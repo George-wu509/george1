@@ -1,10 +1,7 @@
 
 LeetCode 11 / LintCode 383 給定一個長度為 `n` 的整數陣列 `height`。有 `n` 條垂線，第 `i` 條線的兩個端點是 `(i, 0)` 和 `(i, height[i])`。
 
-找出其中的兩條線，使得它們與 `x` 軸共同構成的容器可以容納最多的水。
-
-返回容器可以儲存的最大水量。
-
+找出其中的兩條線，使得它們與 `x` 軸共同構成的容器可以容納最多的水。返回容器可以儲存的最大水量。
 **說明**：你不能傾斜容器。
 
 **範例 1：** 輸入：
@@ -45,6 +42,27 @@ height = [4, 3, 2, 1, 4]
 
 ### 解法一：相向雙指針（Optimal - $O(n)$）
 
+```python
+from typing import List
+
+class Solution:
+    def maxArea(self, height: List[int]) -> int:
+        left, right = 0, len(height) - 1
+        max_water = 0
+        
+        while left < right:
+            width = right - left
+            current_height = min(height[left], height[right])
+            max_water = max(max_water, width * current_height)
+            
+            if height[left] < height[right]:
+                left += 1
+            else:
+                right -= 1
+                
+        return max_water
+```
+解釋版
 ```Python
 from typing import List
 
@@ -67,6 +85,22 @@ class Solution:
                 
         return max_water
 ```
+解釋(my):
+
+```
+                          left(8)與 right(8)一樣高，    8 |    █ ~ ~ ~ ~ █    <--   水量 = 40
+7 |    █ ~ ~ ~ ~ █   █
+6 |    █ █ ~ ~ ~ █   █
+5 |    █ █ ~ █ ~ █   █
+4 |    █ █ ~ █ █ █   █
+3 |    █ █ ~ █ █ █ █ █
+2 |    █ █ █ █ █ █ █ █
+1 |  █ █ █ █ █ █ █ █ █
+  +--------------------
+idx: 0 1 2 3 4 5 6 7 8
+```
+
+
 
 
 ### 解法二：暴力枚舉法（Brute Force - $O(n^2)$，會超時 TLE）

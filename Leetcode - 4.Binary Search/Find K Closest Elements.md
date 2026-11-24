@@ -45,3 +45,5 @@ class Solution:
         return results
 ```
 pass
+解釋:
+先用binary search找到離target最近的數, 再用左右指針向左向右搜尋k個離這個target數最近的k個數
