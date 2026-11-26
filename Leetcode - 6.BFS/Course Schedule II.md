@@ -1,4 +1,6 @@
 
+比較: [[Compare - Topological Sort]]
+
 ### LintCode 616: 课程表 II（Course Schedule II）
 
 在 `LintCode 616` 中，我们需要找到一种课程安排顺序，使得所有课程都能被完成。课程间存在依赖关系，如果无法完成所有课程，则返回空数组。

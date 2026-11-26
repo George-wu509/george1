@@ -63,7 +63,6 @@
 
 絕大多數拓撲排序題目都可以直接套用以下骨架，只需根據題意微調標註的擴充點：
 
-
 ```Python
 from collections import deque, defaultdict
 from typing import List

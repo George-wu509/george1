@@ -1,9 +1,8 @@
 
-lintcode 615
-
 ### LeetCode 207: **Course Schedule（课程表）**
 
 ---
+比較: [[Compare - Topological Sort]]
 
 #### **问题描述**
 

@@ -2,8 +2,15 @@
 ### LintCode 892: 外星人字典
 
 ---
+比較: [[Compare - Topological Sort]]
 
-### 问题描述
+
+|                    |     |
+| ------------------ | --- |
+| [[#### 外星人字典问题描述]] |     |
+| [[#### 拓撲排序之前處理]]  |     |
+
+#### 外星人字典问题描述
 
 给定一组由外星语单词组成的字典 `words`，单词按外星语的字典序排序。通过比较相邻单词，推导出外星语的字母顺序。如果顺序无法确定，返回空字符串。
 
@@ -137,107 +144,262 @@ class Solution:
 pass
 
 
-### 示例输入输出
+topology sort之前的這段程式碼的唯一目的，就是「當偵探」**：從已經排好序的單字清單中，找出隱藏的「字母先後線索」，並把這些線索畫成一張**有向圖（`neighbors`）**與**前置條件計數表（`in_degrees`），交給後面的拓撲排序處理。
 
-#### 输入
-`words = ["wrt", "wrf", "er", "ett", "rftt"]`
+整個建圖流程可以拆成 **3 個步驟**：
 
-#### 输出
-`"wertf"`
+### 步驟 1：把所有出現過的字母變成「節點」
+
+```Python
+neighbors = {ch: set() for word in words for ch in word}
+in_degrees = {ch: 0 for ch in neighbors.keys()}
+```
+
+- **想法**：不管字母順序為何，先把清單裡所有不重複的字母抓出來建檔。
+    
+- **圖解狀態**（以 `["wrt", "wrf", "er", "ett", "rftt"]` 為例）：
+    
+    ```
+    建立 5 個孤立節點，初始入度（被幾個字母擋在前面）全部為 0：
+    
+      [w] (in: 0)    [r] (in: 0)    [t] (in: 0)    [f] (in: 0)    [e] (in: 0)
+    ```
+    
+    _(註：`neighbors` 用 `set()` 而不是 `list`，是為了防止重複加入同一條邊)_
+    
+
+### 步驟 2：兩兩比較「相鄰單字」，抓出第一個不同的字母
+
+```Python
+for i in range(len(words) - 1):
+    first_word = words[i]
+    second_word = words[i + 1]
+    for j in range(min(len(first_word), len(second_word))):
+        if first_word[j] != second_word[j]:
+            if second_word[j] not in neighbors[first_word[j]]:
+                neighbors[first_word[j]].add(second_word[j])
+                in_degrees[second_word[j]] += 1
+            break
+```
+
+- **為什麼只比相鄰單字？** 因為字典序有遞移性（如果 `A < B` 且 `B < C`，自然 `A < C`），不需要兩兩全部配對。
+    
+- **為什麼找到第一個不同字母就 `break`？** 就像英文字典裡 `"apple"` 排在 `"banana"` 前面，是因為第 1 個字母 `'a' < 'b'` 就分出勝負了；後面的 `'p'` 和 `'a'` 誰大誰小完全不影響排序，硬比較反而會得到錯誤線索！
+    
+- **圖解 4 組比對過程**：
+    
+    ```
+    ① "wrt" vs "wrf"         ② "wrf" vs "er"          ③ "er" vs "ett"          ④ "ett" vs "rftt"
+       w  r  [t]                [w] r  f                 e  [r]                   [e] t  t
+       w  r  [f]                [e] r                    e  [t] t                 [r] f  t  t
+       ▲  ▲   │                  │                       ▲   │                     │
+      相同相同 └─▶ t ──▶ f       └─▶ w ──▶ e            相同  └─▶ r ──▶ t           └─▶ e ──▶ r
+              (f 入度 +1)         (e 入度 +1)                 (t 入度 +1)             (r 入度 +1)
+    ```
+    
+- **為什麼要檢查 `if second_word[j] not in neighbors[first_word[j]]`？** 假設後面又出現一組單字也推導出 `t ──▶ f`，因為 `neighbors['t']` 是 `set` 不會重複存，若沒加這個判斷，`in_degrees['f']` 就會被多加 1 次，導致後面拓撲排序時 `f` 的入度永遠無法降為 0。
+    
+
+### 步驟 3：`for ... else` 抓出「違反字典常識」的無效輸入
+
+```Python
+
+        else:
+            if len(first_word) > len(second_word):
+                return ""
+```
+
+- **Python 語法小提醒**：`for ... else` 的 `else` 只有在「內層 `for` 迴圈完全沒有觸發 `break`（也就是較短的單字完全是較長單字的前綴）」時才會執行。
+    
+- **為什麼這樣不合法？** 在任何語言的字典中，空白永遠排在字母前面，所以 `"app"` 一定排在 `"apple"` 前面。如果出現長字在短字前面，代表這份字典根本是錯的，直接回傳 `""` 結束程式：
+    
+    ```
+    情境 A（合法，不觸發 return）：      情境 B（不合法，直接 return ""）：
+       first : "ab"  (長度 2)              first : "abc" (長度 3)
+       second: "abc" (長度 3)              second: "ab"  (長度 2)
+                ▲▲                                  ▲▲
+           前兩字完全相同，短字在前             前兩字完全相同，長字卻排在短字前面 ❌
+    ```
+    
+
+### 建圖完成！準備交棒給拓撲排序
+
+跑完上述迴圈後，程式拿到了兩份整理好的資料，準備進入下一階段的 `heap` 拓撲排序：
+
+```
+1. 有向圖結構 (neighbors)：
+   [w] ──▶ [e] ──▶ [r] ──▶ [t] ──▶ [f]
+
+2. 入度計數表 (in_degrees)：
+   w: 0  (唯一沒有前置條件的字母，馬上進入 heap！)
+   e: 1
+   r: 1
+   t: 1
+   f: 1
+```
 
 ---
 
-### 运行过程
 
-1. **初始化图结构**：
+#### 拓撲排序之前處理
+```
+以 ["wrt", "wrf", "er", "ett", "rftt"] 為例解釋以下code:
+neighbors = {ch: set() for word in words for ch in word}
+in_degrees = {ch: 0 for ch in neighbors.keys()}
+neighbors跟in_degrees各是甚麼?
+
+並解釋以下for loop每個迴圈 first_word , second_word是甚麼, 以及每個流程
+```
+### 一、`neighbors` 與 `in_degrees` 各是什麼？
+
+這兩行程式碼透過字典推導式（Dictionary Comprehension），把 `words` 裡出現過的所有不重複字元（`'w', 'r', 't', 'f', 'e'`）抽出來初始化：
+
+```Python
+neighbors = {ch: set() for word in words for ch in word}
+in_degrees = {ch: 0 for ch in neighbors.keys()}
+```
+
+- **`neighbors`（鄰接表 / 有向邊集合）**：
+    - **意義**：記錄每個字母「**後面緊接著哪些字母**」（即 `key -> value` 的有向邊）。使用 `set()` 是為了避免重複加入同一條規則。
+        
+    - **初始值**：
+        ```Python
+        {'w': set(), 'r': set(), 't': set(), 'f': set(), 'e': set()}
+        ```
+        
+- **`in_degrees`（入度計數表）**：
     
-    - `neighbors`：
+    - **意義**：記錄「**有多少個字母必須排在該字母前面**」（有幾個箭頭指向它）。`0` 代表目前沒有任何前置限制。
         
-        python
+    - **初始值**：
+
+        ```Python
+        {'w': 0, 'r': 0, 't': 0, 'f': 0, 'e': 0}
+        ```
         
-        複製程式碼
-        
-        `{'w': set(), 'r': set(), 't': set(), 'f': set(), 'e': set()}`
-        
-    - `in_degrees`：
-        
-        python
-        
-        複製程式碼
-        
-        `{'w': 0, 'r': 0, 't': 0, 'f': 0, 'e': 0}`
-        
-2. **构建图**：
+
+### 二、`for` 迴圈逐輪拆解
+
+`words` 長度為 `5`，所以外層 `for i in range(len(words) - 1)` 會執行 `i = 0, 1, 2, 3` 共 **4 輪**，每次取出相鄰的兩個單字進行逐字比對：
+
+#### 第 1 輪：`i = 0`
+
+- **`first_word`**：`"wrt"`（長度 3）
     
-    - 比较 `"wrt"` 和 `"wrf"`：
-        - `'t' < 'f'`，加入边 `t -> f`。
-    - 比较 `"wrt"` 和 `"er"`：
-        - `'w' < 'e'`，加入边 `w -> e`。
-    - 比较 `"er"` 和 `"ett"`：
-        - `'r' < 't'`，加入边 `r -> t`。
-    - 比较 `"ett"` 和 `"rftt"`：
-        - `'e' < 'r'`，加入边 `e -> r`。
+- **`second_word`**：`"wrf"`（長度 3）
     
-    **最终图**：
+- **內層迴圈範圍**：`range(min(3, 3))` $\rightarrow$ `j = 0, 1, 2`
     
-    - `neighbors`：
-        
-        python
-        
-        複製程式碼
-        
-        `{'w': {'e'}, 'r': {'t'}, 't': {'f'}, 'f': set(), 'e': {'r'}}`
-        
-    - `in_degrees`：
-        
-        python
-        
-        複製程式碼
-        
-        `{'w': 0, 'r': 1, 't': 1, 'f': 1, 'e': 1}`
-        
-3. **拓扑排序**：
+- **執行流程**：
     
-    - 初始入度为 0 的节点：`['w']`。
-    - 排序过程：
-        - 取出 `'w'`，加入结果：`result = ['w']`。
-            - 更新 `'e'` 的入度：`in_degrees['e'] -= 1`。
-        - 取出 `'e'`，加入结果：`result = ['w', 'e']`。
-            - 更新 `'r'` 的入度：`in_degrees['r'] -= 1`。
-        - 取出 `'r'`，加入结果：`result = ['w', 'e', 'r']`。
-            - 更新 `'t'` 的入度：`in_degrees['t'] -= 1`。
-        - 取出 `'t'`，加入结果：`result = ['w', 'e', 'r', 't']`。
-            - 更新 `'f'` 的入度：`in_degrees['f'] -= 1`。
-        - 取出 `'f'`，加入结果：`result = ['w', 'e', 'r', 't', 'f']`。
-4. **验证结果**：
+    1. `j = 0`：比較 `'w'` 與 `'w'` $\rightarrow$ 相同，繼續下一輪 `j`。
+        
+    2. `j = 1`：比較 `'r'` 與 `'r'` $\rightarrow$ 相同，繼續下一輪 `j`。
+        
+    3. `j = 2`：比較 `'t'` 與 `'f'` $\rightarrow$ **不相同**（`'t' != 'f'`），找到線索 `'t' -> 'f'`：
+        
+        - 檢查 `'f' not in neighbors['t']` 為 `True`。
+            
+        - `neighbors['t'].add('f')` $\rightarrow$ `neighbors['t']` 變成 `{'f'}`。
+            
+        - `in_degrees['f'] += 1` $\rightarrow$ `in_degrees['f']` 變成 `1`。
+            
+        - 執行 **`break`** 跳出內層迴圈（後續字元無須再比）。
+            
+
+#### 第 2 輪：`i = 1`
+
+- **`first_word`**：`"wrf"`（長度 3）
     
-    - `result` 长度等于节点数，返回结果：`"wertf"`。
-
----
-
-### 时间和空间复杂度分析
-
-#### 时间复杂度
-
-1. **构建图**：
+- **`second_word`**：`"er"`（長度 2）
     
-    - 遍历每对相邻单词，复杂度为 `O(L)`，其中 `L` 是所有单词字符总数。
-2. **拓扑排序**：
+- **內層迴圈範圍**：`range(min(3, 2))` $\rightarrow$ `j = 0, 1`
     
-    - 遍历每个节点及其邻居，复杂度为 `O(V + E)`，其中 `V` 是字母数，`E` 是边数。
+- **執行流程**：
+    
+    1. `j = 0`：比較 `'w'` 與 `'e'` $\rightarrow$ **不相同**（`'w' != 'e'`），找到線索 `'w' -> 'e'`：
+        
+        - 檢查 `'e' not in neighbors['w']` 為 `True`。
+            
+        - `neighbors['w'].add('e')` $\rightarrow$ `neighbors['w']` 變成 `{'e'}`。
+            
+        - `in_degrees['e'] += 1` $\rightarrow$ `in_degrees['e']` 變成 `1`。
+            
+        - 執行 **`break`** 跳出內層迴圈（`j = 1` 不會執行）。
+            
 
-总时间复杂度为 **`O(L + V + E)`**。
+#### 第 3 輪：`i = 2`
 
-#### 空间复杂度
+- **`first_word`**：`"er"`（長度 2）
+    
+- **`second_word`**：`"ett"`（長度 3）
+    
+- **內層迴圈範圍**：`range(min(2, 3))` $\rightarrow$ `j = 0, 1`
+    
+- **執行流程**：
+    
+    1. `j = 0`：比較 `'e'` 與 `'e'` $\rightarrow$ 相同，繼續下一輪 `j`。
+        
+    2. `j = 1`：比較 `'r'` 與 `'t'` $\rightarrow$ **不相同**（`'r' != 't'`），找到線索 `'r' -> 't'`：
+        
+        - 檢查 `'t' not in neighbors['r']` 為 `True`。
+            
+        - `neighbors['r'].add('t')` $\rightarrow$ `neighbors['r']` 變成 `{'t'}`。
+            
+        - `in_degrees['t'] += 1` $\rightarrow$ `in_degrees['t']` 變成 `1`。
+            
+        - 執行 **`break`** 跳出內層迴圈。
+            
 
-1. **图存储**：
-    - `neighbors` 和 `in_degrees`，复杂度为 `O(V + E)`。
-2. **优先队列**：
-    - 最多存储 `V` 个节点，复杂度为 `O(V)`。
+#### 第 4 輪：`i = 3`
 
-总空间复杂度为 **`O(V + E)`**。
+- **`first_word`**：`"ett"`（長度 3）
+    
+- **`second_word`**：`"rftt"`（長度 4）
+    
+- **內層迴圈範圍**：`range(min(3, 4))` $\rightarrow$ `j = 0, 1, 2`
+    
+- **執行流程**：
+    
+    1. `j = 0`：比較 `'e'` 與 `'r'` $\rightarrow$ **不相同**（`'e' != 'r'`），找到線索 `'e' -> 'r'`：
+        
+        - 檢查 `'r' not in neighbors['e']` 為 `True`。
+            
+        - `neighbors['e'].add('r')` $\rightarrow$ `neighbors['e']` 變成 `{'r'}`。
+            
+        - `in_degrees['r'] += 1` $\rightarrow$ `in_degrees['r']` 變成 `1`。
+            
+        - 執行 **`break`** 跳出內層迴圈（`j = 1, 2` 不會執行）。
+            
 
----
+### 三、迴圈結束後的最終資料狀態
+
+4 輪外層迴圈全部跑完後，兩個字典的內容如下：
+
+Python
+
+```
+neighbors = {
+    'w': {'e'},   # w 指向 e
+    'r': {'t'},   # r 指向 t
+    't': {'f'},   # t 指向 f
+    'f': set(),   # f 沒有指向任何人
+    'e': {'r'}    # e 指向 r
+}
+
+in_degrees = {
+    'w': 0,       # 唯一沒有前置條件的起點
+    'r': 1,       # 被 e 指向
+    't': 1,       # 被 r 指向
+    'f': 1,       # 被 t 指向
+    'e': 1        # 被 w 指向
+}
+```
+
+
+
+
+
 
 ### 其他解法简述
 
