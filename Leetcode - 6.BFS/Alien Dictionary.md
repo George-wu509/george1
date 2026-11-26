@@ -8,15 +8,9 @@
 给定一组由外星语单词组成的字典 `words`，单词按外星语的字典序排序。通过比较相邻单词，推导出外星语的字母顺序。如果顺序无法确定，返回空字符串。
 
 **输入**：
-
-python
-
-複製程式碼
-
 `["wrt", "wrf", "er", "ett", "rftt"]`
 
 **输出**：
-
 `"wertf"`
 
 ---
@@ -24,21 +18,16 @@ python
 ### 解法：BFS（拓扑排序）
 
 #### 思路
-
 1. **构建图**：
-    
     - 用有向图表示字母之间的顺序关系，节点是字母，边是字母之间的先后关系。
     - 每个字母的 "入度" 表示有多少其他字母需要在它之前。
 2. **比较相邻单词**：
-    
     - 遍历每对相邻单词，比较它们第一个不同的字符，确定顺序。
     - 如果较短的单词是较长单词的前缀，则不可能有有效的顺序，直接返回空字符串。
 3. **拓扑排序**：
-    
     - 将入度为 0 的字母加入优先队列（最小堆），按字典序顺序取出。
     - 遍历其邻居节点，减少邻居节点的入度；如果某邻居节点入度为 0，加入优先队列。
 4. **结果验证**：
-    
     - 如果最终排序结果的长度小于字母总数，则图中有环，返回空字符串。
 
 ---
@@ -66,7 +55,43 @@ Example:
 
 
 ### 代码实现
+```python
+import heapq
+from typing import List
 
+class Solution:
+    def alien_order(self, words: List[str]) -> str:
+        neighbors = {ch: set() for word in words for ch in word}
+        in_degrees = {ch: 0 for ch in neighbors.keys()}
+
+        for i in range(len(words) - 1):
+            first_word = words[i]
+            second_word = words[i + 1]
+            for j in range(min(len(first_word), len(second_word))):
+                if first_word[j] != second_word[j]:
+                    if second_word[j] not in neighbors[first_word[j]]:
+                        neighbors[first_word[j]].add(second_word[j])
+                        in_degrees[second_word[j]] += 1
+                    break
+            else:
+                if len(first_word) > len(second_word):
+                    return ""
+
+        heap = [ch for ch in in_degrees if in_degrees[ch] == 0]
+        heapq.heapify(heap)
+        result = []
+
+        while heap:
+            ch = heapq.heappop(heap)
+            result.append(ch)
+            for neighbor in neighbors[ch]:
+                in_degrees[neighbor] -= 1
+                if in_degrees[neighbor] == 0:
+                    heapq.heappush(heap, neighbor)
+
+        return "".join(result) if len(result) == len(neighbors) else ""
+```
+解釋版
 ```python
 import heapq
 from typing import List
@@ -115,19 +140,9 @@ pass
 ### 示例输入输出
 
 #### 输入
-
-python
-
-複製程式碼
-
 `words = ["wrt", "wrf", "er", "ett", "rftt"]`
 
 #### 输出
-
-python
-
-複製程式碼
-
 `"wertf"`
 
 ---
