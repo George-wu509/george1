@@ -1,4 +1,13 @@
 
+|                        |     |
+| ---------------------- | --- |
+| [[#### Word Search解法]] |     |
+| [[#### 為何不推薦使用BFS?]]   |     |
+|                        |     |
+#### Word Search解法
+```
+
+```
 LeetCode 79 / LintCode 123 (Blind 75 + NeetCode 150)
 給定一個 `m x n` 的二維字元網格 `board` 和一個字串單字 `word` 。如果 `word` 存在於網格中，返回 `true` ；否則，返回 `false` 。
 單字必須按照字母順序，通過相鄰的單元格內的字母構成，其中「相鄰」單元格是那些水平相鄰或垂直相鄰的單元格。同一個單元格內的字母不允許被重複使用。
@@ -306,4 +315,178 @@ class Solution:
 
         return res
 ```
-````
+
+
+
+
+#### 為何不推薦使用BFS?
+```
+在leetcode word search question(給定一個 `m x n` 的二維字元網格 `board` 和一個字串單字 `word` 。如果 `word` 存在於網格中，返回 `true` ；否則，返回 `false`)以coding interview來說是否也推薦使用BFS method? 或者有甚麼理由建議使用DFS? 
+```
+在 Coding Interview 中，針對 LeetCode 79 (Word Search)，**強烈不推薦使用 BFS，標準且最佳的解法是 DFS（搭配 Backtracking 回溯法）**。
+
+### 為什麼面試推薦 DFS 而非 BFS？
+
+這題的核心限制是：**「同一條搜尋路徑中，每個格子只能使用一次，但不同分支可以重複使用同一格。」** 這個限制讓 DFS 與 BFS 在效能與實作上產生巨大落差：
+
+|**比較維度**|**DFS + Backtracking（推薦）**|**BFS（不推薦）**|
+|---|---|---|
+|**狀態與空間複雜度**|只需維護一條當前路徑。可直接原地修改 `board`（如改成 `'#'`）並在回溯時還原，額外空間僅需遞迴深度 **$O(L)$**。|Queue 中同時存在多條互不干擾的分支，**每個節點都必須攜帶一份獨立的 `visited` 集合**，複製與儲存成本極高（最壞達 $O(M \cdot N \cdot 3^L \cdot L)$）。|
+|**搜尋效率（提早終止）**|沿單一方向一路探底，只要有一條路走通就能立刻 `return True`，大幅節省時間。|必須像水波一樣把長度為 $1, 2, \dots, L-1$ 的**所有**可能前綴全部展開，才能觸及長度為 $L$ 的答案，在測資較大時極易 TLE 或 MLE。|
+|**面試擴充性**|程式碼簡潔直覺，且能無縫銜接進階題 **Word Search II (LeetCode 212, DFS + Trie)**。|難以結合 Trie 進行大規模多單字剪枝。|
+
+> **面試建議：** 除非面試官刻意追問「如果不用遞迴/DFS，改用 BFS 該怎麼處理狀態隔離？」，否則一律直接寫 DFS。
+
+### 如果要用 BFS：Python 實作
+
+使用 BFS 時，不能建立全域共用的 `visited`（否則 A 分支走過的格子會擋住 B 分支），必須把 `(row, col, index, visited_set)` 一起打包放進 `deque` 中：
+
+```Python
+from collections import deque
+from typing import List
+
+
+class Solution:
+
+  def exist(self, board: List[List[str]], word: str) -> bool:
+    if not board or not board[0]:
+      return False
+
+    rows, cols = len(board), len(board[0])
+    queue = deque()
+
+    # 1. 找出所有符合 word[0] 的起點，各自建立獨立的 visited set
+    for r in range(rows):
+      for c in range(cols):
+        if board[r][c] == word[0]:
+          if len(word) == 1:
+            return True
+          # 狀態格式: (目前列, 目前行, 目前匹配到的 word 索引, 此路徑已走過的座標集合)
+          queue.append((r, c, 0, {(r, c)}))
+
+    directions = [(1, 0), (-1, 0), (0, 1), (0, -1)]
+
+    # 2. 層序擴展搜尋
+    while queue:
+      r, c, idx, visited = queue.popleft()
+
+      for dr, dc in directions:
+        nr, nc = r + dr, c + dc
+
+        # 檢查邊界、是否已在此路徑走過、以及字元是否符合下一個字母
+        if (
+            0 <= nr < rows
+            and 0 <= nc < cols
+            and (nr, nc) not in visited
+            and board[nr][nc] == word[idx + 1]
+        ):
+          # 若已經匹配到 word 的最後一個字元，直接回傳 True
+          if idx + 1 == len(word) - 1:
+            return True
+
+          # 必須複製一份新的 set 給新分支，避免污染其他分支
+          new_visited = visited | {(nr, nc)}
+          queue.append((nr, nc, idx + 1, new_visited))
+
+    return False
+```
+
+### 範例逐步拆解（Step-by-Step Trace）
+
+給定輸入：
+
+- `board`:
+    
+    - Row 0: `(0,0)='A'`, `(0,1)='B'`, `(0,2)='C'`, `(0,3)='E'`
+        
+    - Row 1: `(1,0)='S'`, `(1,1)='F'`, `(1,2)='C'`, `(1,3)='S'`
+        
+    - Row 2: `(2,0)='A'`, `(2,1)='D'`, `(2,2)='E'`, `(2,3)='E'`
+        
+- `word = "ABCCED"`（索引 `0:'A', 1:'B', 2:'C', 3:'C', 4:'E', 5:'D'`）
+    
+
+#### 步驟 1：初始化 Queue（尋找 `'A'`，`idx = 0`）
+
+掃描整個網格，找到兩個 `'A'`，分別建立獨立的起點狀態放入 Queue：
+
+- `queue` 初始狀態：
+    
+    1. `(0, 0, idx=0, visited={(0,0)})`
+        
+    2. `(2, 0, idx=0, visited={(2,0)})`
+        
+
+#### 步驟 2：第一層展開（尋找 `'B'`，`idx = 1`）
+
+- **Pop `(0, 0, idx=0, {(0,0)})`**：
+    
+    - 檢查上下左右：`下(1,0)='S'`（不符）、`右(0,1)='B'`（**符合**）。
+        
+    - **Push** `(0, 1, idx=1, visited={(0,0), (0,1)})`。
+        
+- **Pop `(2, 0, idx=0, {(2,0)})`**：
+    
+    - 檢查上下左右：`上(1,0)='S'`（不符）、`右(2,1)='D'`（不符）。
+        
+    - 此分支無路可走，自然淘汰。
+        
+
+#### 步驟 3：第二層展開（尋找 `'C'`，`idx = 2`）
+
+- **Pop `(0, 1, idx=1, {(0,0), (0,1)})`**：
+    
+    - 檢查上下左右：
+        
+        - `左(0,0)`：已在 `visited` 中，跳過。
+            
+        - `下(1,1)='F'`：不符。
+            
+        - `右(0,2)='C'`：**符合**。
+            
+    - **Push** `(0, 2, idx=2, visited={(0,0), (0,1), (0,2)})`。
+        
+
+#### 步驟 4：第三層展開（尋找 `'C'`，`idx = 3`）
+
+- **Pop `(0, 2, idx=2, {(0,0), (0,1), (0,2)})`**：
+    
+    - 檢查上下左右：
+        
+        - `左(0,1)`：已在 `visited` 中，跳過。
+            
+        - `右(0,3)='E'`：不符。
+            
+        - `下(1,2)='C'`：**符合**。
+            
+    - **Push** `(1, 2, idx=3, visited={(0,0), (0,1), (0,2), (1,2)})`。
+        
+
+#### 步驟 5：第四層展開（尋找 `'E'`，`idx = 4`）
+
+- **Pop `(1, 2, idx=3, {(0,0), (0,1), (0,2), (1,2)})`**：
+    
+    - 檢查上下左右：
+        
+        - `上(0,2)`：已在 `visited` 中，跳過。
+            
+        - `左(1,1)='F'`、`右(1,3)='S'`：皆不符。
+            
+        - `下(2,2)='E'`：**符合**。
+            
+    - **Push** `(2, 2, idx=4, visited={(0,0), (0,1), (0,2), (1,2), (2,2)})`。
+        
+
+#### 步驟 6：第五層展開（尋找 `'D'`，`idx = 5`）
+
+- **Pop `(2, 2, idx=4, {(0,0), (0,1), (0,2), (1,2), (2,2)})`**：
+    
+    - 檢查上下左右：
+        
+        - `上(1,2)`：已在 `visited` 中，跳過。
+            
+        - `右(2,3)='E'`：不符。
+            
+        - `左(2,1)='D'`：**符合**！
+            
+    - 此時 `idx + 1 == 5`，等於 `len(word) - 1`，代表整個單字 `"ABCCED"` 匹配完成，直接回傳 **`True`**。
