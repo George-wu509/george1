@@ -63,46 +63,79 @@ False
 ---
 
 ### 解法一：標準 DFS + `visited` 集合回溯法（NeetCode 經典寫法，不修改原陣列）
-
 ```python
 class Solution:
-    def exist(self, board: List[List[str]], word: str) -> bool:
-        ROWS, COLS = len(board), len(board[0])
-        path = set()  # 記錄當前 DFS 路徑已走過的座標 (r, c)
-
-        def dfs(r: int, c: int, i: int) -> bool:
-            # 1. 成功配對完 word 的所有字元
-            if i == len(word):
-                return True
-            # 2. 越界、字元不符，或該格子已在當前路徑中使用過
-            if (
-                r < 0 or c < 0 or
-                r >= ROWS or c >= COLS or
-                board[r][c] != word[i] or
-                (r, c) in path
-            ):
-                return False
-
-            # 做選擇：將當前座標加入路徑集合
-            path.add((r, c))
-            # 向四個方向探索下一個字元 word[i + 1]
-            res = (
-                dfs(r + 1, c, i + 1) or
-                dfs(r - 1, c, i + 1) or
-                dfs(r, c + 1, i + 1) or
-                dfs(r, c - 1, i + 1)
-            )
-            # 撤銷選擇（回溯）：離開這條分支前務必移除座標，讓其他分支能正常使用
-            path.remove((r, c))
-            return res
-
-        for r in range(ROWS):
-            for c in range(COLS):
-                if dfs(r, c, 0):
+    def exist(self, board, word):
+        rows, cols = len(board), len(board[0])
+        path = set()(r, c)
+        
+        for r in range(rows):
+            for c in range(cols):
+                if self.dfs(board, word, r, c, 0):
                     return True
         return False
+
+    def dfs(self, board, word, r, c, i):
+        if i == len(word):
+            return True
+        if (
+            r < 0 or c < 0 or
+            r >= rows or c >= cols or
+            board[r][c] != word[i] or
+            (r, c) in path
+        ):
+            return False
+
+        path.add((r, c))
+        res = (
+            dfs(r + 1, c, i + 1) or
+            dfs(r - 1, c, i + 1) or
+            dfs(r, c + 1, i + 1) or
+            dfs(r, c - 1, i + 1)
+        )
+        path.remove((r, c))
+        return res
 ```
-pass
+解說version
+```python
+class Solution:
+    def exist(self, board, word):
+        rows, cols = len(board), len(board[0])
+        path = set()(r, c) # 記錄當前DFS路徑已走過的座標 
+        
+        for r in range(rows):
+            for c in range(cols):
+                if self.dfs(board, word, r, c, 0):
+                    return True
+        return False
+
+    def dfs(self, board, word, r, c, i):
+	    # 1. 成功配對完 word 的所有字元
+        if i == len(word):
+            return True
+        # 2. 越界、字元不符，或該格子已在當前路徑中使用過
+        if (
+            r < 0 or c < 0 or
+            r >= rows or c >= cols or
+            board[r][c] != word[i] or
+            (r, c) in path
+        ):
+            return False
+
+		# 做選擇：將當前座標加入路徑集合
+        path.add((r, c))
+        # 向四個方向探索下一個字元 word[i + 1]
+        res = (
+            dfs(r + 1, c, i + 1) or
+            dfs(r - 1, c, i + 1) or
+            dfs(r, c + 1, i + 1) or
+            dfs(r, c - 1, i + 1)
+        )
+        #回溯：離開這條分支前移除座標，讓其他分支能正常使用
+        path.remove((r, c))
+        return res
+```
+
 
 ### 解法二：原地標記回溯 + 頻率與首尾反轉剪枝（面試最佳解，實務執行最快）
 

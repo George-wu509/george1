@@ -44,7 +44,27 @@ candidates = [2], target = 1
 ---
 
 ### 解法一：決策樹二元選擇回溯法（NeetCode 經典寫法，選或不選）
+```python
+class Solution:
+    def combinationSum(self, candidates, target):
+        res = []
 
+        def dfs(i, cur, total):
+            if total == target:
+                res.append(cur.copy())
+                return
+            if i >= len(candidates) or total > target:
+                return
+
+            cur.append(candidates[i])
+            dfs(i, cur, total + candidates[i])
+            cur.pop()
+            dfs(i + 1, cur, total)
+
+        dfs(0, [], 0)
+        return res
+```
+解釋版
 ```python
 class Solution:
     def combinationSum(self, candidates: List[int], target: int) -> List[List[int]]:
